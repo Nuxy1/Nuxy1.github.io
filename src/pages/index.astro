@@ -1,0 +1,57 @@
+---
+import Base from "../layouts/Base.astro";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const services = [
+  { name: "Zap / scenario fix", price: "from $75", text: "An automation that fails or silently skips records: found, fixed, and given an alert so it can't fail quietly again." },
+  { name: "App-to-app integration", price: "from $300", text: "New orders, leads or bookings flowing between 2-3 apps (Shopify, Stripe, Sheets, a CRM, Slack), tested on real data." },
+  { name: "Custom webhooks & APIs", price: "from $500", text: "When no-code hits a wall: verified webhooks, retries, replay of failed events, and integrations with APIs that have no app." },
+  { name: "Data clean-up & migration", price: "from $150", text: "A messy CSV or an old system's export cleaned, deduplicated and checked before it goes into the new one. Nothing guessed." },
+  { name: "Discord bots", price: "from $150", text: "Welcome cards, self-serve roles, Twitch go-live alerts, mod logs and onboarding flows for communities and streamers." },
+  { name: "Sites & docs", price: "from $250", text: "Fast static sites and documentation, like this one: no server to maintain, published from GitHub." },
+];
+
+const work = [
+  { name: "Shopify order webhook relay", repo: "shopify-webhook-relay", doc: "webhook-relay", text: "Every Shopify order to Google Sheets and Slack/Discord: signature-checked, never written twice, retried, failed deliveries replayable.", tags: ["Node.js", "Webhooks", "Google Sheets", "10 tests"] },
+  { name: "Code steps for Zapier & n8n", repo: "automation-code-steps", doc: "code-steps", text: "Paste-ready steps that clean phones, names, dates and time zones, money and order line items inside a Zap.", tags: ["Zapier", "n8n", "JavaScript", "tested"] },
+  { name: "CSV contact cleaner", repo: "csv-contact-cleaner", doc: "csv-cleaner", text: "Cleans and dedupes a contact list before an import; doubtful rows set aside with reasons, every change counted.", tags: ["Data clean-up", "CSV", "5 tests"] },
+  { name: "Stream community bot", repo: "stream-community-bot", doc: "community-bot", text: "Discord bot for a streamer's server: welcome cards, role buttons, Twitch go-live alerts, mod log.", tags: ["Discord", "Twitch", "discord.js", "6 tests"] },
+];
+---
+<Base title="Nuxy1 · Automation Developer">
+  <h1>Your apps, connected.<br />No more copy and paste.</h1>
+  <p class="lead">I build and fix automations for small businesses, online stores and creators: Zapier, Make and n8n, plus the custom code for what they can't do. Tested before handover, and built so a failure tells someone instead of failing silently.</p>
+  <p><a class="button" href="https://www.upwork.com/freelancers/~01bb5e52e099f056d4">Hire me on Upwork</a></p>
+
+  <img src={`${base}/relay-demo.gif`} alt="Demo: tests passing, a signed Shopify order arriving, the clean spreadsheet row it writes, a forged request refused" width="800" height="450" loading="eager" />
+
+  <h2 id="services">What I do</h2>
+  <div class="grid">
+    {services.map((s) => (
+      <div class="card">
+        <h3>{s.name}</h3>
+        <span class="price">{s.price}</span>
+        <p>{s.text}</p>
+      </div>
+    ))}
+  </div>
+
+  <h2 id="work">Work you can look at</h2>
+  <div class="grid two">
+    {work.map((w) => (
+      <div class="card">
+        <h3>{w.name}</h3>
+        <p>{w.text}</p>
+        <div class="tags">{w.tags.map((t) => <span>{t}</span>)}</div>
+        <p><a href={`${base}/docs/${w.doc}/`}>Docs</a> · <a href={`https://github.com/Nuxy1/${w.repo}`}>Code</a></p>
+      </div>
+    ))}
+  </div>
+
+  <h2>How I work</h2>
+  <div class="grid">
+    <div class="card"><h3>In writing</h3><p>Questions, plans and updates in Upwork chat, with short screen recordings of each piece working. No meetings to schedule.</p></div>
+    <div class="card"><h3>Fixed prices</h3><p>A clear total before I start. Anything unknown gets a small paid check first, so you're never paying for guesses.</p></div>
+    <div class="card"><h3>Your accounts</h3><p>Everything is built in your accounts, and I never ask for passwords. You get a written guide and keep full control.</p></div>
+  </div>
+</Base>
