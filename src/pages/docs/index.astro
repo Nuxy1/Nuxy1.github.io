@@ -1,0 +1,14 @@
+---
+import Base from "../../layouts/Base.astro";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const pages = Object.values(import.meta.glob("./*.md", { eager: true })) as { frontmatter: { title: string; description: string }; url: string }[];
+---
+<Base title="Docs · Nuxy1">
+  <h1>Docs</h1>
+  <p class="lead">Setup guides for each project, written for the person who has to run it.</p>
+  <div class="grid">
+    {pages.map((p) => (
+      <div class="card"><h3><a href={p.url}>{p.frontmatter.title}</a></h3><p>{p.frontmatter.description}</p></div>
+    ))}
+  </div>
+</Base>
