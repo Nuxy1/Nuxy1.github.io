@@ -1,0 +1,73 @@
+---
+// The page frame: one stylesheet, light and dark from the system setting, no client-side JavaScript.
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = "Automation developer: Zapier, Make, n8n, webhooks, Discord bots and data clean-up for small businesses and creators." } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
+    <style is:global>
+      :root {
+        --bg: #ffffff; --panel: #f6f8fa; --text: #1f2328; --muted: #59636e; --line: #d1d9e0; --accent: #0969da; --good: #1a7f37;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root { --bg: #0d1117; --panel: #161b22; --text: #e6edf3; --muted: #9198a1; --line: #30363d; --accent: #4493f8; --good: #3fb950; }
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+      main, header, footer { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+      header { display: flex; justify-content: space-between; align-items: center; padding-top: 22px; padding-bottom: 22px; gap: 12px; flex-wrap: wrap; }
+      header a.brand { font-weight: 700; color: var(--text); text-decoration: none; }
+      nav { display: flex; gap: 18px; flex-wrap: wrap; }
+      a { color: var(--accent); }
+      nav a { color: var(--muted); text-decoration: none; }
+      nav a:hover { color: var(--text); }
+      h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.15; margin: 32px 0 14px; }
+      h2 { font-size: 26px; margin: 56px 0 14px; }
+      h3 { margin: 0 0 6px; font-size: 19px; }
+      .lead { font-size: 20px; color: var(--muted); max-width: 680px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+      .grid.two { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+      @media (max-width: 420px) { .grid.two { grid-template-columns: 1fr; } }
+      .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+      .card p { margin: 6px 0 0; color: var(--muted); font-size: 15.5px; }
+      .price { color: var(--good); font-weight: 600; font-size: 15px; }
+      .button { display: inline-block; background: var(--accent); color: #fff; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+      .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+      .tags span { font-size: 12.5px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; color: var(--muted); }
+      img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); }
+      pre { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; font-size: 14px; }
+      code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 0.92em; }
+      table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; font-size: 15px; }
+      th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+      footer { color: var(--muted); font-size: 14px; padding-top: 48px; padding-bottom: 40px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href={`${base}/`}>Nuxy1 · Automation Developer</a>
+      <nav>
+        <a href={`${base}/#services`}>Services</a>
+        <a href={`${base}/#work`}>Work</a>
+        <a href={`${base}/docs/`}>Docs</a>
+        <a href="https://www.upwork.com/freelancers/~01bb5e52e099f056d4">Hire on Upwork</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>Every project here is open source and tested. Code: <a href="https://github.com/Nuxy1">github.com/Nuxy1</a></footer>
+  </body>
+</html>
