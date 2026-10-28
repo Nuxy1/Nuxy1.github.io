@@ -1,9 +1,14 @@
 ---
+import { Picture } from "astro:assets";
 import Base from "../layouts/Base.astro";
-import Mark from "../components/Mark.astro";
-import stamp from "../../assets/plates/stamp.png";
-import hole from "../../assets/plates/punch-hole.png";
-import fixStamp from "../../assets/plates/stamp-fix.png";
+import Icon, { type IconName } from "../components/Icon.astro";
+import hero from "../assets/photos/hero.jpg";
+import booking from "../assets/photos/booking.jpg";
+import followUp from "../assets/photos/follow-up.jpg";
+import reviews from "../assets/photos/reviews.jpg";
+import newWebsite from "../assets/photos/new-website.jpg";
+import siteFixes from "../assets/photos/site-fixes.jpg";
+import care from "../assets/photos/care.jpg";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // The request form is an email: no server to run, and the answer lands in the inbox the work runs from.
@@ -17,30 +22,39 @@ const query = (fields: Record<string, string>) => new URLSearchParams(fields).to
 const ask = (p?: Item) => `mailto:${inbox}?` + query({ subject: subject(p), body: body(p) });
 const gmail = (p?: Item) => "https://mail.google.com/mail/?" + query({ view: "cm", fs: "1", to: inbox, su: subject(p), body: body(p) });
 const outlook = (p?: Item) => "https://outlook.live.com/mail/0/deeplink/compose?" + query({ to: inbox, subject: subject(p), body: body(p) });
-const request = ask();
 
 // (ids are linked from outreach emails: keep them stable)
 const packages = [
-  { id: "booking", stock: "mint", name: "Online booking & reminders", price: "$400", fixes: "calls you miss while you’re with a client", text: "A Book now button on your website, Google profile and Instagram, connected to the booking tool you already use (or a free one), plus automatic text and email reminders that cut no-shows." },
-  { id: "follow-up", stock: "gold", name: "Lead follow-up", price: "$450", fixes: "messages that wait hours for an answer", text: "Every website form, Facebook or Instagram inquiry gets an instant reply, two friendly follow-ups and an alert to you, so nobody waits until you’re free." },
-  { id: "reviews", stock: "card", name: "Review requests", price: "$250", fixes: "happy clients who never leave a review", text: "After each visit, every client gets a short thank-you with a link to leave you a Google review. More reviews, no awkward asking." },
-  { id: "new-website", stock: "mint", name: "New website", price: "$600", fixes: "no website, or one too old to fix", text: "Up to four pages, built for phones: your services and prices, hours, map and a Book now button, on your own domain. Built in your own Squarespace or Wix account, so you can edit it and it stays yours." },
-  { id: "site-fixes", stock: "gold", name: "Website quick fixes", price: "from $150", fixes: "a site that looks broken on a phone", text: "Secure https, a phone-friendly page setup, a booking button and a contact form that works: on the site you already have." },
-  { id: "care", stock: "card", name: "Care plan", price: "$100/month", fixes: "a site or automation that quietly stops working", text: "Your website and automations watched 24/7, checked every five minutes. Anything that breaks fixed within one business day, and small changes when you ask. Cancel any time." },
+  { id: "booking", photo: booking, alt: "A hand holding a phone with a booking page at a spa’s front desk.", name: "Online booking & reminders", price: "$400", fixes: "calls you miss while you’re with a client", text: "A Book now button on your website, Google profile and Instagram, connected to the booking tool you already use (or a free one), plus automatic text and email reminders that cut no-shows." },
+  { id: "follow-up", photo: followUp, alt: "A nail technician at work while a new message lights up her phone.", name: "Lead follow-up", price: "$450", fixes: "messages that wait hours for an answer", text: "Every website form, Facebook or Instagram inquiry gets an instant reply, 2 friendly follow-ups and an alert to you, so nobody waits until you’re free." },
+  { id: "reviews", photo: reviews, alt: "A barbershop client smiling at his new haircut in the mirror.", name: "Review requests", price: "$250", fixes: "happy clients who never leave a review", text: "After each visit, every client gets a short thank-you with a link to leave you a Google review. More reviews, no awkward asking." },
+  { id: "new-website", photo: newWebsite, alt: "A dance studio owner sitting on the studio floor with a laptop.", name: "New website", price: "$600", fixes: "no website, or one too old to fix", text: "Up to 4 pages, built for phones: your services and prices, hours, map and a Book now button, on your own domain. Built in your own Squarespace or Wix account, so you can edit it and it stays yours." },
+  { id: "site-fixes", photo: siteFixes, alt: "A phone showing a website in a tattoo studio, the artist setting up behind.", name: "Website quick fixes", price: "from $150", fixes: "a site that looks broken on a phone", text: "Secure https, a phone-friendly page setup, a booking button and a contact form that works: on the site you already have." },
+  { id: "care", photo: care, alt: "A groomer drying a fluffy dog on a grooming table.", name: "Care plan", price: "$100/month", fixes: "a site or automation that quietly stops working", text: "Your website and automations watched 24/7, checked every 5 minutes. Anything that breaks fixed within one business day, and small changes when you ask. Cancel any time." },
 ];
+const oneOff = packages.filter((p) => p.id !== "care");
+const carePlan = packages.find((p) => p.id === "care")!;
 
 // (ids are linked from outreach emails too)
-const addons = [
-  { id: "missed-calls", name: "Missed-call text-back", price: "$250", fixes: "callers who hang up and book elsewhere", text: "When you can’t pick up, the caller gets a text right away with your booking link, set up in the booking or phone tool you already use." },
-  { id: "deposits", name: "Deposits & no-show protection", price: "$150", fixes: "empty chairs from no-shows", text: "A card on file or a small deposit when clients book, plus a clear cancellation policy, switched on in your booking tool." },
-  { id: "gift-cards", name: "Online gift cards", price: "$150", fixes: "gift shoppers with nowhere to buy", text: "A Buy a gift card button on your website, Google profile and Instagram, using your booking tool’s own gift cards." },
+const addons: (Item & { id: string; icon: IconName; fixes: string; text: string })[] = [
+  { id: "missed-calls", icon: "phoneX", name: "Missed-call text-back", price: "$250", fixes: "callers who hang up and book elsewhere", text: "When you can’t pick up, the caller gets a text right away with your booking link, set up in the booking or phone tool you already use." },
+  { id: "deposits", icon: "creditCard", name: "Deposits & no-show protection", price: "$150", fixes: "empty chairs from no-shows", text: "A card on file or a small deposit when clients book, plus a clear cancellation policy, switched on in your booking tool." },
+  { id: "gift-cards", icon: "gift", name: "Online gift cards", price: "$150", fixes: "gift shoppers with nowhere to buy", text: "A Buy a gift card button on your website, Google profile and Instagram, using your booking tool’s own gift cards." },
+];
+
+// The finder under the hero: start from the problem, land on the package that fixes it.
+const problems = [
+  { label: "Missed calls", text: "Clients book online", href: "#booking" },
+  { label: "Slow replies", text: "Instant answers", href: "#follow-up" },
+  { label: "Few reviews", text: "Ask every client", href: "#reviews" },
+  { label: "Old website", text: "Fix it or start fresh", href: "#site-fixes" },
 ];
 
 const steps = [
-  ["Tell me in writing.", "Send the request below: your business, your website, what you’d like fixed. No call to schedule."],
-  ["Get the plan and price.", "Within one business day: a written plan and a fixed price. No surprises later."],
-  ["I build it in your accounts.", "50% to start, paid by a secure Stripe invoice. I work as an invited user, never with your passwords, and test with real examples."],
-  ["Handover.", "A short video guide showing it working, then the other 50% by the same kind of invoice. Add the care plan if you want it looked after."],
+  ["Tell me in writing", "Send the request below: your business, your website, what you’d like fixed. No call to schedule."],
+  ["Get the plan and price", "Within one business day: a written plan and a fixed price. No surprises later."],
+  ["I build it in your accounts", "50% to start, paid by a secure Stripe invoice. I work as an invited user, never with your passwords, and test with real examples."],
+  ["Handover", "A short video guide showing it working, then the other 50% by the same kind of invoice. Add the care plan if you want it looked after."],
 ];
 
 // What search engines read about the business (schema.org): only what the page itself says.
@@ -58,11 +72,11 @@ const business = {
   url: site,
   logo: `${site}logo.png`,
   image: `${site}og.jpg`,
-  email: "nuxy@nuxyautomation.com",
+  email: inbox,
   description: "Online booking, instant replies, reminders and review requests for salons, spas, studios and groomers. Fixed prices, no calls needed.",
   address: { "@type": "PostalAddress", addressLocality: "Faribault", addressRegion: "MN", addressCountry: "US" },
   areaServed: ["Minneapolis", "Saint Paul", "Faribault", "Northfield", "Owatonna"].map((name) => ({ "@type": "City", name })),
-  priceRange: "$100–$450",
+  priceRange: "$100-$600",
   sameAs: ["https://github.com/Nuxy1"],
   // (each package is an offer, so a search result can show what it costs)
   hasOfferCatalog: {
@@ -83,374 +97,389 @@ const work = [
   { name: "CSV contact cleaner", repo: "csv-contact-cleaner", doc: "csv-cleaner", text: "Cleans and dedupes a contact list before an import, with every change counted." },
   { name: "Stream community bot", repo: "stream-community-bot", doc: "community-bot", text: "A Discord bot for a creator’s community: welcome cards, role buttons, live alerts." },
 ];
+const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
 ---
-<Base title="Nuxy Automation · Booking and follow-up for small businesses" bare>
+<Base title="Nuxy Automation · Booking and follow-up for small businesses" wide>
   <script type="application/ld+json" set:html={JSON.stringify(business)} />
-  <main>
-    <section class="hero" aria-labelledby="hero-title">
-      <img class="hole" src={hole.src} width="714" height="714" alt="" />
-      <a class="brand-mark" href={`${base}/`} aria-hidden="true" tabindex="-1"><Mark /></a>
-      <a class="brand-name" href={`${base}/`}>Nuxy Automation</a>
-      <nav class="hero-nav" aria-label="Main">
-        <a href="#packages">Packages</a>
-        <a href="#how">How it works</a>
-        <a href="#work">Projects</a>
-        <a href="#request">Request a setup</a>
-      </nav>
 
-      <h1 id="hero-title">Never lose a booking<br /> while you’re with a client.</h1>
-      <p class="sub">Online booking, instant replies, reminders and review requests for salons, spas, studios and groomers. Fixed prices. No calls needed.</p>
+  <section class="wrap hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h1 id="hero-title">Never lose a booking while you’re with a client.</h1>
+      <p class="sub">Online booking, instant replies, reminders and review requests for salons, spas, studios and groomers. Fixed prices, no calls.</p>
+      <p class="hero-actions">
+        <a class="button" href="#request">Request a setup</a>
+        <a class="button secondary" href={`${base}/demo/`}>See it working</a>
+      </p>
+    </div>
+    <Picture class="hero-photo" src={hero} formats={["avif", "webp"]} widths={[640, 960, 1400]} sizes="(min-width: 900px) 46vw, 100vw" alt="A hairdresser laughing with her client mid-haircut, a phone lying on the counter." loading="eager" fetchpriority="high" />
+  </section>
 
-      <ul class="fill">
-        <li class="row book"><span class="label">Book online —</span><a class="value" href="#booking">Online booking &amp; reminders,&nbsp;$400</a><span class="rule" aria-hidden="true"></span></li>
-        <li class="row answer"><span class="label">Answer fast —</span><a class="value" href="#follow-up">Lead follow-up,&nbsp;$450</a><span class="rule" aria-hidden="true"></span></li>
-        <li class="row reviews"><span class="label">Get reviews —</span><a class="value" href="#reviews">Review requests,&nbsp;$250</a><span class="rule" aria-hidden="true"></span></li>
-        <li class="row call"><span class="label">Your 2:15 call</span><img class="stamp" src={stamp.src} width="1584" height="750" alt="Missed" /><span class="rule" aria-hidden="true"></span></li>
-      </ul>
+  <section class="wrap finder" aria-labelledby="finder-title">
+    <h2 id="finder-title">What’s costing you bookings?</h2>
+    <nav class="finder-bar" aria-labelledby="finder-title">
+      {problems.map((p) => (
+        <a class="seg" href={p.href}><span class="seg-label">{p.label}</span><span class="seg-text">{p.text}</span></a>
+      ))}
+      <a class="orb" href="#packages"><Icon name="magnifyingGlass" /><span class="orb-text">See all packages</span></a>
+    </nav>
+  </section>
 
-      <div class="confirm">
-        <span class="confirm-rule" aria-hidden="true"></span>
-        <span class="confirm-label">Confirm</span>
-        <a class="cta" href="#request">Request a setup</a>
-      </div>
-    </section>
-
-    <section id="packages" class="desk" aria-labelledby="packages-title">
-      <div class="desk-head">
-        <h2 id="packages-title">Packages</h2>
-        <p>Fixed prices, agreed in writing before I start. Everything is built in your own accounts, so it stays yours. <a href={`${base}/demo/`}>See them working on a demo salon</a>.</p>
-      </div>
-      <ol class="rack">
-        {packages.map((p) => (
-          <li>
-            <article class={`appt stock-${p.stock}`} id={p.id} aria-labelledby={`${p.id}-name`}>
-              <img class="mark" src={fixStamp.src} width="1584" height="750" alt="" loading="lazy" />
+  <section id="packages" class="wrap section" aria-labelledby="packages-title">
+    <h2 id="packages-title" class="section-title">Packages</h2>
+    <p class="section-lead">Fixed prices, agreed in writing before I start. Everything is built in your own accounts, so it stays yours. <a href={`${base}/demo/`}>See them working on a demo salon</a>.</p>
+    <ul class="listings">
+      {oneOff.map((p, i) => (
+        <li class="reveal">
+          <article class="listing" id={p.id} aria-labelledby={`${p.id}-name`}>
+            <div class="photo"><Picture src={p.photo} formats={["avif", "webp"]} widths={[480, 760, 1100]} sizes={i < 3 ? photoSizes : "(min-width: 1024px) 580px, (min-width: 640px) 50vw, 100vw"} alt={p.alt} loading="lazy" /></div>
+            <div class="title-row">
               <h3 id={`${p.id}-name`}>{p.name}</h3>
-              <p class="price"><span class="price-label">Price</span><span class="price-value">{p.price}</span></p>
-              <p class="fixes"><span class="fixes-label">Fixes —</span> <span class="hand">{p.fixes}</span></p>
-              <p class="desc">{p.text}</p>
-              <p class="pick-row">
-                <a class="pick" href={`#${p.id}`} aria-label={`Choose ${p.name}`}>
-                  <svg class="box" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" /><path class="tick" d="M7 17.5 12.5 24 26.5 5.5" pathLength="1" /></svg>
-                  This one
-                </a>
-                <a class="button pick-cta" href={ask(p)}>Request this setup</a>
-                <span class="pick-alt">or in <a href={gmail(p)} target="_blank" rel="noopener">Gmail</a> · <a href={outlook(p)} target="_blank" rel="noopener">Outlook</a></span>
-              </p>
-            </article>
-          </li>
-        ))}
-        <li>
-          <article class="appt addons stock-mint" id="add-ons" aria-labelledby="add-ons-name">
-            <h3 id="add-ons-name">Add-ons</h3>
-            <p class="desc">Small extras, on their own or with any package.</p>
-            <ul class="extras">
-              {addons.map((a) => (
-                <li class="extra" id={a.id}>
-                  <h4>{a.name}</h4>
-                  <p class="price"><span class="price-label">Price</span><span class="price-value">{a.price}</span></p>
-                  <p class="fixes"><span class="fixes-label">Fixes —</span> <span class="hand">{a.fixes}</span></p>
-                  <p class="extra-desc">{a.text}</p>
-                  <p class="pick-row">
-                    <a class="pick" href={`#${a.id}`} aria-label={`Choose ${a.name}`}>
-                      <svg class="box" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" /><path class="tick" d="M7 17.5 12.5 24 26.5 5.5" pathLength="1" /></svg>
-                      This one
-                    </a>
-                    <a class="button pick-cta" href={ask(a)}>Request this add-on</a>
-                    <span class="pick-alt">or in <a href={gmail(a)} target="_blank" rel="noopener">Gmail</a> · <a href={outlook(a)} target="_blank" rel="noopener">Outlook</a></span>
-                  </p>
-                </li>
-              ))}
-            </ul>
+              <p class="price">{p.price}</p>
+            </div>
+            <p class="fixes">Fixes: {p.fixes}</p>
+            <p class="desc">{p.text}</p>
+            <p class="actions">
+              <a class="request-link" href={ask(p)} aria-label={`Request a setup: ${p.name}`}>Request a setup<Icon name="arrowRight" /></a>
+              <span class="alt">or in <a href={gmail(p)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(p)} target="_blank" rel="noopener">Outlook</a></span>
+            </p>
           </article>
         </li>
-      </ol>
-      <p class="desk-note">Something else? Custom integrations, data clean-up and bots are quoted in writing after one question.</p>
-    </section>
+      ))}
+    </ul>
 
-    <section id="how" class="back" aria-labelledby="how-title">
-      <div class="card-back">
-        <h2 id="how-title">How it works</h2>
-        <ol class="lines">
-          {steps.map(([head, text]) => <li><p><strong>{head}</strong> {text}</p></li>)}
-        </ol>
-        <p class="policy">No calls needed. Questions, plans and updates come in writing, with short screen recordings of each piece working.</p>
+    <article class="care reveal" id={carePlan.id} aria-labelledby="care-name">
+      <div class="photo"><Picture src={carePlan.photo} formats={["avif", "webp"]} widths={[560, 900, 1260]} sizes="(min-width: 900px) 600px, 100vw" alt={carePlan.alt} loading="lazy" /></div>
+      <div class="care-body">
+        <h3 id="care-name">{carePlan.name}</h3>
+        <p class="care-price"><strong>$100</strong> a month</p>
+        <p class="fixes">Fixes: {carePlan.fixes}</p>
+        <p class="desc">{carePlan.text}</p>
+        <p class="actions">
+          <a class="request-link" href={ask(carePlan)} aria-label={`Request a setup: ${carePlan.name}`}>Request a setup<Icon name="arrowRight" /></a>
+          <span class="alt">or in <a href={gmail(carePlan)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(carePlan)} target="_blank" rel="noopener">Outlook</a></span>
+        </p>
       </div>
-    </section>
+    </article>
+  </section>
 
-    <section id="work" class="ledger" aria-labelledby="work-title">
-      <h2 id="work-title">Projects I built</h2>
-      <p class="ledger-note">Nuxy Automation is new, so instead of testimonials, here is working code you can open and check.</p>
-      <figure class="demo">
-        <img src={`${base}/relay-demo.gif`} alt="Demo: a new order arriving, the clean spreadsheet row it writes, and a forged request refused" width="800" height="450" loading="lazy" />
+  <section id="add-ons" class="wrap section addons" aria-labelledby="add-ons-title">
+    <div class="addons-head">
+      <h2 id="add-ons-title" class="section-title">Add-ons</h2>
+      <p class="section-lead">Small extras, on their own or with any package.</p>
+    </div>
+    <ul class="extras">
+      {addons.map((a) => (
+        <li class="extra reveal" id={a.id}>
+          <span class="extra-icon"><Icon name={a.icon} /></span>
+          <div class="extra-body">
+            <div class="title-row">
+              <h3>{a.name}</h3>
+              <p class="price">{a.price}</p>
+            </div>
+            <p class="fixes">Fixes: {a.fixes}</p>
+            <p class="desc">{a.text}</p>
+            <p class="actions">
+              <a class="request-link" href={ask(a)} aria-label={`Request a setup: ${a.name}`}>Request a setup<Icon name="arrowRight" /></a>
+              <span class="alt">or in <a href={gmail(a)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(a)} target="_blank" rel="noopener">Outlook</a></span>
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+    <p class="something-else">Something else? Custom integrations, data clean-up and bots are quoted in writing after one question.</p>
+  </section>
+
+  <section id="how" class="band" aria-labelledby="how-title">
+    <div class="wrap">
+      <h2 id="how-title" class="section-title">How it works</h2>
+      <ol class="steps">
+        {steps.map(([head, text], i) => (
+          <li class="reveal">
+            <span class="step-n" aria-hidden="true">{i + 1}</span>
+            <h3>{head}</h3>
+            <p>{text}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="policy">No calls needed. Questions, plans and updates come in writing, with short screen recordings of each piece working.</p>
+    </div>
+  </section>
+
+  <section id="work" class="wrap section" aria-labelledby="work-title">
+    <h2 id="work-title" class="section-title">Projects I built</h2>
+    <p class="section-lead">Nuxy Automation is new, so instead of testimonials, here is working code you can open and check.</p>
+    <div class="work">
+      <figure class="demo reveal">
+        <video src={`${base}/relay-demo.mp4`} poster={`${base}/relay-demo-poster.jpg`} width="800" height="450" autoplay muted loop playsinline controls preload="metadata" aria-describedby="demo-caption"></video>
+        <figcaption id="demo-caption">The order relay at work: a new order arriving, the clean spreadsheet row it writes, and a forged request refused.</figcaption>
       </figure>
       <ul class="projects">
         {work.map((w) => (
-          <li>
+          <li class="reveal">
             <h3>{w.name}</h3>
             <p>{w.text}</p>
-            <p class="links"><a href={`${base}/docs/${w.doc}/`}>How it works</a> · <a href={`https://github.com/Nuxy1/${w.repo}`}>Code</a></p>
+            <p class="links"><a href={`${base}/docs/${w.doc}/`}>How it works</a><a href={`https://github.com/Nuxy1/${w.repo}`}>Code</a></p>
           </li>
         ))}
       </ul>
-    </section>
+    </div>
+  </section>
 
-    <section id="request" class="desk closing" aria-labelledby="request-title">
-      <div class="final">
-        <h2 id="request-title">Request a setup</h2>
-        <p>Email me your business name, website, what you use for booking now and what you’d like fixed. You’ll have a written plan and a fixed price within one business day.</p>
-        <p class="where">Paying: a secure Stripe invoice by email, by card, Apple Pay, Google Pay or bank transfer. 50% to start, 50% at handover; the care plan is billed monthly.</p>
-        <p class="where">Based in Faribault, Minnesota. Twin Cities and southern Minnesota businesses first, and anywhere remotely.</p>
-        <div class="final-confirm">
-          <span class="final-label">Confirm</span>
-          <a class="button" href={request}>Email {inbox}</a>
-        </div>
-        <p class="other-ways">
-          No email app on this computer? Open it in <a href={gmail()} target="_blank" rel="noopener">Gmail</a> or <a href={outlook()} target="_blank" rel="noopener">Outlook</a>, or write to <span class="address">{inbox}</span>
-          <button class="copy" type="button" data-copy={inbox} hidden>Copy address</button>
-        </p>
-      </div>
-    </section>
-    <script is:inline>
-      // Cards are dealt onto the desk and step numbers written in as they come into view. Without this script
-      // everything simply lies there, printed.
-      if (matchMedia("(prefers-reduced-motion: no-preference)").matches && "IntersectionObserver" in window) {
-        document.documentElement.classList.add("deal");
-        const seen = new IntersectionObserver((entries) => entries.forEach((e) => {
-          if (!e.isIntersecting) return;
-          e.target.classList.add("dealt");
-          seen.unobserve(e.target);
-        }), { rootMargin: "0px 0px -12% 0px" });
-        // (the card an email linked to is already on the desk: its stamp is the moment, not an entrance)
-        document.querySelectorAll(".appt, .card-back").forEach((el) => el.matches(":target, :has(:target)") ? el.classList.add("dealt", "at-rest") : seen.observe(el));
-      }
-      // Copy the address. (navigator.clipboard needs https; until then, select the address and copy it the old way.)
-      document.querySelectorAll("button.copy").forEach((button) => {
-        button.hidden = false;
-        button.addEventListener("click", async () => {
-          const address = button.previousElementSibling;
-          try {
-            await navigator.clipboard.writeText(button.dataset.copy);
-          } catch {
-            const range = document.createRange();
-            range.selectNodeContents(address);
-            getSelection().removeAllRanges();
-            getSelection().addRange(range);
-            if (!document.execCommand("copy")) return; // (left selected: Ctrl+C still works)
-          }
-          button.textContent = "Copied";
-          setTimeout(() => (button.textContent = "Copy address"), 2000);
-        });
+  <section id="request" class="wrap section request" aria-labelledby="request-title">
+    <div class="request-copy">
+      <h2 id="request-title" class="section-title">Request a setup</h2>
+      <p class="section-lead">Email me your business name, website, what you use for booking now and what you’d like fixed. You’ll have a written plan and a fixed price within one business day.</p>
+      <ul class="facts">
+        <li><Icon name="envelopeSimple" /><p><strong>Everything in writing.</strong> No calls needed: questions, plans and updates come by email.</p></li>
+        <li><Icon name="creditCard" /><p><strong>Paying:</strong> a secure Stripe invoice by email, by card, Apple Pay, Google Pay or bank transfer. 50% to start, 50% at handover; the care plan is billed monthly.</p></li>
+        <li><Icon name="mapPin" /><p><strong>Based in Faribault, Minnesota.</strong> Twin Cities and southern Minnesota businesses first, and anywhere remotely.</p></li>
+      </ul>
+    </div>
+    <aside class="ticket" aria-label="Send your request">
+      <p class="ticket-head"><strong>Written plan and price</strong><span>within one business day</span></p>
+      <ul class="include">
+        <li><Icon name="check" />Your business name</li>
+        <li><Icon name="check" />Your website, if you have one</li>
+        <li><Icon name="check" />What you use for booking now</li>
+        <li><Icon name="check" />What you’d like fixed</li>
+      </ul>
+      <a class="button wide" href={ask()}>Request a setup</a>
+      <p class="ticket-note">Nothing is charged until you agree to the written plan.</p>
+      <p class="other-ways">
+        No email app? Open it in <a href={gmail()} target="_blank" rel="noopener">Gmail</a> or <a href={outlook()} target="_blank" rel="noopener">Outlook</a>, or write to <span class="address">{inbox}</span>
+        <button class="copy" type="button" data-copy={inbox} hidden><Icon name="copy" /><span aria-live="polite">Copy address</span></button>
+      </p>
+    </aside>
+  </section>
+
+  <script is:inline>
+    // Less motion: the demo video waits for its play button instead of starting by itself.
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) document.querySelectorAll("video[autoplay]").forEach((v) => { v.autoplay = false; v.pause(); });
+    // Copy the address. (navigator.clipboard can be refused; then select the address and copy it the old way.)
+    document.querySelectorAll("button.copy").forEach((button) => {
+      const label = button.querySelector("span");
+      button.hidden = false;
+      button.addEventListener("click", async () => {
+        const address = button.previousElementSibling;
+        try {
+          await navigator.clipboard.writeText(button.dataset.copy);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(address);
+          getSelection().removeAllRanges();
+          getSelection().addRange(range);
+          if (!document.execCommand("copy")) return; // (left selected: Ctrl+C still works)
+        }
+        label.textContent = "Copied";
+        setTimeout(() => (label.textContent = "Copy address"), 2000);
       });
-    </script>
-  </main>
+    });
+  </script>
 </Base>
 
 <style>
-  /* The hero is the approved comp (2752x1536) laid out in % of its own width; type in cqw of the same frame. */
-  .hero { position: relative; }
-  .hero a { text-decoration: none; }
-  .hero .value:hover, .hero-nav a:hover, .brand-name:hover { color: var(--stamp); }
-  .fill { list-style: none; margin: 0; padding: 0; }
-  .brand-mark :global(svg) { display: block; width: 100%; height: 100%; }
-  h1 { font: 700 var(--h1) / 0.89 var(--display); text-transform: uppercase; margin: 0; letter-spacing: 0.002em; }
-  .sub { margin: 0; }
-  .label, .confirm-label { font-weight: 400; white-space: nowrap; }
-  .value { font-family: var(--hand); color: var(--pen); white-space: nowrap; }
-  .rule, .confirm-rule { display: block; background: linear-gradient(var(--ink), var(--ink)) center / 100% max(2px, 0.16cqw) no-repeat; }
-  .cta { display: flex; align-items: center; justify-content: center; background: var(--ink); color: var(--card); border-radius: 0.35cqw; box-shadow: 0 0.12cqw 0.4cqw rgb(28 20 22 / 0.22); transition: background-color 160ms ease-out, translate 160ms ease-out, box-shadow 160ms ease-out; }
-  .cta:hover { background: #0a3826; color: var(--card); translate: 0 -1px; box-shadow: 0 0.3cqw 0.8cqw rgb(28 20 22 / 0.28); }
-  .cta:active { translate: 0 1px; box-shadow: 0 1px 2px rgb(28 20 22 / 0.3); transition-duration: 60ms; }
-  /* On arrival the card is filled in: each package written along its line in pen, then the 2:15 call stamped. */
-  .value { animation: write 440ms cubic-bezier(0.5, 0.1, 0.35, 1) backwards; }
-  .book .value { animation-delay: 280ms; }
-  .answer .value { animation-delay: 460ms; }
-  .reviews .value { animation-delay: 640ms; }
-  .stamp { animation: press 520ms cubic-bezier(0.16, 1, 0.3, 1) 1100ms backwards; }
+  .section { padding-block: clamp(56px, 7vw, 88px) 0; }
+  .section-title { font-size: clamp(1.75rem, 3vw, 2.25rem); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 10px; }
+  .section-lead { font-size: 1.0625rem; max-width: 60ch; margin: 0 0 32px; }
+  .price { margin: 0; color: var(--ink); font-weight: 700; font-size: 1.0625rem; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+  .fixes { margin: 6px 0 0; color: var(--muted); font-size: 0.9375rem; }
+  .desc { margin: 10px 0 0; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; padding-top: 14px; }
+  /* Each package's request is a quiet link; it becomes the coral button only on the package an email linked to. */
+  .request-link {
+    display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--ink); font-weight: 600;
+    text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.25em;
+    transition: background-color 160ms ease-out, color 160ms ease-out;
+  }
+  .request-link :global(.icon) { width: 1.1em; height: 1.1em; transition: transform 200ms var(--ease); }
+  .request-link:hover :global(.icon) { transform: translateX(3px); }
+  .alt { color: var(--muted); font-size: 0.875rem; }
+  .alt a { color: var(--muted); }
+  .alt a:hover { color: var(--accent-text); }
+  .photo { overflow: hidden; border-radius: var(--r-md); background: var(--surface-strong); }
+  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease); }
+  :is(.listing, .care, .extra):target { outline: 2px solid var(--ink); outline-offset: 12px; border-radius: var(--r-lg); }
+  :is(.listing, .care, .extra):target .request-link { padding: 0 22px; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); text-decoration: none; }
+  :is(.listing, .care, .extra):target .request-link:hover { background: var(--accent-press); }
 
-  @media (min-width: 860px) {
-    .hero { container-type: inline-size; aspect-ratio: 2752 / 1536; overflow: hidden; }
-    .hero > *, .row > *, .confirm > * { position: absolute; }
-    .fill, .row, .confirm { display: contents; }
-    .hole { left: 3.92%; top: 6.51%; width: 5.09%; height: 9.11%; object-fit: cover; }
-    .brand-mark { left: 12.35%; top: 3.52%; width: 3.34%; height: 5.99%; }
-    .brand-name { left: 16.28%; top: 3.95%; font: 700 1.93cqw/1 var(--text); white-space: nowrap; }
-    .hero-nav { right: 5.09%; top: 4.1%; display: flex; gap: 1.55cqw; font: 400 1.72cqw/1 var(--text); white-space: nowrap; }
-    h1 { --h1: 8.61cqw; left: 12.35%; top: 11.6%; width: 80%; }
-    .sub { left: 12.35%; top: 38.2%; width: 81%; font-size: 2.58cqw; line-height: 1.03; }
-    .label { font-size: 2.94cqw; line-height: 1; }
-    .value { font-size: 4.1cqw; line-height: 1; }
-    .book .label { left: 12.35%; top: 51.5%; }
-    .answer .label { left: 12.35%; top: 58.9%; }
-    .reviews .label { left: 12.35%; top: 66.3%; }
-    .call .label { left: 12.35%; top: 73.6%; }
-    .book .value { left: 31.5%; top: 49.7%; }
-    .answer .value { left: 31.5%; top: 57.5%; }
-    .reviews .value { left: 31.5%; top: 64.9%; }
-    .book .rule { left: 30.09%; top: 56.45%; width: 65.77%; height: 0.91%; }
-    .answer .rule { left: 30.09%; top: 63.8%; width: 65.77%; height: 0.91%; }
-    .reviews .rule { left: 30.09%; top: 71.03%; width: 65.77%; height: 0.91%; }
-    .call .rule { left: 28.63%; top: 78.39%; width: 67.19%; height: 0.91%; }
-    .stamp { left: 29.25%; top: 70.18%; width: 17.51%; height: 14.84%; object-fit: cover; z-index: 1; }
-    .confirm-rule { left: 54.43%; top: 86.65%; width: 15.63%; height: 0.91%; }
-    .confirm-label { left: 54.43%; top: 87.5%; font-size: 2.94cqw; line-height: 1; }
-    .cta { left: 69.91%; top: 82.1%; width: 25.8%; height: 10.48%; font: 400 2.73cqw/1 var(--text); }
+  /* Hero: the promise on the left, a working salon on the right. */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 64px); align-items: center; padding-block: clamp(28px, 4vw, 48px) 8px; }
+  .hero h1 { font-size: clamp(2.25rem, 3.3vw, 2.875rem); line-height: 1.08; letter-spacing: -0.03em; margin: 0; }
+  .sub { font-size: clamp(1.0625rem, 1.4vw, 1.25rem); line-height: 1.5; max-width: 40ch; margin: 20px 0 0; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 32px 0 0; }
+  .hero-photo { width: 100%; height: clamp(420px, calc(100dvh - var(--nav-h) - 110px), 660px); object-fit: cover; object-position: 50% 40%; border-radius: var(--r-lg); background: var(--surface-strong); }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-copy > * { animation: enter 700ms var(--ease) backwards; }
+    .hero-copy > :nth-child(2) { animation-delay: 80ms; }
+    .hero-copy > :nth-child(3) { animation-delay: 160ms; }
+    .hero-photo { animation: settle 900ms var(--ease) backwards; }
+  }
+  @keyframes enter { from { opacity: 0; transform: translateY(16px); } }
+  @keyframes settle { from { opacity: 0; transform: scale(1.03); } }
+
+  /* The finder: Airbnb's search pill, here split by problem; the coral orb opens every package. */
+  .finder { padding-top: clamp(40px, 5vw, 56px); }
+  .finder h2 { font-size: 1.125rem; margin: 0 0 14px; text-align: center; }
+  .finder-bar {
+    display: flex; align-items: stretch; max-width: 920px; margin: 0 auto; padding: 8px; gap: 0;
+    border: 1px solid var(--hairline); border-radius: var(--r-full); background: var(--bg); box-shadow: var(--shadow);
+  }
+  .seg { position: relative; flex: 1 1 0; display: grid; gap: 2px; padding: 10px 22px; border-radius: var(--r-full); text-decoration: none; transition: background-color 160ms ease-out; }
+  .seg + .seg::before { content: ""; position: absolute; left: 0; top: 22%; bottom: 22%; border-left: 1px solid var(--hairline); }
+  .seg:hover { background: var(--surface-strong); }
+  .seg:hover::before, .seg:hover + .seg::before { opacity: 0; }
+  .seg-label { color: var(--ink); font-size: 0.8125rem; font-weight: 700; }
+  .seg-text { color: var(--muted); font-size: 0.875rem; }
+  .orb {
+    flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 56px; padding: 0 16px; margin-left: 4px;
+    border-radius: var(--r-full); background: var(--accent); color: var(--on-accent); text-decoration: none; font-weight: 600;
+    transition: background-color 160ms ease-out;
+  }
+  .orb:hover { background: var(--accent-press); color: var(--on-accent); }
+  .orb :global(.icon) { width: 1.35rem; height: 1.35rem; }
+  .orb-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @media (max-width: 760px) {
+    .finder h2 { text-align: left; }
+    .finder-bar { display: grid; grid-template-columns: 1fr 1fr; border-radius: var(--r-lg); padding: 8px; }
+    .seg { border-radius: var(--r-md); padding: 12px 14px; }
+    .seg + .seg::before { display: none; }
+    .orb { grid-column: 1 / -1; min-height: 48px; margin: 6px 0 0; border-radius: var(--r-sm); }
+    .orb-text { position: static; width: auto; height: auto; clip-path: none; }
   }
 
-  @media (max-width: 859.98px) {
-    .hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 12px; padding: 18px 20px 36px; overflow-wrap: break-word; }
-    h1 br { display: none; }
-    .hole { position: absolute; right: 16px; top: 14px; width: 44px; height: 44px; }
-    .brand-mark { width: 40px; height: 40px; }
-    .brand-name { align-self: center; font-weight: 700; font-size: 1.15rem; padding-right: 56px; }
-    .hero-nav { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 14px 0 26px; font-size: 1rem; }
-    .hero-nav a { text-decoration: underline; text-underline-offset: 0.2em; }
-    .hero-nav a[href="#request"] { display: none; } /* (the Request button is on the same screen) */
-    h1, .sub, .fill, .confirm { grid-column: 1 / -1; }
-    h1 { --h1: clamp(2.9rem, 14.5vw, 5.2rem); }
-    .sub { font-size: 1.12rem; line-height: 1.45; margin: 14px 0 22px; }
-    .row { position: relative; display: grid; padding: 10px 0 4px; }
-    .label { font-size: 1rem; }
-    .value { font-size: 1.75rem; line-height: 1.2; white-space: normal; }
-    .rule { height: 6px; }
-    .call { min-height: 92px; }
-    .stamp { position: absolute; left: 40%; top: 18px; width: 150px; height: auto; }
-    .confirm { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 22px; }
-    .confirm-rule { height: 6px; }
-    .confirm-label { font-size: 1rem; margin-bottom: 6px; }
-    .cta { font-size: 1.2rem; padding: 18px; border-radius: 6px; }
-  }
-
-  /* Below the card: the desk it lies on, and the rest of the cards. */
-  .desk { background: var(--ink); color: var(--card); padding: clamp(56px, 8vw, 104px) 20px; }
-  .desk h2, .back h2, .ledger h2 { font: 700 clamp(3rem, 7vw, 5.5rem)/0.9 var(--display); text-transform: uppercase; margin: 0 0 14px; }
-  .desk-head { max-width: 980px; margin: 0 auto 40px; }
-  .desk-head p, .desk-note { max-width: 60ch; font-size: 1.12rem; margin: 0; }
-  .desk-head a { color: var(--card); }
-  .desk-head a:hover { color: #fff; }
-  .desk-note { max-width: 980px; margin: 40px auto 0; }
-  .rack { list-style: none; padding: 0; margin: 0 auto; max-width: 980px; display: grid; gap: 22px; }
-  .rack li:nth-child(odd) .appt { --tilt: -0.3deg; --tilt-in: -3.2deg; }
-  .rack li:nth-child(even) .appt { --tilt: 0.35deg; --tilt-in: 2.8deg; }
-  /* Card stock: the hero's own paper fibre (grain plate) multiplied onto each stock colour. */
-  .appt, .card-back, .final { background: var(--grain) repeat var(--stock); background-size: 1254px auto; background-blend-mode: multiply; }
-  .appt {
-    --stock: var(--card); position: relative; color: var(--ink);
-    display: grid; grid-template-columns: 1fr auto; gap: 6px 28px; padding: 26px 30px 26px 76px; scroll-margin-top: 64px;
-    box-shadow: 0 6px 18px rgb(10 14 12 / 0.35); rotate: var(--tilt);
-    border: 3px solid transparent; transition: border-color 200ms ease-out, rotate 260ms ease-out, translate 260ms ease-out, box-shadow 260ms ease-out;
-  }
-  /* dealt onto the desk: slides in from below at a steeper angle and settles at its own tilt */
-  :global(html.deal) .appt:not(.dealt) { opacity: 0; translate: 0 56px; rotate: var(--tilt-in); }
-  .appt.dealt:not(.at-rest) { animation: deal 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
-  .appt.dealt:not(.at-rest) .hand { animation: write 520ms cubic-bezier(0.5, 0.1, 0.35, 1) 380ms backwards; }
-  /* picked up: squared to the hand and lifted off the desk */
+  /* Packages: photo-first listings, three across then two wider. */
+  .listings { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 40px 24px; }
+  .listings > li { grid-column: span 2; }
+  .listings > li:nth-child(n + 4) { grid-column: span 3; }
+  /* (each card fills its grid cell, so the requests in a row line up at the bottom) */
+  .listings > li { display: flex; }
+  .listing { flex: 1; display: flex; flex-direction: column; }
+  .listing .actions { margin-top: auto; }
+  .listing .photo { aspect-ratio: 4 / 3; }
+  .listings > li:nth-child(n + 4) .photo { aspect-ratio: 16 / 9; }
+  .title-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-top: 16px; }
+  .title-row h3 { font-size: 1.1875rem; line-height: 1.3; margin: 0; }
   @media (hover: hover) and (pointer: fine) {
-    .appt:hover { rotate: 0deg; translate: 0 -4px; box-shadow: 0 16px 32px rgb(10 14 12 / 0.45); }
+    .listing:hover .photo :global(img), .care:hover .photo :global(img) { transform: scale(1.03); }
   }
-  /* the punched hole: the desk seen through it, with the cut edge's shadow and lit lower rim */
-  .appt::before {
-    content: ""; position: absolute; left: 24px; top: 24px; width: 28px; height: 28px; border-radius: 50%;
-    background: var(--ink); box-shadow: inset 0 5px 4px -2px rgb(0 0 0 / 0.6), 0 2px 0 rgb(255 255 255 / 0.85), 0 -1px 0 rgb(0 0 0 / 0.18);
+  @media (max-width: 1023px) {
+    .listings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .listings > li, .listings > li:nth-child(n + 4) { grid-column: auto; }
+    .listings > li:last-child { grid-column: 1 / -1; }
+    .listings > li:nth-child(n + 4) .photo { aspect-ratio: 4 / 3; }
+    .listings > li:last-child .photo { aspect-ratio: 16 / 9; }
   }
-  .appt.stock-mint { --stock: var(--mint); }
-  .appt.stock-gold { --stock: var(--gold); }
-  .appt h3 { font: 700 clamp(1.9rem, 4vw, 2.6rem)/0.95 var(--display); text-transform: uppercase; margin: 0; }
-  .price { grid-row: span 2; margin: 0; display: grid; align-content: start; border: 2px solid var(--ink); text-align: center; min-width: 9.5rem; }
-  .price-label { border-bottom: 2px solid var(--ink); padding: 4px 10px; font-size: 0.85rem; }
-  .price-value { padding: 10px 14px; font: 700 1.6rem/1 var(--text); font-variant-numeric: tabular-nums lining-nums; }
-  .fixes { margin: 4px 0 0; border-bottom: 2px solid var(--ink); padding-bottom: 2px; }
-  .fixes-label { font-size: 0.95rem; }
-  .hand { display: inline-block; font: 1.45rem/1.2 var(--hand); color: var(--pen); }
-  .desc { grid-column: 1 / -1; margin: 10px 0 0; max-width: 64ch; }
-  /* Choosing: a printed tick box, ticked in pen; the chosen card's own request appears beside it. */
-  .pick-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 26px; margin: 18px 0 0; }
-  .pick { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none; }
-  .box { width: 30px; height: 30px; flex: none; overflow: visible; }
-  .box rect { fill: none; stroke: var(--ink); stroke-width: 2; }
-  .tick { fill: none; stroke: var(--pen); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
-  .pick:hover .box rect { stroke: var(--stamp); }
-  :is(.appt, .extra):target > .pick-row .tick { stroke-dashoffset: 0; animation: tick 300ms cubic-bezier(0.5, 0.1, 0.35, 1) 60ms backwards; }
-  .pick-cta { visibility: hidden; opacity: 0; translate: 0 6px; transition: opacity 220ms ease-out, translate 220ms ease-out, visibility 0s linear 220ms, background-color 160ms ease-out, transform 160ms ease-out; }
-  :is(.appt, .extra):target > .pick-row .pick-cta { visibility: visible; opacity: 1; translate: 0 0; transition-delay: 300ms, 300ms, 0s, 0s, 0s; }
-  .pick-alt { font-size: 0.95rem; visibility: hidden; opacity: 0; transition: opacity 220ms ease-out, visibility 0s linear 220ms; }
-  :is(.appt, .extra):target > .pick-row .pick-alt { visibility: visible; opacity: 1; transition-delay: 380ms, 0s; }
-  /* Add-ons: one card, its extras printed as ruled rows (each with its own id, price box and tick) */
-  .appt.addons { grid-template-columns: 1fr; }
-  .addons > .desc { margin-top: 6px; }
-  .extras { list-style: none; margin: 16px 0 0; padding: 0; }
-  .extra { display: grid; grid-template-columns: 1fr auto; gap: 6px 28px; padding: 18px 0 14px; border-top: 2px solid var(--ink); scroll-margin-top: 64px; }
-  .extra h4 { font: 700 1.7rem/1 var(--display); text-transform: uppercase; margin: 0; }
-  .extra-desc { grid-column: 1 / -1; margin: 8px 0 0; max-width: 64ch; }
-  .extra .pick-row { margin-top: 12px; }
-  .mark { position: absolute; right: 18px; bottom: 10px; z-index: 1; width: min(13rem, 40%); height: auto; opacity: 0; pointer-events: none; }
-  .appt:target { border-color: var(--ink); }
-  .appt:target > .mark { opacity: 1; animation: press 520ms cubic-bezier(0.16, 1, 0.3, 1) 250ms backwards; }
-
-  .back { padding: clamp(64px, 9vw, 120px) 20px; }
-  .card-back { --stock: var(--gold); max-width: 860px; margin: 0 auto; padding: clamp(28px, 5vw, 56px); box-shadow: 0 6px 18px rgb(28 20 22 / 0.22); }
-  .lines { counter-reset: step; list-style: none; padding: 0; margin: 18px 0 0; }
-  .lines li { counter-increment: step; display: grid; grid-template-columns: 2.2rem 1fr; gap: 10px; padding: 14px 0 12px; border-bottom: 2px solid var(--ink); }
-  .lines li::before { content: counter(step); font: 1.7rem/1 var(--hand); color: var(--pen); }
-  .lines p { margin: 0; max-width: 62ch; }
-  .policy { margin: 22px 0 0; max-width: 62ch; }
-
-  .ledger { max-width: 980px; margin: 0 auto; padding: 0 20px clamp(64px, 9vw, 120px); }
-  .ledger-note { max-width: 60ch; font-size: 1.12rem; margin: 0 0 26px; }
-  .demo { margin: 0 0 28px; }
-  .demo img { display: block; width: 100%; max-width: 800px; height: auto; border: 3px solid var(--ink); }
-  .projects { list-style: none; padding: 0; margin: 0; border-top: 2px solid var(--ink); }
-  .projects li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 6px 26px; align-items: baseline; padding: 16px 0 14px; border-bottom: 2px solid var(--ink); }
-  .projects h3 { font: 700 1.7rem/1 var(--display); text-transform: uppercase; margin: 0; }
-  .projects p { margin: 0; }
-  .links { white-space: nowrap; }
-  @media (max-width: 720px) {
-    .projects li { grid-template-columns: 1fr; }
-    .appt { grid-template-columns: 1fr; padding-left: 66px; }
-    .extra { grid-template-columns: 1fr; }
-    .price { grid-row: auto; justify-self: start; }
-    .mark { bottom: auto; top: 116px; right: 12px; } /* (beside the price box, clear of the text) */
+  @media (max-width: 639px) {
+    .listings { grid-template-columns: 1fr; }
+    .listings > li:last-child .photo { aspect-ratio: 4 / 3; }
   }
 
-  .closing { padding-bottom: clamp(64px, 9vw, 120px); }
-  .final { --stock: var(--card); max-width: 860px; margin: 0 auto; color: var(--ink); padding: clamp(28px, 5vw, 56px); box-shadow: 0 6px 18px rgb(10 14 12 / 0.35); }
-  .final p { max-width: 60ch; font-size: 1.12rem; }
-  .where { font-size: 1rem !important; }
-  .final-confirm { display: flex; align-items: end; gap: 18px; flex-wrap: wrap; margin-top: 26px; }
-  .final-label { flex: 1 1 10rem; border-top: 2px solid var(--ink); padding-top: 6px; max-width: 16rem; }
-  .final .other-ways { font-size: 1rem; margin: 18px 0 0; }
-  .address { font-weight: 700; user-select: all; overflow-wrap: anywhere; }
+  /* The care plan: the monthly one, set apart on its own wide card. */
+  .care { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 48px); align-items: center; margin-top: 56px; padding: 16px; border: 1px solid var(--hairline); border-radius: var(--r-lg); }
+  .care .photo { aspect-ratio: 3 / 2; }
+  .care-body { padding: 8px 16px 8px 0; }
+  .care h3 { font-size: 1.5rem; line-height: 1.2; margin: 0; }
+  .care-price { margin: 10px 0 0; color: var(--body); font-variant-numeric: tabular-nums lining-nums; }
+  .care-price strong { color: var(--ink); font-size: 1.75rem; letter-spacing: -0.02em; }
+  @media (max-width: 860px) {
+    .care { grid-template-columns: 1fr; padding: 12px; }
+    .care-body { padding: 0 8px 12px; }
+  }
+
+  /* Add-ons: amenity rows, each with its own icon, price and request. */
+  .addons { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 24px clamp(32px, 6vw, 80px); align-items: start; }
+  .addons-head { position: sticky; top: calc(var(--nav-h) + 24px); }
+  .extras { list-style: none; margin: 0; padding: 0; }
+  .extra { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 20px; padding: 24px 0; }
+  .extra + .extra { border-top: 1px solid var(--hairline); }
+  .extra:first-child { padding-top: 6px; }
+  .extra-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: var(--r-full); background: var(--surface-strong); color: var(--ink); }
+  .extra-icon :global(.icon) { width: 24px; height: 24px; }
+  .extra .title-row { margin-top: 0; }
+  .something-else { grid-column: 2; margin: 8px 0 0; padding: 18px 20px; border-radius: var(--r-md); background: var(--surface); }
+  @media (max-width: 860px) {
+    .addons { grid-template-columns: 1fr; }
+    .addons-head { position: static; }
+    .addons-head .section-lead { margin-bottom: 8px; }
+    .something-else { grid-column: auto; }
+    .extra { grid-template-columns: 40px minmax(0, 1fr); gap: 14px; }
+    .extra-icon { width: 40px; height: 40px; }
+  }
+
+  /* How it works: four steps along one line, numbered like days on a calendar. */
+  .band { background: var(--surface); margin-top: clamp(56px, 7vw, 88px); padding-block: clamp(56px, 7vw, 88px); }
+  .steps { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 28px; }
+  .steps li { position: relative; }
+  .step-n {
+    position: relative; z-index: 1; display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-full);
+    background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .steps li:first-child .step-n { background: var(--ink); color: var(--bg); }
+  /* the dashed line from each step's number to the next */
+  .steps li:not(:last-child)::after { content: ""; position: absolute; top: 22px; left: 56px; right: -16px; border-top: 1.5px dashed var(--hairline); }
+  .steps h3 { font-size: 1.125rem; margin: 18px 0 6px; }
+  .steps p { margin: 0; font-size: 0.9375rem; }
+  .policy { margin: 40px 0 0; max-width: 62ch; color: var(--body); }
+  @media (max-width: 900px) {
+    .steps { grid-template-columns: 1fr; gap: 0; }
+    .steps li { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 18px; padding-bottom: 28px; }
+    .steps li:not(:last-child)::after { left: 21px; right: auto; top: 48px; bottom: 4px; border-top: 0; border-left: 1.5px dashed var(--hairline); }
+    .step-n { grid-row: span 2; }
+    .steps h3 { margin: 10px 0 4px; }
+  }
+
+  /* Projects: the relay working on video, the four projects beside it. */
+  .work { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px clamp(28px, 4vw, 56px); align-items: start; }
+  .demo { margin: 0; }
+  .demo video { width: 100%; border-radius: var(--r-md); background: #101010; box-shadow: var(--shadow); }
+  .demo figcaption { margin-top: 12px; color: var(--muted); font-size: 0.875rem; }
+  .projects { list-style: none; margin: 0; padding: 0; }
+  .projects li { padding: 18px 0; }
+  .projects li + li { border-top: 1px solid var(--hairline); }
+  .projects li:first-child { padding-top: 0; }
+  .projects h3 { font-size: 1.0625rem; margin: 0 0 4px; }
+  .projects p { margin: 0; font-size: 0.9375rem; }
+  .projects .links { display: flex; gap: 18px; margin-top: 8px; font-weight: 600; }
+  @media (max-width: 900px) { .work { grid-template-columns: 1fr; } }
+
+  /* Request: the details on the left, the ticket to send it on the right (Airbnb's reservation card). */
+  .request { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px clamp(32px, 6vw, 96px); align-items: start; padding-bottom: clamp(64px, 8vw, 104px); }
+  .facts { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--hairline); }
+  .facts li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 14px; padding: 20px 0; border-bottom: 1px solid var(--hairline); }
+  .facts :global(.icon) { width: 26px; height: 26px; color: var(--ink); margin-top: 1px; }
+  .facts p { margin: 0; }
+  .facts strong { color: var(--ink); }
+  .ticket { position: sticky; top: calc(var(--nav-h) + 24px); padding: 24px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg); box-shadow: var(--shadow-lift); }
+  .ticket-head { display: grid; gap: 2px; margin: 0 0 16px; }
+  .ticket-head strong { color: var(--ink); font-size: 1.375rem; letter-spacing: -0.015em; }
+  .ticket-head span { color: var(--muted); }
+  .include { list-style: none; margin: 0 0 20px; padding: 0; border: 1px solid var(--hairline); border-radius: var(--r-sm); }
+  .include li { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--ink); font-size: 0.9375rem; }
+  .include li + li { border-top: 1px solid var(--hairline); }
+  .include :global(.icon) { color: var(--accent-text); }
+  .button.wide { width: 100%; }
+  .ticket-note { margin: 12px 0 0; text-align: center; color: var(--muted); font-size: 0.875rem; }
+  .other-ways { margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--hairline); font-size: 0.875rem; }
+  .address { color: var(--ink); font-weight: 600; user-select: all; overflow-wrap: anywhere; }
   .copy {
-    font: 400 0.9rem/1.2 var(--text); color: var(--ink); background: transparent; cursor: pointer;
-    border: 2px solid var(--ink); border-radius: 0.35rem; padding: 0.3em 0.7em; margin-left: 4px;
-    transition: color 160ms ease-out, border-color 160ms ease-out;
+    display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; padding: 6px 12px; min-height: 36px; cursor: pointer;
+    font: 600 0.8125rem/1 var(--font); color: var(--ink); background: transparent; border: 1px solid var(--hairline); border-radius: var(--r-full);
+    transition: background-color 160ms ease-out, border-color 160ms ease-out;
   }
-  .copy:hover { color: var(--stamp); border-color: var(--stamp); }
+  .copy:hover { background: var(--surface); border-color: var(--ink); }
+  @media (max-width: 900px) {
+    .request { grid-template-columns: 1fr; }
+    .ticket { position: static; }
+  }
 
-  :global(html.deal) .lines li::before { clip-path: inset(-20% 100% -20% 0); }
-  .card-back.dealt .lines li::before { clip-path: none; animation: write 360ms cubic-bezier(0.5, 0.1, 0.35, 1) backwards; }
-  .card-back.dealt .lines li:nth-child(2)::before { animation-delay: 140ms; }
-  .card-back.dealt .lines li:nth-child(3)::before { animation-delay: 280ms; }
-  .card-back.dealt .lines li:nth-child(4)::before { animation-delay: 420ms; }
-
-  @keyframes press {
-    from { transform: scale(1.14) rotate(-2deg); filter: blur(1.5px); }
+  @media (max-width: 899px) {
+    .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 24px; }
+    .hero-photo { height: auto; aspect-ratio: 4 / 3.4; max-height: 480px; object-position: 50% 42%; }
   }
-  /* a pen moving along the line: the ink appears left to right */
-  @keyframes write {
-    from { clip-path: inset(-20% 100% -20% 0); }
-    to { clip-path: inset(-20% 0 -20% 0); }
+  @media (max-width: 420px) {
+    .hero-actions .button { flex: 1 1 100%; }
   }
-  @keyframes deal {
-    from { opacity: 0; translate: 0 56px; rotate: var(--tilt-in); }
-  }
-  @keyframes tick {
-    from { stroke-dashoffset: 1; }
-  }
-  /* Less motion: nothing slides or writes in; stamps, ticks and the chosen card's request still appear at once. */
   @media (prefers-reduced-motion: reduce) {
-    .stamp, .value, .appt:target > .mark, .tick { animation: none !important; }
-    .cta, .appt, .pick-cta, .pick-alt { transition: none; }
-    .appt:hover, .cta:hover, .cta:active { translate: none; }
+    .photo :global(img) { transition: none; }
   }
 </style>

@@ -9,7 +9,7 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
 ---
 <Base title="Demo salon · Nuxy Automation" description="See online booking, reminders, missed-call text-back, instant replies and review requests working on a made-up salon.">
   <h1>See it working</h1>
-  <p class="lead">{salon} is a made-up salon: no real business, people or phone numbers. This is what the packages look like once they’re set up. The parts written in blue are filled in automatically for each client.</p>
+  <p class="lead">{salon} is a made-up salon: no real business, people or phone numbers. This is what the packages look like once they’re set up. The highlighted parts are filled in automatically for each client.</p>
 
   <section class="exhibit" aria-labelledby="ex-booking">
     <h2 id="ex-booking">Online booking</h2>
@@ -18,11 +18,11 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
       <input class="sr" type="radio" name="booking-view" id="view-before" checked />
       <input class="sr" type="radio" name="booking-view" id="view-after" />
       <p class="views">
-        <label for="view-before"><svg class="box" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" /><path class="tick" d="M7 17.5 12.5 24 26.5 5.5" pathLength="1" /></svg>Before</label>
-        <label for="view-after"><svg class="box" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" /><path class="tick" d="M7 17.5 12.5 24 26.5 5.5" pathLength="1" /></svg>After</label>
+        <label for="view-before">Before</label>
+        <label for="view-after">After</label>
       </p>
       <div class="browser">
-        <p class="bar" aria-hidden="true"><span class="dots"></span><span class="url">juniperandrose.example</span></p>
+        <p class="bar"><span class="url">juniperandrose.example</span></p>
         <div class="site">
           <p class="site-name">{salon}</p>
           <p class="site-line">Cuts, color and curls. Open Tuesday to Saturday, 9 to 6.</p>
@@ -44,7 +44,7 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
         </div>
       </div>
     </div>
-    <p class="note after-note">Tick After, then Book now. The booking page also takes a deposit to cut no-shows (<a href="/#deposits">add-on: $150</a>) and sells gift cards (<a href="/#gift-cards">add-on: $150</a>).</p>
+    <p class="note after-note">Choose After, then Book now. The booking page also takes a deposit to cut no-shows (<a href="/#deposits">add-on: $150</a>) and sells gift cards (<a href="/#gift-cards">add-on: $150</a>).</p>
   </section>
 
   <section class="exhibit phones" aria-label="Messages clients receive">
@@ -110,79 +110,79 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
 
 <style>
   .lead { margin-bottom: 8px; }
-  .exhibit { margin: 44px 0 0; }
+  .exhibit { margin: 48px 0 0; }
+  .exhibit h2 { margin-top: 0; }
   .note { margin: 0 0 18px; max-width: 62ch; }
-  .after-note { margin: 16px 0 0; font-size: 0.95rem; }
+  .after-note { margin: 16px 0 0; font-size: 0.9375rem; color: var(--muted); }
 
-  /* Before / After: two printed tick boxes; the radio buttons stay in the page for keyboards and screen readers */
+  /* Before / After: a segmented pill; the radio buttons stay in the page for keyboards and screen readers. */
   .sr { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
-  .views { display: flex; gap: 28px; margin: 0 0 14px; }
-  .views label { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; font-size: 1.05rem; }
-  .box { width: 30px; height: 30px; flex: none; overflow: visible; }
-  .box rect { fill: none; stroke: var(--ink); stroke-width: 2; }
-  .tick { fill: none; stroke: var(--pen); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 280ms cubic-bezier(0.5, 0.1, 0.35, 1); }
-  #view-before:checked ~ .views label[for="view-before"] .tick,
-  #view-after:checked ~ .views label[for="view-after"] .tick { stroke-dashoffset: 0; }
+  .views { display: inline-flex; gap: 4px; margin: 0 0 16px; padding: 4px; border-radius: var(--r-full); background: var(--surface-strong); }
+  .views label { display: inline-flex; align-items: center; min-height: 40px; padding: 0 22px; border-radius: var(--r-full); cursor: pointer; font-weight: 600; color: var(--muted); transition: background-color 160ms ease-out, color 160ms ease-out, box-shadow 160ms ease-out; }
+  .views label:hover { color: var(--ink); }
+  #view-before:checked ~ .views label[for="view-before"],
+  #view-after:checked ~ .views label[for="view-after"] { background: var(--bg); color: var(--ink); box-shadow: var(--shadow); }
   #view-before:focus-visible ~ .views label[for="view-before"],
-  #view-after:focus-visible ~ .views label[for="view-after"] { outline: 3px solid var(--stamp); outline-offset: 3px; }
+  #view-after:focus-visible ~ .views label[for="view-after"] { outline: 2px solid var(--ink); outline-offset: 2px; }
   #view-before:checked ~ .browser .after,
   #view-after:checked ~ .browser .before { display: none; }
 
-  /* the salon's own website, printed as an exhibit: an ink browser outline around its pale page */
-  .browser { border: 2px solid var(--ink); background: var(--card-hi); box-shadow: 0 6px 18px rgb(28 20 22 / 0.18); }
-  .bar { display: flex; align-items: center; gap: 14px; margin: 0; padding: 8px 12px; border-bottom: 2px solid var(--ink); font-size: 0.85rem; }
-  .dots { width: 46px; height: 10px; background: radial-gradient(circle 5px, var(--ink) 98%, transparent) 0 0 / 16px 10px repeat-x; }
-  .url { border: 2px solid var(--ink); border-radius: 999px; padding: 1px 12px; }
+  /* The salon's own website, shown working inside a browser frame. */
+  .browser { overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg); box-shadow: var(--shadow); }
+  .bar { margin: 0; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--hairline-soft); }
+  .url { display: inline-block; padding: 3px 14px; border-radius: var(--r-full); background: var(--bg); color: var(--muted); font-size: 0.8125rem; box-shadow: inset 0 0 0 1px var(--hairline); }
   .site { padding: clamp(20px, 5vw, 40px); min-height: 18rem; }
-  .site-name { font: 700 clamp(2.4rem, 7vw, 3.6rem)/0.9 var(--display); text-transform: uppercase; margin: 0; }
-  .site-line { margin: 8px 0 20px; }
-  .site-call { font-weight: 700; font-size: 1.3rem; margin: 0; }
-  .site-small { font-size: 0.95rem; margin: 8px 0 0; }
+  .site-name { color: var(--ink); font-size: clamp(1.75rem, 5vw, 2.25rem); font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; margin: 0; }
+  .site-line { margin: 8px 0 22px; }
+  .site-call { color: var(--ink); font-weight: 700; font-size: 1.25rem; margin: 0; }
+  .site-small { font-size: 0.9375rem; color: var(--muted); margin: 8px 0 0; }
   .site-book {
-    display: inline-flex; list-style: none; cursor: pointer; background: var(--ink); color: var(--card); padding: 0.8em 1.4em;
-    border-radius: 0.35rem; font-size: 1.1rem; box-shadow: 0 2px 6px rgb(28 20 22 / 0.22);
+    display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; list-style: none; cursor: pointer;
+    background: var(--ink); color: var(--bg); border-radius: var(--r-sm); font-weight: 600;
   }
   .site-book::-webkit-details-marker { display: none; }
-  .site-book:hover { background: #0a3826; }
-  details[open] .site-book { box-shadow: none; translate: 0 1px; }
-  .booking { margin-top: 18px; border-top: 2px solid var(--ink); padding-top: 12px; animation: unfold 320ms cubic-bezier(0.16, 1, 0.3, 1); }
-  .booking-head { font-weight: 700; margin: 10px 0 6px; }
+  details[open] .site-book { opacity: 0.85; }
+  .booking { margin-top: 20px; padding-top: 4px; border-top: 1px solid var(--hairline); }
+  .booking-head { color: var(--ink); font-weight: 600; margin: 16px 0 8px; }
   .services, .times { list-style: none; margin: 0; padding: 0; }
-  .services li { display: flex; justify-content: space-between; gap: 12px; max-width: 24rem; padding: 4px 0; border-bottom: 1px solid var(--ink); }
+  .services { max-width: 26rem; border: 1px solid var(--hairline); border-radius: var(--r-sm); }
+  .services li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; font-variant-numeric: tabular-nums; }
+  .services li + li { border-top: 1px solid var(--hairline); }
   .times { display: flex; flex-wrap: wrap; gap: 8px; }
-  .times li { border: 2px solid var(--ink); padding: 4px 12px; font-variant-numeric: tabular-nums; }
-  .times li:nth-child(3) { background: var(--ink); color: var(--card); }
-  .gift { text-decoration: underline; text-underline-offset: 0.2em; }
-
-  /* the client's phone, drawn in the one ink: messages from the salon outlined, the client's own filled */
-  .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 40px 28px; }
-  .phone { margin: 0; }
-  .phone-title { margin-top: 0 !important; }
-  .thread {
-    list-style: none; margin: 0; padding: 22px 16px 26px; display: grid; gap: 10px; align-content: start; min-height: 16rem;
-    border: 2px solid var(--ink); border-radius: 30px; background: var(--card-hi); box-shadow: 0 6px 18px rgb(28 20 22 / 0.18);
+  .times li { padding: 8px 16px; border-radius: var(--r-full); box-shadow: inset 0 0 0 1px var(--hairline); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .times li:nth-child(3) { background: var(--ink); color: var(--bg); box-shadow: none; }
+  .gift { color: var(--ink); text-decoration: underline; text-underline-offset: 0.2em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .booking { animation: unfold 320ms var(--ease); }
   }
-  .thread li { max-width: 86%; padding: 9px 13px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4; }
-  .in { justify-self: start; border: 2px solid var(--ink); border-bottom-left-radius: 4px; }
-  .out { justify-self: end; background: var(--ink); color: var(--card); border-bottom-right-radius: 4px; }
-  .event { justify-self: center; max-width: 100% !important; padding: 2px 0 !important; font-size: 0.85rem !important; }
-  .fill { font: 400 1.08em/1.2 var(--hand); color: var(--pen); }
+
+  /* The client's phone: the salon's automatic messages in grey, the client's own replies in ink. */
+  .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 40px 28px; }
+  .phone { margin: 0; }
+  .phone-title { margin: 0 0 12px !important; font-size: 1.125rem !important; }
+  .thread {
+    list-style: none; margin: 0; padding: 22px 14px 26px; display: grid; gap: 8px; align-content: start; min-height: 16rem;
+    border: 1px solid var(--hairline); border-radius: 28px; background: var(--bg); box-shadow: var(--shadow);
+  }
+  .thread li { max-width: 86%; padding: 9px 14px; border-radius: 18px; font-size: 0.9375rem; line-height: 1.4; }
+  .page .thread li + li { margin-top: 0; }
+  .in { justify-self: start; background: var(--surface-strong); color: var(--ink); border-bottom-left-radius: 6px; }
+  .out { justify-self: end; background: var(--ink); color: var(--bg); border-bottom-right-radius: 6px; }
+  .event { justify-self: center; max-width: 100% !important; padding: 2px 0 !important; color: var(--muted); font-size: 0.8125rem !important; }
+  .fill { font-weight: 600; background: var(--accent-soft); color: var(--ink); padding: 0 2px; margin: 0 -2px; border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
   .link { text-decoration: underline; text-underline-offset: 0.18em; overflow-wrap: anywhere; }
-  figcaption { margin-top: 12px; font-size: 0.95rem; max-width: 40ch; }
+  figcaption { margin-top: 12px; font-size: 0.9375rem; color: var(--muted); max-width: 40ch; }
 
   :global(html.deal) .phone:not(.dealt) .thread li { opacity: 0; }
-  .phone.dealt .thread li { animation: arrive 380ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+  .phone.dealt .thread li { animation: arrive 380ms var(--ease) backwards; }
   .phone.dealt .thread li:nth-child(2) { animation-delay: 700ms; }
   .phone.dealt .thread li:nth-child(3) { animation-delay: 1400ms; }
   .phone.dealt .thread li:nth-child(4) { animation-delay: 2100ms; }
 
-  .close { margin-top: 56px; border-top: 2px solid var(--ink); padding-top: 8px; }
-  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 18px; }
+  .close { margin-top: 64px; padding: 28px; border-radius: var(--r-lg); background: var(--surface); }
+  .close h2 { margin-top: 0; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin: 20px 0 0; }
 
-  @keyframes arrive { from { opacity: 0; translate: 0 10px; } }
-  @keyframes unfold { from { opacity: 0; translate: 0 -6px; } }
-  @media (prefers-reduced-motion: reduce) {
-    .tick { transition: none; }
-    .booking { animation: none; }
-  }
+  @keyframes arrive { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes unfold { from { opacity: 0; transform: translateY(-6px); } }
 </style>
