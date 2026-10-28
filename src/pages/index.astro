@@ -7,11 +7,16 @@ import fixStamp from "../../assets/plates/stamp-fix.png";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // The request form is an email: no server to run, and the answer lands in the inbox the work runs from.
-// (a chosen package's own request names it at the top)
-const ask = (p?: { name: string; price: string }) => "mailto:nuxy@nuxyautomation.com?" + new URLSearchParams({
-  subject: p ? `Setup request: ${p.name}` : "Setup request",
-  body: `${p ? `Package: ${p.name} (${p.price})\n` : ""}Business name:\nWebsite:\nWhat you use for booking now (or "phone only"):\nWhat you'd like fixed or set up:\nAnything else:\n`,
-}).toString().replace(/\+/g, "%20");
+// (a chosen package's own request names it at the top; Gmail and Outlook links for computers with no email app,
+// where a mailto: link does nothing at all)
+const inbox = "nuxy@nuxyautomation.com";
+type Item = { name: string; price: string };
+const subject = (p?: Item) => (p ? `Setup request: ${p.name}` : "Setup request");
+const body = (p?: Item) => `${p ? `Package: ${p.name} (${p.price})\n` : ""}Business name:\nWebsite:\nWhat you use for booking now (or "phone only"):\nWhat you'd like fixed or set up:\nAnything else:\n`;
+const query = (fields: Record<string, string>) => new URLSearchParams(fields).toString().replace(/\+/g, "%20");
+const ask = (p?: Item) => `mailto:${inbox}?` + query({ subject: subject(p), body: body(p) });
+const gmail = (p?: Item) => "https://mail.google.com/mail/?" + query({ view: "cm", fs: "1", to: inbox, su: subject(p), body: body(p) });
+const outlook = (p?: Item) => "https://outlook.live.com/mail/0/deeplink/compose?" + query({ to: inbox, subject: subject(p), body: body(p) });
 const request = ask();
 
 // (ids are linked from outreach emails: keep them stable)
@@ -105,7 +110,7 @@ const work = [
       <div class="confirm">
         <span class="confirm-rule" aria-hidden="true"></span>
         <span class="confirm-label">Confirm</span>
-        <a class="cta" href={request}>Request a setup</a>
+        <a class="cta" href="#request">Request a setup</a>
       </div>
     </section>
 
@@ -129,6 +134,7 @@ const work = [
                   This one
                 </a>
                 <a class="button pick-cta" href={ask(p)}>Request this setup</a>
+                <span class="pick-alt">or in <a href={gmail(p)} target="_blank" rel="noopener">Gmail</a> · <a href={outlook(p)} target="_blank" rel="noopener">Outlook</a></span>
               </p>
             </article>
           </li>
@@ -150,6 +156,7 @@ const work = [
                       This one
                     </a>
                     <a class="button pick-cta" href={ask(a)}>Request this add-on</a>
+                    <span class="pick-alt">or in <a href={gmail(a)} target="_blank" rel="noopener">Gmail</a> · <a href={outlook(a)} target="_blank" rel="noopener">Outlook</a></span>
                   </p>
                 </li>
               ))}
@@ -195,8 +202,12 @@ const work = [
         <p class="where">Based in Faribault, Minnesota. Twin Cities and southern Minnesota businesses first, and anywhere remotely.</p>
         <div class="final-confirm">
           <span class="final-label">Confirm</span>
-          <a class="button" href={request}>Email nuxy@nuxyautomation.com</a>
+          <a class="button" href={request}>Email {inbox}</a>
         </div>
+        <p class="other-ways">
+          No email app on this computer? Open it in <a href={gmail()} target="_blank" rel="noopener">Gmail</a> or <a href={outlook()} target="_blank" rel="noopener">Outlook</a>, or write to <span class="address">{inbox}</span>
+          <button class="copy" type="button" data-copy={inbox} hidden>Copy address</button>
+        </p>
       </div>
     </section>
     <script is:inline>
@@ -212,6 +223,24 @@ const work = [
         // (the card an email linked to is already on the desk: its stamp is the moment, not an entrance)
         document.querySelectorAll(".appt, .card-back").forEach((el) => el.matches(":target, :has(:target)") ? el.classList.add("dealt", "at-rest") : seen.observe(el));
       }
+      // Copy the address. (navigator.clipboard needs https; until then, select the address and copy it the old way.)
+      document.querySelectorAll("button.copy").forEach((button) => {
+        button.hidden = false;
+        button.addEventListener("click", async () => {
+          const address = button.previousElementSibling;
+          try {
+            await navigator.clipboard.writeText(button.dataset.copy);
+          } catch {
+            const range = document.createRange();
+            range.selectNodeContents(address);
+            getSelection().removeAllRanges();
+            getSelection().addRange(range);
+            if (!document.execCommand("copy")) return; // (left selected: Ctrl+C still works)
+          }
+          button.textContent = "Copied";
+          setTimeout(() => (button.textContent = "Copy address"), 2000);
+        });
+      });
     </script>
   </main>
 </Base>
@@ -341,6 +370,8 @@ const work = [
   :is(.appt, .extra):target > .pick-row .tick { stroke-dashoffset: 0; animation: tick 300ms cubic-bezier(0.5, 0.1, 0.35, 1) 60ms backwards; }
   .pick-cta { visibility: hidden; opacity: 0; translate: 0 6px; transition: opacity 220ms ease-out, translate 220ms ease-out, visibility 0s linear 220ms, background-color 160ms ease-out, transform 160ms ease-out; }
   :is(.appt, .extra):target > .pick-row .pick-cta { visibility: visible; opacity: 1; translate: 0 0; transition-delay: 300ms, 300ms, 0s, 0s, 0s; }
+  .pick-alt { font-size: 0.95rem; visibility: hidden; opacity: 0; transition: opacity 220ms ease-out, visibility 0s linear 220ms; }
+  :is(.appt, .extra):target > .pick-row .pick-alt { visibility: visible; opacity: 1; transition-delay: 380ms, 0s; }
   /* Add-ons: one card, its extras printed as ruled rows (each with its own id, price box and tick) */
   .appt.addons { grid-template-columns: 1fr; }
   .addons > .desc { margin-top: 6px; }
@@ -384,6 +415,14 @@ const work = [
   .where { font-size: 1rem !important; }
   .final-confirm { display: flex; align-items: end; gap: 18px; flex-wrap: wrap; margin-top: 26px; }
   .final-label { flex: 1 1 10rem; border-top: 2px solid var(--ink); padding-top: 6px; max-width: 16rem; }
+  .final .other-ways { font-size: 1rem; margin: 18px 0 0; }
+  .address { font-weight: 700; user-select: all; overflow-wrap: anywhere; }
+  .copy {
+    font: 400 0.9rem/1.2 var(--text); color: var(--ink); background: transparent; cursor: pointer;
+    border: 2px solid var(--ink); border-radius: 0.35rem; padding: 0.3em 0.7em; margin-left: 4px;
+    transition: color 160ms ease-out, border-color 160ms ease-out;
+  }
+  .copy:hover { color: var(--stamp); border-color: var(--stamp); }
 
   :global(html.deal) .lines li::before { clip-path: inset(-20% 100% -20% 0); }
   .card-back.dealt .lines li::before { clip-path: none; animation: write 360ms cubic-bezier(0.5, 0.1, 0.35, 1) backwards; }
@@ -408,7 +447,7 @@ const work = [
   /* Less motion: nothing slides or writes in; stamps, ticks and the chosen card's request still appear at once. */
   @media (prefers-reduced-motion: reduce) {
     .stamp, .value, .appt:target > .mark, .tick { animation: none !important; }
-    .cta, .appt, .pick-cta { transition: none; }
+    .cta, .appt, .pick-cta, .pick-alt { transition: none; }
     .appt:hover, .cta:hover, .cta:active { translate: none; }
   }
 </style>
