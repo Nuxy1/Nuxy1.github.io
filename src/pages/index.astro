@@ -1,57 +1,274 @@
 ---
 import Base from "../layouts/Base.astro";
+import Mark from "../components/Mark.astro";
+import stamp from "../../assets/plates/stamp.png";
+import hole from "../../assets/plates/punch-hole.png";
+import fixStamp from "../../assets/plates/stamp-fix.png";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const services = [
-  { name: "Zap / scenario fix", price: "from $75", text: "An automation that fails or silently skips records: found, fixed, and given an alert so it can't fail quietly again." },
-  { name: "App-to-app integration", price: "from $300", text: "New orders, leads or bookings flowing between 2-3 apps (Shopify, Stripe, Sheets, a CRM, Slack), tested on real data." },
-  { name: "Custom webhooks & APIs", price: "from $500", text: "When no-code hits a wall: verified webhooks, retries, replay of failed events, and integrations with APIs that have no app." },
-  { name: "Data clean-up & migration", price: "from $150", text: "A messy CSV or an old system's export cleaned, deduplicated and checked before it goes into the new one. Nothing guessed." },
-  { name: "Discord bots", price: "from $150", text: "Welcome cards, self-serve roles, Twitch go-live alerts, mod logs and onboarding flows for communities and streamers." },
-  { name: "Sites & docs", price: "from $250", text: "Fast static sites and documentation, like this one: no server to maintain, published from GitHub." },
+// The request form is an email: no server to run, and the answer lands in the inbox the work runs from.
+const request = "mailto:nuxy@nuxyautomation.com?" + new URLSearchParams({
+  subject: "Setup request",
+  body: "Business name:\nWebsite:\nWhat you use for booking now (or \"phone only\"):\nWhat you'd like fixed or set up:\nAnything else:\n",
+}).toString().replace(/\+/g, "%20");
+
+// (ids are linked from outreach emails: keep them stable)
+const packages = [
+  { id: "booking", stock: "mint", name: "Online booking & reminders", price: "$400", fixes: "calls you miss while you’re with a client", text: "A Book now button on your website, Google profile and Instagram, connected to the booking tool you already use (or a free one), plus automatic text and email reminders that cut no-shows." },
+  { id: "follow-up", stock: "gold", name: "Lead follow-up", price: "$450", fixes: "messages that wait hours for an answer", text: "Every website form, Facebook or Instagram inquiry gets an instant reply, two friendly follow-ups and an alert to you, so nobody waits until you’re free." },
+  { id: "reviews", stock: "card", name: "Review requests", price: "$250", fixes: "happy clients who never leave a review", text: "After each visit, every client gets a short thank-you with a link to leave you a Google review. More reviews, no awkward asking." },
+  { id: "site-fixes", stock: "mint", name: "Website quick fixes", price: "from $150", fixes: "a site that looks broken on a phone", text: "Secure https, a phone-friendly page setup, a booking button and a contact form that works: on the site you already have." },
+  { id: "care", stock: "gold", name: "Care plan", price: "$100/month", fixes: "an automation that quietly stops working", text: "I watch your automations, fix anything that breaks within one business day, and make small changes when you ask. Cancel any time." },
+];
+
+const steps = [
+  ["Tell me in writing.", "Send the request below: your business, your website, what you’d like fixed. No call to schedule."],
+  ["Get the plan and price.", "Within one business day: a written plan and a fixed price. No surprises later."],
+  ["I build it in your accounts.", "50% to start, paid by a secure Stripe invoice. I work as an invited user, never with your passwords, and test with real examples."],
+  ["Handover.", "A short video guide showing it working, then the other 50% by the same kind of invoice. Add the care plan if you want it looked after."],
 ];
 
 const work = [
-  { name: "Shopify order webhook relay", repo: "shopify-webhook-relay", doc: "webhook-relay", text: "Every Shopify order to Google Sheets and Slack/Discord: signature-checked, never written twice, retried, failed deliveries replayable.", tags: ["Node.js", "Webhooks", "Google Sheets", "10 tests"] },
-  { name: "Code steps for Zapier & n8n", repo: "automation-code-steps", doc: "code-steps", text: "Paste-ready steps that clean phones, names, dates and time zones, money and order line items inside a Zap.", tags: ["Zapier", "n8n", "JavaScript", "tested"] },
-  { name: "CSV contact cleaner", repo: "csv-contact-cleaner", doc: "csv-cleaner", text: "Cleans and dedupes a contact list before an import; doubtful rows set aside with reasons, every change counted.", tags: ["Data clean-up", "CSV", "5 tests"] },
-  { name: "Stream community bot", repo: "stream-community-bot", doc: "community-bot", text: "Discord bot for a streamer's server: welcome cards, role buttons, Twitch go-live alerts, mod log.", tags: ["Discord", "Twitch", "discord.js", "6 tests"] },
+  { name: "Shopify order webhook relay", repo: "shopify-webhook-relay", doc: "webhook-relay", text: "Every order to Google Sheets and Slack or Discord: checked, never written twice, retried, failures replayable." },
+  { name: "Code steps for Zapier & n8n", repo: "automation-code-steps", doc: "code-steps", text: "Paste-ready steps that clean phone numbers, names, dates and time zones inside an automation." },
+  { name: "CSV contact cleaner", repo: "csv-contact-cleaner", doc: "csv-cleaner", text: "Cleans and dedupes a contact list before an import, with every change counted." },
+  { name: "Stream community bot", repo: "stream-community-bot", doc: "community-bot", text: "A Discord bot for a creator’s community: welcome cards, role buttons, live alerts." },
 ];
 ---
-<Base title="Nuxy1 · Automation Developer">
-  <h1>Your apps, connected.<br />No more copy and paste.</h1>
-  <p class="lead">I build and fix automations for small businesses, online stores and creators: Zapier, Make and n8n, plus the custom code for what they can't do. Tested before handover, and built so a failure tells someone instead of failing silently.</p>
-  <p><a class="button" href="https://www.upwork.com/freelancers/~01bb5e52e099f056d4">Hire me on Upwork</a></p>
+<Base title="Nuxy Automation · Booking and follow-up for small businesses" bare>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <img class="hole" src={hole.src} width="714" height="714" alt="" />
+      <a class="brand-mark" href={`${base}/`} aria-hidden="true" tabindex="-1"><Mark /></a>
+      <a class="brand-name" href={`${base}/`}>Nuxy Automation</a>
+      <nav class="hero-nav" aria-label="Main">
+        <a href="#packages">Packages</a>
+        <a href="#how">How it works</a>
+        <a href="#work">Projects</a>
+        <a href="#request">Request a setup</a>
+      </nav>
 
-  <img src={`${base}/relay-demo.gif`} alt="Demo: tests passing, a signed Shopify order arriving, the clean spreadsheet row it writes, a forged request refused" width="800" height="450" loading="eager" />
+      <h1 id="hero-title">Never lose a booking<br /> while you’re with a client.</h1>
+      <p class="sub">Online booking, instant replies, reminders and review requests for salons, spas, studios and groomers. Fixed prices. No calls needed.</p>
 
-  <h2 id="services">What I do</h2>
-  <div class="grid">
-    {services.map((s) => (
-      <div class="card">
-        <h3>{s.name}</h3>
-        <span class="price">{s.price}</span>
-        <p>{s.text}</p>
+      <ul class="fill">
+        <li class="row book"><span class="label">Book online —</span><a class="value" href="#booking">Online booking &amp; reminders,&nbsp;$400</a><span class="rule" aria-hidden="true"></span></li>
+        <li class="row answer"><span class="label">Answer fast —</span><a class="value" href="#follow-up">Lead follow-up,&nbsp;$450</a><span class="rule" aria-hidden="true"></span></li>
+        <li class="row reviews"><span class="label">Get reviews —</span><a class="value" href="#reviews">Review requests,&nbsp;$250</a><span class="rule" aria-hidden="true"></span></li>
+        <li class="row call"><span class="label">Your 2:15 call</span><img class="stamp" src={stamp.src} width="1584" height="750" alt="Missed" /><span class="rule" aria-hidden="true"></span></li>
+      </ul>
+
+      <div class="confirm">
+        <span class="confirm-rule" aria-hidden="true"></span>
+        <span class="confirm-label">Confirm</span>
+        <a class="cta" href={request}>Request a setup</a>
       </div>
-    ))}
-  </div>
+    </section>
 
-  <h2 id="work">Work you can look at</h2>
-  <div class="grid two">
-    {work.map((w) => (
-      <div class="card">
-        <h3>{w.name}</h3>
-        <p>{w.text}</p>
-        <div class="tags">{w.tags.map((t) => <span>{t}</span>)}</div>
-        <p><a href={`${base}/docs/${w.doc}/`}>Docs</a> · <a href={`https://github.com/Nuxy1/${w.repo}`}>Code</a></p>
+    <section id="packages" class="desk" aria-labelledby="packages-title">
+      <div class="desk-head">
+        <h2 id="packages-title">Packages</h2>
+        <p>Fixed prices, agreed in writing before I start. Everything is built in your own accounts, so it stays yours.</p>
       </div>
-    ))}
-  </div>
+      <ol class="rack">
+        {packages.map((p) => (
+          <li>
+            <article class={`appt stock-${p.stock}`} id={p.id} aria-labelledby={`${p.id}-name`}>
+              <img class="mark" src={fixStamp.src} width="1584" height="750" alt="" loading="lazy" />
+              <h3 id={`${p.id}-name`}>{p.name}</h3>
+              <p class="price"><span class="price-label">Price</span><span class="price-value">{p.price}</span></p>
+              <p class="fixes"><span class="fixes-label">Fixes —</span> <span class="hand">{p.fixes}</span></p>
+              <p class="desc">{p.text}</p>
+            </article>
+          </li>
+        ))}
+      </ol>
+      <p class="desk-note">Something else? Custom integrations, data clean-up and bots are quoted in writing after one question.</p>
+    </section>
 
-  <h2>How I work</h2>
-  <div class="grid">
-    <div class="card"><h3>In writing</h3><p>Questions, plans and updates in Upwork chat, with short screen recordings of each piece working. No meetings to schedule.</p></div>
-    <div class="card"><h3>Fixed prices</h3><p>A clear total before I start. Anything unknown gets a small paid check first, so you're never paying for guesses.</p></div>
-    <div class="card"><h3>Your accounts</h3><p>Everything is built in your accounts, and I never ask for passwords. You get a written guide and keep full control.</p></div>
-  </div>
+    <section id="how" class="back" aria-labelledby="how-title">
+      <div class="card-back">
+        <h2 id="how-title">How it works</h2>
+        <ol class="lines">
+          {steps.map(([head, text]) => <li><p><strong>{head}</strong> {text}</p></li>)}
+        </ol>
+        <p class="policy">No calls needed. Questions, plans and updates come in writing, with short screen recordings of each piece working.</p>
+      </div>
+    </section>
+
+    <section id="work" class="ledger" aria-labelledby="work-title">
+      <h2 id="work-title">Projects I built</h2>
+      <p class="ledger-note">Nuxy Automation is new, so instead of testimonials, here is working code you can open and check.</p>
+      <figure class="demo">
+        <img src={`${base}/relay-demo.gif`} alt="Demo: a new order arriving, the clean spreadsheet row it writes, and a forged request refused" width="800" height="450" loading="lazy" />
+      </figure>
+      <ul class="projects">
+        {work.map((w) => (
+          <li>
+            <h3>{w.name}</h3>
+            <p>{w.text}</p>
+            <p class="links"><a href={`${base}/docs/${w.doc}/`}>How it works</a> · <a href={`https://github.com/Nuxy1/${w.repo}`}>Code</a></p>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section id="request" class="desk closing" aria-labelledby="request-title">
+      <div class="final">
+        <h2 id="request-title">Request a setup</h2>
+        <p>Email me your business name, website, what you use for booking now and what you’d like fixed. You’ll have a written plan and a fixed price within one business day.</p>
+        <p class="where">Paying: a secure Stripe invoice by email, by card, Apple Pay, Google Pay or bank transfer. 50% to start, 50% at handover; the care plan is billed monthly.</p>
+        <p class="where">Based in Faribault, Minnesota. Twin Cities and southern Minnesota businesses first, and anywhere remotely.</p>
+        <div class="final-confirm">
+          <span class="final-label">Confirm</span>
+          <a class="button" href={request}>Email nuxy@nuxyautomation.com</a>
+        </div>
+      </div>
+    </section>
+  </main>
 </Base>
+
+<style>
+  /* The hero is the approved comp (2752x1536) laid out in % of its own width; type in cqw of the same frame. */
+  .hero { position: relative; }
+  .hero a { text-decoration: none; }
+  .hero .value:hover, .hero-nav a:hover, .brand-name:hover { color: var(--stamp); }
+  .fill { list-style: none; margin: 0; padding: 0; }
+  .brand-mark :global(svg) { display: block; width: 100%; height: 100%; }
+  h1 { font: 700 var(--h1) / 0.89 var(--display); text-transform: uppercase; margin: 0; letter-spacing: 0.002em; }
+  .sub { margin: 0; }
+  .label, .confirm-label { font-weight: 400; white-space: nowrap; }
+  .value { font-family: var(--hand); color: var(--pen); white-space: nowrap; }
+  .rule, .confirm-rule { display: block; background: linear-gradient(var(--ink), var(--ink)) center / 100% max(2px, 0.16cqw) no-repeat; }
+  .cta { display: flex; align-items: center; justify-content: center; background: #094834; color: var(--card); border-radius: 0.35cqw; box-shadow: 0 0.12cqw 0.4cqw rgb(28 20 22 / 0.22); transition: background-color 160ms ease-out; }
+  .cta:hover { background: #062f22; color: var(--card); }
+  .stamp { animation: press 520ms cubic-bezier(0.16, 1, 0.3, 1) 380ms backwards; }
+
+  @media (min-width: 860px) {
+    .hero { container-type: inline-size; aspect-ratio: 2752 / 1536; overflow: hidden; }
+    .hero > *, .row > *, .confirm > * { position: absolute; }
+    .fill, .row, .confirm { display: contents; }
+    .hole { left: 3.92%; top: 6.51%; width: 5.09%; height: 9.11%; object-fit: cover; }
+    .brand-mark { left: 12.35%; top: 3.52%; width: 3.34%; height: 5.99%; }
+    .brand-name { left: 16.28%; top: 3.95%; font: 700 1.93cqw/1 var(--text); white-space: nowrap; }
+    .hero-nav { right: 5.09%; top: 4.1%; display: flex; gap: 1.55cqw; font: 400 1.72cqw/1 var(--text); white-space: nowrap; }
+    h1 { --h1: 8.61cqw; left: 12.35%; top: 11.6%; width: 80%; }
+    .sub { left: 12.35%; top: 38.2%; width: 81%; font-size: 2.58cqw; line-height: 1.03; }
+    .label { font-size: 2.94cqw; line-height: 1; }
+    .value { font-size: 4.1cqw; line-height: 1; }
+    .book .label { left: 12.35%; top: 51.5%; }
+    .answer .label { left: 12.35%; top: 58.9%; }
+    .reviews .label { left: 12.35%; top: 66.3%; }
+    .call .label { left: 12.35%; top: 73.6%; }
+    .book .value { left: 31.5%; top: 49.7%; }
+    .answer .value { left: 31.5%; top: 57.5%; }
+    .reviews .value { left: 31.5%; top: 64.9%; }
+    .book .rule { left: 30.09%; top: 56.45%; width: 65.77%; height: 0.91%; }
+    .answer .rule { left: 30.09%; top: 63.8%; width: 65.77%; height: 0.91%; }
+    .reviews .rule { left: 30.09%; top: 71.03%; width: 65.77%; height: 0.91%; }
+    .call .rule { left: 28.63%; top: 78.39%; width: 67.19%; height: 0.91%; }
+    .stamp { left: 29.25%; top: 70.18%; width: 17.51%; height: 14.84%; object-fit: cover; z-index: 1; }
+    .confirm-rule { left: 54.43%; top: 86.65%; width: 15.63%; height: 0.91%; }
+    .confirm-label { left: 54.43%; top: 87.5%; font-size: 2.94cqw; line-height: 1; }
+    .cta { left: 69.91%; top: 82.1%; width: 25.8%; height: 10.48%; font: 400 2.73cqw/1 var(--text); }
+  }
+
+  @media (max-width: 859.98px) {
+    .hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 12px; padding: 18px 20px 36px; overflow-wrap: break-word; }
+    h1 br { display: none; }
+    .hole { position: absolute; right: 16px; top: 14px; width: 44px; height: 44px; }
+    .brand-mark { width: 40px; height: 40px; }
+    .brand-name { align-self: center; font-weight: 700; font-size: 1.15rem; padding-right: 56px; }
+    .hero-nav { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 14px 0 26px; font-size: 1rem; }
+    .hero-nav a { text-decoration: underline; text-underline-offset: 0.2em; }
+    .hero-nav a[href="#request"] { display: none; } /* (the Request button is on the same screen) */
+    h1, .sub, .fill, .confirm { grid-column: 1 / -1; }
+    h1 { --h1: clamp(2.9rem, 14.5vw, 5.2rem); }
+    .sub { font-size: 1.12rem; line-height: 1.45; margin: 14px 0 22px; }
+    .row { position: relative; display: grid; padding: 10px 0 4px; }
+    .label { font-size: 1rem; }
+    .value { font-size: 1.75rem; line-height: 1.2; white-space: normal; }
+    .rule { height: 6px; }
+    .call { min-height: 92px; }
+    .stamp { position: absolute; left: 40%; top: 18px; width: 150px; height: auto; }
+    .confirm { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 22px; }
+    .confirm-rule { height: 6px; }
+    .confirm-label { font-size: 1rem; margin-bottom: 6px; }
+    .cta { font-size: 1.2rem; padding: 18px; border-radius: 6px; }
+  }
+
+  /* Below the card: the desk it lies on, and the rest of the cards. */
+  .desk { background: var(--ink); color: var(--card); padding: clamp(56px, 8vw, 104px) 20px; }
+  .desk h2, .back h2, .ledger h2 { font: 700 clamp(3rem, 7vw, 5.5rem)/0.9 var(--display); text-transform: uppercase; margin: 0 0 14px; }
+  .desk-head { max-width: 980px; margin: 0 auto 40px; }
+  .desk-head p, .desk-note { max-width: 60ch; font-size: 1.12rem; margin: 0; }
+  .desk-note { max-width: 980px; margin: 40px auto 0; }
+  .rack { list-style: none; padding: 0; margin: 0 auto; max-width: 980px; display: grid; gap: 22px; }
+  .rack li:nth-child(even) .appt { transform: rotate(0.35deg); }
+  .rack li:nth-child(odd) .appt { transform: rotate(-0.3deg); }
+  /* Card stock: the hero's own paper fibre (grain plate) multiplied onto each stock colour. */
+  .appt, .card-back, .final { background: var(--grain) repeat var(--stock); background-size: 1254px auto; background-blend-mode: multiply; }
+  .appt {
+    --stock: var(--card); position: relative; color: var(--ink);
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 28px; padding: 26px 30px 26px 76px; scroll-margin-top: 64px;
+    box-shadow: 0 6px 18px rgb(10 14 12 / 0.35);
+    border: 3px solid transparent; transition: border-color 200ms ease-out;
+  }
+  /* the punched hole: the desk seen through it, with the cut edge's shadow and lit lower rim */
+  .appt::before {
+    content: ""; position: absolute; left: 24px; top: 24px; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--ink); box-shadow: inset 0 5px 4px -2px rgb(0 0 0 / 0.6), 0 2px 0 rgb(255 255 255 / 0.85), 0 -1px 0 rgb(0 0 0 / 0.18);
+  }
+  .appt.stock-mint { --stock: var(--mint); }
+  .appt.stock-gold { --stock: var(--gold); }
+  .appt h3 { font: 700 clamp(1.9rem, 4vw, 2.6rem)/0.95 var(--display); text-transform: uppercase; margin: 0; }
+  .price { grid-row: span 2; margin: 0; display: grid; align-content: start; border: 2px solid var(--ink); text-align: center; min-width: 9.5rem; }
+  .price-label { border-bottom: 2px solid var(--ink); padding: 4px 10px; font-size: 0.85rem; }
+  .price-value { padding: 10px 14px; font: 700 1.6rem/1 var(--text); font-variant-numeric: tabular-nums lining-nums; }
+  .fixes { margin: 4px 0 0; border-bottom: 2px solid var(--ink); padding-bottom: 2px; }
+  .fixes-label { font-size: 0.95rem; }
+  .hand { font: 1.45rem/1.2 var(--hand); color: var(--pen); }
+  .desc { grid-column: 1 / -1; margin: 10px 0 0; max-width: 64ch; }
+  .mark { position: absolute; right: 18px; bottom: 10px; z-index: 1; width: min(13rem, 40%); height: auto; opacity: 0; pointer-events: none; }
+  .appt:target { border-color: var(--ink); }
+  .appt:target .mark { opacity: 1; animation: press 520ms cubic-bezier(0.16, 1, 0.3, 1) 250ms backwards; }
+
+  .back { padding: clamp(64px, 9vw, 120px) 20px; }
+  .card-back { --stock: var(--gold); max-width: 860px; margin: 0 auto; padding: clamp(28px, 5vw, 56px); box-shadow: 0 6px 18px rgb(28 20 22 / 0.22); }
+  .lines { counter-reset: step; list-style: none; padding: 0; margin: 18px 0 0; }
+  .lines li { counter-increment: step; display: grid; grid-template-columns: 2.2rem 1fr; gap: 10px; padding: 14px 0 12px; border-bottom: 2px solid var(--ink); }
+  .lines li::before { content: counter(step); font: 1.7rem/1 var(--hand); color: var(--pen); }
+  .lines p { margin: 0; max-width: 62ch; }
+  .policy { margin: 22px 0 0; max-width: 62ch; }
+
+  .ledger { max-width: 980px; margin: 0 auto; padding: 0 20px clamp(64px, 9vw, 120px); }
+  .ledger-note { max-width: 60ch; font-size: 1.12rem; margin: 0 0 26px; }
+  .demo { margin: 0 0 28px; }
+  .demo img { display: block; width: 100%; max-width: 800px; height: auto; border: 3px solid var(--ink); }
+  .projects { list-style: none; padding: 0; margin: 0; border-top: 2px solid var(--ink); }
+  .projects li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 6px 26px; align-items: baseline; padding: 16px 0 14px; border-bottom: 2px solid var(--ink); }
+  .projects h3 { font: 700 1.7rem/1 var(--display); text-transform: uppercase; margin: 0; }
+  .projects p { margin: 0; }
+  .links { white-space: nowrap; }
+  @media (max-width: 720px) {
+    .projects li { grid-template-columns: 1fr; }
+    .appt { grid-template-columns: 1fr; padding-left: 66px; }
+    .price { grid-row: auto; justify-self: start; }
+    .mark { bottom: auto; top: 116px; right: 12px; } /* (beside the price box, clear of the text) */
+  }
+
+  .closing { padding-bottom: clamp(64px, 9vw, 120px); }
+  .final { --stock: var(--card); max-width: 860px; margin: 0 auto; color: var(--ink); padding: clamp(28px, 5vw, 56px); box-shadow: 0 6px 18px rgb(10 14 12 / 0.35); }
+  .final p { max-width: 60ch; font-size: 1.12rem; }
+  .where { font-size: 1rem !important; }
+  .final-confirm { display: flex; align-items: end; gap: 18px; flex-wrap: wrap; margin-top: 26px; }
+  .final-label { flex: 1 1 10rem; border-top: 2px solid var(--ink); padding-top: 6px; max-width: 16rem; }
+
+  @keyframes press {
+    from { transform: scale(1.14) rotate(-2deg); filter: blur(1.5px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stamp, .appt:target .mark { animation: none; }
+    .cta, .appt { transition: none; }
+  }
+</style>

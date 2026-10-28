@@ -1,0 +1,47 @@
+---
+import Base from "../layouts/Base.astro";
+
+const contact = "nuxy@nuxyautomation.com";
+---
+<Base title="Policies · Nuxy Automation" description="Refunds, care plan cancellations, terms of service and privacy for Nuxy Automation.">
+  <h1>Policies</h1>
+  <p class="lead">Plain-language terms for working with Nuxy Automation, a one-person business in Faribault, Minnesota. Questions: <a href={`mailto:${contact}`}>{contact}</a>.</p>
+  <p>Last updated October 28, 2026.</p>
+
+  <h2 id="refunds">Refunds</h2>
+  <ul>
+    <li><strong>Before work starts:</strong> every project begins with a 50% deposit. If you cancel before I start, I refund the whole deposit.</li>
+    <li><strong>After work starts:</strong> I refund the part of the deposit that covers work I haven’t done yet. Work already finished is yours to keep.</li>
+    <li><strong>At handover:</strong> you pay the other 50% after you’ve seen the work running. If something doesn’t do what the written plan says, I fix it at no charge. One round of changes within 14 days of handover is included.</li>
+    <li>Refunds go back to the card or bank account you paid with, through Stripe, usually within 5–10 business days.</li>
+  </ul>
+
+  <h2 id="cancel">Care plan cancellations</h2>
+  <ul>
+    <li>The care plan is $100 a month, billed monthly in advance.</li>
+    <li>Cancel any time from the link in your monthly receipt email, or by emailing me. It stops at the end of the month you’ve already paid for, and you’re never charged again.</li>
+    <li>Months already paid aren’t refunded part-way.</li>
+  </ul>
+
+  <h2 id="terms">Terms of service</h2>
+  <ul>
+    <li><strong>The work:</strong> what you get is the written plan you agreed to by email. Anything outside it is quoted in writing before I do it.</li>
+    <li><strong>Prices:</strong> fixed, in US dollars. Sales tax is added only where the law requires it.</li>
+    <li><strong>Payment:</strong> by Stripe invoice, due within 7 days. Work starts once the deposit is paid.</li>
+    <li><strong>Your accounts:</strong> I work as an invited user and never ask for your passwords. You can remove my access at any time.</li>
+    <li><strong>Ownership:</strong> once you’ve paid in full, everything I build for you is yours.</li>
+    <li><strong>Other companies’ tools:</strong> booking, email and texting services are run by other companies. Their fees, outages and rule changes aren’t mine to control, and I’ll tell you about any cost before you sign up.</li>
+    <li><strong>Responsibility:</strong> my total responsibility for any job is limited to what you paid me for it.</li>
+    <li>These terms follow Minnesota law.</li>
+  </ul>
+
+  <h2 id="privacy">Privacy</h2>
+  <ul>
+    <li><strong>What I keep:</strong> what you send me by email (your name, business, website and contact details) and what Stripe needs to send you invoices.</li>
+    <li><strong>Payments:</strong> handled by Stripe. I never see or store your full card or bank numbers; Stripe’s <a href="https://stripe.com/privacy">privacy policy</a> covers payment data.</li>
+    <li><strong>Your customers’ data:</strong> stays in your own accounts. I use it only to do the work you asked for, and I never sell or share it.</li>
+    <li><strong>This website:</strong> no cookies, no analytics and no forms of my own. The request button opens your own email app. The site is hosted by GitHub Pages.</li>
+    <li><strong>Email:</strong> if I emailed you about your website and you reply “unsubscribe”, I never email you again.</li>
+    <li><strong>Your requests:</strong> email me to see, correct or delete what I have about you.</li>
+  </ul>
+</Base>
