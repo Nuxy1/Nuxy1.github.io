@@ -1,10 +1,16 @@
 ---
-// The page frame: one stylesheet, light and dark from the system setting, no client-side JavaScript.
+// The page frame: pink card stock printed in one green ink, self-hosted faces, no client-side JavaScript.
+// bare: the page draws its own letterhead (the homepage prints it on its hero card).
+import Mark from "../components/Mark.astro";
+import paper from "../../assets/plates/paper.png";
+import grain from "../../assets/plates/grain.png";
+
 interface Props {
   title: string;
   description?: string;
+  bare?: boolean;
 }
-const { title, description = "Automation developer: Zapier, Make, n8n, webhooks, Discord bots and data clean-up for small businesses and creators." } = Astro.props;
+const { title, description = "Nuxy Automation: online booking, instant lead replies, reminders and review requests for salons, spas, studios and groomers. Fixed prices, no calls needed.", bare = false } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 <!doctype html>
@@ -16,58 +22,85 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta name="theme-color" content="#f4b4c4" />
     <link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
-    <style is:global>
+    <link rel="preload" href={`${base}/fonts/sofia-xc-700.woff2`} as="font" type="font/woff2" crossorigin />
+    <style is:global define:vars={{ paper: `url(${paper.src})`, grain: `url(${grain.src})` }}>
+      @font-face { font-family: "Sofia Sans Extra Condensed"; font-weight: 700; font-display: swap; src: url("/fonts/sofia-xc-700.woff2") format("woff2"); }
+      @font-face { font-family: "Almarai"; font-weight: 400; font-display: swap; src: url("/fonts/almarai-400.woff2") format("woff2"); }
+      @font-face { font-family: "Almarai"; font-weight: 700; font-display: swap; src: url("/fonts/almarai-700.woff2") format("woff2"); }
+      @font-face { font-family: "Kalam"; font-weight: 400; font-display: swap; src: url("/fonts/kalam-400.woff2") format("woff2"); }
       :root {
-        --bg: #ffffff; --panel: #f6f8fa; --text: #1f2328; --muted: #59636e; --line: #d1d9e0; --accent: #0969da; --good: #1a7f37;
-        color-scheme: light dark;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root { --bg: #0d1117; --panel: #161b22; --text: #e6edf3; --muted: #9198a1; --line: #30363d; --accent: #4493f8; --good: #3fb950; }
+        --card: #f4b4c4; --card-hi: #f9cfd9; --mint: #b9e2cf; --gold: #f1c04a;
+        --ink: #0f4a32; --ink-soft: #2c5f47; --pen: #15228f; --stamp: #c62027;
+        --display: "Sofia Sans Extra Condensed", "Arial Narrow", sans-serif;
+        --text: "Almarai", system-ui, sans-serif;
+        --hand: "Kalam", cursive;
+        color-scheme: light;
+        accent-color: var(--ink);
+        scrollbar-color: var(--ink) var(--card);
       }
       * { box-sizing: border-box; }
-      body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
-      main, header, footer { max-width: 920px; margin: 0 auto; padding: 0 20px; }
-      header { display: flex; justify-content: space-between; align-items: center; padding-top: 22px; padding-bottom: 22px; gap: 12px; flex-wrap: wrap; }
-      header a.brand { font-weight: 700; color: var(--text); text-decoration: none; }
-      nav { display: flex; gap: 18px; flex-wrap: wrap; }
-      a { color: var(--accent); }
-      nav a { color: var(--muted); text-decoration: none; }
-      nav a:hover { color: var(--text); }
-      h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.15; margin: 32px 0 14px; }
-      h2 { font-size: 26px; margin: 56px 0 14px; }
-      h3 { margin: 0 0 6px; font-size: 19px; }
-      .lead { font-size: 20px; color: var(--muted); max-width: 680px; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
-      .grid.two { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
-      @media (max-width: 420px) { .grid.two { grid-template-columns: 1fr; } }
-      .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
-      .card p { margin: 6px 0 0; color: var(--muted); font-size: 15.5px; }
-      .price { color: var(--good); font-weight: 600; font-size: 15px; }
-      .button { display: inline-block; background: var(--accent); color: #fff; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; }
-      .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-      .tags span { font-size: 12.5px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; color: var(--muted); }
-      img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); }
-      pre { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; font-size: 14px; }
-      code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 0.92em; }
-      table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; font-size: 15px; }
-      th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
-      footer { color: var(--muted); font-size: 14px; padding-top: 48px; padding-bottom: 40px; }
+      html { scroll-behavior: smooth; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .button { transition: none; } }
+      body {
+        margin: 0; color: var(--ink); font: 18px/1.6 var(--text);
+        background: var(--card) var(--paper) repeat; background-size: 91.1vw auto;
+        caret-color: var(--stamp);
+      }
+      ::selection { background: var(--ink); color: var(--card); }
+      a { color: var(--ink); text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; }
+      a:hover { color: var(--stamp); }
+      :focus-visible { outline: 3px solid var(--stamp); outline-offset: 3px; border-radius: 2px; }
+      .button {
+        display: inline-flex; align-items: center; justify-content: center; background: var(--ink); color: var(--card);
+        font: 400 1.15rem/1.25 var(--text); text-align: center; padding: 0.95em 1.4em; border-radius: 0.35rem; text-decoration: none;
+        box-shadow: 0 2px 6px rgb(28 20 22 / 0.22); transition: background-color 160ms ease-out, transform 160ms ease-out;
+      }
+      .button:hover { background: #0a3826; color: var(--card); transform: translateY(-1px); }
+      .button:active { transform: translateY(1px); box-shadow: 0 1px 2px rgb(28 20 22 / 0.3); }
+
+      /* Inner pages (docs): the letterhead and a readable column printed on the card. */
+      .letterhead { display: flex; justify-content: space-between; align-items: center; gap: 12px 24px; flex-wrap: wrap; max-width: 1040px; margin: 0 auto; padding: 22px 20px; }
+      .brand { display: inline-flex; align-items: center; gap: 0.55em; font-weight: 700; text-decoration: none; }
+      .brand svg { width: 1.9em; height: 1.9em; }
+      .letterhead nav { display: flex; gap: 6px 22px; flex-wrap: wrap; }
+      .letterhead nav a { text-decoration: none; }
+      .letterhead nav a:hover { text-decoration: underline; }
+      .page { max-width: 820px; margin: 0 auto; padding: 0 20px 64px; }
+      .page h1 { font: 700 clamp(2.8rem, 8vw, 4.5rem)/0.92 var(--display); text-transform: uppercase; margin: 24px 0 18px; }
+      .page h2 { font: 700 2.1rem/1 var(--display); text-transform: uppercase; margin: 48px 0 12px; }
+      .page h3 { margin: 0 0 6px; font-size: 1.1rem; }
+      .lead { font-size: 1.2rem; max-width: 62ch; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+      .card { background: var(--card-hi); border-top: 2px solid var(--ink); padding: 16px 18px; box-shadow: 0 2px 8px rgb(28 20 22 / 0.12); }
+      .card p { margin: 6px 0 0; color: var(--ink-soft); font-size: 0.95rem; }
+      .page img { max-width: 100%; height: auto; border: 2px solid var(--ink); }
+      pre { background: var(--card-hi); border-left: 1px solid var(--ink); padding: 14px; overflow-x: auto; font-size: 14px; }
+      code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 0.88em; }
+      table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; font-size: 15px; font-variant-numeric: tabular-nums; }
+      th, td { border-bottom: 1px solid var(--ink); padding: 7px 10px; text-align: left; vertical-align: top; }
+
+      .site-foot { background: var(--ink); color: var(--card); font-size: 0.95rem; padding: 28px 20px 36px; text-align: center; }
+      .site-foot a { color: var(--card); }
+      .site-foot a:hover { color: #fff; }
     </style>
   </head>
   <body>
-    <header>
-      <a class="brand" href={`${base}/`}>Nuxy1 · Automation Developer</a>
-      <nav>
-        <a href={`${base}/#services`}>Services</a>
-        <a href={`${base}/#work`}>Work</a>
-        <a href={`${base}/docs/`}>Docs</a>
-        <a href="https://www.upwork.com/freelancers/~01bb5e52e099f056d4">Hire on Upwork</a>
-      </nav>
-    </header>
-    <main>
-      <slot />
-    </main>
-    <footer>Every project here is open source and tested. Code: <a href="https://github.com/Nuxy1">github.com/Nuxy1</a></footer>
+    {bare ? <slot /> : (
+      <>
+        <header class="letterhead">
+          <a class="brand" href={`${base}/`}><Mark />Nuxy Automation</a>
+          <nav aria-label="Main">
+            <a href={`${base}/#packages`}>Packages</a>
+            <a href={`${base}/#how`}>How it works</a>
+            <a href={`${base}/#work`}>Projects</a>
+            <a href={`${base}/#request`}>Request a setup</a>
+          </nav>
+        </header>
+        <main class="page"><slot /></main>
+      </>
+    )}
+    <footer class="site-foot">Nuxy Automation · Faribault, Minnesota · <a href="mailto:nuxy@nuxyautomation.com">nuxy@nuxyautomation.com</a> · <a href={`${base}/policies/`}>Refunds, terms &amp; privacy</a> · Code: <a href="https://github.com/Nuxy1">github.com/Nuxy1</a></footer>
   </body>
 </html>
