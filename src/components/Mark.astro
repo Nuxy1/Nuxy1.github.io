@@ -1,16 +1,16 @@
 ---
-// The Nuxy "N" mark (media/fiverr/avatar.html's path and four ring nodes) printed in one ink on a round badge.
+// The Nuxy "N" mark (media/fiverr/avatar.html's path and four ring nodes), white on a round coral badge.
 interface Props {
   class?: string;
 }
 ---
 <svg class={Astro.props.class} viewBox="0 0 800 800" role="img" aria-label="Nuxy Automation">
-  <circle cx="400" cy="400" r="400" fill="var(--ink)" />
-  <path d="M222 588 V212 L578 588 V212" fill="none" stroke="var(--card)" stroke-width="72" stroke-linecap="round" stroke-linejoin="round" />
-  <g fill="var(--card)">
+  <circle cx="400" cy="400" r="400" fill="var(--accent)" />
+  <path d="M222 588 V212 L578 588 V212" fill="none" stroke="var(--on-accent)" stroke-width="72" stroke-linecap="round" stroke-linejoin="round" />
+  <g fill="var(--on-accent)">
     <circle cx="222" cy="588" r="62" /><circle cx="222" cy="212" r="62" /><circle cx="578" cy="588" r="62" /><circle cx="578" cy="212" r="62" />
   </g>
-  <g fill="var(--ink)">
+  <g fill="var(--accent)">
     <circle cx="222" cy="588" r="24" /><circle cx="222" cy="212" r="24" /><circle cx="578" cy="588" r="24" /><circle cx="578" cy="212" r="24" />
   </g>
 </svg>
