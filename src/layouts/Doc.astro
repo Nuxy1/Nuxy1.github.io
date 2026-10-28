@@ -1,9 +1,15 @@
 ---
 // A docs page: a project's README rendered as a page of the site (scripts/sync-docs.mjs copies them in).
 import Base from "./Base.astro";
+import Icon from "../components/Icon.astro";
 const { frontmatter } = Astro.props;
 ---
 <Base title={`${frontmatter.title} · Docs · Nuxy Automation`} description={frontmatter.description}>
-  <p><a href={`https://github.com/Nuxy1/${frontmatter.repo}`}>Code on GitHub</a></p>
+  <p class="doc-links"><a href="/docs/">All docs</a><a href={`https://github.com/Nuxy1/${frontmatter.repo}`}><Icon name="githubLogo" />Code on GitHub</a></p>
   <slot />
 </Base>
+
+<style>
+  .doc-links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; font-size: 0.9375rem; font-weight: 600; }
+  .doc-links a { display: inline-flex; align-items: center; gap: 6px; }
+</style>
