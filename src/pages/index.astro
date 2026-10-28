@@ -23,6 +23,13 @@ const packages = [
   { id: "care", stock: "gold", name: "Care plan", price: "$100/month", fixes: "an automation that quietly stops working", text: "I watch your automations, fix anything that breaks within one business day, and make small changes when you ask. Cancel any time." },
 ];
 
+// (ids are linked from outreach emails too)
+const addons = [
+  { id: "missed-calls", name: "Missed-call text-back", price: "$250", fixes: "callers who hang up and book elsewhere", text: "When you can’t pick up, the caller gets a text right away with your booking link, set up in the booking or phone tool you already use." },
+  { id: "deposits", name: "Deposits & no-show protection", price: "$150", fixes: "empty chairs from no-shows", text: "A card on file or a small deposit when clients book, plus a clear cancellation policy, switched on in your booking tool." },
+  { id: "gift-cards", name: "Online gift cards", price: "$150", fixes: "gift shoppers with nowhere to buy", text: "A Buy a gift card button on your website, Google profile and Instagram, using your booking tool’s own gift cards." },
+];
+
 const steps = [
   ["Tell me in writing.", "Send the request below: your business, your website, what you’d like fixed. No call to schedule."],
   ["Get the plan and price.", "Within one business day: a written plan and a fixed price. No surprises later."],
@@ -55,7 +62,7 @@ const business = {
   hasOfferCatalog: {
     "@type": "OfferCatalog",
     name: "Packages",
-    itemListElement: packages.map((p) => ({
+    itemListElement: [...packages, ...addons].map((p) => ({
       "@type": "Offer",
       url: `${site}#${p.id}`,
       priceSpecification: priceOf(p.price),
@@ -126,6 +133,29 @@ const work = [
             </article>
           </li>
         ))}
+        <li>
+          <article class="appt addons stock-card" id="add-ons" aria-labelledby="add-ons-name">
+            <h3 id="add-ons-name">Add-ons</h3>
+            <p class="desc">Small extras, on their own or with any package.</p>
+            <ul class="extras">
+              {addons.map((a) => (
+                <li class="extra" id={a.id}>
+                  <h4>{a.name}</h4>
+                  <p class="price"><span class="price-label">Price</span><span class="price-value">{a.price}</span></p>
+                  <p class="fixes"><span class="fixes-label">Fixes —</span> <span class="hand">{a.fixes}</span></p>
+                  <p class="extra-desc">{a.text}</p>
+                  <p class="pick-row">
+                    <a class="pick" href={`#${a.id}`} aria-label={`Choose ${a.name}`}>
+                      <svg class="box" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" /><path class="tick" d="M7 17.5 12.5 24 26.5 5.5" pathLength="1" /></svg>
+                      This one
+                    </a>
+                    <a class="button pick-cta" href={ask(a)}>Request this add-on</a>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </article>
+        </li>
       </ol>
       <p class="desk-note">Something else? Custom integrations, data clean-up and bots are quoted in writing after one question.</p>
     </section>
@@ -180,7 +210,7 @@ const work = [
           seen.unobserve(e.target);
         }), { rootMargin: "0px 0px -12% 0px" });
         // (the card an email linked to is already on the desk: its stamp is the moment, not an entrance)
-        document.querySelectorAll(".appt, .card-back").forEach((el) => el.matches(":target") ? el.classList.add("dealt", "at-rest") : seen.observe(el));
+        document.querySelectorAll(".appt, .card-back").forEach((el) => el.matches(":target, :has(:target)") ? el.classList.add("dealt", "at-rest") : seen.observe(el));
       }
     </script>
   </main>
@@ -308,12 +338,20 @@ const work = [
   .box rect { fill: none; stroke: var(--ink); stroke-width: 2; }
   .tick { fill: none; stroke: var(--pen); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
   .pick:hover .box rect { stroke: var(--stamp); }
-  .appt:target .tick { stroke-dashoffset: 0; animation: tick 300ms cubic-bezier(0.5, 0.1, 0.35, 1) 60ms backwards; }
+  :is(.appt, .extra):target > .pick-row .tick { stroke-dashoffset: 0; animation: tick 300ms cubic-bezier(0.5, 0.1, 0.35, 1) 60ms backwards; }
   .pick-cta { visibility: hidden; opacity: 0; translate: 0 6px; transition: opacity 220ms ease-out, translate 220ms ease-out, visibility 0s linear 220ms, background-color 160ms ease-out, transform 160ms ease-out; }
-  .appt:target .pick-cta { visibility: visible; opacity: 1; translate: 0 0; transition-delay: 300ms, 300ms, 0s, 0s, 0s; }
+  :is(.appt, .extra):target > .pick-row .pick-cta { visibility: visible; opacity: 1; translate: 0 0; transition-delay: 300ms, 300ms, 0s, 0s, 0s; }
+  /* Add-ons: one card, its extras printed as ruled rows (each with its own id, price box and tick) */
+  .appt.addons { grid-template-columns: 1fr; }
+  .addons > .desc { margin-top: 6px; }
+  .extras { list-style: none; margin: 16px 0 0; padding: 0; }
+  .extra { display: grid; grid-template-columns: 1fr auto; gap: 6px 28px; padding: 18px 0 14px; border-top: 2px solid var(--ink); scroll-margin-top: 64px; }
+  .extra h4 { font: 700 1.7rem/1 var(--display); text-transform: uppercase; margin: 0; }
+  .extra-desc { grid-column: 1 / -1; margin: 8px 0 0; max-width: 64ch; }
+  .extra .pick-row { margin-top: 12px; }
   .mark { position: absolute; right: 18px; bottom: 10px; z-index: 1; width: min(13rem, 40%); height: auto; opacity: 0; pointer-events: none; }
   .appt:target { border-color: var(--ink); }
-  .appt:target .mark { opacity: 1; animation: press 520ms cubic-bezier(0.16, 1, 0.3, 1) 250ms backwards; }
+  .appt:target > .mark { opacity: 1; animation: press 520ms cubic-bezier(0.16, 1, 0.3, 1) 250ms backwards; }
 
   .back { padding: clamp(64px, 9vw, 120px) 20px; }
   .card-back { --stock: var(--gold); max-width: 860px; margin: 0 auto; padding: clamp(28px, 5vw, 56px); box-shadow: 0 6px 18px rgb(28 20 22 / 0.22); }
@@ -335,6 +373,7 @@ const work = [
   @media (max-width: 720px) {
     .projects li { grid-template-columns: 1fr; }
     .appt { grid-template-columns: 1fr; padding-left: 66px; }
+    .extra { grid-template-columns: 1fr; }
     .price { grid-row: auto; justify-self: start; }
     .mark { bottom: auto; top: 116px; right: 12px; } /* (beside the price box, clear of the text) */
   }
@@ -368,7 +407,7 @@ const work = [
   }
   /* Less motion: nothing slides or writes in; stamps, ticks and the chosen card's request still appear at once. */
   @media (prefers-reduced-motion: reduce) {
-    .stamp, .value, .appt:target .mark, .appt:target .tick { animation: none; }
+    .stamp, .value, .appt:target > .mark, .tick { animation: none !important; }
     .cta, .appt, .pick-cta { transition: none; }
     .appt:hover, .cta:hover, .cta:active { translate: none; }
   }
