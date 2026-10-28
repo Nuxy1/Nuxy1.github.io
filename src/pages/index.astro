@@ -24,8 +24,9 @@ const packages = [
   { id: "booking", stock: "mint", name: "Online booking & reminders", price: "$400", fixes: "calls you miss while you’re with a client", text: "A Book now button on your website, Google profile and Instagram, connected to the booking tool you already use (or a free one), plus automatic text and email reminders that cut no-shows." },
   { id: "follow-up", stock: "gold", name: "Lead follow-up", price: "$450", fixes: "messages that wait hours for an answer", text: "Every website form, Facebook or Instagram inquiry gets an instant reply, two friendly follow-ups and an alert to you, so nobody waits until you’re free." },
   { id: "reviews", stock: "card", name: "Review requests", price: "$250", fixes: "happy clients who never leave a review", text: "After each visit, every client gets a short thank-you with a link to leave you a Google review. More reviews, no awkward asking." },
-  { id: "site-fixes", stock: "mint", name: "Website quick fixes", price: "from $150", fixes: "a site that looks broken on a phone", text: "Secure https, a phone-friendly page setup, a booking button and a contact form that works: on the site you already have." },
-  { id: "care", stock: "gold", name: "Care plan", price: "$100/month", fixes: "an automation that quietly stops working", text: "I watch your automations, fix anything that breaks within one business day, and make small changes when you ask. Cancel any time." },
+  { id: "new-website", stock: "mint", name: "New website", price: "$600", fixes: "no website, or one too old to fix", text: "Up to four pages, built for phones: your services and prices, hours, map and a Book now button, on your own domain. Built in your own Squarespace or Wix account, so you can edit it and it stays yours." },
+  { id: "site-fixes", stock: "gold", name: "Website quick fixes", price: "from $150", fixes: "a site that looks broken on a phone", text: "Secure https, a phone-friendly page setup, a booking button and a contact form that works: on the site you already have." },
+  { id: "care", stock: "card", name: "Care plan", price: "$100/month", fixes: "a site or automation that quietly stops working", text: "Your website and automations watched 24/7, checked every five minutes. Anything that breaks fixed within one business day, and small changes when you ask. Cancel any time." },
 ];
 
 // (ids are linked from outreach emails too)
@@ -117,7 +118,7 @@ const work = [
     <section id="packages" class="desk" aria-labelledby="packages-title">
       <div class="desk-head">
         <h2 id="packages-title">Packages</h2>
-        <p>Fixed prices, agreed in writing before I start. Everything is built in your own accounts, so it stays yours.</p>
+        <p>Fixed prices, agreed in writing before I start. Everything is built in your own accounts, so it stays yours. <a href={`${base}/demo/`}>See them working on a demo salon</a>.</p>
       </div>
       <ol class="rack">
         {packages.map((p) => (
@@ -140,7 +141,7 @@ const work = [
           </li>
         ))}
         <li>
-          <article class="appt addons stock-card" id="add-ons" aria-labelledby="add-ons-name">
+          <article class="appt addons stock-mint" id="add-ons" aria-labelledby="add-ons-name">
             <h3 id="add-ons-name">Add-ons</h3>
             <p class="desc">Small extras, on their own or with any package.</p>
             <ul class="extras">
@@ -325,6 +326,8 @@ const work = [
   .desk h2, .back h2, .ledger h2 { font: 700 clamp(3rem, 7vw, 5.5rem)/0.9 var(--display); text-transform: uppercase; margin: 0 0 14px; }
   .desk-head { max-width: 980px; margin: 0 auto 40px; }
   .desk-head p, .desk-note { max-width: 60ch; font-size: 1.12rem; margin: 0; }
+  .desk-head a { color: var(--card); }
+  .desk-head a:hover { color: #fff; }
   .desk-note { max-width: 980px; margin: 40px auto 0; }
   .rack { list-style: none; padding: 0; margin: 0 auto; max-width: 980px; display: grid; gap: 22px; }
   .rack li:nth-child(odd) .appt { --tilt: -0.3deg; --tilt-in: -3.2deg; }

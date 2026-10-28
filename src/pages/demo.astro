@@ -1,0 +1,188 @@
+---
+import Base from "../layouts/Base.astro";
+
+// A made-up salon showing each package working. Nothing here is a real business, person or phone number
+// (555 numbers and the .example domain are reserved for exactly this).
+const salon = "Juniper & Rose";
+const services = [["Women’s cut", "$55"], ["Men’s cut", "$35"], ["Color", "from $95"], ["Blowout", "$40"]];
+const times = ["10:30", "1:00", "2:15", "4:45"];
+---
+<Base title="Demo salon · Nuxy Automation" description="See online booking, reminders, missed-call text-back, instant replies and review requests working on a made-up salon.">
+  <h1>See it working</h1>
+  <p class="lead">{salon} is a made-up salon: no real business, people or phone numbers. This is what the packages look like once they’re set up. The parts written in blue are filled in automatically for each client.</p>
+
+  <section class="exhibit" aria-labelledby="ex-booking">
+    <h2 id="ex-booking">Online booking</h2>
+    <p class="note">Before, clients had to call. After, they book themselves from the website, Google and Instagram. <a href="/#booking">The package: $400</a></p>
+    <div class="switch">
+      <input class="sr" type="radio" name="booking-view" id="view-before" checked />
+      <input class="sr" type="radio" name="booking-view" id="view-after" />
+      <p class="views">
+        <label for="view-before"><svg class="box" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" /><path class="tick" d="M7 17.5 12.5 24 26.5 5.5" pathLength="1" /></svg>Before</label>
+        <label for="view-after"><svg class="box" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" /><path class="tick" d="M7 17.5 12.5 24 26.5 5.5" pathLength="1" /></svg>After</label>
+      </p>
+      <div class="browser">
+        <p class="bar" aria-hidden="true"><span class="dots"></span><span class="url">juniperandrose.example</span></p>
+        <div class="site">
+          <p class="site-name">{salon}</p>
+          <p class="site-line">Cuts, color and curls. Open Tuesday to Saturday, 9 to 6.</p>
+          <div class="before">
+            <p class="site-call">Call to book: (507) 555-0142</p>
+            <p class="site-small">Leave a message and we’ll call you back when we’re free.</p>
+          </div>
+          <details class="after">
+            <summary class="site-book">Book now</summary>
+            <div class="booking">
+              <p class="booking-head">Choose a service</p>
+              <ul class="services">{services.map(([name, price]) => <li><span>{name}</span><span>{price}</span></li>)}</ul>
+              <p class="booking-head">Tuesday, November 4</p>
+              <ul class="times">{times.map((t) => <li>{t}</li>)}</ul>
+              <p class="site-small">A $20 deposit holds your spot. Free cancellation up to 24 hours before.</p>
+              <p class="site-small"><span class="gift">Buy a gift card</span></p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+    <p class="note after-note">Tick After, then Book now. The booking page also takes a deposit to cut no-shows (<a href="/#deposits">add-on: $150</a>) and sells gift cards (<a href="/#gift-cards">add-on: $150</a>).</p>
+  </section>
+
+  <section class="exhibit phones" aria-label="Messages clients receive">
+    <figure class="phone">
+      <h2 class="phone-title">Reminders</h2>
+      <ol class="thread">
+        <li class="in">Hi <b class="fill">Maya</b>, a reminder of your <b class="fill">women’s cut with Jess</b> tomorrow at <b class="fill">2:15 PM</b> at {salon}. Need to change it? <span class="link">juniperandrose.example/book</span></li>
+        <li class="out">See you then!</li>
+      </ol>
+      <figcaption>Sent the day before, by the booking tool you already use. <a href="/#booking">Part of online booking</a></figcaption>
+    </figure>
+
+    <figure class="phone">
+      <h2 class="phone-title">Missed-call text-back</h2>
+      <ol class="thread">
+        <li class="event">Missed call: <b class="fill">(507) 555-0188</b>, 11:42 AM</li>
+        <li class="in">Sorry we missed your call! We’re with a client. Book online any time: <span class="link">juniperandrose.example/book</span></li>
+        <li class="out">Perfect, just booked Saturday</li>
+      </ol>
+      <figcaption>Goes out within a minute when nobody can pick up. <a href="/#missed-calls">Add-on: $250</a></figcaption>
+    </figure>
+
+    <figure class="phone">
+      <h2 class="phone-title">Instant replies</h2>
+      <ol class="thread">
+        <li class="out">Do you have anything this Saturday?</li>
+        <li class="in">Hi <b class="fill">Sam</b>, thanks for messaging {salon}! You can see every open time and book here: <span class="link">juniperandrose.example/book</span>. Jess will reply personally soon.</li>
+        <li class="event">Next day, if they haven’t booked</li>
+        <li class="in">Hi <b class="fill">Sam</b>, just checking you found a time. Saturday still has <b class="fill">1:00</b> open.</li>
+      </ol>
+      <figcaption>Every website, Facebook and Instagram message answered at once, with an alert to the salon. <a href="/#follow-up">Lead follow-up: $450</a></figcaption>
+    </figure>
+
+    <figure class="phone">
+      <h2 class="phone-title">Review requests</h2>
+      <ol class="thread">
+        <li class="in">Thanks for coming in today, <b class="fill">Maya</b>! If you have a minute, a Google review helps a small salon a lot: <span class="link">g.page/juniper-and-rose/review</span></li>
+        <li class="out">Done! Love the cut</li>
+      </ol>
+      <figcaption>Sent to every client after their visit, not only the happy ones (Google’s rules). <a href="/#reviews">Review requests: $250</a></figcaption>
+    </figure>
+  </section>
+
+  <section class="close" aria-labelledby="ex-yours">
+    <h2 id="ex-yours">Want this for your business?</h2>
+    <p>Everything above is built inside your own accounts, with the booking tool you already use where possible. Fixed prices, in writing, no calls needed.</p>
+    <p class="actions"><a class="button" href="/#request">Request a setup</a> <a href="/#packages">See the packages and prices</a></p>
+  </section>
+
+  <script is:inline>
+    // Messages arrive one by one as each phone comes into view. Without this script they're simply all there.
+    if (matchMedia("(prefers-reduced-motion: no-preference)").matches && "IntersectionObserver" in window) {
+      document.documentElement.classList.add("deal");
+      const seen = new IntersectionObserver((entries) => entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        e.target.classList.add("dealt");
+        seen.unobserve(e.target);
+      }), { rootMargin: "0px 0px -15% 0px" });
+      document.querySelectorAll(".phone").forEach((el) => seen.observe(el));
+    }
+  </script>
+</Base>
+
+<style>
+  .lead { margin-bottom: 8px; }
+  .exhibit { margin: 44px 0 0; }
+  .note { margin: 0 0 18px; max-width: 62ch; }
+  .after-note { margin: 16px 0 0; font-size: 0.95rem; }
+
+  /* Before / After: two printed tick boxes; the radio buttons stay in the page for keyboards and screen readers */
+  .sr { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+  .views { display: flex; gap: 28px; margin: 0 0 14px; }
+  .views label { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; font-size: 1.05rem; }
+  .box { width: 30px; height: 30px; flex: none; overflow: visible; }
+  .box rect { fill: none; stroke: var(--ink); stroke-width: 2; }
+  .tick { fill: none; stroke: var(--pen); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 280ms cubic-bezier(0.5, 0.1, 0.35, 1); }
+  #view-before:checked ~ .views label[for="view-before"] .tick,
+  #view-after:checked ~ .views label[for="view-after"] .tick { stroke-dashoffset: 0; }
+  #view-before:focus-visible ~ .views label[for="view-before"],
+  #view-after:focus-visible ~ .views label[for="view-after"] { outline: 3px solid var(--stamp); outline-offset: 3px; }
+  #view-before:checked ~ .browser .after,
+  #view-after:checked ~ .browser .before { display: none; }
+
+  /* the salon's own website, printed as an exhibit: an ink browser outline around its pale page */
+  .browser { border: 2px solid var(--ink); background: var(--card-hi); box-shadow: 0 6px 18px rgb(28 20 22 / 0.18); }
+  .bar { display: flex; align-items: center; gap: 14px; margin: 0; padding: 8px 12px; border-bottom: 2px solid var(--ink); font-size: 0.85rem; }
+  .dots { width: 46px; height: 10px; background: radial-gradient(circle 5px, var(--ink) 98%, transparent) 0 0 / 16px 10px repeat-x; }
+  .url { border: 2px solid var(--ink); border-radius: 999px; padding: 1px 12px; }
+  .site { padding: clamp(20px, 5vw, 40px); min-height: 18rem; }
+  .site-name { font: 700 clamp(2.4rem, 7vw, 3.6rem)/0.9 var(--display); text-transform: uppercase; margin: 0; }
+  .site-line { margin: 8px 0 20px; }
+  .site-call { font-weight: 700; font-size: 1.3rem; margin: 0; }
+  .site-small { font-size: 0.95rem; margin: 8px 0 0; }
+  .site-book {
+    display: inline-flex; list-style: none; cursor: pointer; background: var(--ink); color: var(--card); padding: 0.8em 1.4em;
+    border-radius: 0.35rem; font-size: 1.1rem; box-shadow: 0 2px 6px rgb(28 20 22 / 0.22);
+  }
+  .site-book::-webkit-details-marker { display: none; }
+  .site-book:hover { background: #0a3826; }
+  details[open] .site-book { box-shadow: none; translate: 0 1px; }
+  .booking { margin-top: 18px; border-top: 2px solid var(--ink); padding-top: 12px; animation: unfold 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .booking-head { font-weight: 700; margin: 10px 0 6px; }
+  .services, .times { list-style: none; margin: 0; padding: 0; }
+  .services li { display: flex; justify-content: space-between; gap: 12px; max-width: 24rem; padding: 4px 0; border-bottom: 1px solid var(--ink); }
+  .times { display: flex; flex-wrap: wrap; gap: 8px; }
+  .times li { border: 2px solid var(--ink); padding: 4px 12px; font-variant-numeric: tabular-nums; }
+  .times li:nth-child(3) { background: var(--ink); color: var(--card); }
+  .gift { text-decoration: underline; text-underline-offset: 0.2em; }
+
+  /* the client's phone, drawn in the one ink: messages from the salon outlined, the client's own filled */
+  .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 40px 28px; }
+  .phone { margin: 0; }
+  .phone-title { margin-top: 0 !important; }
+  .thread {
+    list-style: none; margin: 0; padding: 22px 16px 26px; display: grid; gap: 10px; align-content: start; min-height: 16rem;
+    border: 2px solid var(--ink); border-radius: 30px; background: var(--card-hi); box-shadow: 0 6px 18px rgb(28 20 22 / 0.18);
+  }
+  .thread li { max-width: 86%; padding: 9px 13px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4; }
+  .in { justify-self: start; border: 2px solid var(--ink); border-bottom-left-radius: 4px; }
+  .out { justify-self: end; background: var(--ink); color: var(--card); border-bottom-right-radius: 4px; }
+  .event { justify-self: center; max-width: 100% !important; padding: 2px 0 !important; font-size: 0.85rem !important; }
+  .fill { font: 400 1.08em/1.2 var(--hand); color: var(--pen); }
+  .link { text-decoration: underline; text-underline-offset: 0.18em; overflow-wrap: anywhere; }
+  figcaption { margin-top: 12px; font-size: 0.95rem; max-width: 40ch; }
+
+  :global(html.deal) .phone:not(.dealt) .thread li { opacity: 0; }
+  .phone.dealt .thread li { animation: arrive 380ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+  .phone.dealt .thread li:nth-child(2) { animation-delay: 700ms; }
+  .phone.dealt .thread li:nth-child(3) { animation-delay: 1400ms; }
+  .phone.dealt .thread li:nth-child(4) { animation-delay: 2100ms; }
+
+  .close { margin-top: 56px; border-top: 2px solid var(--ink); padding-top: 8px; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 18px; }
+
+  @keyframes arrive { from { opacity: 0; translate: 0 10px; } }
+  @keyframes unfold { from { opacity: 0; translate: 0 -6px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .tick { transition: none; }
+    .booking { animation: none; }
+  }
+</style>
