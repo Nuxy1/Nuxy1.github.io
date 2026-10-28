@@ -30,6 +30,40 @@ const steps = [
   ["Handover.", "A short video guide showing it working, then the other 50% by the same kind of invoice. Add the care plan if you want it looked after."],
 ];
 
+// What search engines read about the business (schema.org): only what the page itself says.
+const site = "https://nuxyautomation.com/";
+const priceOf = (price: string) => {
+  const n = Number(price.replace(/\D/g, ""));
+  if (price.startsWith("from")) return { "@type": "PriceSpecification", minPrice: n, priceCurrency: "USD" };
+  if (price.includes("/month")) return { "@type": "UnitPriceSpecification", price: n, priceCurrency: "USD", unitText: "MONTH" };
+  return { "@type": "PriceSpecification", price: n, priceCurrency: "USD" };
+};
+const business = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  name: "Nuxy Automation",
+  url: site,
+  logo: `${site}logo.png`,
+  image: `${site}og.jpg`,
+  email: "nuxy@nuxyautomation.com",
+  description: "Online booking, instant replies, reminders and review requests for salons, spas, studios and groomers. Fixed prices, no calls needed.",
+  address: { "@type": "PostalAddress", addressLocality: "Faribault", addressRegion: "MN", addressCountry: "US" },
+  areaServed: ["Minneapolis", "Saint Paul", "Faribault", "Northfield", "Owatonna"].map((name) => ({ "@type": "City", name })),
+  priceRange: "$100–$450",
+  sameAs: ["https://github.com/Nuxy1"],
+  // (each package is an offer, so a search result can show what it costs)
+  hasOfferCatalog: {
+    "@type": "OfferCatalog",
+    name: "Packages",
+    itemListElement: packages.map((p) => ({
+      "@type": "Offer",
+      url: `${site}#${p.id}`,
+      priceSpecification: priceOf(p.price),
+      itemOffered: { "@type": "Service", name: p.name, description: p.text },
+    })),
+  },
+};
+
 const work = [
   { name: "Shopify order webhook relay", repo: "shopify-webhook-relay", doc: "webhook-relay", text: "Every order to Google Sheets and Slack or Discord: checked, never written twice, retried, failures replayable." },
   { name: "Code steps for Zapier & n8n", repo: "automation-code-steps", doc: "code-steps", text: "Paste-ready steps that clean phone numbers, names, dates and time zones inside an automation." },
@@ -38,6 +72,7 @@ const work = [
 ];
 ---
 <Base title="Nuxy Automation · Booking and follow-up for small businesses" bare>
+  <script type="application/ld+json" set:html={JSON.stringify(business)} />
   <main>
     <section class="hero" aria-labelledby="hero-title">
       <img class="hole" src={hole.src} width="714" height="714" alt="" />
