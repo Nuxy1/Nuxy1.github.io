@@ -116,6 +116,7 @@ Built from three skills: **awesome-design-md** (the Airbnb reference: white canv
 - One service catalog: Airbnb's category strip (All, Appointments, Trades, Restaurants, Shops, Offices) filters the cards and puts each kind's usual first steps first ("Start here"). Four groups: Win and keep customers, Less admin, Websites and Google, Add-ons.
 - Service cards: icon, name and price, the problem it fixes, then "What's included" opening the details and the request. No repeated request rows down the page.
 - The request card is the reservation card; on phones a sticky bar carries the same action once the hero is gone.
+- Bundles: a + on each card (Airbnb's save heart) adds it to a bundle; a floating bar shows the services, the total with 10% off for 2 and 15% off for 3 or more, a nudge to the next step ("Add 1 more for 15% off") and one request email for the lot. It replaces the phone bar while it's open.
 - Works without client-side JavaScript: every service is shown, the strip stays hidden, details open by tap. The scripts only enhance.
 
 ## Colors
