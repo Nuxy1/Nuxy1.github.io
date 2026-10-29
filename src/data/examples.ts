@@ -1,4 +1,4 @@
-// The three working examples (github.com/Nuxy1/small-business-automations), for the homepage's demo week and the
+// The four working examples (github.com/Nuxy1/small-business-automations), for the homepage's demo week and the
 // case-study pages. The businesses are made up; the lines are the demo's real output (npm run demo), the speeds are
 // npm run bench on a Ryzen 7 desktop. Nothing here is a client result.
 export type Line = [time: string, kind: string, text: string];
@@ -9,6 +9,41 @@ export type Example = {
 };
 
 export const examples: Example[] = [
+  {
+    slug: "booking-reminders", tab: "Booking reminders", title: "Booking reminders for a dog groomer", who: "Prairie Paws Grooming", kind: "dog groomer",
+    service: { id: "booking", name: "Online booking & reminders", price: "$400" },
+    problem: "Clients call to book while the groomer’s hands are full, so calls go unanswered, and the ones who do book sometimes forget and don’t show.",
+    built: [
+      "A confirmation the moment someone books online, with a link to move or cancel",
+      "A reminder the day before and another 2 hours before, never at night",
+      "A moved booking gets a new confirmation and new reminders; a cancelled one gets none",
+      "The day’s schedule in the owner’s inbox every morning",
+    ],
+    messy: [
+      "JORDAN PRICE in capitals becomes Jordan Price; Ana.Lima@Gmial.com is fixed",
+      "The same booking sent twice by the booking tool is confirmed once",
+      "A 9 a.m. appointment’s 2-hour reminder would land at 7 a.m.: skipped, the day-before one already went",
+      "A booking with no usable email goes to the owner to confirm by hand",
+    ],
+    numbers: [["2", "bookings"], ["1", "moved"], ["3", "confirmations"], ["4", "reminders"], ["1", "morning schedule"], ["0", "reminders at night"]],
+    speed: "5,000 bookings confirmed and checked for reminders in 1.4 seconds",
+    fit: "Most booking tools (Square, Acuity, Vagaro) have confirmations and reminders built in: those are switched on and set up first. This runs where they don’t, from the booking tool’s webhook.",
+    lines: [
+      ["Mon 10:12", "booking", "Jordan Price books a full groom for Wednesday 2:00 PM"],
+      ["Mon 10:12", "customer", "Confirmation to Jordan, with a link to move or cancel"],
+      ["Mon 10:12", "owner", "New booking: Jordan Price"],
+      ["Mon 21:40", "booking", "Ana Lima books a nail trim for Thursday 9:00 AM"],
+      ["Mon 21:40", "customer", "Confirmation to ana.lima@gmail.com (the typo fixed)"],
+      ["Tue 14:00", "customer", "See you tomorrow: reminder to Jordan"],
+      ["Tue 16:05", "moved", "Jordan moves to Thursday 11:00 AM"],
+      ["Tue 16:05", "customer", "Moved: a new confirmation; the old reminders are dropped"],
+      ["Wed 09:00", "customer", "See you tomorrow: reminder to Ana"],
+      ["Wed 11:00", "customer", "See you tomorrow: reminder to Jordan, for the new time"],
+      ["Thu 07:00", "owner", "Today: 2 appointments"],
+      ["Thu 07:00", "skipped", "Ana’s 2-hour reminder would land at 7 a.m.: skipped"],
+      ["Thu 09:00", "customer", "In 2 hours: last reminder to Jordan"],
+    ],
+  },
   {
     slug: "lead-follow-up", tab: "Lead follow-up", title: "Lead follow-up for a plumber", who: "Northfield Plumbing Co.", kind: "plumber",
     service: { id: "follow-up", name: "Lead follow-up", price: "$450" },
