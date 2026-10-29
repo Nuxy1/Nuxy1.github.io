@@ -3,15 +3,10 @@ import { Picture } from "astro:assets";
 import Base from "../layouts/Base.astro";
 import Icon, { type IconName } from "../components/Icon.astro";
 import hero from "../assets/photos/hero.jpg";
-import booking from "../assets/photos/booking.jpg";
-import followUp from "../assets/photos/follow-up.jpg";
-import reviews from "../assets/photos/reviews.jpg";
-import newWebsite from "../assets/photos/new-website.jpg";
-import siteFixes from "../assets/photos/site-fixes.jpg";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // The request form is an email: no server to run, and the answer lands in the inbox the work runs from.
-// (a chosen package's own request names it at the top; Gmail and Outlook links for computers with no email app,
+// (a chosen service's own request names it at the top; Gmail and Outlook links for computers with no email app,
 // where a mailto: link does nothing at all)
 const inbox = "nuxy@nuxyautomation.com";
 type Item = { name: string; price: string };
@@ -22,37 +17,50 @@ const ask = (p?: Item) => `mailto:${inbox}?` + query({ subject: subject(p), body
 const gmail = (p?: Item) => "https://mail.google.com/mail/?" + query({ view: "cm", fs: "1", to: inbox, su: subject(p), body: body(p) });
 const outlook = (p?: Item) => "https://outlook.live.com/mail/0/deeplink/compose?" + query({ to: inbox, subject: subject(p), body: body(p) });
 
-// (ids are linked from outreach emails: keep them stable)
-const packages = [
-  { id: "booking", photo: booking, alt: "A hand holding a phone with a booking page at a spa’s front desk.", name: "Online booking & reminders", price: "$400", fixes: "calls you miss while you’re with a customer", text: "A Book now button on your website, Google profile and Instagram, connected to the booking tool you already use (or a free one), plus automatic text and email reminders that cut no-shows." },
-  { id: "follow-up", photo: followUp, alt: "A nail technician at work while a new message lights up her phone.", name: "Lead follow-up", price: "$450", fixes: "messages that wait hours for an answer", text: "Every website form, email, Facebook or Instagram inquiry gets an instant reply, 2 friendly follow-ups and an alert to you, so nobody waits until you’re free. A contact form added if your site has none." },
-  { id: "reviews", photo: reviews, alt: "A barbershop client smiling at his new haircut in the mirror.", name: "Review requests", price: "$250", fixes: "happy customers who never leave a review", text: "After each visit, job or order, every customer gets a short thank-you with a link to leave you a Google review. More reviews, no awkward asking." },
-  { id: "new-website", photo: newWebsite, alt: "A dance studio owner sitting on the studio floor with a laptop.", name: "New website", price: "$900", fixes: "no website, or one too old to fix", text: "Up to 4 pages, built for phones: your services and prices, hours, map and a Book, Quote or Order button, on your own domain. Built in your own Squarespace or Wix account, so you can edit it and it stays yours." },
-  { id: "site-fixes", photo: siteFixes, alt: "A phone showing a website in a tattoo studio, the artist setting up behind.", name: "Website quick fixes", price: "from $150", fixes: "a site that looks broken on a phone", text: "Secure https, a phone-friendly page setup, a booking or quote button and a contact form that works: on the site you already have." },
+// Kinds of business: the strip that filters the services, and what each kind usually starts with.
+const kinds: { id: string; icon: IconName; name: string; full: string; who: string; start: string[] }[] = [
+  { id: "all", icon: "squaresFour", name: "All", full: "every business", who: "", start: [] },
+  { id: "appointments", icon: "calendarCheck", name: "Appointments", full: "Appointment businesses", who: "salons, spas, studios, clinics, groomers", start: ["booking", "deposits", "reviews"] },
+  { id: "trades", icon: "hammer", name: "Trades", full: "Trades and home services", who: "plumbers, electricians, cleaners, contractors, auto shops", start: ["quotes", "invoices", "missed-calls"] },
+  { id: "food", icon: "forkKnife", name: "Restaurants", full: "Restaurants and cafés", who: "restaurants, cafés, bakeries, breweries", start: ["ordering", "email-list", "gift-cards"] },
+  { id: "retail", icon: "storefront", name: "Shops", full: "Shops and online stores", who: "boutiques, gift shops, garden centers, online stores", start: ["online-shop", "store", "email-list"] },
+  { id: "office", icon: "briefcase", name: "Offices", full: "Offices and professional services", who: "law, accounting, real estate, insurance, consultants", start: ["follow-up", "ai-replies", "invoices"] },
 ];
-const oneOff = packages;
 
-// Every other service, in three groups (ids are linked from outreach emails: keep them stable)
-type Service = Item & { id: string; icon: IconName; fixes: string; text: string };
-const groups: { id: string; title: string; lead: string; items: Service[] }[] = [
-  { id: "customers", title: "Win and keep customers", lead: "For the inquiries, orders and regulars that slip away while you’re busy.", items: [
-    { id: "quotes", icon: "clipboardText", name: "Quote requests", price: "$450", fixes: "calls you can’t take on a job", text: "A Get a quote form on your site (photos welcome), an instant reply to the customer, a reminder to you to send the estimate, and a follow-up if they go quiet." },
-    { id: "email-list", icon: "envelopeOpen", name: "Email list & welcome emails", price: "$300", fixes: "customers who never hear from you again", text: "A sign-up form on your site and at checkout, 3 welcome emails in your voice, and your existing customers imported (only people who agreed), in Mailchimp, Brevo or Klaviyo." },
-    { id: "ordering", icon: "forkKnife", name: "Online ordering & reservations", price: "$400", fixes: "a phone ringing at your busiest hour", text: "Online ordering and table reservations switched on in the system you already use (Toast, Square, Clover) or a free one, with Order and Reserve buttons on your site and Google profile." },
-    { id: "ai-replies", icon: "robot", name: "AI inquiry assistant", price: "$750", fixes: "an inbox that eats your evenings", text: "New emails and form messages sorted by AI, with a drafted answer waiting in your inbox for you to approve and an alert for anything urgent. Nothing is sent without you." },
+// Every one-time service. ids are linked from outreach emails: keep them stable. fits: the kinds it suits ("all": every kind).
+type Service = Item & { id: string; icon: IconName; fixes: string; text: string; fits: string; popular?: boolean };
+// (cols: cards per row on wide screens, so each group fills its rows)
+const groups: { id: string; title: string; lead: string; cols?: number; items: Service[] }[] = [
+  { id: "customers", title: "Win and keep customers", lead: "For the inquiries, bookings and regulars that slip away while you’re busy.", items: [
+    { id: "booking", icon: "calendarCheck", name: "Online booking & reminders", price: "$400", fits: "appointments office", popular: true, fixes: "Calls you miss while you’re with a customer", text: "A Book now button on your website, Google profile and Instagram, connected to the booking tool you already use (or a free one), plus automatic text and email reminders that cut no-shows." },
+    { id: "follow-up", icon: "chatCircleText", name: "Lead follow-up", price: "$450", fits: "all", popular: true, fixes: "Messages that wait hours for an answer", text: "Every website form, email, Facebook or Instagram inquiry gets an instant reply, 2 friendly follow-ups and an alert to you, so nobody waits until you’re free. A contact form added if your site has none." },
+    { id: "reviews", icon: "star", name: "Review requests", price: "$250", fits: "all", popular: true, fixes: "Happy customers who never leave a review", text: "After each visit, job or order, every customer gets a short thank-you with a link to leave you a Google review. More reviews, no awkward asking." },
+    { id: "quotes", icon: "clipboardText", name: "Quote requests", price: "$450", fits: "trades", fixes: "Calls you can’t take on a job", text: "A Get a quote form on your site (photos welcome), an instant reply to the customer, a reminder to you to send the estimate, and a follow-up if they go quiet." },
+    { id: "email-list", icon: "envelopeOpen", name: "Email list & welcome emails", price: "$300", fits: "appointments food retail", fixes: "Customers who never hear from you again", text: "A sign-up form on your site and at checkout, 3 welcome emails in your voice, and your existing customers imported (only people who agreed), in Mailchimp, Brevo or Klaviyo." },
+    { id: "ordering", icon: "forkKnife", name: "Online ordering & reservations", price: "$400", fits: "food", fixes: "A phone ringing at your busiest hour", text: "Online ordering and table reservations switched on in the system you already use (Toast, Square, Clover) or a free one, with Order and Reserve buttons on your site and Google profile." },
   ] },
-  { id: "admin", title: "Less admin", lead: "For the copy-and-paste hours between your tools.", items: [
-    { id: "invoices", icon: "receipt", name: "Invoices & payment reminders", price: "$350", fixes: "invoices sent late and paid later", text: "Invoices sent automatically when a job is done or an order ships, from QuickBooks, Stripe, Square or Wave, friendly reminders when one is overdue, and an alert when it’s paid." },
-    { id: "store", icon: "storefront", name: "Online store automations", price: "$500", fixes: "orders typed into spreadsheets by hand", text: "For Shopify, WooCommerce or Square stores: every order into your spreadsheet or accounting, low-stock alerts, abandoned-cart and thank-you emails." },
-    { id: "reports", icon: "chartLineUp", name: "Weekly report", price: "$300", fixes: "numbers scattered across five apps", text: "One email or live dashboard every Monday with the numbers you care about: sales, leads, bookings, reviews, pulled from the tools you already use." },
-    { id: "data", icon: "broom", name: "Data clean-up & import", price: "from $200", fixes: "messy, duplicated customer lists", text: "Customer and contact lists cleaned, duplicates merged and moved into your new CRM or email tool, with every change counted." },
-    { id: "integrations", icon: "plugsConnected", name: "Custom integrations", price: "from $750", fixes: "apps that don’t talk to each other", text: "Your CRM, email marketing, inventory sheet, accounting and website connected with custom connectors and webhooks: every record checked, never written twice, retried when a service is down, and an alert if anything fails." },
+  { id: "admin", title: "Less admin", lead: "For the inbox and copy-and-paste hours between your tools.", items: [
+    { id: "ai-replies", icon: "robot", name: "AI inquiry assistant", price: "$750", fits: "all", fixes: "An inbox that eats your evenings", text: "New emails and form messages sorted by AI, with a drafted answer waiting in your inbox for you to approve and an alert for anything urgent. Nothing is sent without you." },
+    { id: "invoices", icon: "receipt", name: "Invoices & payment reminders", price: "$350", fits: "trades office", fixes: "Invoices sent late and paid later", text: "Invoices sent automatically when a job is done or an order ships, from QuickBooks, Stripe, Square or Wave, friendly reminders when one is overdue, and an alert when it’s paid." },
+    { id: "store", icon: "storefront", name: "Online store automations", price: "$500", fits: "retail", fixes: "Orders typed into spreadsheets by hand", text: "For Shopify, WooCommerce or Square stores: every order into your spreadsheet or accounting, low-stock alerts, abandoned-cart and thank-you emails." },
+    { id: "reports", icon: "chartLineUp", name: "Weekly report", price: "$300", fits: "all", fixes: "Numbers scattered across five apps", text: "One email or live dashboard every Monday with the numbers you care about: sales, leads, bookings, reviews, pulled from the tools you already use." },
+    { id: "data", icon: "broom", name: "Data clean-up & import", price: "from $200", fits: "all", fixes: "Messy, duplicated customer lists", text: "Customer and contact lists cleaned, duplicates merged and moved into your new CRM or email tool, with every change counted." },
+    { id: "integrations", icon: "plugsConnected", name: "Custom integrations", price: "from $750", fits: "all", fixes: "Apps that don’t talk to each other", text: "Your CRM, email marketing, inventory sheet, accounting and website connected with custom connectors and webhooks: every record checked, never written twice, retried when a service is down, and an alert if anything fails." },
   ] },
-  { id: "web", title: "Websites and Google", lead: "For being easy to find and easy to buy from.", items: [
-    { id: "online-shop", icon: "shoppingBag", name: "Online shop", price: "$1,200", fixes: "customers who can’t buy unless they come in", text: "A store on Square Online or Shopify in your own account: up to 25 products from photos you send, payments, pickup or shipping, and a Shop button on your site." },
-    { id: "google-profile", icon: "mapTrifold", name: "Google profile setup", price: "$250", fixes: "a business Google barely shows", text: "Your Google Business Profile claimed or created, with categories, hours, services, your photos and your website and booking links. I walk you through Google’s own verification." },
+  { id: "web", title: "Websites and Google", lead: "For being easy to find and easy to buy from.", cols: 4, items: [
+    { id: "new-website", icon: "globeSimple", name: "New website", price: "$900", fits: "all", popular: true, fixes: "No website, or one too old to fix", text: "Up to 4 pages, built for phones: your services and prices, hours, map and a Book, Quote or Order button, on your own domain. Built in your own Squarespace or Wix account, so you can edit it and it stays yours." },
+    { id: "site-fixes", icon: "wrench", name: "Website quick fixes", price: "from $150", fits: "all", popular: true, fixes: "A site that looks broken on a phone", text: "Secure https, a phone-friendly page setup, a booking or quote button and a contact form that works: on the site you already have." },
+    { id: "online-shop", icon: "shoppingBag", name: "Online shop", price: "$1,200", fits: "retail", fixes: "Customers who can’t buy unless they come in", text: "A store on Square Online or Shopify in your own account: up to 25 products from photos you send, payments, pickup or shipping, and a Shop button on your site." },
+    { id: "google-profile", icon: "mapTrifold", name: "Google profile setup", price: "$250", fits: "all", fixes: "A business Google barely shows", text: "Your Google Business Profile claimed or created, with categories, hours, services, your photos and your website and booking links. I walk you through Google’s own verification." },
+  ] },
+  { id: "add-ons", title: "Add-ons", lead: "Small extras, on their own or with any service.", items: [
+    { id: "missed-calls", icon: "phoneX", name: "Missed-call text-back", price: "$250", fits: "trades appointments", fixes: "Callers who hang up and call someone else", text: "When you can’t pick up, the caller gets a text right away with your booking or quote link, set up in the booking or phone tool you already use." },
+    { id: "deposits", icon: "creditCard", name: "Deposits & no-show protection", price: "$150", fits: "appointments", fixes: "Empty chairs from no-shows", text: "A card on file or a small deposit when clients book, plus a clear cancellation policy, switched on in your booking tool." },
+    { id: "gift-cards", icon: "gift", name: "Online gift cards", price: "$150", fits: "appointments food retail", fixes: "Gift shoppers with nowhere to buy", text: "A Buy a gift card button on your website, Google profile and Instagram, using your booking or point-of-sale tool’s own gift cards." },
   ] },
 ];
+const services = groups.flatMap((g) => g.items);
+const kindData = Object.fromEntries(kinds.map(({ id, full, who, start }) => [id, { full, who, start }]));
 
 // The monthly plans (billed monthly by Stripe, cancel any time)
 const plans = [
@@ -61,36 +69,35 @@ const plans = [
   { id: "automation-partner", name: "Automation partner", price: "$1,000/month", amount: "$1,000", who: "Your automation team, on call", points: ["Everything in Automation care", "One new automation or integration every month", "Fixes started within 4 business hours", "A quarterly look at your tools for more time to save"] },
 ];
 
-// Who it's for: each kind of business and the services that fit it first
-const kinds: { icon: IconName; name: string; who: string; links: [string, string][] }[] = [
-  { icon: "calendarCheck", name: "Appointments", who: "Salons, spas, studios, clinics, groomers", links: [["Online booking", "#booking"], ["Deposits", "#deposits"], ["Review requests", "#reviews"]] },
-  { icon: "hammer", name: "Trades & home services", who: "Plumbers, electricians, cleaners, contractors, auto shops", links: [["Quote requests", "#quotes"], ["Invoices & reminders", "#invoices"], ["Missed-call text-back", "#missed-calls"]] },
-  { icon: "forkKnife", name: "Restaurants & cafés", who: "Restaurants, cafés, bakeries, breweries", links: [["Online ordering", "#ordering"], ["Email list", "#email-list"], ["Gift cards", "#gift-cards"]] },
-  { icon: "storefront", name: "Shops & online stores", who: "Boutiques, gift shops, garden centers, online stores", links: [["Online shop", "#online-shop"], ["Store automations", "#store"], ["Email list", "#email-list"]] },
-  { icon: "briefcase", name: "Offices & professional services", who: "Law, accounting, real estate, insurance, consultants", links: [["Lead follow-up", "#follow-up"], ["AI inquiry assistant", "#ai-replies"], ["Invoices & reminders", "#invoices"]] },
-  { icon: "plugsConnected", name: "Any business", who: "Tools that don’t talk to each other", links: [["Custom integrations", "#integrations"], ["Weekly report", "#reports"], ["Data clean-up", "#data"]] },
+// The hero's moving notifications: examples of what the services do on their own (marked as examples on the page).
+const feed: { icon: IconName; title: string; meta: string }[] = [
+  { icon: "chatCircleText", title: "Website inquiry answered", meta: "Instant reply sent, you’re alerted" },
+  { icon: "calendarCheck", title: "Booking confirmed", meta: "Saturday 10:00 · reminder set" },
+  { icon: "receipt", title: "Invoice paid", meta: "$350 · thank-you email sent" },
+  { icon: "star", title: "Review request sent", meta: "After today’s job" },
+  { icon: "table", title: "Order added to your sheet", meta: "Stock count updated" },
+  { icon: "phoneX", title: "Missed call texted back", meta: "Booking link sent" },
 ];
 
-// (ids are linked from outreach emails too)
-const addons: (Item & { id: string; icon: IconName; fixes: string; text: string })[] = [
-  { id: "missed-calls", icon: "phoneX", name: "Missed-call text-back", price: "$250", fixes: "callers who hang up and call someone else", text: "When you can’t pick up, the caller gets a text right away with your booking or quote link, set up in the booking or phone tool you already use." },
-  { id: "deposits", icon: "creditCard", name: "Deposits & no-show protection", price: "$150", fixes: "empty chairs from no-shows", text: "A card on file or a small deposit when clients book, plus a clear cancellation policy, switched on in your booking tool." },
-  { id: "gift-cards", icon: "gift", name: "Online gift cards", price: "$150", fixes: "gift shoppers with nowhere to buy", text: "A Buy a gift card button on your website, Google profile and Instagram, using your booking or point-of-sale tool’s own gift cards." },
-];
-
-// The finder under the hero: start from the problem, land on the package that fixes it.
-const problems = [
-  { label: "Missed inquiries", text: "Instant replies", href: "#follow-up" },
-  { label: "Busy phone", text: "Book, quote, order online", href: "#kinds" },
-  { label: "Admin hours", text: "Invoices that send themselves", href: "#invoices" },
-  { label: "Apps that don’t talk", text: "Connect them", href: "#integrations" },
-];
+// Tools the services are built in (named in the services themselves): the client's own accounts.
+const tools = ["Square", "Shopify", "QuickBooks", "Stripe", "Google Business Profile", "Gmail", "Outlook", "Mailchimp", "Toast", "Clover", "WooCommerce", "Squarespace", "Wix", "Acuity", "Wave", "Klaviyo", "Zapier", "Make", "n8n", "Slack"];
 
 const steps = [
   ["Tell me in writing", "Send the request below: your business, your website, the tools you use and what you’d like fixed. No call to schedule."],
   ["Get the plan and price", "Within one business day: a written plan and a fixed price. No surprises later."],
   ["I build it in your accounts", "50% to start, paid by a secure Stripe invoice. I work as an invited user, never with your passwords, and test with real examples."],
   ["Handover", "A short video guide showing it working, then the other 50% by the same kind of invoice. Add a monthly plan if you want it looked after."],
+];
+
+// Answers only from the written policies (/policies/) and the contract.
+const faqs = [
+  ["Do we need to get on a call?", "No. Your request, the written plan and price, questions and updates all happen by email, with short screen recordings of each piece working."],
+  ["Who owns what you build?", "You do. Everything is built in your own accounts (your booking tool, your Google, your Stripe), and once it’s paid in full everything I build is yours."],
+  ["Do you need my passwords?", "No. I work as an invited user in your accounts and never ask for passwords. You can remove my access at any time."],
+  ["What if something doesn’t work?", "If anything doesn’t do what the written plan says, I fix it at no charge. One round of changes within 14 days of handover is included, and a monthly plan keeps it watched after that."],
+  ["How do I pay?", "By a secure Stripe invoice: card, Apple Pay, Google Pay or bank transfer. 50% to start and 50% at handover; monthly plans are billed monthly. Nothing is charged until you agree to the written plan."],
+  ["What if I change my mind?", "Cancel before work starts and the whole deposit is refunded. After that, I refund the part that covers work not yet done. Monthly plans end with the month already paid."],
+  ["Do you work outside Minnesota?", "Yes. I’m based in Faribault and start with Twin Cities and southern Minnesota businesses, and everything works remotely anywhere in the US."],
 ];
 
 // What search engines read about the business (schema.org): only what the page itself says.
@@ -114,11 +121,11 @@ const business = {
   areaServed: ["Minneapolis", "Saint Paul", "Faribault", "Northfield", "Owatonna"].map((name) => ({ "@type": "City", name })),
   priceRange: "$150-$1200",
   sameAs: ["https://github.com/Nuxy1"],
-  // (each package is an offer, so a search result can show what it costs)
+  // (each service is an offer, so a search result can show what it costs)
   hasOfferCatalog: {
     "@type": "OfferCatalog",
     name: "Services",
-    itemListElement: [...packages, ...groups.flatMap((g) => g.items), ...addons, ...plans].map((p) => ({
+    itemListElement: [...services, ...plans].map((p) => ({
       "@type": "Offer",
       url: `${site}#${p.id}`,
       priceSpecification: priceOf(p.price),
@@ -126,139 +133,121 @@ const business = {
     })),
   },
 };
+const faqData = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+};
 
 const work = [
   { name: "Shopify order webhook relay", repo: "shopify-webhook-relay", doc: "webhook-relay", text: "Every order to Google Sheets and Slack or Discord: checked, never written twice, retried, failures replayable." },
   { name: "Code steps for Zapier & n8n", repo: "automation-code-steps", doc: "code-steps", text: "Paste-ready steps that clean phone numbers, names, dates and time zones inside an automation." },
   { name: "CSV contact cleaner", repo: "csv-contact-cleaner", doc: "csv-cleaner", text: "Cleans and dedupes a contact list before an import, with every change counted." },
-  { name: "Stream community bot", repo: "stream-community-bot", doc: "community-bot", text: "A Discord bot for a creator’s community: welcome cards, role buttons, live alerts." },
 ];
-const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
 ---
 <Base title="Nuxy Automation · Automations and integrations for small businesses" description="Your tools connected and your busywork automated: instant replies, online booking, quotes and ordering, invoices, store automations, reports and custom integrations for any small business. Fixed prices, no calls. Faribault, Minnesota." wide>
   <script type="application/ld+json" set:html={JSON.stringify(business)} />
+  <script type="application/ld+json" set:html={JSON.stringify(faqData)} />
 
-  <section class="wrap hero" aria-labelledby="hero-title">
+  <section class="wrap hero" aria-labelledby="hero-title" data-hero>
     <div class="hero-copy">
       <h1 id="hero-title">Your tools connected. Your busywork automated.</h1>
-      <p class="sub">Instant replies to every inquiry, online booking and ordering, invoices that send themselves, orders that land in your spreadsheet, apps that finally talk. For any small business. Fixed prices, no calls.</p>
+      <p class="sub">Instant replies to every inquiry, online booking and ordering, invoices that send themselves, orders that land in your spreadsheet, apps that finally talk. For any small business.</p>
       <p class="hero-actions">
         <a class="button" href="#request">Request a setup</a>
-        <a class="button secondary" href={`${base}/demo/`}>See it working</a>
+        <a class="button secondary" href="#services">Browse services</a>
       </p>
-    </div>
-    <Picture class="hero-photo" src={hero} formats={["avif", "webp"]} widths={[640, 960, 1400]} sizes="(min-width: 900px) 46vw, 100vw" alt="A shop owner in a work apron smiling at her laptop behind a wooden counter stacked with orders." loading="eager" fetchpriority="high" />
-  </section>
-
-  <section class="wrap finder" aria-labelledby="finder-title">
-    <h2 id="finder-title">What’s costing you customers or time?</h2>
-    <nav class="finder-bar" aria-labelledby="finder-title">
-      {problems.map((p) => (
-        <a class="seg" href={p.href}><span class="seg-label">{p.label}</span><span class="seg-text">{p.text}</span></a>
-      ))}
-      <a class="orb" href="#services"><Icon name="magnifyingGlass" /><span class="orb-text">See all services</span></a>
-    </nav>
-  </section>
-
-  <section id="kinds" class="wrap section" aria-labelledby="kinds-title">
-    <h2 id="kinds-title" class="section-title">Built for your kind of business</h2>
-    <p class="section-lead">Start from what you do. Each kind of business has the services that usually save it the most, and everything else on this page works for it too.</p>
-    <ul class="kinds">
-      {kinds.map((k) => (
-        <li class="kind reveal">
-          <span class="kind-icon"><Icon name={k.icon} /></span>
-          <h3>{k.name}</h3>
-          <p class="who">{k.who}</p>
-          <p class="kind-links">{k.links.map(([label, href]) => <a href={href}>{label}</a>)}</p>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  <section id="services" class="wrap section" aria-labelledby="packages-title">
-    <h2 id="packages-title" class="section-title">Most requested</h2>
-    <p class="section-lead">Fixed prices, agreed in writing before I start. Everything is built in your own accounts, so it stays yours. <a href={`${base}/demo/`}>See them working on a demo salon</a>.</p>
-    <ul class="listings">
-      {oneOff.map((p, i) => (
-        <li class="reveal">
-          <article class="listing" id={p.id} aria-labelledby={`${p.id}-name`}>
-            <div class="photo"><Picture src={p.photo} formats={["avif", "webp"]} widths={[480, 760, 1100]} sizes={i < 3 ? photoSizes : "(min-width: 1024px) 580px, (min-width: 640px) 50vw, 100vw"} alt={p.alt} loading="lazy" /></div>
-            <div class="title-row">
-              <h3 id={`${p.id}-name`}>{p.name}</h3>
-              <p class="price">{p.price}</p>
-            </div>
-            <p class="fixes">Fixes: {p.fixes}</p>
-            <p class="desc">{p.text}</p>
-            <p class="actions">
-              <a class="request-link" href={ask(p)} aria-label={`Request a setup: ${p.name}`}>Request a setup<Icon name="arrowRight" /></a>
-              <span class="alt">or in <a href={gmail(p)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(p)} target="_blank" rel="noopener">Outlook</a></span>
-            </p>
-          </article>
-        </li>
-      ))}
-    </ul>
-
-  </section>
-
-  {groups.map((g) => (
-    <section id={g.id} class="wrap section addons" aria-labelledby={`${g.id}-title`}>
-      <div class="addons-head">
-        <h2 id={`${g.id}-title`} class="section-title">{g.title}</h2>
-        <p class="section-lead">{g.lead}</p>
-      </div>
-      <ul class="extras">
-        {g.items.map((a) => (
-          <li class="extra reveal" id={a.id}>
-            <span class="extra-icon"><Icon name={a.icon} /></span>
-            <div class="extra-body">
-              <div class="title-row">
-                <h3>{a.name}</h3>
-                <p class="price">{a.price}</p>
-              </div>
-              <p class="fixes">Fixes: {a.fixes}</p>
-              <p class="desc">{a.text}</p>
-              <p class="actions">
-                <a class="request-link" href={ask(a)} aria-label={`Request a setup: ${a.name}`}>Request a setup<Icon name="arrowRight" /></a>
-                <span class="alt">or in <a href={gmail(a)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(a)} target="_blank" rel="noopener">Outlook</a></span>
-              </p>
-            </div>
-          </li>
-        ))}
+      <ul class="promises">
+        <li><Icon name="checkCircle" />Fixed prices in writing</li>
+        <li><Icon name="checkCircle" />Built in your accounts</li>
+        <li><Icon name="checkCircle" />No calls needed</li>
       </ul>
-    </section>
-  ))}
-
-
-  <section id="add-ons" class="wrap section addons" aria-labelledby="add-ons-title">
-    <div class="addons-head">
-      <h2 id="add-ons-title" class="section-title">Add-ons</h2>
-      <p class="section-lead">Small extras, on their own or with any service.</p>
     </div>
-    <ul class="extras">
-      {addons.map((a) => (
-        <li class="extra reveal" id={a.id}>
-          <span class="extra-icon"><Icon name={a.icon} /></span>
-          <div class="extra-body">
-            <div class="title-row">
-              <h3>{a.name}</h3>
-              <p class="price">{a.price}</p>
-            </div>
-            <p class="fixes">Fixes: {a.fixes}</p>
-            <p class="desc">{a.text}</p>
-            <p class="actions">
-              <a class="request-link" href={ask(a)} aria-label={`Request a setup: ${a.name}`}>Request a setup<Icon name="arrowRight" /></a>
-              <span class="alt">or in <a href={gmail(a)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(a)} target="_blank" rel="noopener">Outlook</a></span>
-            </p>
-          </div>
-        </li>
-      ))}
-    </ul>
-    <p class="something-else">Something else? Bots, scrapers of public data and custom dashboards are quoted in writing after one question.</p>
+    <div class="hero-media">
+      <Picture class="hero-photo" src={hero} formats={["avif", "webp"]} widths={[640, 960, 1400]} sizes="(min-width: 900px) 46vw, 100vw" alt="A shop owner in a work apron smiling at her laptop behind a wooden counter stacked with orders." loading="eager" fetchpriority="high" />
+      <div class="feed-box" aria-hidden="true">
+        <p class="feed-label"><span class="live"></span>Examples of what runs while you work</p>
+        <ul class="feed" data-feed>
+          {feed.map((f, i) => (
+            <li class={i < 3 ? "on" : undefined}>
+              <span class="feed-icon"><Icon name={f.icon} /></span>
+              <span class="feed-text"><strong>{f.title}</strong><span>{f.meta}</span></span>
+              <span class="feed-time">now</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="tools" aria-labelledby="tools-title">
+    <h2 id="tools-title" class="tools-label">Built in the tools you already use</h2>
+    <div class="marquee">
+      <div class="marquee-track">
+        <ul>{tools.map((t) => <li>{t}</li>)}</ul>
+        <ul aria-hidden="true">{tools.map((t) => <li>{t}</li>)}</ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="services" class="wrap section" aria-labelledby="services-title" data-catalog data-kinds={JSON.stringify(kindData)}>
+    <div class="section-head">
+      <h2 id="services-title" class="section-title">Services</h2>
+      <p class="section-lead">Fixed prices, agreed in writing before I start. Everything is built in your own accounts, so it stays yours. <a href={`${base}/demo/`}>See online booking working on a demo</a>.</p>
+    </div>
+    <div id="kinds" class="strip-wrap">
+      <div class="strip" role="toolbar" aria-label="Show services for your kind of business" hidden>
+        {kinds.map((k, i) => (
+          <button type="button" data-kind={k.id} aria-pressed={i === 0 ? "true" : "false"}><Icon name={k.icon} /><span>{k.name}</span></button>
+        ))}
+      </div>
+    </div>
+    <p class="kind-note" aria-live="polite">All {services.length} services. Pick your kind of business to see what usually helps first.</p>
+
+    {groups.map((g) => (
+      <div class="group" id={g.id}>
+        <div class="group-head">
+          <h3>{g.title}</h3>
+          <p>{g.lead}</p>
+        </div>
+        <ul class={g.cols === 4 ? "svcs four" : "svcs"}>
+          {g.items.map((s) => (
+            <li class="svc reveal" id={s.id} data-fits={s.fits} style={`view-transition-name: svc-${s.id}`}>
+              <div class="svc-top">
+                <span class="svc-icon"><Icon name={s.icon} /></span>
+                <span class="tags">
+                  <span class="tag start-tag">Start here</span>
+                  {s.popular && <span class="tag popular-tag">Most requested</span>}
+                </span>
+              </div>
+              <div class="svc-title">
+                <h4>{s.name}</h4>
+                <p class="price">{s.price}</p>
+              </div>
+              <p class="svc-fixes">Fixes: {s.fixes.charAt(0).toLowerCase() + s.fixes.slice(1)}</p>
+              <details class="svc-more">
+                <summary>What’s included<Icon name="caretDown" /></summary>
+                <div class="svc-body">
+                  <p>{s.text}</p>
+                  <p class="svc-actions">
+                    <a class="request-link" href={ask(s)} aria-label={`Request a setup: ${s.name}`}>Request this<Icon name="arrowRight" /></a>
+                    <span class="alt">or in <a href={gmail(s)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(s)} target="_blank" rel="noopener">Outlook</a></span>
+                  </p>
+                </div>
+              </details>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+    <p class="something-else"><Icon name="sparkle" /><span>Something else? Bots, scrapers of public data and custom dashboards are quoted in writing after one question. <a href="#request">Ask about it</a>.</span></p>
   </section>
 
   <section id="plans" class="wrap section" aria-labelledby="plans-title">
-    <h2 id="plans-title" class="section-title">Monthly plans</h2>
-    <p class="section-lead">Keep everything watched and growing after handover. Billed monthly by Stripe; cancel any time and it ends with the month already paid.</p>
+    <div class="section-head">
+      <h2 id="plans-title" class="section-title">Monthly plans</h2>
+      <p class="section-lead">Keep everything watched and growing after handover. Billed monthly by Stripe; cancel any time and it ends with the month already paid.</p>
+    </div>
     <ul class="plans">
       {plans.map((p, i) => (
         <li class={`plan reveal${i === plans.length - 1 ? " featured" : ""}`} id={p.id}>
@@ -280,20 +269,22 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
       <h2 id="how-title" class="section-title">How it works</h2>
       <ol class="steps">
         {steps.map(([head, text], i) => (
-          <li class="reveal">
+          <li>
             <span class="step-n" aria-hidden="true">{i + 1}</span>
             <h3>{head}</h3>
             <p>{text}</p>
           </li>
         ))}
       </ol>
-      <p class="policy">No calls needed. Questions, plans and updates come in writing, with short screen recordings of each piece working.</p>
+      <p class="policy"><Icon name="envelopeSimple" />No calls needed. Questions, plans and updates come in writing, with short screen recordings of each piece working.</p>
     </div>
   </section>
 
   <section id="work" class="wrap section" aria-labelledby="work-title">
-    <h2 id="work-title" class="section-title">Projects I built</h2>
-    <p class="section-lead">Nuxy Automation is new, so instead of testimonials, here is working code you can open and check.</p>
+    <div class="section-head">
+      <h2 id="work-title" class="section-title">Projects I built</h2>
+      <p class="section-lead">Nuxy Automation is new, so instead of testimonials, here is working code you can open and check.</p>
+    </div>
     <div class="work">
       <figure class="demo reveal">
         <video src={`${base}/relay-demo.mp4`} poster={`${base}/relay-demo-poster.jpg`} width="800" height="450" autoplay muted loop playsinline controls preload="metadata" aria-describedby="demo-caption"></video>
@@ -304,10 +295,26 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
           <li class="reveal">
             <h3>{w.name}</h3>
             <p>{w.text}</p>
-            <p class="links"><a href={`${base}/docs/${w.doc}/`}>How it works</a><a href={`https://github.com/Nuxy1/${w.repo}`}>Code</a></p>
+            <p class="links"><a href={`${base}/docs/${w.doc}/`}>How it works</a><a href={`https://github.com/Nuxy1/${w.repo}`}>Code<Icon name="arrowUpRight" /></a></p>
           </li>
         ))}
       </ul>
+    </div>
+  </section>
+
+  <section id="faq" class="wrap section faq" aria-labelledby="faq-title">
+    <div class="section-head">
+      <h2 id="faq-title" class="section-title">Questions</h2>
+      <p class="section-lead">The short answers. The full terms are on the <a href={`${base}/policies/`}>policies page</a>.</p>
+      <p class="ask-more"><Icon name="envelopeSimple" /><span>Something else? <a href={ask()}>Email your question</a> and get an answer in writing.</span></p>
+    </div>
+    <div class="faq-list">
+      {faqs.map(([q, a]) => (
+        <details class="qa">
+          <summary>{q}<span class="qa-sign"><Icon name="plus" /></span></summary>
+          <p>{a}</p>
+        </details>
+      ))}
     </div>
   </section>
 
@@ -338,9 +345,100 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
     </aside>
   </section>
 
+  <div class="dock" data-dock aria-hidden="true">
+    <p><strong>Plan and price</strong><span>within one business day</span></p>
+    <a class="button" href="#request" tabindex="-1">Request a setup</a>
+  </div>
+
   <script is:inline>
+    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
     // Less motion: the demo video waits for its play button instead of starting by itself.
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) document.querySelectorAll("video[autoplay]").forEach((v) => { v.autoplay = false; v.pause(); });
+    if (calm) document.querySelectorAll("video[autoplay]").forEach((v) => { v.autoplay = false; v.pause(); });
+
+    // The hero's notifications: a new one arrives every few seconds and the oldest leaves (still with less motion).
+    const feed = document.querySelector("[data-feed]");
+    if (feed && !calm) {
+      const items = [...feed.children];
+      let next = 3;
+      setInterval(() => {
+        if (document.hidden) return;
+        const oldest = feed.querySelector("li.on");
+        oldest.classList.add("out");
+        setTimeout(() => {
+          oldest.classList.remove("on", "out");
+          const item = items[next++ % items.length];
+          feed.append(item);
+          item.classList.add("on");
+        }, 420);
+      }, 2800);
+    }
+
+    // The services: the strip shows what fits a kind of business, its usual first steps first.
+    const catalog = document.querySelector("[data-catalog]");
+    if (catalog) {
+      const strip = catalog.querySelector(".strip");
+      const note = catalog.querySelector(".kind-note");
+      const cards = [...catalog.querySelectorAll(".svc")];
+      const groups = [...catalog.querySelectorAll(".group")];
+      const kinds = JSON.parse(catalog.dataset.kinds);
+      const show = (kind) => {
+        const k = kinds[kind];
+        let shown = 0;
+        for (const b of strip.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.kind === kind));
+        for (const card of cards) {
+          const fits = kind === "all" || card.dataset.fits === "all" || card.dataset.fits.split(" ").includes(kind);
+          const first = k.start.indexOf(card.id);
+          card.hidden = !fits;
+          card.classList.toggle("start", first >= 0);
+          card.style.order = first >= 0 ? String(first - 10) : "";
+          if (fits) shown++;
+        }
+        for (const g of groups) g.hidden = !g.querySelector(".svc:not([hidden])");
+        note.textContent = kind === "all"
+          ? `All ${cards.length} services. Pick your kind of business to see what usually helps first.`
+          : `${shown} services for ${k.who}. The ones marked Start here usually help first.`;
+      };
+      strip.hidden = false;
+      strip.addEventListener("click", (e) => {
+        const button = e.target.closest("button[data-kind]");
+        if (!button || button.getAttribute("aria-pressed") === "true") return;
+        // (scrolled into the list: after the change, back to its top, so a shorter list doesn't leave you below it)
+        const deep = groups[0].getBoundingClientRect().top < strip.getBoundingClientRect().bottom;
+        const change = () => {
+          show(button.dataset.kind);
+          if (deep) groups.find((g) => !g.hidden).scrollIntoView({ block: "start" });
+        };
+        if (document.startViewTransition && !calm) document.startViewTransition(change);
+        else change();
+      });
+      // A link straight to a service (outreach emails link #quotes and the like): everything shown, that one opened.
+      const reach = () => {
+        const target = location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        if (!target || !catalog.contains(target)) return;
+        if (target.closest("[hidden]")) show("all");
+        const more = target.matches(".svc") && target.querySelector("details");
+        if (more) more.open = true;
+        target.scrollIntoView({ block: target.matches(".svc") ? "center" : "start" });
+      };
+      addEventListener("hashchange", reach);
+      if (location.hash) requestAnimationFrame(reach);
+    }
+
+    // Phones: a request bar at the bottom once the hero is gone, out of the way of the request card and the footer.
+    const dock = document.querySelector("[data-dock]");
+    if (dock && "IntersectionObserver" in window) {
+      const seen = new Map();
+      const watch = [document.querySelector("[data-hero]"), document.querySelector("#request"), document.querySelector(".site-foot")].filter(Boolean);
+      const watcher = new IntersectionObserver((entries) => {
+        for (const e of entries) seen.set(e.target, e.isIntersecting);
+        const up = ![...seen.values()].some(Boolean);
+        dock.classList.toggle("up", up);
+        dock.setAttribute("aria-hidden", String(!up));
+        dock.querySelector("a").tabIndex = up ? 0 : -1;
+      });
+      watch.forEach((el) => watcher.observe(el));
+    }
+
     // Copy the address. (navigator.clipboard can be refused; then select the address and copy it the old way.)
     document.querySelectorAll("button.copy").forEach((button) => {
       const label = button.querySelector("span");
@@ -364,190 +462,250 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
 </Base>
 
 <style>
-  .section { padding-block: clamp(56px, 7vw, 88px) 0; }
-  .section-title { font-size: clamp(1.75rem, 3vw, 2.25rem); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 10px; }
-  .section-lead { font-size: 1.0625rem; max-width: 60ch; margin: 0 0 32px; }
+  .section { padding-block: clamp(64px, 8vw, 104px) 0; }
+  .section-head { max-width: 680px; margin-bottom: 32px; }
+  .section-title { font-size: clamp(1.875rem, 3.2vw, 2.5rem); line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 12px; }
+  .section-lead { font-size: 1.0625rem; margin: 0; }
   .price { margin: 0; color: var(--ink); font-weight: 700; font-size: 1.0625rem; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
-  .fixes { margin: 6px 0 0; color: var(--muted); font-size: 0.9375rem; }
-  .desc { margin: 10px 0 0; }
-  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; padding-top: 14px; }
-  /* Each package's request is a quiet link; it becomes the coral button only on the package an email linked to. */
-  .request-link {
-    display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--ink); font-weight: 600;
-    text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.25em;
-    transition: background-color 160ms ease-out, color 160ms ease-out;
-  }
-  .request-link :global(.icon) { width: 1.1em; height: 1.1em; transition: transform 200ms var(--ease); }
-  .request-link:hover :global(.icon) { transform: translateX(3px); }
   .alt { color: var(--muted); font-size: 0.875rem; }
   .alt a { color: var(--muted); }
   .alt a:hover { color: var(--accent-text); }
-  .photo { overflow: hidden; border-radius: var(--r-md); background: var(--surface-strong); }
-  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease); }
-  :is(.listing, .extra):target { outline: 2px solid var(--ink); outline-offset: 12px; border-radius: var(--r-lg); }
-  :is(.listing, .extra):target .request-link { padding: 0 22px; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); text-decoration: none; }
-  :is(.listing, .extra):target .request-link:hover { background: var(--accent-press); }
 
-  /* Hero: the promise on the left, a working salon on the right. */
-  .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 64px); align-items: center; padding-block: clamp(28px, 4vw, 48px) 8px; }
-  .hero h1 { font-size: clamp(2.25rem, 3.3vw, 2.875rem); line-height: 1.08; letter-spacing: -0.03em; margin: 0; }
-  .sub { font-size: clamp(1.0625rem, 1.4vw, 1.25rem); line-height: 1.5; max-width: 40ch; margin: 20px 0 0; }
+  /* Hero: the promise on the left; on the right a shop owner at work while her notifications arrive by themselves. */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: center; padding-block: clamp(32px, 4vw, 56px) 0; }
+  .hero h1 { font-size: clamp(2.375rem, 4.2vw, 3.5rem); line-height: 1.04; letter-spacing: -0.035em; margin: 0; }
+  .sub { font-size: clamp(1.0625rem, 1.4vw, 1.25rem); line-height: 1.55; max-width: 42ch; margin: 22px 0 0; }
   .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 32px 0 0; }
-  .hero-photo { width: 100%; height: clamp(420px, calc(100dvh - var(--nav-h) - 110px), 660px); object-fit: cover; object-position: 50% 40%; border-radius: var(--r-lg); background: var(--surface-strong); }
+  .promises { list-style: none; display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 28px 0 0; padding: 0; color: var(--body); font-size: 0.9375rem; }
+  .promises li { display: inline-flex; align-items: center; gap: 8px; }
+  .promises :global(.icon) { width: 20px; height: 20px; color: var(--ink); }
+  .hero-media { position: relative; }
+  .hero-photo { width: 100%; height: clamp(440px, calc(100dvh - var(--nav-h) - 120px), 640px); object-fit: cover; object-position: 50% 40%; border-radius: var(--r-lg); background: var(--surface-strong); }
+  .feed-box { position: absolute; left: clamp(12px, 2vw, 20px); bottom: clamp(12px, 2vw, 20px); width: min(330px, calc(100% - 24px)); }
+  .feed-label { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 5px 12px; border-radius: var(--r-full); background: rgb(0 0 0 / 0.55); color: #fff; font-size: 0.75rem; font-weight: 600; backdrop-filter: blur(6px); }
+  .live { width: 7px; height: 7px; border-radius: 50%; background: #3ccf6e; box-shadow: 0 0 0 3px rgb(60 207 110 / 0.3); }
+  .feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .feed li { display: none; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 12px; max-height: 80px; padding: 10px 14px; border-radius: var(--r-md); background: var(--bg); box-shadow: var(--shadow-lift); overflow: hidden; }
+  .feed li.on { display: grid; }
+  .feed-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--r-full); background: var(--surface-strong); color: var(--ink); }
+  .feed-icon :global(.icon) { width: 19px; height: 19px; }
+  .feed-text { display: grid; min-width: 0; line-height: 1.3; }
+  .feed-text strong { color: var(--ink); font-size: 0.875rem; }
+  .feed-text span { color: var(--muted); font-size: 0.8125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .feed-time { align-self: start; color: var(--muted); font-size: 0.75rem; }
   @media (prefers-reduced-motion: no-preference) {
-    .hero-copy > * { animation: enter 700ms var(--ease) backwards; }
-    .hero-copy > :nth-child(2) { animation-delay: 80ms; }
-    .hero-copy > :nth-child(3) { animation-delay: 160ms; }
-    .hero-photo { animation: settle 900ms var(--ease) backwards; }
+    .hero-copy > * { animation: enter 800ms var(--ease) backwards; }
+    .hero-copy > :nth-child(2) { animation-delay: 90ms; }
+    .hero-copy > :nth-child(3) { animation-delay: 180ms; }
+    .hero-copy > :nth-child(4) { animation-delay: 270ms; }
+    .hero-photo { animation: settle 1000ms var(--ease) backwards; }
+    .feed-label { animation: enter 600ms var(--ease) 500ms backwards; }
+    .feed li.on { animation: feed-in 560ms var(--ease) backwards; }
+    .feed li.on:nth-child(1) { animation-delay: 650ms; }
+    .feed li.on:nth-child(2) { animation-delay: 800ms; }
+    .feed li.on:nth-child(3) { animation-delay: 950ms; }
+    .feed li.on.out { animation: feed-out 420ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+    .live { animation: pulse 2s ease-in-out infinite; }
   }
-  @keyframes enter { from { opacity: 0; transform: translateY(16px); } }
-  @keyframes settle { from { opacity: 0; transform: scale(1.03); } }
+  @keyframes enter { from { opacity: 0; transform: translateY(18px); } }
+  @keyframes settle { from { opacity: 0; transform: scale(1.04); } }
+  @keyframes feed-in { from { opacity: 0; transform: translateY(16px) scale(0.97); } }
+  @keyframes feed-out { to { opacity: 0; transform: translateY(-6px) scale(0.97); max-height: 0; padding-block: 0; margin-bottom: -8px; } }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgb(60 207 110 / 0); } }
 
-  /* The finder: Airbnb's search pill, here split by problem; the coral orb opens every package. */
-  .finder { padding-top: clamp(40px, 5vw, 56px); }
-  .finder h2 { font-size: 1.125rem; margin: 0 0 14px; text-align: center; }
-  .finder-bar {
-    display: flex; align-items: stretch; max-width: 920px; margin: 0 auto; padding: 8px; gap: 0;
-    border: 1px solid var(--hairline); border-radius: var(--r-full); background: var(--bg); box-shadow: var(--shadow);
+  /* Tools: the names drift past; hover holds them still. */
+  .tools { padding-top: clamp(48px, 6vw, 72px); }
+  .tools-label { margin: 0 0 18px; text-align: center; color: var(--muted); font-size: 0.9375rem; font-weight: 500; letter-spacing: 0; }
+  .marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+  .marquee-track { display: flex; gap: 10px; width: max-content; }
+  .marquee ul { display: flex; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .marquee li { padding: 9px 18px; border: 1px solid var(--hairline); border-radius: var(--r-full); color: var(--ink); font-size: 0.9375rem; font-weight: 600; white-space: nowrap; }
+  @media (prefers-reduced-motion: no-preference) {
+    .marquee-track { animation: drift 48s linear infinite; }
+    .marquee:hover .marquee-track { animation-play-state: paused; }
   }
-  .seg { position: relative; flex: 1 1 0; display: grid; gap: 2px; padding: 10px 22px; border-radius: var(--r-full); text-decoration: none; transition: background-color 160ms ease-out; }
-  .seg + .seg::before { content: ""; position: absolute; left: 0; top: 22%; bottom: 22%; border-left: 1px solid var(--hairline); }
-  .seg:hover { background: var(--surface-strong); }
-  .seg:hover::before, .seg:hover + .seg::before { opacity: 0; }
-  .seg-label { color: var(--ink); font-size: 0.8125rem; font-weight: 700; }
-  .seg-text { color: var(--muted); font-size: 0.875rem; }
-  .orb {
-    flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 56px; padding: 0 16px; margin-left: 4px;
-    border-radius: var(--r-full); background: var(--accent); color: var(--on-accent); text-decoration: none; font-weight: 600;
-    transition: background-color 160ms ease-out;
-  }
-  .orb:hover { background: var(--accent-press); color: var(--on-accent); }
-  .orb :global(.icon) { width: 1.35rem; height: 1.35rem; }
-  .orb-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  @media (max-width: 760px) {
-    .finder h2 { text-align: left; }
-    .finder-bar { display: grid; grid-template-columns: 1fr 1fr; border-radius: var(--r-lg); padding: 8px; }
-    .seg { border-radius: var(--r-md); padding: 12px 14px; }
-    .seg + .seg::before { display: none; }
-    .orb { grid-column: 1 / -1; min-height: 48px; margin: 6px 0 0; border-radius: var(--r-sm); }
-    .orb-text { position: static; width: auto; height: auto; clip-path: none; }
+  @keyframes drift { to { transform: translateX(calc(-50% - 5px)); } }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee { mask-image: none; padding-inline: 16px; }
+    .marquee-track, .marquee ul:first-child { flex-wrap: wrap; justify-content: center; width: auto; }
+    .marquee ul[aria-hidden] { display: none; }
   }
 
-  /* Packages: photo-first listings, three across then two wider. */
-  .listings { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 40px 24px; }
-  .listings > li { grid-column: span 2; }
-  .listings > li:nth-child(n + 4) { grid-column: span 3; }
-  /* (each card fills its grid cell, so the requests in a row line up at the bottom) */
-  .listings > li { display: flex; }
-  .listing { flex: 1; display: flex; flex-direction: column; }
-  .listing .actions { margin-top: auto; }
-  .listing .photo { aspect-ratio: 4 / 3; }
-  .listings > li:nth-child(n + 4) .photo { aspect-ratio: 16 / 9; }
-  .title-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-top: 16px; }
-  .title-row h3 { font-size: 1.1875rem; line-height: 1.3; margin: 0; }
+  /* Services: Airbnb's category strip filters one catalog of cards. */
+  .strip-wrap { position: sticky; top: var(--nav-h); z-index: 5; margin: 0 calc(-1 * clamp(16px, 4vw, 40px)); padding: 0 clamp(16px, 4vw, 40px); background: var(--bg); }
+  .strip { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--hairline-soft); }
+  .strip::-webkit-scrollbar { display: none; }
+  .strip button {
+    flex: none; display: grid; justify-items: center; gap: 6px; min-width: 92px; padding: 14px 14px 12px; margin-bottom: -1px; cursor: pointer;
+    background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font: 600 0.875rem/1.2 var(--font);
+    transition: color 160ms ease-out, border-color 160ms ease-out;
+  }
+  .strip button :global(.icon) { width: 26px; height: 26px; transition: transform 200ms var(--ease); }
+  .strip button:hover { color: var(--ink); border-bottom-color: var(--hairline); }
+  .strip button:hover :global(.icon) { transform: translateY(-2px); }
+  .strip button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+  .kind-note { margin: 0; padding: 14px 0; color: var(--muted); font-size: 0.9375rem; }
+  .group { padding-top: 32px; scroll-margin-top: calc(var(--nav-h) + 140px); }
+  .group-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin-bottom: 18px; }
+  .group-head h3 { font-size: 1.375rem; letter-spacing: -0.02em; margin: 0; }
+  .group-head p { margin: 0; color: var(--muted); }
+  .svcs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .svc {
+    display: flex; flex-direction: column; padding: 20px 20px 8px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg);
+    scroll-margin-top: calc(var(--nav-h) + 140px); transition: box-shadow 220ms ease-out, border-color 220ms ease-out, transform 220ms var(--ease);
+  }
   @media (hover: hover) and (pointer: fine) {
-    .listing:hover .photo :global(img) { transform: scale(1.03); }
+    .svc:hover { border-color: transparent; box-shadow: var(--shadow-lift); transform: translateY(-3px); }
+    .svc:hover .svc-icon { background: var(--ink); color: var(--bg); }
   }
-  @media (max-width: 1023px) {
-    .listings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .listings > li, .listings > li:nth-child(n + 4) { grid-column: auto; }
-    .listings > li:last-child { grid-column: 1 / -1; }
-    .listings > li:nth-child(n + 4) .photo { aspect-ratio: 4 / 3; }
-    .listings > li:last-child .photo { aspect-ratio: 16 / 9; }
+  .svc:target { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink), var(--shadow-lift); }
+  .svc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .svc-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-full); background: var(--surface-strong); color: var(--ink); transition: background-color 220ms ease-out, color 220ms ease-out; }
+  .svc-icon :global(.icon) { width: 22px; height: 22px; }
+  .tags { display: flex; gap: 6px; }
+  .tag { padding: 4px 10px; border-radius: var(--r-full); background: var(--surface); color: var(--ink); font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+  .start-tag { display: none; background: var(--ink); color: var(--bg); }
+  .svc.start .start-tag { display: inline-block; }
+  .svc.start .popular-tag { display: none; }
+  /* (name, then the price on its own line, like a listing card: long names never push the price around) */
+  .svc-title { display: grid; gap: 2px; margin-top: 16px; }
+  .svc-title .price { font-size: 1rem; }
+  .svc-title h4 { margin: 0; font-size: 1.0625rem; line-height: 1.3; letter-spacing: -0.01em; }
+  .svc-fixes { margin: 6px 0 0; min-height: 3em; color: var(--muted); font-size: 0.9375rem; line-height: 1.5; }
+  .svc-more { margin-top: 12px; border-top: 1px solid var(--hairline-soft); interpolate-size: allow-keywords; }
+  .svc-more summary {
+    display: flex; align-items: center; justify-content: space-between; min-height: 48px; cursor: pointer; list-style: none;
+    color: var(--ink); font-weight: 600; font-size: 0.9375rem;
   }
+  .svc-more summary::-webkit-details-marker { display: none; }
+  .svc-more summary :global(.icon) { width: 18px; height: 18px; transition: transform 260ms var(--ease); }
+  .svc-more[open] summary :global(.icon) { transform: rotate(180deg); }
+  .svc-more summary:hover { color: var(--accent-text); }
+  .svc-body p { margin: 0; font-size: 0.9375rem; }
+  .svc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; padding: 6px 0 8px; }
+  .request-link {
+    display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--ink); font-weight: 600;
+    text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.25em;
+  }
+  .request-link :global(.icon) { width: 1.1em; height: 1.1em; transition: transform 200ms var(--ease); }
+  .request-link:hover :global(.icon) { transform: translateX(3px); }
+  /* (the One Coral Rule: only the service an email linked to gets the coral button) */
+  .svc:target .request-link { padding: 0 20px; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); text-decoration: none; }
+  .svc:target .request-link:hover { background: var(--accent-press); }
+  @media (prefers-reduced-motion: no-preference) {
+    .svc-more::details-content { block-size: 0; overflow-y: clip; transition: block-size 320ms var(--ease), content-visibility 320ms allow-discrete; }
+    .svc-more[open]::details-content { block-size: auto; }
+  }
+  .something-else { display: flex; gap: 12px; align-items: flex-start; margin: 32px 0 0; padding: 18px 20px; border-radius: var(--r-md); background: var(--surface); }
+  .something-else :global(.icon) { width: 22px; height: 22px; margin-top: 1px; color: var(--ink); }
+  @media (min-width: 1100px) { .svcs.four { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 1023px) { .svcs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 639px) {
-    .listings { grid-template-columns: 1fr; }
-    .listings > li:last-child .photo { aspect-ratio: 4 / 3; }
+    .svcs { grid-template-columns: 1fr; gap: 12px; }
+    .svc-fixes { min-height: 0; }
+    .strip button { min-width: 78px; padding-inline: 10px; }
   }
-
-  /* Add-ons: amenity rows, each with its own icon, price and request. */
-  .addons { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 24px clamp(32px, 6vw, 80px); align-items: start; }
-  .addons-head { position: sticky; top: calc(var(--nav-h) + 24px); }
-  .extras { list-style: none; margin: 0; padding: 0; }
-  .extra { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 20px; padding: 24px 0; }
-  .extra + .extra { border-top: 1px solid var(--hairline); }
-  .extra:first-child { padding-top: 6px; }
-  .extra-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: var(--r-full); background: var(--surface-strong); color: var(--ink); }
-  .extra-icon :global(.icon) { width: 24px; height: 24px; }
-  .extra .title-row { margin-top: 0; }
-  .something-else { grid-column: 2; margin: 8px 0 0; padding: 18px 20px; border-radius: var(--r-md); background: var(--surface); }
-  @media (max-width: 860px) {
-    .addons { grid-template-columns: 1fr; }
-    .addons-head { position: static; }
-    .addons-head .section-lead { margin-bottom: 8px; }
-    .something-else { grid-column: auto; }
-    .extra { grid-template-columns: 40px minmax(0, 1fr); gap: 14px; }
-    .extra-icon { width: 40px; height: 40px; }
-  }
-
-  /* Kinds of business: six tiles, each with the services that fit it first. */
-  .kinds { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-  .kind { display: flex; flex-direction: column; padding: 22px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg); }
-  .kind-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-full); background: var(--surface-strong); color: var(--ink); }
-  .kind-icon :global(.icon) { width: 22px; height: 22px; }
-  .kind h3 { font-size: 1.125rem; margin: 14px 0 4px; }
-  .who { margin: 0; color: var(--muted); font-size: 0.9375rem; }
-  .kind-links { display: flex; flex-wrap: wrap; gap: 8px; margin: auto 0 0; padding-top: 16px; }
-  .kind-links a { padding: 6px 12px; border-radius: var(--r-full); background: var(--surface); color: var(--ink); font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: background-color 160ms ease-out; }
-  .kind-links a:hover { background: var(--surface-strong); }
-  @media (max-width: 1023px) { .kinds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 639px) { .kinds { grid-template-columns: 1fr; } }
+  :global(::view-transition-group(*)) { animation-duration: 320ms; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
 
   /* Monthly plans: three side by side, the most complete one set apart. */
   .plans { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
-  .plan { position: relative; display: flex; flex-direction: column; padding: 28px 24px 24px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg); scroll-margin-top: calc(var(--nav-h) + 24px); }
+  .plan {
+    position: relative; display: flex; flex-direction: column; padding: 28px 24px 24px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg);
+    transition: box-shadow 220ms ease-out, transform 220ms var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) { .plan:hover { box-shadow: var(--shadow-lift); transform: translateY(-3px); } }
   .plan.featured { border-color: var(--ink); box-shadow: var(--shadow-lift); }
   .plan:target { outline: 2px solid var(--ink); outline-offset: 6px; }
   .badge { position: absolute; top: -13px; left: 24px; margin: 0; padding: 3px 12px; border-radius: var(--r-full); background: var(--ink); color: var(--bg); font-size: 0.8125rem; font-weight: 700; }
   .plan h3 { font-size: 1.25rem; margin: 0 0 4px; }
+  .who { margin: 0; color: var(--muted); font-size: 0.9375rem; }
   .plan-price { margin: 16px 0 0; color: var(--body); font-variant-numeric: tabular-nums lining-nums; }
-  .plan-price strong { color: var(--ink); font-size: 2rem; letter-spacing: -0.02em; }
+  .plan-price strong { color: var(--ink); font-size: 2.25rem; letter-spacing: -0.03em; }
   .points { list-style: none; margin: 18px 0 24px; padding: 0; display: grid; gap: 10px; }
   .points li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; font-size: 0.9375rem; }
   .points :global(.icon) { width: 18px; height: 18px; margin-top: 3px; color: var(--accent-text); }
   .plan .button { margin-top: auto; }
   .plan-alt { margin: 10px 0 0; text-align: center; }
   .plan-note { margin: 24px 0 0; max-width: 70ch; color: var(--muted); font-size: 0.9375rem; }
-  @media (max-width: 900px) { .plans { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .plans { grid-template-columns: 1fr; gap: 28px; } }
 
-  /* How it works: four steps along one line, numbered like days on a calendar. */
-  .band { background: var(--surface); margin-top: clamp(56px, 7vw, 88px); padding-block: clamp(56px, 7vw, 88px); }
-  .steps { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 28px; }
+  /* How it works: four steps along one line that draws itself in as you scroll, each number filling as it's reached. */
+  .band { background: var(--surface); margin-top: clamp(64px, 8vw, 104px); padding-block: clamp(64px, 8vw, 104px); }
+  .steps { list-style: none; margin: 36px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 28px; }
   .steps li { position: relative; }
   .step-n {
     position: relative; z-index: 1; display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-full);
-    background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); font-weight: 700; font-variant-numeric: tabular-nums;
+    background: var(--ink); color: var(--bg); box-shadow: inset 0 0 0 1.5px var(--ink); font-weight: 700; font-variant-numeric: tabular-nums;
   }
-  .steps li:first-child .step-n { background: var(--ink); color: var(--bg); }
-  /* the dashed line from each step's number to the next */
-  .steps li:not(:last-child)::after { content: ""; position: absolute; top: 22px; left: 56px; right: -16px; border-top: 1.5px dashed var(--hairline); }
+  .steps li:not(:last-child)::after, .steps li:not(:last-child)::before { content: ""; position: absolute; top: 22px; left: 56px; right: -16px; }
+  .steps li:not(:last-child)::after { border-top: 1.5px dashed var(--hairline); }
+  .steps li:not(:last-child)::before { z-index: 1; border-top: 1.5px solid var(--ink); transform-origin: left; }
   .steps h3 { font-size: 1.125rem; margin: 18px 0 6px; }
   .steps p { margin: 0; font-size: 0.9375rem; }
-  .policy { margin: 40px 0 0; max-width: 62ch; color: var(--body); }
+  .policy { display: flex; gap: 10px; align-items: flex-start; margin: 40px 0 0; max-width: 64ch; color: var(--body); }
+  .policy :global(.icon) { width: 22px; height: 22px; margin-top: 1px; color: var(--ink); }
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .step-n { animation: fill-in linear both; animation-timeline: view(); animation-range: entry 90% cover 35%; }
+      .steps li:not(:last-child)::before { animation: draw linear both; animation-timeline: view(); animation-range: entry 100% cover 45%; }
+    }
+  }
+  @keyframes fill-in { from { background: var(--bg); color: var(--ink); } }
+  @keyframes draw { from { transform: scaleX(0); } }
   @media (max-width: 900px) {
     .steps { grid-template-columns: 1fr; gap: 0; }
     .steps li { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 18px; padding-bottom: 28px; }
-    .steps li:not(:last-child)::after { left: 21px; right: auto; top: 48px; bottom: 4px; border-top: 0; border-left: 1.5px dashed var(--hairline); }
+    .steps li:not(:last-child)::after, .steps li:not(:last-child)::before { left: 21px; right: auto; top: 48px; bottom: 4px; border-top: 0; }
+    .steps li:not(:last-child)::after { border-left: 1.5px dashed var(--hairline); }
+    .steps li:not(:last-child)::before { border-left: 1.5px solid var(--ink); transform-origin: top; }
     .step-n { grid-row: span 2; }
     .steps h3 { margin: 10px 0 4px; }
   }
+  @media (max-width: 900px) and (prefers-reduced-motion: no-preference) { @keyframes draw { from { transform: scaleY(0); } } }
 
-  /* Projects: the relay working on video, the four projects beside it. */
+  /* Projects: the relay working on video, the projects beside it. */
   .work { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px clamp(28px, 4vw, 56px); align-items: start; }
   .demo { margin: 0; }
   .demo video { width: 100%; border-radius: var(--r-md); background: #101010; box-shadow: var(--shadow); }
   .demo figcaption { margin-top: 12px; color: var(--muted); font-size: 0.875rem; }
   .projects { list-style: none; margin: 0; padding: 0; }
-  .projects li { padding: 18px 0; }
+  .projects li { padding: 20px 0; }
   .projects li + li { border-top: 1px solid var(--hairline); }
   .projects li:first-child { padding-top: 0; }
   .projects h3 { font-size: 1.0625rem; margin: 0 0 4px; }
   .projects p { margin: 0; font-size: 0.9375rem; }
-  .projects .links { display: flex; gap: 18px; margin-top: 8px; font-weight: 600; }
+  .projects .links { display: flex; gap: 18px; margin-top: 10px; font-weight: 600; }
+  .projects .links a { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; }
+  .projects .links :global(.icon) { width: 1em; height: 1em; }
   @media (max-width: 900px) { .work { grid-template-columns: 1fr; } }
 
+  /* Questions: one line each, the answer slides open. */
+  .faq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 24px clamp(32px, 6vw, 96px); align-items: start; }
+  .faq .section-head { position: sticky; top: calc(var(--nav-h) + 32px); }
+  .faq-list { border-top: 1px solid var(--hairline); }
+  .ask-more { display: flex; gap: 10px; align-items: flex-start; margin: 24px 0 0; padding: 16px 18px; border-radius: var(--r-md); background: var(--surface); font-size: 0.9375rem; }
+  .ask-more :global(.icon) { width: 20px; height: 20px; margin-top: 2px; color: var(--ink); }
+  .qa { border-bottom: 1px solid var(--hairline); interpolate-size: allow-keywords; }
+  .qa summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; padding: 14px 0; cursor: pointer; list-style: none; color: var(--ink); font-weight: 600; font-size: 1.0625rem; }
+  .qa summary::-webkit-details-marker { display: none; }
+  .qa summary:hover { color: var(--accent-text); }
+  .qa-sign { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--r-full); background: var(--surface-strong); color: var(--ink); transition: transform 280ms var(--ease), background-color 200ms ease-out; }
+  .qa-sign :global(.icon) { width: 16px; height: 16px; }
+  .qa[open] .qa-sign { transform: rotate(45deg); background: var(--ink); color: var(--bg); }
+  .qa p { margin: 0; padding: 0 48px 22px 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .qa::details-content { block-size: 0; overflow-y: clip; transition: block-size 320ms var(--ease), content-visibility 320ms allow-discrete; }
+    .qa[open]::details-content { block-size: auto; }
+  }
+  @media (max-width: 860px) {
+    .faq { grid-template-columns: 1fr; }
+    .faq .section-head { position: static; margin-bottom: 8px; }
+    .qa p { padding-right: 0; }
+  }
+
   /* Request: the details on the left, the ticket to send it on the right (Airbnb's reservation card). */
-  .request { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px clamp(32px, 6vw, 96px); align-items: start; padding-bottom: clamp(64px, 8vw, 104px); }
+  .request { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px clamp(32px, 6vw, 96px); align-items: start; padding-bottom: clamp(72px, 9vw, 112px); }
+  .request .section-lead { margin-bottom: 28px; }
   .facts { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--hairline); }
   .facts li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 14px; padding: 20px 0; border-bottom: 1px solid var(--hairline); }
   .facts :global(.icon) { width: 26px; height: 26px; color: var(--ink); margin-top: 1px; }
@@ -576,14 +734,27 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
     .ticket { position: static; }
   }
 
+  /* Phones: Airbnb's sticky reservation bar. */
+  .dock { display: none; }
+  @media (max-width: 760px) {
+    .dock {
+      position: fixed; inset: auto 0 0; z-index: 25; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--hairline);
+      transform: translateY(110%); transition: transform 320ms var(--ease); visibility: hidden;
+    }
+    .dock.up { transform: none; visibility: visible; }
+    .dock p { display: grid; margin: 0; font-size: 0.8125rem; color: var(--muted); line-height: 1.3; }
+    .dock strong { color: var(--ink); font-size: 0.9375rem; }
+    .dock .button { min-height: 44px; padding: 0 18px; }
+  }
+  @media (max-width: 760px) and (prefers-reduced-motion: reduce) { .dock { transition: none; } }
+
   @media (max-width: 899px) {
     .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 24px; }
-    .hero-photo { height: auto; aspect-ratio: 4 / 3.4; max-height: 480px; object-position: 50% 42%; }
+    .hero-photo { height: auto; aspect-ratio: 4 / 3.6; max-height: 520px; object-position: 50% 40%; }
   }
   @media (max-width: 420px) {
     .hero-actions .button { flex: 1 1 100%; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .photo :global(img) { transition: none; }
+    .feed li:nth-child(n) { padding: 8px 12px; }
   }
 </style>
