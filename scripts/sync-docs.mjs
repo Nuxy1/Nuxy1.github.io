@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const PROJECTS = [
+  { slug: "small-business-automations", dir: "../small-business-automations", repo: "small-business-automations" },
   { slug: "webhook-relay", dir: "../webhook-relay", repo: "shopify-webhook-relay" },
   { slug: "code-steps", dir: "../code-steps", repo: "automation-code-steps" },
   { slug: "csv-cleaner", dir: "../csv-cleaner", repo: "csv-contact-cleaner" },
