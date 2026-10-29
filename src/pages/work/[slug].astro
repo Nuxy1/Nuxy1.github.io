@@ -18,6 +18,11 @@ const others = examples.filter((x) => x.slug !== e.slug);
   <h1>{e.title}</h1>
   <p class="made-up"><Icon name="sealCheck" /><span><strong>{e.who}</strong> is made up for this example. The code is real and open: <a href="https://github.com/Nuxy1/small-business-automations">read it or run it</a>.</span></p>
 
+  <figure id="video" class="video">
+    <video src={`${base}/videos/${e.slug}.mp4`} poster={`${base}/videos/${e.slug}-poster.jpg`} width="1920" height="1080" controls playsinline preload="metadata" aria-describedby="video-note"></video>
+    <figcaption id="video-note">The week below, in under a minute: every line and every email is the code’s real output. No sound needed.</figcaption>
+  </figure>
+
   <h2>The problem</h2>
   <p class="lead">{e.problem}</p>
 
@@ -27,7 +32,7 @@ const others = examples.filter((x) => x.slug !== e.slug);
   <h2>The messy parts it handles</h2>
   <ul class="ticks">{e.messy.map((m) => <li><Icon name="check" />{m}</li>)}</ul>
 
-  <h2>A week of it, as it ran</h2>
+  <h2>The week, line by line</h2>
   <figure class="term">
     <p class="term-who">{e.who}</p>
     <ol class="term-lines">
@@ -55,6 +60,9 @@ const others = examples.filter((x) => x.slug !== e.slug);
   .crumbs a { color: var(--muted); }
   .made-up { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 8px; padding: 12px 16px; border-radius: var(--r-md); background: var(--surface); font-size: 0.9375rem; }
   .made-up :global(.icon) { width: 20px; height: 20px; margin-top: 2px; color: var(--ink); }
+  .video { margin: 20px 0 8px; }
+  .video video { width: 100%; height: auto; border-radius: var(--r-md); background: #0f1115; box-shadow: var(--shadow-lift); }
+  .video figcaption { margin-top: 10px; color: var(--muted); font-size: 0.875rem; }
   .ticks { list-style: none; padding: 0 !important; display: grid; gap: 10px; }
   .ticks li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; margin: 0 !important; }
   .ticks :global(.icon) { width: 18px; height: 18px; margin-top: 4px; color: var(--accent-text); }
