@@ -8,7 +8,6 @@ import followUp from "../assets/photos/follow-up.jpg";
 import reviews from "../assets/photos/reviews.jpg";
 import newWebsite from "../assets/photos/new-website.jpg";
 import siteFixes from "../assets/photos/site-fixes.jpg";
-import care from "../assets/photos/care.jpg";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // The request form is an email: no server to run, and the answer lands in the inbox the work runs from.
@@ -17,7 +16,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const inbox = "nuxy@nuxyautomation.com";
 type Item = { name: string; price: string };
 const subject = (p?: Item) => (p ? `Setup request: ${p.name}` : "Setup request");
-const body = (p?: Item) => `${p ? `Package: ${p.name} (${p.price})\n` : ""}Business name:\nWebsite:\nWhat you use for booking now (or "phone only"):\nWhat you'd like fixed or set up:\nAnything else:\n`;
+const body = (p?: Item) => `${p ? `Service: ${p.name} (${p.price})\n` : ""}Business name:\nWebsite:\nWhat kind of business:\nTools you use now (booking, ordering, accounting, email, CRM...):\nWhat you'd like fixed or set up:\nAnything else:\n`;
 const query = (fields: Record<string, string>) => new URLSearchParams(fields).toString().replace(/\+/g, "%20");
 const ask = (p?: Item) => `mailto:${inbox}?` + query({ subject: subject(p), body: body(p) });
 const gmail = (p?: Item) => "https://mail.google.com/mail/?" + query({ view: "cm", fs: "1", to: inbox, su: subject(p), body: body(p) });
@@ -25,36 +24,73 @@ const outlook = (p?: Item) => "https://outlook.live.com/mail/0/deeplink/compose?
 
 // (ids are linked from outreach emails: keep them stable)
 const packages = [
-  { id: "booking", photo: booking, alt: "A hand holding a phone with a booking page at a spa’s front desk.", name: "Online booking & reminders", price: "$400", fixes: "calls you miss while you’re with a client", text: "A Book now button on your website, Google profile and Instagram, connected to the booking tool you already use (or a free one), plus automatic text and email reminders that cut no-shows." },
-  { id: "follow-up", photo: followUp, alt: "A nail technician at work while a new message lights up her phone.", name: "Lead follow-up", price: "$450", fixes: "messages that wait hours for an answer", text: "Every website form, Facebook or Instagram inquiry gets an instant reply, 2 friendly follow-ups and an alert to you, so nobody waits until you’re free." },
-  { id: "reviews", photo: reviews, alt: "A barbershop client smiling at his new haircut in the mirror.", name: "Review requests", price: "$250", fixes: "happy clients who never leave a review", text: "After each visit, every client gets a short thank-you with a link to leave you a Google review. More reviews, no awkward asking." },
-  { id: "new-website", photo: newWebsite, alt: "A dance studio owner sitting on the studio floor with a laptop.", name: "New website", price: "$600", fixes: "no website, or one too old to fix", text: "Up to 4 pages, built for phones: your services and prices, hours, map and a Book now button, on your own domain. Built in your own Squarespace or Wix account, so you can edit it and it stays yours." },
-  { id: "site-fixes", photo: siteFixes, alt: "A phone showing a website in a tattoo studio, the artist setting up behind.", name: "Website quick fixes", price: "from $150", fixes: "a site that looks broken on a phone", text: "Secure https, a phone-friendly page setup, a booking button and a contact form that works: on the site you already have." },
-  { id: "care", photo: care, alt: "A groomer drying a fluffy dog on a grooming table.", name: "Care plan", price: "$100/month", fixes: "a site or automation that quietly stops working", text: "Your website and automations watched 24/7, checked every 5 minutes. Anything that breaks fixed within one business day, and small changes when you ask. Cancel any time." },
+  { id: "booking", photo: booking, alt: "A hand holding a phone with a booking page at a spa’s front desk.", name: "Online booking & reminders", price: "$400", fixes: "calls you miss while you’re with a customer", text: "A Book now button on your website, Google profile and Instagram, connected to the booking tool you already use (or a free one), plus automatic text and email reminders that cut no-shows." },
+  { id: "follow-up", photo: followUp, alt: "A nail technician at work while a new message lights up her phone.", name: "Lead follow-up", price: "$450", fixes: "messages that wait hours for an answer", text: "Every website form, email, Facebook or Instagram inquiry gets an instant reply, 2 friendly follow-ups and an alert to you, so nobody waits until you’re free. A contact form added if your site has none." },
+  { id: "reviews", photo: reviews, alt: "A barbershop client smiling at his new haircut in the mirror.", name: "Review requests", price: "$250", fixes: "happy customers who never leave a review", text: "After each visit, job or order, every customer gets a short thank-you with a link to leave you a Google review. More reviews, no awkward asking." },
+  { id: "new-website", photo: newWebsite, alt: "A dance studio owner sitting on the studio floor with a laptop.", name: "New website", price: "$900", fixes: "no website, or one too old to fix", text: "Up to 4 pages, built for phones: your services and prices, hours, map and a Book, Quote or Order button, on your own domain. Built in your own Squarespace or Wix account, so you can edit it and it stays yours." },
+  { id: "site-fixes", photo: siteFixes, alt: "A phone showing a website in a tattoo studio, the artist setting up behind.", name: "Website quick fixes", price: "from $150", fixes: "a site that looks broken on a phone", text: "Secure https, a phone-friendly page setup, a booking or quote button and a contact form that works: on the site you already have." },
 ];
-const oneOff = packages.filter((p) => p.id !== "care");
-const carePlan = packages.find((p) => p.id === "care")!;
+const oneOff = packages;
+
+// Every other service, in three groups (ids are linked from outreach emails: keep them stable)
+type Service = Item & { id: string; icon: IconName; fixes: string; text: string };
+const groups: { id: string; title: string; lead: string; items: Service[] }[] = [
+  { id: "customers", title: "Win and keep customers", lead: "For the inquiries, orders and regulars that slip away while you’re busy.", items: [
+    { id: "quotes", icon: "clipboardText", name: "Quote requests", price: "$450", fixes: "calls you can’t take on a job", text: "A Get a quote form on your site (photos welcome), an instant reply to the customer, a reminder to you to send the estimate, and a follow-up if they go quiet." },
+    { id: "email-list", icon: "envelopeOpen", name: "Email list & welcome emails", price: "$300", fixes: "customers who never hear from you again", text: "A sign-up form on your site and at checkout, 3 welcome emails in your voice, and your existing customers imported (only people who agreed), in Mailchimp, Brevo or Klaviyo." },
+    { id: "ordering", icon: "forkKnife", name: "Online ordering & reservations", price: "$400", fixes: "a phone ringing at your busiest hour", text: "Online ordering and table reservations switched on in the system you already use (Toast, Square, Clover) or a free one, with Order and Reserve buttons on your site and Google profile." },
+    { id: "ai-replies", icon: "robot", name: "AI inquiry assistant", price: "$750", fixes: "an inbox that eats your evenings", text: "New emails and form messages sorted by AI, with a drafted answer waiting in your inbox for you to approve and an alert for anything urgent. Nothing is sent without you." },
+  ] },
+  { id: "admin", title: "Less admin", lead: "For the copy-and-paste hours between your tools.", items: [
+    { id: "invoices", icon: "receipt", name: "Invoices & payment reminders", price: "$350", fixes: "invoices sent late and paid later", text: "Invoices sent automatically when a job is done or an order ships, from QuickBooks, Stripe, Square or Wave, friendly reminders when one is overdue, and an alert when it’s paid." },
+    { id: "store", icon: "storefront", name: "Online store automations", price: "$500", fixes: "orders typed into spreadsheets by hand", text: "For Shopify, WooCommerce or Square stores: every order into your spreadsheet or accounting, low-stock alerts, abandoned-cart and thank-you emails." },
+    { id: "reports", icon: "chartLineUp", name: "Weekly report", price: "$300", fixes: "numbers scattered across five apps", text: "One email or live dashboard every Monday with the numbers you care about: sales, leads, bookings, reviews, pulled from the tools you already use." },
+    { id: "data", icon: "broom", name: "Data clean-up & import", price: "from $200", fixes: "messy, duplicated customer lists", text: "Customer and contact lists cleaned, duplicates merged and moved into your new CRM or email tool, with every change counted." },
+    { id: "integrations", icon: "plugsConnected", name: "Custom integrations", price: "from $750", fixes: "apps that don’t talk to each other", text: "Your CRM, email marketing, inventory sheet, accounting and website connected with custom connectors and webhooks: every record checked, never written twice, retried when a service is down, and an alert if anything fails." },
+  ] },
+  { id: "web", title: "Websites and Google", lead: "For being easy to find and easy to buy from.", items: [
+    { id: "online-shop", icon: "shoppingBag", name: "Online shop", price: "$1,200", fixes: "customers who can’t buy unless they come in", text: "A store on Square Online or Shopify in your own account: up to 25 products from photos you send, payments, pickup or shipping, and a Shop button on your site." },
+    { id: "google-profile", icon: "mapTrifold", name: "Google profile setup", price: "$250", fixes: "a business Google barely shows", text: "Your Google Business Profile claimed or created, with categories, hours, services, your photos and your website and booking links. I walk you through Google’s own verification." },
+  ] },
+];
+
+// The monthly plans (billed monthly by Stripe, cancel any time)
+const plans = [
+  { id: "care", name: "Care plan", price: "$100/month", amount: "$100", who: "A website and a few simple automations", points: ["Website checked every 5 minutes, 24/7", "Anything that breaks fixed within one business day", "Domain and security renewals watched", "Small changes when you ask"] },
+  { id: "automation-care", name: "Automation care", price: "$500/month", amount: "$500", who: "Businesses running several automations", points: ["Up to 10 automations or integrations monitored", "Failed runs alert me, fixed the same business day", "A monthly report of what ran and what was fixed", "Up to 3 hours of small changes a month"] },
+  { id: "automation-partner", name: "Automation partner", price: "$1,000/month", amount: "$1,000", who: "Your automation team, on call", points: ["Everything in Automation care", "One new automation or integration every month", "Fixes started within 4 business hours", "A quarterly look at your tools for more time to save"] },
+];
+
+// Who it's for: each kind of business and the services that fit it first
+const kinds: { icon: IconName; name: string; who: string; links: [string, string][] }[] = [
+  { icon: "calendarCheck", name: "Appointments", who: "Salons, spas, studios, clinics, groomers", links: [["Online booking", "#booking"], ["Deposits", "#deposits"], ["Review requests", "#reviews"]] },
+  { icon: "hammer", name: "Trades & home services", who: "Plumbers, electricians, cleaners, contractors, auto shops", links: [["Quote requests", "#quotes"], ["Invoices & reminders", "#invoices"], ["Missed-call text-back", "#missed-calls"]] },
+  { icon: "forkKnife", name: "Restaurants & cafés", who: "Restaurants, cafés, bakeries, breweries", links: [["Online ordering", "#ordering"], ["Email list", "#email-list"], ["Gift cards", "#gift-cards"]] },
+  { icon: "storefront", name: "Shops & online stores", who: "Boutiques, gift shops, garden centers, online stores", links: [["Online shop", "#online-shop"], ["Store automations", "#store"], ["Email list", "#email-list"]] },
+  { icon: "briefcase", name: "Offices & professional services", who: "Law, accounting, real estate, insurance, consultants", links: [["Lead follow-up", "#follow-up"], ["AI inquiry assistant", "#ai-replies"], ["Invoices & reminders", "#invoices"]] },
+  { icon: "plugsConnected", name: "Any business", who: "Tools that don’t talk to each other", links: [["Custom integrations", "#integrations"], ["Weekly report", "#reports"], ["Data clean-up", "#data"]] },
+];
 
 // (ids are linked from outreach emails too)
 const addons: (Item & { id: string; icon: IconName; fixes: string; text: string })[] = [
-  { id: "missed-calls", icon: "phoneX", name: "Missed-call text-back", price: "$250", fixes: "callers who hang up and book elsewhere", text: "When you can’t pick up, the caller gets a text right away with your booking link, set up in the booking or phone tool you already use." },
+  { id: "missed-calls", icon: "phoneX", name: "Missed-call text-back", price: "$250", fixes: "callers who hang up and call someone else", text: "When you can’t pick up, the caller gets a text right away with your booking or quote link, set up in the booking or phone tool you already use." },
   { id: "deposits", icon: "creditCard", name: "Deposits & no-show protection", price: "$150", fixes: "empty chairs from no-shows", text: "A card on file or a small deposit when clients book, plus a clear cancellation policy, switched on in your booking tool." },
-  { id: "gift-cards", icon: "gift", name: "Online gift cards", price: "$150", fixes: "gift shoppers with nowhere to buy", text: "A Buy a gift card button on your website, Google profile and Instagram, using your booking tool’s own gift cards." },
+  { id: "gift-cards", icon: "gift", name: "Online gift cards", price: "$150", fixes: "gift shoppers with nowhere to buy", text: "A Buy a gift card button on your website, Google profile and Instagram, using your booking or point-of-sale tool’s own gift cards." },
 ];
 
 // The finder under the hero: start from the problem, land on the package that fixes it.
 const problems = [
-  { label: "Missed calls", text: "Clients book online", href: "#booking" },
-  { label: "Slow replies", text: "Instant answers", href: "#follow-up" },
-  { label: "Few reviews", text: "Ask every client", href: "#reviews" },
-  { label: "Old website", text: "Fix it or start fresh", href: "#site-fixes" },
+  { label: "Missed inquiries", text: "Instant replies", href: "#follow-up" },
+  { label: "Busy phone", text: "Book, quote, order online", href: "#kinds" },
+  { label: "Admin hours", text: "Invoices that send themselves", href: "#invoices" },
+  { label: "Apps that don’t talk", text: "Connect them", href: "#integrations" },
 ];
 
 const steps = [
-  ["Tell me in writing", "Send the request below: your business, your website, what you’d like fixed. No call to schedule."],
+  ["Tell me in writing", "Send the request below: your business, your website, the tools you use and what you’d like fixed. No call to schedule."],
   ["Get the plan and price", "Within one business day: a written plan and a fixed price. No surprises later."],
   ["I build it in your accounts", "50% to start, paid by a secure Stripe invoice. I work as an invited user, never with your passwords, and test with real examples."],
-  ["Handover", "A short video guide showing it working, then the other 50% by the same kind of invoice. Add the care plan if you want it looked after."],
+  ["Handover", "A short video guide showing it working, then the other 50% by the same kind of invoice. Add a monthly plan if you want it looked after."],
 ];
 
 // What search engines read about the business (schema.org): only what the page itself says.
@@ -73,20 +109,20 @@ const business = {
   logo: `${site}logo.png`,
   image: `${site}og.jpg`,
   email: inbox,
-  description: "Online booking, instant replies, reminders and review requests for salons, spas, studios and groomers. Fixed prices, no calls needed.",
+  description: "Automations, integrations and websites for small businesses of every kind: instant replies, online booking, quotes and ordering, invoices, store automations, reports and custom connectors. Fixed prices, no calls needed.",
   address: { "@type": "PostalAddress", addressLocality: "Faribault", addressRegion: "MN", addressCountry: "US" },
   areaServed: ["Minneapolis", "Saint Paul", "Faribault", "Northfield", "Owatonna"].map((name) => ({ "@type": "City", name })),
-  priceRange: "$100-$600",
+  priceRange: "$150-$1200",
   sameAs: ["https://github.com/Nuxy1"],
   // (each package is an offer, so a search result can show what it costs)
   hasOfferCatalog: {
     "@type": "OfferCatalog",
-    name: "Packages",
-    itemListElement: [...packages, ...addons].map((p) => ({
+    name: "Services",
+    itemListElement: [...packages, ...groups.flatMap((g) => g.items), ...addons, ...plans].map((p) => ({
       "@type": "Offer",
       url: `${site}#${p.id}`,
       priceSpecification: priceOf(p.price),
-      itemOffered: { "@type": "Service", name: p.name, description: p.text },
+      itemOffered: { "@type": "Service", name: p.name, description: "text" in p ? p.text : `${p.who}: ${p.points.join("; ")}.` },
     })),
   },
 };
@@ -99,33 +135,48 @@ const work = [
 ];
 const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
 ---
-<Base title="Nuxy Automation · Booking and follow-up for small businesses" wide>
+<Base title="Nuxy Automation · Automations and integrations for small businesses" description="Your tools connected and your busywork automated: instant replies, online booking, quotes and ordering, invoices, store automations, reports and custom integrations for any small business. Fixed prices, no calls. Faribault, Minnesota." wide>
   <script type="application/ld+json" set:html={JSON.stringify(business)} />
 
   <section class="wrap hero" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <h1 id="hero-title">Never lose a booking while you’re with a client.</h1>
-      <p class="sub">Online booking, instant replies, reminders and review requests for salons, spas, studios and groomers. Fixed prices, no calls.</p>
+      <h1 id="hero-title">Your tools connected. Your busywork automated.</h1>
+      <p class="sub">Instant replies to every inquiry, online booking and ordering, invoices that send themselves, orders that land in your spreadsheet, apps that finally talk. For any small business. Fixed prices, no calls.</p>
       <p class="hero-actions">
         <a class="button" href="#request">Request a setup</a>
         <a class="button secondary" href={`${base}/demo/`}>See it working</a>
       </p>
     </div>
-    <Picture class="hero-photo" src={hero} formats={["avif", "webp"]} widths={[640, 960, 1400]} sizes="(min-width: 900px) 46vw, 100vw" alt="A hairdresser laughing with her client mid-haircut, a phone lying on the counter." loading="eager" fetchpriority="high" />
+    <Picture class="hero-photo" src={hero} formats={["avif", "webp"]} widths={[640, 960, 1400]} sizes="(min-width: 900px) 46vw, 100vw" alt="A shop owner in a work apron smiling at her laptop behind a wooden counter stacked with orders." loading="eager" fetchpriority="high" />
   </section>
 
   <section class="wrap finder" aria-labelledby="finder-title">
-    <h2 id="finder-title">What’s costing you bookings?</h2>
+    <h2 id="finder-title">What’s costing you customers or time?</h2>
     <nav class="finder-bar" aria-labelledby="finder-title">
       {problems.map((p) => (
         <a class="seg" href={p.href}><span class="seg-label">{p.label}</span><span class="seg-text">{p.text}</span></a>
       ))}
-      <a class="orb" href="#packages"><Icon name="magnifyingGlass" /><span class="orb-text">See all packages</span></a>
+      <a class="orb" href="#services"><Icon name="magnifyingGlass" /><span class="orb-text">See all services</span></a>
     </nav>
   </section>
 
-  <section id="packages" class="wrap section" aria-labelledby="packages-title">
-    <h2 id="packages-title" class="section-title">Packages</h2>
+  <section id="kinds" class="wrap section" aria-labelledby="kinds-title">
+    <h2 id="kinds-title" class="section-title">Built for your kind of business</h2>
+    <p class="section-lead">Start from what you do. Each kind of business has the services that usually save it the most, and everything else on this page works for it too.</p>
+    <ul class="kinds">
+      {kinds.map((k) => (
+        <li class="kind reveal">
+          <span class="kind-icon"><Icon name={k.icon} /></span>
+          <h3>{k.name}</h3>
+          <p class="who">{k.who}</p>
+          <p class="kind-links">{k.links.map(([label, href]) => <a href={href}>{label}</a>)}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section id="services" class="wrap section" aria-labelledby="packages-title">
+    <h2 id="packages-title" class="section-title">Most requested</h2>
     <p class="section-lead">Fixed prices, agreed in writing before I start. Everything is built in your own accounts, so it stays yours. <a href={`${base}/demo/`}>See them working on a demo salon</a>.</p>
     <ul class="listings">
       {oneOff.map((p, i) => (
@@ -147,25 +198,41 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
       ))}
     </ul>
 
-    <article class="care reveal" id={carePlan.id} aria-labelledby="care-name">
-      <div class="photo"><Picture src={carePlan.photo} formats={["avif", "webp"]} widths={[560, 900, 1260]} sizes="(min-width: 900px) 600px, 100vw" alt={carePlan.alt} loading="lazy" /></div>
-      <div class="care-body">
-        <h3 id="care-name">{carePlan.name}</h3>
-        <p class="care-price"><strong>$100</strong> a month</p>
-        <p class="fixes">Fixes: {carePlan.fixes}</p>
-        <p class="desc">{carePlan.text}</p>
-        <p class="actions">
-          <a class="request-link" href={ask(carePlan)} aria-label={`Request a setup: ${carePlan.name}`}>Request a setup<Icon name="arrowRight" /></a>
-          <span class="alt">or in <a href={gmail(carePlan)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(carePlan)} target="_blank" rel="noopener">Outlook</a></span>
-        </p>
-      </div>
-    </article>
   </section>
+
+  {groups.map((g) => (
+    <section id={g.id} class="wrap section addons" aria-labelledby={`${g.id}-title`}>
+      <div class="addons-head">
+        <h2 id={`${g.id}-title`} class="section-title">{g.title}</h2>
+        <p class="section-lead">{g.lead}</p>
+      </div>
+      <ul class="extras">
+        {g.items.map((a) => (
+          <li class="extra reveal" id={a.id}>
+            <span class="extra-icon"><Icon name={a.icon} /></span>
+            <div class="extra-body">
+              <div class="title-row">
+                <h3>{a.name}</h3>
+                <p class="price">{a.price}</p>
+              </div>
+              <p class="fixes">Fixes: {a.fixes}</p>
+              <p class="desc">{a.text}</p>
+              <p class="actions">
+                <a class="request-link" href={ask(a)} aria-label={`Request a setup: ${a.name}`}>Request a setup<Icon name="arrowRight" /></a>
+                <span class="alt">or in <a href={gmail(a)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(a)} target="_blank" rel="noopener">Outlook</a></span>
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+
 
   <section id="add-ons" class="wrap section addons" aria-labelledby="add-ons-title">
     <div class="addons-head">
       <h2 id="add-ons-title" class="section-title">Add-ons</h2>
-      <p class="section-lead">Small extras, on their own or with any package.</p>
+      <p class="section-lead">Small extras, on their own or with any service.</p>
     </div>
     <ul class="extras">
       {addons.map((a) => (
@@ -186,7 +253,26 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
         </li>
       ))}
     </ul>
-    <p class="something-else">Something else? Custom integrations, data clean-up and bots are quoted in writing after one question.</p>
+    <p class="something-else">Something else? Bots, scrapers of public data and custom dashboards are quoted in writing after one question.</p>
+  </section>
+
+  <section id="plans" class="wrap section" aria-labelledby="plans-title">
+    <h2 id="plans-title" class="section-title">Monthly plans</h2>
+    <p class="section-lead">Keep everything watched and growing after handover. Billed monthly by Stripe; cancel any time and it ends with the month already paid.</p>
+    <ul class="plans">
+      {plans.map((p, i) => (
+        <li class={`plan reveal${i === plans.length - 1 ? " featured" : ""}`} id={p.id}>
+          {i === plans.length - 1 && <p class="badge">Most complete</p>}
+          <h3>{p.name}</h3>
+          <p class="who">{p.who}</p>
+          <p class="plan-price"><strong>{p.amount}</strong> a month</p>
+          <ul class="points">{p.points.map((point) => <li><Icon name="check" />{point}</li>)}</ul>
+          <a class={`button wide${i === plans.length - 1 ? "" : " secondary"}`} href={ask(p)}>Start {p.name}</a>
+          <p class="alt plan-alt">or in <a href={gmail(p)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(p)} target="_blank" rel="noopener">Outlook</a></p>
+        </li>
+      ))}
+    </ul>
+    <p class="plan-note">Monitoring runs 24/7: websites are checked every 5 minutes, and automations alert me when a run fails. Fixes come within each plan’s stated time, not instantly.</p>
   </section>
 
   <section id="how" class="band" aria-labelledby="how-title">
@@ -228,10 +314,10 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
   <section id="request" class="wrap section request" aria-labelledby="request-title">
     <div class="request-copy">
       <h2 id="request-title" class="section-title">Request a setup</h2>
-      <p class="section-lead">Email me your business name, website, what you use for booking now and what you’d like fixed. You’ll have a written plan and a fixed price within one business day.</p>
+      <p class="section-lead">Email me your business name, website, the tools you use now and what you’d like fixed. You’ll have a written plan and a fixed price within one business day.</p>
       <ul class="facts">
         <li><Icon name="envelopeSimple" /><p><strong>Everything in writing.</strong> No calls needed: questions, plans and updates come by email.</p></li>
-        <li><Icon name="creditCard" /><p><strong>Paying:</strong> a secure Stripe invoice by email, by card, Apple Pay, Google Pay or bank transfer. 50% to start, 50% at handover; the care plan is billed monthly.</p></li>
+        <li><Icon name="creditCard" /><p><strong>Paying:</strong> a secure Stripe invoice by email, by card, Apple Pay, Google Pay or bank transfer. 50% to start, 50% at handover; monthly plans are billed monthly.</p></li>
         <li><Icon name="mapPin" /><p><strong>Based in Faribault, Minnesota.</strong> Twin Cities and southern Minnesota businesses first, and anywhere remotely.</p></li>
       </ul>
     </div>
@@ -240,7 +326,7 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
       <ul class="include">
         <li><Icon name="check" />Your business name</li>
         <li><Icon name="check" />Your website, if you have one</li>
-        <li><Icon name="check" />What you use for booking now</li>
+        <li><Icon name="check" />The tools you use now</li>
         <li><Icon name="check" />What you’d like fixed</li>
       </ul>
       <a class="button wide" href={ask()}>Request a setup</a>
@@ -298,9 +384,9 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
   .alt a:hover { color: var(--accent-text); }
   .photo { overflow: hidden; border-radius: var(--r-md); background: var(--surface-strong); }
   .photo :global(img) { width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease); }
-  :is(.listing, .care, .extra):target { outline: 2px solid var(--ink); outline-offset: 12px; border-radius: var(--r-lg); }
-  :is(.listing, .care, .extra):target .request-link { padding: 0 22px; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); text-decoration: none; }
-  :is(.listing, .care, .extra):target .request-link:hover { background: var(--accent-press); }
+  :is(.listing, .extra):target { outline: 2px solid var(--ink); outline-offset: 12px; border-radius: var(--r-lg); }
+  :is(.listing, .extra):target .request-link { padding: 0 22px; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); text-decoration: none; }
+  :is(.listing, .extra):target .request-link:hover { background: var(--accent-press); }
 
   /* Hero: the promise on the left, a working salon on the right. */
   .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 64px); align-items: center; padding-block: clamp(28px, 4vw, 48px) 8px; }
@@ -360,7 +446,7 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
   .title-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-top: 16px; }
   .title-row h3 { font-size: 1.1875rem; line-height: 1.3; margin: 0; }
   @media (hover: hover) and (pointer: fine) {
-    .listing:hover .photo :global(img), .care:hover .photo :global(img) { transform: scale(1.03); }
+    .listing:hover .photo :global(img) { transform: scale(1.03); }
   }
   @media (max-width: 1023px) {
     .listings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -372,18 +458,6 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
   @media (max-width: 639px) {
     .listings { grid-template-columns: 1fr; }
     .listings > li:last-child .photo { aspect-ratio: 4 / 3; }
-  }
-
-  /* The care plan: the monthly one, set apart on its own wide card. */
-  .care { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 48px); align-items: center; margin-top: 56px; padding: 16px; border: 1px solid var(--hairline); border-radius: var(--r-lg); }
-  .care .photo { aspect-ratio: 3 / 2; }
-  .care-body { padding: 8px 16px 8px 0; }
-  .care h3 { font-size: 1.5rem; line-height: 1.2; margin: 0; }
-  .care-price { margin: 10px 0 0; color: var(--body); font-variant-numeric: tabular-nums lining-nums; }
-  .care-price strong { color: var(--ink); font-size: 1.75rem; letter-spacing: -0.02em; }
-  @media (max-width: 860px) {
-    .care { grid-template-columns: 1fr; padding: 12px; }
-    .care-body { padding: 0 8px 12px; }
   }
 
   /* Add-ons: amenity rows, each with its own icon, price and request. */
@@ -405,6 +479,36 @@ const photoSizes = "(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw";
     .extra { grid-template-columns: 40px minmax(0, 1fr); gap: 14px; }
     .extra-icon { width: 40px; height: 40px; }
   }
+
+  /* Kinds of business: six tiles, each with the services that fit it first. */
+  .kinds { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .kind { display: flex; flex-direction: column; padding: 22px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg); }
+  .kind-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-full); background: var(--surface-strong); color: var(--ink); }
+  .kind-icon :global(.icon) { width: 22px; height: 22px; }
+  .kind h3 { font-size: 1.125rem; margin: 14px 0 4px; }
+  .who { margin: 0; color: var(--muted); font-size: 0.9375rem; }
+  .kind-links { display: flex; flex-wrap: wrap; gap: 8px; margin: auto 0 0; padding-top: 16px; }
+  .kind-links a { padding: 6px 12px; border-radius: var(--r-full); background: var(--surface); color: var(--ink); font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: background-color 160ms ease-out; }
+  .kind-links a:hover { background: var(--surface-strong); }
+  @media (max-width: 1023px) { .kinds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 639px) { .kinds { grid-template-columns: 1fr; } }
+
+  /* Monthly plans: three side by side, the most complete one set apart. */
+  .plans { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+  .plan { position: relative; display: flex; flex-direction: column; padding: 28px 24px 24px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg); scroll-margin-top: calc(var(--nav-h) + 24px); }
+  .plan.featured { border-color: var(--ink); box-shadow: var(--shadow-lift); }
+  .plan:target { outline: 2px solid var(--ink); outline-offset: 6px; }
+  .badge { position: absolute; top: -13px; left: 24px; margin: 0; padding: 3px 12px; border-radius: var(--r-full); background: var(--ink); color: var(--bg); font-size: 0.8125rem; font-weight: 700; }
+  .plan h3 { font-size: 1.25rem; margin: 0 0 4px; }
+  .plan-price { margin: 16px 0 0; color: var(--body); font-variant-numeric: tabular-nums lining-nums; }
+  .plan-price strong { color: var(--ink); font-size: 2rem; letter-spacing: -0.02em; }
+  .points { list-style: none; margin: 18px 0 24px; padding: 0; display: grid; gap: 10px; }
+  .points li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; font-size: 0.9375rem; }
+  .points :global(.icon) { width: 18px; height: 18px; margin-top: 3px; color: var(--accent-text); }
+  .plan .button { margin-top: auto; }
+  .plan-alt { margin: 10px 0 0; text-align: center; }
+  .plan-note { margin: 24px 0 0; max-width: 70ch; color: var(--muted); font-size: 0.9375rem; }
+  @media (max-width: 900px) { .plans { grid-template-columns: 1fr; } }
 
   /* How it works: four steps along one line, numbered like days on a calendar. */
   .band { background: var(--surface); margin-top: clamp(56px, 7vw, 88px); padding-block: clamp(56px, 7vw, 88px); }
