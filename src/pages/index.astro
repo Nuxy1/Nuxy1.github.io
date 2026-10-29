@@ -96,6 +96,7 @@ const faqs = [
   ["Do you need my passwords?", "No. I work as an invited user in your accounts and never ask for passwords. You can remove my access at any time."],
   ["What if something doesn’t work?", "If anything doesn’t do what the written plan says, I fix it at no charge. One round of changes within 14 days of handover is included, and a monthly plan keeps it watched after that."],
   ["How do I pay?", "By a secure Stripe invoice: card, Apple Pay, Google Pay or bank transfer. 50% to start and 50% at handover; monthly plans are billed monthly. Nothing is charged until you agree to the written plan."],
+  ["Is there a discount for more than one service?", "Yes. Order 2 one-time services together and the total is 10% off; 3 or more, 15% off. Add-ons count, monthly plans aren’t discounted, and the discount is written into the plan and price before you pay anything."],
   ["What if I change my mind?", "Cancel before work starts and the whole deposit is refunded. After that, I refund the part that covers work not yet done. Monthly plans end with the month already paid."],
   ["Do you work outside Minnesota?", "Yes. I’m based in Faribault and start with Twin Cities and southern Minnesota businesses, and everything works remotely anywhere in the US."],
 ];
@@ -203,6 +204,7 @@ const work = [
       </div>
     </div>
     <p class="kind-note" aria-live="polite">All {services.length} services. Pick your kind of business to see what usually helps first.</p>
+    <p class="bundle-note"><Icon name="sparkle" /><span><strong>Bundle and save.</strong> Order 2 services together and the total is 10% off; 3 or more, 15% off.<span data-js-only hidden> Tap <span class="mini" aria-hidden="true">+</span> on any service to build yours.</span></span></p>
 
     {groups.map((g) => (
       <div class="group" id={g.id}>
@@ -212,12 +214,13 @@ const work = [
         </div>
         <ul class={g.cols === 4 ? "svcs four" : "svcs"}>
           {g.items.map((s) => (
-            <li class="svc reveal" id={s.id} data-fits={s.fits} style={`view-transition-name: svc-${s.id}`}>
+            <li class="svc reveal" id={s.id} data-fits={s.fits} data-name={s.name} data-price={s.price} style={`view-transition-name: svc-${s.id}`}>
               <div class="svc-top">
                 <span class="svc-icon"><Icon name={s.icon} /></span>
                 <span class="tags">
                   <span class="tag start-tag">Start here</span>
                   {s.popular && <span class="tag popular-tag">Most requested</span>}
+                  <button class="pick" type="button" aria-pressed="false" aria-label={`Add ${s.name} to your bundle`} title="Add to your bundle" data-pick hidden><Icon name="plus" /><Icon name="check" /></button>
                 </span>
               </div>
               <div class="svc-title">
@@ -240,7 +243,7 @@ const work = [
         </ul>
       </div>
     ))}
-    <p class="something-else"><Icon name="sparkle" /><span>Something else? Bots, scrapers of public data and custom dashboards are quoted in writing after one question. <a href="#request">Ask about it</a>.</span></p>
+    <p class="something-else"><Icon name="question" /><span>Something else? Bots, scrapers of public data and custom dashboards are quoted in writing after one question. <a href="#request">Ask about it</a>.</span></p>
   </section>
 
   <section id="plans" class="wrap section" aria-labelledby="plans-title">
@@ -338,12 +341,25 @@ const work = [
       </ul>
       <a class="button wide" href={ask()}>Request a setup</a>
       <p class="ticket-note">Nothing is charged until you agree to the written plan.</p>
+      <p class="ticket-bundle"><Icon name="sparkle" />More than one service? 2 together are 10% off, 3 or more 15% off.</p>
       <p class="other-ways">
         No email app? Open it in <a href={gmail()} target="_blank" rel="noopener">Gmail</a> or <a href={outlook()} target="_blank" rel="noopener">Outlook</a>, or write to <span class="address">{inbox}</span>
         <button class="copy" type="button" data-copy={inbox} hidden><Icon name="copy" /><span aria-live="polite">Copy address</span></button>
       </p>
     </aside>
   </section>
+
+  <div class="bundle" data-bundle data-inbox={inbox} hidden>
+    <div class="bundle-sum" aria-live="polite">
+      <p class="bundle-what"><strong data-count></strong><span data-names></span></p>
+      <p class="bundle-price"><s data-was></s><strong data-total></strong><span class="off" data-off></span></p>
+      <p class="bundle-hint" data-hint></p>
+    </div>
+    <div class="bundle-acts">
+      <a class="button" data-ask href="#request">Request this bundle</a>
+      <p class="alt">or in <a data-gmail href="#request" target="_blank" rel="noopener">Gmail</a> or <a data-outlook href="#request" target="_blank" rel="noopener">Outlook</a> · <button type="button" class="clear" data-clear>Clear</button></p>
+    </div>
+  </div>
 
   <div class="dock" data-dock aria-hidden="true">
     <p><strong>Plan and price</strong><span>within one business day</span></p>
@@ -422,6 +438,54 @@ const work = [
       };
       addEventListener("hashchange", reach);
       if (location.hash) requestAnimationFrame(reach);
+    }
+
+    // The bundle: + on a card adds it; the bar shows the discounted total (2 services 10% off, 3 or more 15%) and one
+    // request email listing them all.
+    const bundle = document.querySelector("[data-bundle]");
+    if (catalog && bundle) {
+      const picks = new Map();
+      const $ = (name) => bundle.querySelector(`[data-${name}]`);
+      const money = (n) => "$" + Math.round(n).toLocaleString("en-US");
+      const enc = (fields) => new URLSearchParams(fields).toString().replace(/\+/g, "%20");
+      const inbox = bundle.dataset.inbox;
+      const draw = () => {
+        const list = [...picks.values()];
+        bundle.hidden = !list.length;
+        document.body.classList.toggle("has-bundle", list.length > 0);
+        if (!list.length) return;
+        const from = list.some((s) => s.price.startsWith("from")) ? "from " : "";
+        const sub = list.reduce((t, s) => t + Number(s.price.replace(/\D/g, "")), 0);
+        const off = list.length >= 3 ? 15 : list.length === 2 ? 10 : 0;
+        const total = sub * (1 - off / 100);
+        $("count").textContent = `${list.length} service${list.length > 1 ? "s" : ""}`;
+        $("names").textContent = list.map((s) => s.name).join(", ");
+        $("was").textContent = off ? money(sub) : "";
+        $("total").textContent = from + money(total);
+        $("off").textContent = off ? `${off}% off` : "";
+        $("hint").textContent = list.length === 1 ? "Add 1 more service for 10% off the total" : list.length === 2 ? "Add 1 more for 15% off" : "Your best bundle price: 15% off";
+        if (!calm) $("total").animate([{ transform: "scale(1.12)" }, { transform: "none" }], { duration: 360, easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
+        const subject = list.length > 1 ? `Setup request: bundle of ${list.length} services` : `Setup request: ${list[0].name}`;
+        const body = `Services:\n${list.map((s) => `- ${s.name} (${s.price})`).join("\n")}\n${off ? `Bundle discount: ${off}% (${from}${money(total)} instead of ${from}${money(sub)})\n` : ""}\nBusiness name:\nWebsite:\nWhat kind of business:\nTools you use now (booking, ordering, accounting, email, CRM...):\nAnything else:\n`;
+        $("ask").href = `mailto:${inbox}?` + enc({ subject, body });
+        $("gmail").href = "https://mail.google.com/mail/?" + enc({ view: "cm", fs: "1", to: inbox, su: subject, body });
+        $("outlook").href = "https://outlook.live.com/mail/0/deeplink/compose?" + enc({ to: inbox, subject, body });
+      };
+      const set = (card, on) => {
+        const pick = card.querySelector("[data-pick]");
+        pick.setAttribute("aria-pressed", String(on));
+        pick.setAttribute("aria-label", on ? `Remove ${card.dataset.name} from your bundle` : `Add ${card.dataset.name} to your bundle`);
+        card.classList.toggle("picked", on);
+        if (on) picks.set(card.id, { name: card.dataset.name, price: card.dataset.price });
+        else picks.delete(card.id);
+      };
+      for (const card of catalog.querySelectorAll(".svc")) {
+        const pick = card.querySelector("[data-pick]");
+        pick.hidden = false;
+        pick.addEventListener("click", () => { set(card, pick.getAttribute("aria-pressed") !== "true"); draw(); });
+      }
+      $("clear").addEventListener("click", () => { for (const card of catalog.querySelectorAll(".svc.picked")) set(card, false); draw(); });
+      document.querySelectorAll("[data-js-only]").forEach((el) => (el.hidden = false));
     }
 
     // Phones: a request bar at the bottom once the hero is gone, out of the way of the request card and the footer.
@@ -596,6 +660,58 @@ const work = [
     .svc-more::details-content { block-size: 0; overflow-y: clip; transition: block-size 320ms var(--ease), content-visibility 320ms allow-discrete; }
     .svc-more[open]::details-content { block-size: auto; }
   }
+  /* The bundle: the note over the catalog, the + on each card, the bar at the bottom. */
+  .bundle-note { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 4px; padding: 14px 18px; border: 1px dashed var(--hairline); border-radius: var(--r-md); font-size: 0.9375rem; }
+  .bundle-note :global(.icon) { width: 22px; height: 22px; margin-top: 1px; color: var(--ink); }
+  .bundle-note strong { color: var(--ink); }
+  .mini { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid var(--hairline); border-radius: 50%; color: var(--ink); font-weight: 700; line-height: 1; }
+  .tags { align-items: center; }
+  .pick {
+    display: grid; place-items: center; width: 40px; height: 40px; margin: -6px -8px 0 2px; padding: 0; cursor: pointer;
+    border: 1px solid var(--hairline); border-radius: var(--r-full); background: var(--bg); color: var(--ink);
+    transition: background-color 200ms ease-out, border-color 200ms ease-out, color 200ms ease-out, transform 200ms var(--ease);
+  }
+  .pick:hover { border-color: var(--ink); transform: scale(1.06); }
+  .pick:active { transform: scale(0.94); }
+  .pick :global(.icon) { grid-area: 1 / 1; width: 18px; height: 18px; transition: opacity 200ms ease-out, transform 260ms var(--ease); }
+  .pick :global(.icon:last-child) { opacity: 0; transform: scale(0.4); }
+  .pick[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .pick[aria-pressed="true"] :global(.icon:first-child) { opacity: 0; transform: rotate(90deg) scale(0.4); }
+  .pick[aria-pressed="true"] :global(.icon:last-child) { opacity: 1; transform: none; }
+  .svc.picked { border-color: var(--ink); }
+  .bundle {
+    position: fixed; left: 50%; bottom: 16px; z-index: 26; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 24px;
+    width: min(780px, calc(100% - 32px)); padding: 16px 20px; transform: translateX(-50%);
+    border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg); box-shadow: var(--shadow-lift);
+  }
+  .bundle-sum { min-width: 0; }
+  .bundle-sum p { margin: 0; }
+  .bundle-what { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+  .bundle-what strong { color: var(--ink); white-space: nowrap; }
+  .bundle-what span { color: var(--muted); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bundle-price { display: flex; gap: 10px; align-items: baseline; margin-top: 2px !important; font-variant-numeric: tabular-nums lining-nums; }
+  .bundle-price s { color: var(--muted); }
+  .bundle-price strong { display: inline-block; color: var(--ink); font-size: 1.375rem; letter-spacing: -0.02em; }
+  .off { padding: 2px 8px; border-radius: var(--r-full); background: var(--ink); color: var(--bg); font-size: 0.75rem; font-weight: 700; }
+  .off:empty { display: none; }
+  .bundle-hint { color: var(--accent-text); font-size: 0.8125rem; font-weight: 600; }
+  .bundle-acts { display: grid; justify-items: end; gap: 4px; }
+  .bundle-acts .alt { margin: 0; }
+  .clear { padding: 0; border: 0; background: none; color: var(--muted); font: inherit; text-decoration: underline; cursor: pointer; }
+  .clear:hover { color: var(--ink); }
+  :global(body.has-bundle) { padding-bottom: 120px; }
+  :global(body.has-bundle) .dock { display: none; }
+  @media (prefers-reduced-motion: no-preference) { .bundle:not([hidden]) { animation: bundle-in 380ms var(--ease); } }
+  @keyframes bundle-in { from { opacity: 0; transform: translate(-50%, 24px); } }
+  @media (max-width: 640px) {
+    .bundle { grid-template-columns: 1fr; bottom: 0; width: 100%; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); border-radius: var(--r-lg) var(--r-lg) 0 0; }
+    .bundle-acts { justify-items: stretch; gap: 6px; }
+    .bundle-acts .alt { font-size: 0.8125rem; text-align: center; }
+    :global(body.has-bundle) { padding-bottom: 170px; }
+  }
+  .ticket-bundle { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 0; padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface); color: var(--body); font-size: 0.875rem; }
+  .ticket-bundle :global(.icon) { width: 18px; height: 18px; margin-top: 1px; color: var(--ink); }
+
   .something-else { display: flex; gap: 12px; align-items: flex-start; margin: 32px 0 0; padding: 18px 20px; border-radius: var(--r-md); background: var(--surface); }
   .something-else :global(.icon) { width: 22px; height: 22px; margin-top: 1px; color: var(--ink); }
   @media (min-width: 1100px) { .svcs.four { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
