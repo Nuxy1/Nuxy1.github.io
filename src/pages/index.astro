@@ -5,17 +5,9 @@ import Icon, { type IconName } from "../components/Icon.astro";
 import hero from "../assets/photos/hero.jpg";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-// The request form is an email: no server to run, and the answer lands in the inbox the work runs from.
-// (a chosen service's own request names it at the top; Gmail and Outlook links for computers with no email app,
-// where a mailto: link does nothing at all)
-const inbox = "nuxy@nuxyautomation.com";
-type Item = { name: string; price: string };
-const subject = (p?: Item) => (p ? `Setup request: ${p.name}` : "Setup request");
-const body = (p?: Item) => `${p ? `Service: ${p.name} (${p.price})\n` : ""}Business name:\nWebsite:\nWhat kind of business:\nTools you use now (booking, ordering, accounting, email, CRM...):\nWhat you'd like fixed or set up:\nAnything else:\n`;
-const query = (fields: Record<string, string>) => new URLSearchParams(fields).toString().replace(/\+/g, "%20");
-const ask = (p?: Item) => `mailto:${inbox}?` + query({ subject: subject(p), body: body(p) });
-const gmail = (p?: Item) => "https://mail.google.com/mail/?" + query({ view: "cm", fs: "1", to: inbox, su: subject(p), body: body(p) });
-const outlook = (p?: Item) => "https://outlook.live.com/mail/0/deeplink/compose?" + query({ to: inbox, subject: subject(p), body: body(p) });
+import { ask, gmail, outlook, inbox } from "../lib/request";
+import { caseFor, examples } from "../data/examples";
+import { reviews } from "../data/reviews";
 
 // Kinds of business: the strip that filters the services, and what each kind usually starts with.
 const kinds: { id: string; icon: IconName; name: string; full: string; who: string; start: string[] }[] = [
@@ -28,7 +20,7 @@ const kinds: { id: string; icon: IconName; name: string; full: string; who: stri
 ];
 
 // Every one-time service. ids are linked from outreach emails: keep them stable. fits: the kinds it suits ("all": every kind).
-type Service = Item & { id: string; icon: IconName; fixes: string; text: string; fits: string; popular?: boolean };
+type Service = { name: string; price: string } & { id: string; icon: IconName; fixes: string; text: string; fits: string; popular?: boolean };
 // (cols: cards per row on wide screens, so each group fills its rows)
 const groups: { id: string; title: string; lead: string; cols?: number; items: Service[] }[] = [
   { id: "customers", title: "Win and keep customers", lead: "For the inquiries, bookings and regulars that slip away while you’re busy.", items: [
@@ -148,39 +140,8 @@ const keep: { icon: IconName; title: string; text: string }[] = [
   { icon: "shieldCheck", title: "An off switch, and a plan", text: "You can pause it yourself in one step. If something goes wrong, I pause it first, tell you within 4 business hours, and fix it with a test so it can’t come back." },
 ];
 
-// The working examples' demo week, as `npm run demo` prints it in small-business-automations (made-up businesses).
-const week: { id: string; tab: string; who: string; lines: [string, string, string][] }[] = [
-  { id: "leads", tab: "Lead follow-up", who: "Northfield Plumbing Co.", lines: [
-    ["Mon 09:10", "form", "Maria Gonzalez, Maria.Gonzalez@Gmial.com: “Kitchen sink drains slowly”"],
-    ["Mon 09:10", "owner", "New inquiry: Maria Gonzalez, with her phone number"],
-    ["Mon 09:10", "customer", "Instant reply to maria.gonzalez@gmail.com (the typo fixed)"],
-    ["Mon 09:40", "owner", "Maria wrote again: one conversation, no second reply"],
-    ["Tue 10:00", "owner", "Bob left no usable email or phone: passed to you"],
-    ["Tue 10:00", "customer", "Follow-up to Maria"],
-    ["Tue 15:00", "stopped", "Maria replied: her follow-ups stop"],
-    ["Wed 09:00", "customer", "Follow-up to Wei: waited for 9 a.m., not 9:15 p.m."],
-    ["Fri 09:00", "customer", "Last follow-up to Wei, then no more"],
-  ] },
-  { id: "invoices", tab: "Invoice reminders", who: "Cannon River Cleaning", lines: [
-    ["Mon 10:00", "owner", "Invoice 1046 has no email: passed to you, not guessed"],
-    ["Mon 10:00", "owner", "Invoice 1047’s due date reads 13/45/2026: passed to you"],
-    ["Mon 10:00", "customer", "Friendly reminder: invoice 1041, $1,240.00"],
-    ["Mon 10:00", "customer", "Friendly reminder: invoice 1042, $100.00 of $180.00 left"],
-    ["Mon 10:00", "owner", "Invoice 1048 is 36 days late: time for a personal call"],
-    ["Mon 10:00", "owner", "This week: 4 late invoices, $2,410.50 owed"],
-    ["Tue 10:00", "customer", "Second reminder: invoice 1042"],
-    ["Sat 10:00", "quiet", "Weekend: no customer emails"],
-    ["Mon 09:00", "customer", "Second reminder: invoice 1043 (9 a.m. after the clock change)"],
-  ] },
-  { id: "reviews", tab: "Review requests", who: "Juniper & Rose Salon", lines: [
-    ["Mon 13:00", "customer", "Thank-you with the review link to Ana, 2 hours after her visit"],
-    ["Tue 09:00", "customer", "To Jordan: her visit ended 6:30 p.m., so it waited for morning"],
-    ["Tue 12:00", "skipped", "Tom was a no-show: not asked"],
-    ["Wed 14:00", "skipped", "Ana again: already asked this year"],
-    ["Wed 15:00", "skipped", "Priya’s email reads “priya at example”: not used"],
-    ["Wed 16:30", "customer", "Thank-you with the review link to Sam"],
-  ] },
-];
+// The working examples' demo week (src/data/examples.ts).
+const week = examples.map(({ slug, tab, who, lines }) => ({ id: slug, tab, who, lines }));
 
 const work = [
   { name: "Shopify order webhook relay", repo: "shopify-webhook-relay", doc: "webhook-relay", text: "Every order to Google Sheets and Slack or Discord: checked, never written twice, retried, failures replayable." },
@@ -274,6 +235,7 @@ const work = [
                 <summary>What’s included<Icon name="caretDown" /></summary>
                 <div class="svc-body">
                   <p>{s.text}</p>
+                  {caseFor[s.id] && <p class="see"><a href={`${base}/work/${caseFor[s.id]}/`}>See it working on a made-up {examples.find((e) => e.slug === caseFor[s.id])?.kind}<Icon name="arrowRight" /></a></p>}
                   <p class="svc-actions">
                     <a class="request-link" href={ask(s)} aria-label={`Request a setup: ${s.name}`}>Request this<Icon name="arrowRight" /></a>
                     <span class="alt">or in <a href={gmail(s)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(s)} target="_blank" rel="noopener">Outlook</a></span>
@@ -341,6 +303,24 @@ const work = [
     </ul>
   </section>
 
+  {reviews.length > 0 && (
+    <section id="reviews-from-clients" class="wrap section" aria-labelledby="said-title">
+      <div class="section-head">
+        <h2 id="said-title" class="section-title">What clients say</h2>
+        <p class="section-lead">Word for word, from where each review was left.</p>
+      </div>
+      <ul class="said">
+        {reviews.map((r) => (
+          <li class="reveal">
+            {r.stars && <p class="stars" aria-label={`${r.stars} out of 5 stars`}>{"★".repeat(r.stars)}</p>}
+            <blockquote>{r.quote}</blockquote>
+            <p class="said-who"><strong>{r.name}</strong>{r.business && <span>, {r.business}</span>}<span class="said-src">{r.link ? <a href={r.link}>{r.source}</a> : r.source} · {r.date}</span></p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
   <section id="work" class="wrap section" aria-labelledby="work-title">
     <div class="section-head">
       <h2 id="work-title" class="section-title">Working examples</h2>
@@ -358,6 +338,7 @@ const work = [
           <li><Icon name="check" />Waits out quiet hours and weekends</li>
         </ul>
         <p class="links"><a href={`${base}/docs/small-business-automations/`}>How it works</a><a href="https://github.com/Nuxy1/small-business-automations">Code<Icon name="arrowUpRight" /></a></p>
+        <p class="cases">Case studies: {examples.map((e) => <a href={`${base}/work/${e.slug}/`}>{e.tab}</a>)}</p>
       </div>
       <div class="term" data-term>
         <div class="term-tabs" role="tablist" aria-label="Demo week" hidden>
@@ -903,6 +884,14 @@ const work = [
   }
   @media (max-width: 900px) and (prefers-reduced-motion: no-preference) { @keyframes draw { from { transform: scaleY(0); } } }
 
+  /* What clients say: real reviews only (src/data/reviews.ts); hidden while there are none. */
+  .said { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .said li { padding: 22px; border: 1px solid var(--hairline); border-radius: var(--r-md); }
+  .stars { margin: 0 0 8px; color: var(--ink); letter-spacing: 2px; }
+  .said blockquote { margin: 0; color: var(--ink); font-size: 1.0625rem; line-height: 1.5; }
+  .said-who { margin: 14px 0 0; font-size: 0.9375rem; }
+  .said-src { display: block; color: var(--muted); font-size: 0.875rem; }
+
   /* Built to keep working: four promises, one per tile. */
   .keep { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
   .keep li { padding: 22px 20px; border-radius: var(--r-md); background: var(--surface); }
@@ -924,6 +913,12 @@ const work = [
   .feature .links { display: flex; gap: 18px; font-weight: 600; margin: 0; }
   .feature .links a { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; }
   .feature .links :global(.icon) { width: 1em; height: 1em; }
+  .cases { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 14px 0 0; color: var(--muted); font-size: 0.875rem; }
+  .cases a { color: var(--ink); font-weight: 600; }
+  .see { margin-top: 10px !important; font-weight: 600; }
+  .see a { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+  .see a:hover { text-decoration: underline; }
+  .see :global(.icon) { width: 1em; height: 1em; }
   .term { border-radius: var(--r-md); background: #101114; color: #d9dde3; box-shadow: var(--shadow); overflow: hidden; font: 0.8125rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; }
   .term-tabs { display: flex; gap: 2px; padding: 8px 8px 0; background: #191b20; overflow-x: auto; scrollbar-width: none; }
   .term-tabs button { flex: none; padding: 9px 14px; border: 0; border-radius: 8px 8px 0 0; background: transparent; color: #9aa1ab; font: 600 0.8125rem/1 var(--font); cursor: pointer; transition: color 160ms ease-out, background-color 160ms ease-out; }
