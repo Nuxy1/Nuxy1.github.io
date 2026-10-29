@@ -10,12 +10,12 @@ interface Props {
   description?: string;
   wide?: boolean;
 }
-const { title, description = "Online booking, instant replies, reminders and review requests for salons, spas, studios and groomers. Fixed prices, no calls. Faribault, Minnesota.", wide = false } = Astro.props;
+const { title, description = "Automations, integrations and websites for small businesses of every kind. Fixed prices, no calls. Faribault, Minnesota.", wide = false } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const shareImage = new URL(`${base}/og.jpg`, Astro.site);
 const inbox = "nuxy@nuxyautomation.com";
-const sections = [["Packages", "packages"], ["How it works", "how"], ["Projects", "work"]];
+const sections = [["Services", "services"], ["Plans", "plans"], ["How it works", "how"], ["Projects", "work"]];
 ---
 <!doctype html>
 <html lang="en">
@@ -185,15 +185,15 @@ const sections = [["Packages", "packages"], ["How it works", "how"], ["Projects"
       <div class="wrap">
         <div class="foot-cols">
           <section aria-labelledby="foot-packages">
-            <h2 id="foot-packages">Packages</h2>
+            <h2 id="foot-packages">Services</h2>
             <ul>
-              <li><a href={`${base}/#booking`}>Online booking &amp; reminders</a></li>
-              <li><a href={`${base}/#follow-up`}>Lead follow-up</a></li>
-              <li><a href={`${base}/#reviews`}>Review requests</a></li>
-              <li><a href={`${base}/#new-website`}>New website</a></li>
-              <li><a href={`${base}/#site-fixes`}>Website quick fixes</a></li>
-              <li><a href={`${base}/#care`}>Care plan</a></li>
+              <li><a href={`${base}/#kinds`}>By kind of business</a></li>
+              <li><a href={`${base}/#services`}>Most requested</a></li>
+              <li><a href={`${base}/#customers`}>Win and keep customers</a></li>
+              <li><a href={`${base}/#admin`}>Less admin</a></li>
+              <li><a href={`${base}/#integrations`}>Custom integrations</a></li>
               <li><a href={`${base}/#add-ons`}>Add-ons</a></li>
+              <li><a href={`${base}/#plans`}>Monthly plans</a></li>
             </ul>
           </section>
           <section aria-labelledby="foot-about">
