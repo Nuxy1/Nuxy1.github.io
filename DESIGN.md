@@ -86,9 +86,14 @@ components:
     textColor: "{colors.on-accent}"
     rounded: "{rounded.full}"
     height: "40px"
-  listing:
-    photoRatio: "4 / 3 (first row), 16 / 9 (second row)"
-    photoRounded: "{rounded.md}"
+  service-card:
+    rounded: "{rounded.md}"
+    padding: "20px"
+    border: "1px {colors.hairline}"
+    hover: "lift 3px + the lifted shadow"
+  category-strip:
+    active: "ink label + 2px ink underline"
+    inactive: "muted label"
   ticket:
     backgroundColor: "{colors.bg}"
     rounded: "{rounded.md}"
@@ -99,24 +104,25 @@ components:
 
 ## Overview
 
-The site reads like a friendly booking marketplace, the world the clients already live in. The canvas is white (near-black in dark mode), the ink is near-black, and one coral accent carries the single action: **Request a setup**. Real photography of the businesses served (salon, spa, nail studio, barbershop, dance studio, tattoo studio, groomer) carries the visual weight, so type stays modest. The photos are generated stock scenes, never presented as clients.
+The site reads like a friendly marketplace, the world small-business owners already shop in. The canvas is white (near-black in dark mode), the ink is near-black, and one coral accent carries the single action: **Request a setup**. It sells to every kind of small business (appointments, trades, restaurants, shops, offices), so the only photo is the hero: a shop owner at work. Generated stock, never presented as a client. Everything else is type, icons and motion that shows the product working.
 
-Built from three skills: **awesome-design-md** (the Airbnb reference: white canvas, one accent, photo-first cards, pill search bar, reservation card), **taste-skill** (design read, anti-slop rules, pre-flight) and Vercel's **web design guidelines** (accessibility, focus, motion, content handling).
+Built from three skills: **awesome-design-md** (the Airbnb reference: white canvas, one accent, category strip, reservation card and its sticky phone bar), **taste-skill** (design read, anti-slop rules, pre-flight) and Vercel's **web design guidelines** (accessibility, focus, motion, content handling).
 
-**Design read:** a landing page for small booking-business owners reading on a phone, in a warm, photo-led marketplace language, built with native CSS in Astro. Dials: variance 6, motion 4, density 4.
+**Design read:** a landing page for small-business owners of every kind, reading on a phone or laptop, in a clean, warm marketplace language, built with native CSS and a little vanilla JS in Astro. Dials: variance 6, motion 6, density 4.
 
 **Key characteristics**
-- One accent. Coral fills only the request action (nav pill, hero button, request card) and the search orb. Everywhere else is ink, greys and photos.
-- Photo-first package listings with the price on the title line, like a listing card.
-- The finder under the hero is the Airbnb search pill, split by problem (Missed calls, Slow replies, Few reviews, Old website); the coral orb opens every package.
-- The request card is the reservation card: what to include, one full-width button, and "Nothing is charged until you agree to the written plan."
-- Works without client-side JavaScript. Three small inline scripts only enhance: the small-screen menu closes on a choice, the copy-address button, and the demo's message arrivals.
+- One accent. Coral fills only the request action (nav pill, hero button, request card, phone bar) and the request on a service an email linked to. Everywhere else is ink, greys and the one photo.
+- The hero photo carries live notifications ("Website inquiry answered", "Invoice paid"...) that arrive and leave every few seconds, marked "Examples of what runs while you work".
+- One service catalog: Airbnb's category strip (All, Appointments, Trades, Restaurants, Shops, Offices) filters the cards and puts each kind's usual first steps first ("Start here"). Four groups: Win and keep customers, Less admin, Websites and Google, Add-ons.
+- Service cards: icon, name and price, the problem it fixes, then "What's included" opening the details and the request. No repeated request rows down the page.
+- The request card is the reservation card; on phones a sticky bar carries the same action once the hero is gone.
+- Works without client-side JavaScript: every service is shown, the strip stays hidden, details open by tap. The scripts only enhance.
 
 ## Colors
 
 - **Ink** (#222222): headings, prices, nav, the focus ring. Never pure black.
 - **Body** (#3f3f3f) for running text; **Muted** (#6a6a6a) for meta lines ("Fixes: ..."), captions and the legal band.
-- **Coral** (#dc2453, pressed #b8143f): the request action and the orb only. White text on it is 4.9:1.
+- **Coral** (#dc2453, pressed #b8143f): the request action only. White text on it is 4.9:1.
 - **Coral text** (#c81d4a light, #ff7d97 dark): link hover and the check marks in the request card.
 - **Coral soft** (#fdecf0 / #3b1621): selection and the demo's auto-filled words.
 - **Surfaces**: #f7f7f7 for the How it works band, the footer and quiet notes; #f0f0f0 behind icons and loading photos.
@@ -136,27 +142,31 @@ Built from three skills: **awesome-design-md** (the Airbnb reference: white canv
 
 ## Layout
 
-- Container 1200px with a 16-40px gutter; sticky white header 72px with a hairline.
-- Hero: copy (1.25fr) beside the photo (1fr, 20px radius), the photo's height held to the viewport (420-660px). Stacks on phones with the photo below the buttons.
-- Packages: 6-column grid, three listings then two wider ones; 2 columns on tablets (the last one full width), 1 on phones. Requests line up at the bottom of each row.
-- Care plan: its own wide card (photo beside text) because it is monthly.
-- Add-ons: sticky title on the left, rows with round icons on the right.
-- How it works: a grey band, four steps along a dashed line with calendar-style numbers (first one filled); vertical on phones.
-- Projects: the relay video beside the four projects.
+- Container 1200px with a 16-40px gutter; sticky white header 72px with a hairline; the nav marks the section being read.
+- Hero: copy (1.1fr) beside the photo (1fr, 20px radius) with the notification stack on it, three promises under the buttons. Stacks on phones with the photo below.
+- Tools: a full-width row of the tools the work is built in, drifting slowly (held on hover).
+- Services: the strip sticks under the header while the catalog scrolls; cards 3 across (Websites and Google 4 across), 2 on tablets, 1 on phones. Groups hold 6, 6, 4 and 3 so rows fill.
+- Monthly plans: three cards, the most complete one set apart.
+- How it works: a grey band, four steps on a line that draws in as you scroll; vertical on phones.
+- Projects: the relay video beside three projects.
+- Questions: sticky title on the left, answers that slide open on the right.
 - Request: details on the left, the sticky ticket on the right.
 - Footer: three link columns and a legal band ("No cookies, no tracking.").
 
 ## Shapes and elevation
 
-Radius rule: **buttons 8px, cards and photos 14px, hero photo and large framed cards 20px, pills and round icons full.** One shadow tier (`--shadow`) for the finder, menu and demo frames, and a lifted tier (`--shadow-lift`) for the ticket, the open menu and hovered guides. No other shadows.
+Radius rule: **buttons 8px, cards and photos 14px, hero photo and large framed cards 20px, pills and round icons full.** One shadow tier (`--shadow`) for the menu and the demo video, and a lifted tier (`--shadow-lift`) for the ticket, the notifications, the featured plan and hovered cards. No other shadows.
 
 ## Motion
 
-Motion level 4: purposeful and quiet.
-- Hero copy rises in (staggered 80ms) and the photo settles from 1.03 scale.
-- Sections rise 28px as they enter, using CSS scroll-driven animations (`animation-timeline: view()`) where supported; elsewhere they are simply there.
-- Photos scale 1.03 on card hover; the request arrow nudges 3px; buttons press to 0.98.
-- `prefers-reduced-motion`: all of it off, and the demo video waits for its play button.
+Motion level 6: lively, always meaning something.
+- Hero copy rises in (staggered 90ms), the photo settles from 1.04 scale, then the notifications arrive one by one and keep cycling every 2.8s (paused while the tab is hidden).
+- The tools row drifts (48s a loop, held on hover).
+- The category strip filters with a View Transition: cards slide to their new places.
+- Service details and answers slide open (`::details-content` with `interpolate-size`); carets turn, the answer's plus turns into a cross.
+- Cards lift 3px on hover and their icon fills ink; the request arrow nudges 3px; buttons press to 0.98.
+- Sections rise as they enter, and the How it works line draws step to step (CSS scroll-driven animations where supported; elsewhere everything is simply there).
+- `prefers-reduced-motion`: all of it off, the tools wrap still, the notifications stand still, the demo video waits for its play button.
 
 ## Icons
 
@@ -164,4 +174,4 @@ Phosphor (regular), inlined by `src/components/Icon.astro` so they take the text
 
 ## Anchors
 
-Outreach emails link to `#booking`, `#follow-up`, `#reviews`, `#new-website`, `#site-fixes`, `#care`, `#add-ons`, `#missed-calls`, `#deposits`, `#gift-cards`, `#packages`, `#how`, `#work`, `#request`. Keep these ids stable.
+Outreach emails link to every service id (`#booking`, `#follow-up`, `#reviews`, `#quotes`, `#email-list`, `#ordering`, `#ai-replies`, `#invoices`, `#store`, `#reports`, `#data`, `#integrations`, `#new-website`, `#site-fixes`, `#online-shop`, `#google-profile`, `#missed-calls`, `#deposits`, `#gift-cards`), the plans (`#care`, `#automation-care`, `#automation-partner`) and `#services`, `#how`, `#work`, `#faq`, `#request`. A link to a service shows every service, opens that card and turns its request coral. Keep these ids stable.
