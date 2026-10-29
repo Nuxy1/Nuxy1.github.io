@@ -94,7 +94,7 @@ const faqs = [
   ["Do we need to get on a call?", "No. Your request, the written plan and price, questions and updates all happen by email, with short screen recordings of each piece working."],
   ["Who owns what you build?", "You do. Everything is built in your own accounts (your booking tool, your Google, your Stripe), and once it’s paid in full everything I build is yours."],
   ["Do you need my passwords?", "No. I work as an invited user in your accounts and never ask for passwords. You can remove my access at any time."],
-  ["What if something doesn’t work?", "If anything doesn’t do what the written plan says, I fix it at no charge. One round of changes within 14 days of handover is included, and a monthly plan keeps it watched after that."],
+  ["What if something breaks after launch?", "Every job includes a 30-day launch watch: every failure alerts me, I check in with you on day 3 and day 14, and anything my work breaks is fixed at no charge. After that, anything that doesn’t do what the written plan says is still fixed at no charge, and a monthly plan keeps it watched."],
   ["How do I pay?", "By a secure Stripe invoice: card, Apple Pay, Google Pay or bank transfer. 50% to start and 50% at handover; monthly plans are billed monthly. Nothing is charged until you agree to the written plan."],
   ["Is there a discount for more than one service?", "Yes. Order 2 one-time services together and the total is 10% off; 3 or more, 15% off. Add-ons count, monthly plans aren’t discounted, and the discount is written into the plan and price before you pay anything."],
   ["What if I change my mind?", "Cancel before work starts and the whole deposit is refunded. After that, I refund the part that covers work not yet done. Monthly plans end with the month already paid."],
@@ -139,6 +139,48 @@ const faqData = {
   "@type": "FAQPage",
   mainEntity: faqs.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
 };
+
+// How a job keeps working (business/delivery-playbook.md, in short).
+const keep: { icon: IconName; title: string; text: string }[] = [
+  { icon: "sealCheck", title: "Your tools’ own features first", text: "If your booking tool or accounting app can already do it, I set that up properly. Custom code only where your tools can’t, and then only on tested code." },
+  { icon: "clipboardText", title: "Tested on your real, messy data", text: "A dry run on a copy of your records: names in capitals, typos, duplicates, odd dates. Every message is read by a person before anything goes live." },
+  { icon: "bellSimple", title: "30-day launch watch, included", text: "For the first 30 days every failure alerts me, with check-ins on day 3 and day 14. Anything my work breaks is fixed at no charge." },
+  { icon: "shieldCheck", title: "An off switch, and a plan", text: "You can pause it yourself in one step. If something goes wrong, I pause it first, tell you within 4 business hours, and fix it with a test so it can’t come back." },
+];
+
+// The working examples' demo week, as `npm run demo` prints it in small-business-automations (made-up businesses).
+const week: { id: string; tab: string; who: string; lines: [string, string, string][] }[] = [
+  { id: "leads", tab: "Lead follow-up", who: "Northfield Plumbing Co.", lines: [
+    ["Mon 09:10", "form", "Maria Gonzalez, Maria.Gonzalez@Gmial.com: “Kitchen sink drains slowly”"],
+    ["Mon 09:10", "owner", "New inquiry: Maria Gonzalez, with her phone number"],
+    ["Mon 09:10", "customer", "Instant reply to maria.gonzalez@gmail.com (the typo fixed)"],
+    ["Mon 09:40", "owner", "Maria wrote again: one conversation, no second reply"],
+    ["Tue 10:00", "owner", "Bob left no usable email or phone: passed to you"],
+    ["Tue 10:00", "customer", "Follow-up to Maria"],
+    ["Tue 15:00", "stopped", "Maria replied: her follow-ups stop"],
+    ["Wed 09:00", "customer", "Follow-up to Wei: waited for 9 a.m., not 9:15 p.m."],
+    ["Fri 09:00", "customer", "Last follow-up to Wei, then no more"],
+  ] },
+  { id: "invoices", tab: "Invoice reminders", who: "Cannon River Cleaning", lines: [
+    ["Mon 10:00", "owner", "Invoice 1046 has no email: passed to you, not guessed"],
+    ["Mon 10:00", "owner", "Invoice 1047’s due date reads 13/45/2026: passed to you"],
+    ["Mon 10:00", "customer", "Friendly reminder: invoice 1041, $1,240.00"],
+    ["Mon 10:00", "customer", "Friendly reminder: invoice 1042, $100.00 of $180.00 left"],
+    ["Mon 10:00", "owner", "Invoice 1048 is 36 days late: time for a personal call"],
+    ["Mon 10:00", "owner", "This week: 4 late invoices, $2,410.50 owed"],
+    ["Tue 10:00", "customer", "Second reminder: invoice 1042"],
+    ["Sat 10:00", "quiet", "Weekend: no customer emails"],
+    ["Mon 09:00", "customer", "Second reminder: invoice 1043 (9 a.m. after the clock change)"],
+  ] },
+  { id: "reviews", tab: "Review requests", who: "Juniper & Rose Salon", lines: [
+    ["Mon 13:00", "customer", "Thank-you with the review link to Ana, 2 hours after her visit"],
+    ["Tue 09:00", "customer", "To Jordan: her visit ended 6:30 p.m., so it waited for morning"],
+    ["Tue 12:00", "skipped", "Tom was a no-show: not asked"],
+    ["Wed 14:00", "skipped", "Ana again: already asked this year"],
+    ["Wed 15:00", "skipped", "Priya’s email reads “priya at example”: not used"],
+    ["Wed 16:30", "customer", "Thank-you with the review link to Sam"],
+  ] },
+];
 
 const work = [
   { name: "Shopify order webhook relay", repo: "shopify-webhook-relay", doc: "webhook-relay", text: "Every order to Google Sheets and Slack or Discord: checked, never written twice, retried, failures replayable." },
@@ -283,11 +325,55 @@ const work = [
     </div>
   </section>
 
+  <section id="keep" class="wrap section" aria-labelledby="keep-title">
+    <div class="section-head">
+      <h2 id="keep-title" class="section-title">Built to keep working</h2>
+      <p class="section-lead">The job isn’t done when it works once. It’s done when it still works on day 300, with your real customers and their typos.</p>
+    </div>
+    <ul class="keep">
+      {keep.map((k) => (
+        <li class="reveal">
+          <span class="keep-icon"><Icon name={k.icon} /></span>
+          <h3>{k.title}</h3>
+          <p>{k.text}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
   <section id="work" class="wrap section" aria-labelledby="work-title">
     <div class="section-head">
-      <h2 id="work-title" class="section-title">Projects I built</h2>
-      <p class="section-lead">Nuxy Automation is new, so instead of testimonials, here is working code you can open and check.</p>
+      <h2 id="work-title" class="section-title">Working examples</h2>
+      <p class="section-lead">Nuxy Automation is new, so instead of testimonials: working code you can open, run and check. The businesses in the examples are made up.</p>
     </div>
+    <article class="feature reveal">
+      <div class="feature-copy">
+        <h3>Small-business automations</h3>
+        <p class="feature-meta">Open source · 10 tests · no dependencies</p>
+        <p>Lead follow-up for a plumber, invoice reminders for a cleaning company and review requests for a salon, built the way client work is built.</p>
+        <ul class="feature-points">
+          <li><Icon name="check" />Never sends the same message twice</li>
+          <li><Icon name="check" />Never fails silently: every failure alerts the owner</li>
+          <li><Icon name="check" />Cleans messy names, emails, phones, dates and amounts</li>
+          <li><Icon name="check" />Waits out quiet hours and weekends</li>
+        </ul>
+        <p class="links"><a href={`${base}/docs/small-business-automations/`}>How it works</a><a href="https://github.com/Nuxy1/small-business-automations">Code<Icon name="arrowUpRight" /></a></p>
+      </div>
+      <div class="term" data-term>
+        <div class="term-tabs" role="tablist" aria-label="Demo week" hidden>
+          {week.map((w, i) => <button type="button" role="tab" id={`tab-${w.id}`} aria-controls={`week-${w.id}`} aria-selected={i === 0 ? "true" : "false"} tabindex={i === 0 ? 0 : -1}>{w.tab}</button>)}
+        </div>
+        {week.map((w) => (
+          <div class="term-panel" id={`week-${w.id}`} role="tabpanel" aria-labelledby={`tab-${w.id}`}>
+            <p class="term-who">{w.who}</p>
+            <ol class="term-lines">
+              {w.lines.map(([time, kind, text]) => <li class={`k-${kind}`}><span class="t">{time}</span><span class="k">{kind}</span><span class="x">{text}</span></li>)}
+            </ol>
+          </div>
+        ))}
+        <p class="term-foot">A simulated week, as <code>npm run demo</code> prints it.</p>
+      </div>
+    </article>
     <div class="work">
       <figure class="demo reveal">
         <video src={`${base}/relay-demo.mp4`} poster={`${base}/relay-demo-poster.jpg`} width="800" height="450" autoplay muted loop playsinline controls preload="metadata" aria-describedby="demo-caption"></video>
@@ -486,6 +572,44 @@ const work = [
       }
       $("clear").addEventListener("click", () => { for (const card of catalog.querySelectorAll(".svc.picked")) set(card, false); draw(); });
       document.querySelectorAll("[data-js-only]").forEach((el) => (el.hidden = false));
+    }
+
+    // The demo week: tabs switch the tool; its lines play in one by one when it comes into view (all at once with less motion).
+    const term = document.querySelector("[data-term]");
+    if (term) {
+      const tabs = [...term.querySelectorAll('[role="tab"]')];
+      const panels = [...term.querySelectorAll('[role="tabpanel"]')];
+      let seen = false;
+      const play = (panel) => {
+        const lines = [...panel.querySelectorAll("li")];
+        lines.forEach((li, i) => { li.classList.toggle("on", calm); if (!calm) setTimeout(() => li.classList.add("on"), 120 + i * 320); });
+      };
+      const open = (tab) => {
+        for (const t of tabs) { const on = t === tab; t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1; }
+        for (const p of panels) p.hidden = p.id !== tab.getAttribute("aria-controls");
+        const panel = panels.find((p) => !p.hidden);
+        if (seen) play(panel);
+      };
+      term.querySelector(".term-tabs").hidden = false;
+      term.classList.add("playing");
+      term.addEventListener("click", (e) => { const tab = e.target.closest('[role="tab"]'); if (tab) open(tab); });
+      term.addEventListener("keydown", (e) => {
+        const i = tabs.indexOf(document.activeElement);
+        if (i < 0 || !["ArrowLeft", "ArrowRight"].includes(e.key)) return;
+        const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus();
+        open(next);
+      });
+      open(tabs[0]);
+      if ("IntersectionObserver" in window) {
+        const watcher = new IntersectionObserver((entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          seen = true;
+          play(panels.find((p) => !p.hidden));
+          watcher.disconnect();
+        }, { threshold: 0.35 });
+        watcher.observe(term);
+      } else { seen = true; play(panels[0]); }
     }
 
     // Phones: a request bar at the bottom once the hero is gone, out of the way of the request card and the footer.
@@ -778,6 +902,60 @@ const work = [
     .steps h3 { margin: 10px 0 4px; }
   }
   @media (max-width: 900px) and (prefers-reduced-motion: no-preference) { @keyframes draw { from { transform: scaleY(0); } } }
+
+  /* Built to keep working: four promises, one per tile. */
+  .keep { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .keep li { padding: 22px 20px; border-radius: var(--r-md); background: var(--surface); }
+  .keep-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-full); background: var(--bg); color: var(--ink); }
+  .keep-icon :global(.icon) { width: 22px; height: 22px; }
+  .keep h3 { font-size: 1.0625rem; margin: 16px 0 6px; }
+  .keep p { margin: 0; font-size: 0.9375rem; }
+  @media (max-width: 1023px) { .keep { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .keep { grid-template-columns: 1fr; } }
+
+  /* Working examples: the repo beside its demo week playing in a terminal. */
+  .feature { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 24px clamp(28px, 4vw, 56px); align-items: center; margin-bottom: clamp(40px, 5vw, 64px); }
+  .feature h3 { font-size: 1.375rem; letter-spacing: -0.02em; margin: 0; }
+  .feature-meta { margin: 4px 0 14px; color: var(--muted); font-size: 0.875rem; font-weight: 600; }
+  .feature-copy > p { margin: 0 0 14px; }
+  .feature-points { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 8px; }
+  .feature-points li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; font-size: 0.9375rem; }
+  .feature-points :global(.icon) { width: 18px; height: 18px; margin-top: 3px; color: var(--accent-text); }
+  .feature .links { display: flex; gap: 18px; font-weight: 600; margin: 0; }
+  .feature .links a { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; }
+  .feature .links :global(.icon) { width: 1em; height: 1em; }
+  .term { border-radius: var(--r-md); background: #101114; color: #d9dde3; box-shadow: var(--shadow); overflow: hidden; font: 0.8125rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; }
+  .term-tabs { display: flex; gap: 2px; padding: 8px 8px 0; background: #191b20; overflow-x: auto; scrollbar-width: none; }
+  .term-tabs button { flex: none; padding: 9px 14px; border: 0; border-radius: 8px 8px 0 0; background: transparent; color: #9aa1ab; font: 600 0.8125rem/1 var(--font); cursor: pointer; transition: color 160ms ease-out, background-color 160ms ease-out; }
+  .term-tabs button:hover { color: #fff; }
+  .term-tabs button[aria-selected="true"] { background: #101114; color: #fff; }
+  .term-tabs button:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+  .term-panel { padding: 16px 18px 6px; min-height: 300px; }
+  .term-panel + .term-panel { border-top: 1px solid #23262d; }
+  .term.playing .term-panel + .term-panel { border-top: 0; }
+  .term-who { margin: 0 0 10px; color: #9aa1ab; }
+  .term-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .term-lines li { display: grid; grid-template-columns: 76px 72px minmax(0, 1fr); gap: 10px; }
+  .term-lines .t { color: #7d8590; font-variant-numeric: tabular-nums; }
+  .term-lines .k { color: #7d8590; }
+  .k-customer .k { color: #7ee2a8; }
+  .k-owner .k { color: #9ecbff; }
+  .k-form .k { color: #f0c674; }
+  .k-stopped .k, .k-skipped .k, .k-quiet .k { color: #b4b9c1; }
+  .k-skipped .x, .k-quiet .x { color: #9aa1ab; }
+  .term-foot { margin: 0; padding: 10px 18px 14px; color: #7d8590; }
+  .term-foot code { color: #d9dde3; background: #1d2026; border-radius: 4px; padding: 1px 5px; font-size: 0.95em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .term.playing .term-lines li { opacity: 0; transform: translateY(6px); transition: opacity 280ms ease-out, transform 280ms var(--ease); }
+    .term.playing .term-lines li.on { opacity: 1; transform: none; }
+  }
+  @media (max-width: 900px) { .feature { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) {
+    .term-lines li { display: block; padding: 6px 0; border-bottom: 1px solid #1d2026; }
+    .term-lines .t::after { content: " · "; }
+    .term-lines .x { display: block; }
+    .term-panel { min-height: 0; }
+  }
 
   /* Projects: the relay working on video, the projects beside it. */
   .work { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px clamp(28px, 4vw, 56px); align-items: start; }
