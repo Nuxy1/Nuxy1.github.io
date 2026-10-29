@@ -19,8 +19,8 @@ const others = examples.filter((x) => x.slug !== e.slug);
   <p class="made-up"><Icon name="sealCheck" /><span><strong>{e.who}</strong> is made up for this example. The code is real and open: <a href="https://github.com/Nuxy1/small-business-automations">read it or run it</a>.</span></p>
 
   <figure id="video" class="video">
-    <video src={`${base}/videos/${e.slug}.mp4`} poster={`${base}/videos/${e.slug}-poster.jpg`} width="1920" height="1080" controls playsinline preload="metadata" aria-describedby="video-note"></video>
-    <figcaption id="video-note">The week below, in under a minute: every line and every email is the code’s real output. No sound needed.</figcaption>
+    <video src={`${base}/videos/${e.slug}.mp4`} poster={`${base}/videos/${e.slug}-poster.jpg`} width="1920" height="1080" controls playsinline preload="metadata" aria-describedby="video-note"><track kind="captions" src={`${base}/videos/${e.slug}.vtt`} srclang="en" label="English" /></video>
+    <figcaption id="video-note">The week below, in about a minute, with a voice-over (captions in the player). Every line and every email is the code’s real output.</figcaption>
   </figure>
 
   <h2>The problem</h2>
@@ -73,7 +73,7 @@ const others = examples.filter((x) => x.slug !== e.slug);
   .term-lines .t, .term-lines .k { color: #7d8590; }
   .k-customer .k { color: #7ee2a8; }
   .k-owner .k { color: #9ecbff; }
-  .k-form .k { color: #f0c674; }
+  .k-form .k, .k-booking .k, .k-moved .k { color: #f0c674; }
   .k-stopped .k, .k-skipped .k, .k-quiet .k { color: #b4b9c1; }
   .k-skipped .x, .k-quiet .x { color: #9aa1ab; }
   .term figcaption { padding: 10px 18px 14px; color: #7d8590; }
