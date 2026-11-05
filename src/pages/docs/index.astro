@@ -9,7 +9,7 @@ const pages = Object.values(import.meta.glob("./*.md", { eager: true })) as { fr
   <ul class="guides">
     {pages.map((p) => (
       <li>
-        <a href={p.url}>
+        <a href={p.url.endsWith("/") ? p.url : `${p.url}/`}>
           <span class="guide-title">{p.frontmatter.title}</span>
           <span class="guide-text">{p.frontmatter.description}</span>
           <Icon name="arrowRight" class="guide-arrow" />

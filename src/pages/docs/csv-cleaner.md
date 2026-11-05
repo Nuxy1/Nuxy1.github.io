@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Doc.astro
 title: "CSV Contact Cleaner"
-description: "Before you import a contact list into a CRM, an email tool or a new database, run it through this. It fixes what can be fixed safely, merges duplicates, and puts everything doubtful in a separate file"
+description: "Before you import a contact list into a CRM, an email tool or a new database, run it through this. It fixes what can be fixed safely, merges duplicates, and puts everything doubtful in a separate file for a person to check."
 repo: csv-contact-cleaner
 ---
 

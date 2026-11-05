@@ -13,7 +13,7 @@ const { example: e } = Astro.props as { example: Example };
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const others = examples.filter((x) => x.slug !== e.slug);
 ---
-<Base title={`${e.title} · Case study · Nuxy Automation`} description={`${e.problem} How a ${e.service.name.toLowerCase()} setup handles it, shown on a made-up ${e.kind} with working, open-source code.`}>
+<Base title={`${e.title} · Example · Nuxy Automation`} description={`${e.problem} How a ${e.service.name.toLowerCase()} setup handles it, shown on a made-up ${e.kind} with working, open-source code.`}>
   <p class="crumbs"><a href={`${base}/#work`}>Working examples</a><span aria-hidden="true">/</span>{e.tab}</p>
   <h1>{e.title}</h1>
   <p class="made-up"><Icon name="sealCheck" /><span><strong>{e.who}</strong> is made up for this example. The code is real and open: <a href="https://github.com/Nuxy1/small-business-automations">read it or run it</a>.</span></p>
