@@ -1,0 +1,334 @@
+---
+// The flagship demo: one quote request through lead response & follow-up, in 6 steps, from the customer's phone
+// and the owner's side. Everything is made up and nothing is sent anywhere: it is a page script, not a connection.
+// Without JavaScript every step shows at once, in order.
+import Icon from "./Icon.astro";
+
+interface Props { id?: string; headingLevel?: "h2" | "h3" }
+const { id = "lead-demo", headingLevel = "h3" } = Astro.props;
+const H = headingLevel;
+
+const steps = [
+  { title: "A customer asks for a quote", time: "Mon 9:42 PM", text: "Dana’s water heater is leaking, so she fills in the quote form on Hollow Oak Plumbing’s website. The owner, Ryan, is off for the night." },
+  { title: "She gets a reply in seconds", time: "Mon 9:42 PM", text: "An automatic text thanks her, says when Ryan will be in touch and gives one safety tip. Ryan wrote it in advance, in his own words." },
+  { title: "The owner gets the details", time: "Mon 9:42 PM", text: "Ryan gets one alert with what he needs to call back: name, job, area and best time. No digging through emails." },
+  { title: "It goes on the lead list", time: "Mon 9:42 PM", text: "Dana is added to Ryan’s lead list as New, with the next step and when it’s due, so nothing gets forgotten." },
+  { title: "A follow-up if it goes quiet", time: "Tue–Wed", text: "Tuesday morning Ryan texts his price from the lead card. Dana doesn’t answer, so a day later a friendly follow-up goes out. There are at most 2, and they stop on any reply." },
+  { title: "The owner takes over", time: "Wed 8:31 AM", text: "Dana replies. The follow-ups stop at once, Ryan gets an alert, and he books the visit himself. The automation never talks over him." },
+];
+const n = steps.length;
+---
+<div class="ld" id={id} data-lead-demo data-steps={n}>
+  <div class="ld-bar">
+    <span class="chip plain"><Icon name="info" />Simulated demo</span>
+    <p>Hollow Oak Plumbing, Ryan and Dana are made up. Nothing here is sent to anyone.</p>
+  </div>
+
+  <div class="ld-grid">
+    <div class="ld-side">
+      <H class="sr-only">Steps</H>
+      <ol class="ld-steps">
+        {steps.map((s, i) => (
+          <li>
+            <button type="button" class="ld-step" data-go={i + 1} aria-current={i === 0 ? "step" : "false"} disabled>
+              <span class="ld-num" aria-hidden="true">{i + 1}</span>
+              <span class="ld-step-text">
+                <span class="ld-step-title"><span class="sr-only">Step {i + 1}: </span>{s.title}</span>
+                <span class="ld-step-time">{s.time}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div class="ld-controls" data-controls hidden>
+        <button type="button" class="button" data-play data-track="demo_start"><Icon name="play" /><span data-play-label>Start the demo</span></button>
+        <div class="ld-row">
+          <button type="button" class="button secondary small" data-back><Icon name="caretLeft" />Back</button>
+          <button type="button" class="button secondary small" data-next aria-label="Next step">Next<Icon name="caretRight" /></button>
+          <button type="button" class="button secondary small" data-reset><Icon name="arrowCounterClockwise" />Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ld-stage">
+      <div class="ld-views" role="group" aria-label="Choose a view" data-views hidden>
+        <button type="button" data-view="customer" aria-pressed="true"><Icon name="deviceMobile" />Customer view</button>
+        <button type="button" data-view="owner" aria-pressed="false"><Icon name="userCircle" />Owner view</button>
+        <button type="button" data-view="both" aria-pressed="false" class="ld-wide"><Icon name="monitor" />Side by side</button>
+      </div>
+
+      <div class="ld-caption" aria-live="polite">
+        {steps.map((s, i) => (
+          <p data-from={i + 1} data-to={i + 1}><strong>Step {i + 1} of {n}: {s.title}.</strong> {s.text}</p>
+        ))}
+      </div>
+
+      <div class="ld-panes" data-panes data-view="both">
+        <section class="ld-pane ld-customer" aria-label="What Dana, the customer, sees">
+          <header class="ld-pane-head"><Icon name="deviceMobile" /><span>Dana’s phone</span><span class="ld-who">Customer</span></header>
+          <div class="ld-thread">
+            <div class="ld-msg out ld-form" data-from="1">
+              <p class="ld-form-title"><Icon name="browser" />Quote request · hollowoakplumbing.example</p>
+              <dl>
+                <div><dt>Job</dt><dd>Water heater leaking in the basement</dd></div>
+                <div><dt>Heater</dt><dd>40-gallon gas, about 12 years old</dd></div>
+                <div><dt>Best time</dt><dd>After 4 PM</dd></div>
+              </dl>
+              <p class="ld-consent"><Icon name="checkCircle" />OK to text me about this request</p>
+              <span class="ld-time">Mon 9:42 PM · sent</span>
+            </div>
+            <div class="ld-msg in" data-from="2">
+              <span class="ld-tag auto">Automatic reply</span>
+              <p>Hi Dana, thanks for your request about the leaking water heater. Ryan will text you by 8 AM with a price and times. If water is spreading, turn the cold-water valve on top of the heater to off. Reply STOP to stop texts.</p>
+              <span class="ld-time">Mon 9:42 PM</span>
+            </div>
+            <p class="ld-empty" data-from="3" data-to="4">Nothing new on Dana’s phone at this step: she already knows when to expect a price.</p>
+            <div class="ld-msg in" data-from="5">
+              <span class="ld-tag person">From Ryan</span>
+              <p>Hi Dana, it’s Ryan from Hollow Oak. Replacing your 40-gallon gas heater, installed with the old one hauled away: $1,450. I can do Thursday morning. Want me to hold it?</p>
+              <span class="ld-time">Tue 8:05 AM</span>
+            </div>
+            <div class="ld-msg in" data-from="5">
+              <span class="ld-tag auto">Automatic follow-up</span>
+              <p>Hi Dana, just checking you saw Ryan’s price for the water heater. Thursday morning is still open. Any questions, reply here.</p>
+              <span class="ld-time">Wed 8:05 AM</span>
+            </div>
+            <div class="ld-msg out" data-from="6">
+              <p>Thursday works! How early can you come?</p>
+              <span class="ld-time">Wed 8:31 AM · sent</span>
+            </div>
+            <div class="ld-msg in" data-from="6">
+              <span class="ld-tag person">From Ryan</span>
+              <p>7:30 works. See you Thursday. Ryan</p>
+              <span class="ld-time">Wed 8:40 AM</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="ld-pane ld-owner" aria-label="What Ryan, the owner, sees">
+          <header class="ld-pane-head"><Icon name="userCircle" /><span>Ryan’s alerts and lead list</span><span class="ld-who">Owner</span></header>
+          <div class="ld-owner-body">
+            <p class="ld-empty" data-from="1" data-to="1">Ryan is off for the night. Nothing for him to do yet.</p>
+            <ol class="ld-log">
+              <li data-from="1"><span class="ld-time">Mon 9:42 PM</span>New quote request from the website form</li>
+              <li data-from="2"><span class="ld-time">Mon 9:42 PM</span>Reply sent to Dana automatically</li>
+            </ol>
+            <div class="ld-alert" data-from="3">
+              <p class="ld-alert-title"><Icon name="bellRinging" />New quote request: Dana R.</p>
+              <p>Water heater leaking in the basement · 40-gallon gas, about 12 years old · Faribault · prefers a text after 4 PM</p>
+              <p class="ld-alert-actions" aria-hidden="true"><span><Icon name="phone" />Call</span><span><Icon name="chatCircleText" />Text</span><span><Icon name="kanban" />Open lead</span></p>
+            </div>
+
+            {[
+              { from: 4, to: 4, stage: 0, next: "Text Dana a price by Tue 8 AM", value: "Not quoted yet" },
+              { from: 5, to: 5, stage: 1, next: "Follow-up 2 of 2 on Fri if she stays quiet", value: "$1,450 quoted" },
+              { from: 6, to: 6, stage: 2, next: "Visit Thu 7:30 AM", value: "$1,450 · won" },
+            ].map((c) => (
+              <div class="ld-lead" data-from={c.from} data-to={c.to}>
+                <div class="ld-lead-head"><strong>Dana R.</strong><span>Water heater · Faribault</span></div>
+                <ol class="ld-stages" aria-label="Lead stage">
+                  {["New", "Quote sent", "Booked"].map((s, k) => <li class={k === c.stage ? "on" : k < c.stage ? "past" : ""} aria-current={k === c.stage ? "step" : undefined}>{s}</li>)}
+                </ol>
+                <dl class="ld-lead-facts">
+                  <div><dt>Source</dt><dd>Website form</dd></div>
+                  <div><dt>Assigned</dt><dd>Ryan</dd></div>
+                  <div><dt>Next</dt><dd>{c.next}</dd></div>
+                  <div><dt>Value</dt><dd>{c.value}</dd></div>
+                </dl>
+              </div>
+            ))}
+
+            <ol class="ld-log">
+              <li data-from="5"><span class="ld-time">Tue 8:05 AM</span>Ryan sent his price from the lead card</li>
+              <li data-from="5"><span class="ld-time">Wed 8:05 AM</span>No reply in 24 hours: follow-up 1 of 2 sent</li>
+            </ol>
+            <div class="ld-alert good" data-from="6">
+              <p class="ld-alert-title"><Icon name="checkCircle" />Dana replied. Follow-ups stopped.</p>
+              <p>“Thursday works! How early can you come?” Over to you.</p>
+            </div>
+            <ol class="ld-log">
+              <li data-from="6"><span class="ld-time">Wed 8:40 AM</span>Ryan replied and booked Thu 7:30 AM</li>
+            </ol>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    document.querySelectorAll("[data-lead-demo]").forEach(function (root) {
+      if (root.dataset.ready) return;
+      root.dataset.ready = "1";
+      var total = +root.dataset.steps, cur = 1, timer = null, started = false, completed = false;
+      var items = root.querySelectorAll("[data-from]");
+      var stepBtns = root.querySelectorAll("[data-go]");
+      var play = root.querySelector("[data-play]"), playLabel = root.querySelector("[data-play-label]");
+      var back = root.querySelector("[data-back]"), next = root.querySelector("[data-next]"), reset = root.querySelector("[data-reset]");
+      var panes = root.querySelector("[data-panes]"), viewBtns = root.querySelectorAll("button[data-view]");
+      var track = function (e) { if (window.nuxyTrack) window.nuxyTrack(e); };
+      var wide = window.matchMedia("(min-width: 1060px)");
+
+      function show(n) {
+        cur = Math.max(1, Math.min(total, n));
+        items.forEach(function (el) {
+          var f = +el.dataset.from, t = +(el.dataset.to || total), on = cur >= f && cur <= t;
+          el.hidden = !on;
+          el.classList.toggle("is-new", on && f === cur);
+        });
+        root.querySelectorAll(".ld-log").forEach(function (l) { l.hidden = !l.querySelector("li:not([hidden])"); });
+        stepBtns.forEach(function (b) {
+          var k = +b.dataset.go;
+          b.setAttribute("aria-current", k === cur ? "step" : "false");
+          b.classList.toggle("done", k < cur);
+        });
+        back.disabled = cur === 1;
+        next.disabled = cur === total;
+        if (cur === total) {
+          stop();
+          playLabel.textContent = "Watch it again";
+          if (!completed) { completed = true; track("demo_complete"); }
+        }
+      }
+      function begin() { if (!started) { started = true; track("demo_start"); } }
+      function stop() { if (timer) { clearInterval(timer); timer = null; } play.setAttribute("aria-pressed", "false"); if (cur < total) playLabel.textContent = "Play"; }
+      function setView(v) {
+        panes.dataset.view = v;
+        viewBtns.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.view === v ? "true" : "false"); });
+      }
+
+      play.removeAttribute("data-track");
+      play.addEventListener("click", function () {
+        if (timer) { stop(); return; }
+        begin();
+        if (cur === total) show(1);
+        play.setAttribute("aria-pressed", "true");
+        playLabel.textContent = "Pause";
+        timer = setInterval(function () { show(cur + 1); }, 3600);
+      });
+      next.addEventListener("click", function () { begin(); stop(); show(cur + 1); });
+      back.addEventListener("click", function () { stop(); show(cur - 1); });
+      reset.addEventListener("click", function () { stop(); completed = false; playLabel.textContent = "Start the demo"; show(1); });
+      stepBtns.forEach(function (b) { b.disabled = false; b.addEventListener("click", function () { begin(); stop(); show(+b.dataset.go); }); });
+      viewBtns.forEach(function (b) { b.addEventListener("click", function () { setView(b.dataset.view); }); });
+      wide.addEventListener("change", function (e) { if (!e.matches && panes.dataset.view === "both") setView("customer"); });
+
+      setView(wide.matches ? "both" : "customer");
+      root.querySelector("[data-controls]").hidden = false;
+      root.querySelector("[data-views]").hidden = false;
+      root.classList.add("ready");
+      show(1);
+      root.querySelectorAll(".is-new").forEach(function (el) { el.classList.remove("is-new"); });
+    });
+  })();
+</script>
+
+<style>
+  .ld { border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg); overflow: hidden; }
+  .ld-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 18px; border-bottom: 1px solid var(--hairline-soft); background: var(--bg-2); font-size: 0.875rem; color: var(--muted); }
+  .ld-bar .chip :global(.icon) { width: 1em; height: 1em; }
+  .ld-grid { display: grid; }
+  .ld-side { padding: 18px; border-bottom: 1px solid var(--hairline-soft); }
+  .ld-steps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; list-style: none; }
+  .ld-step {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; min-height: 48px; padding: 6px 2px;
+    border: 1px solid transparent; border-radius: var(--r-md); background: none; color: var(--muted); text-align: left; cursor: pointer;
+  }
+  .ld-step:disabled { cursor: default; }
+  .ld-step:not(:disabled):hover { background: rgba(148, 163, 184, 0.06); color: var(--ink); }
+  .ld-num { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hairline-strong); font-size: 0.875rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ld-step.done .ld-num { border-color: transparent; background: var(--accent-soft); color: var(--link); }
+  .ld-step[aria-current="step"] .ld-num { border-color: var(--button); background: var(--button); color: #fff; }
+  .ld-step-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .ld-step-title { color: var(--ink); font-weight: 600; font-size: 0.9375rem; line-height: 1.3; }
+  .ld-step-time { font-size: 0.8125rem; color: var(--muted); }
+  .ld-controls { display: grid; gap: 10px; margin-top: 16px; }
+  .ld-controls > .button { width: 100%; }
+  .ld-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .ld-row .button { padding: 0 8px; min-height: 44px; }
+  .ld-row .button:disabled { opacity: 0.45; cursor: default; }
+  .ld-row :global(.icon) { width: 1em; height: 1em; }
+
+  .ld-stage { padding: 18px; min-width: 0; }
+  .ld-views { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin-bottom: 14px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--bg-2); width: fit-content; max-width: 100%; }
+  .ld-views button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 9px; background: none; color: var(--muted); font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+  .ld-views button:hover { color: var(--ink); }
+  .ld-views button[aria-pressed="true"] { background: var(--surface-strong); color: var(--ink); box-shadow: inset 0 0 0 1px var(--hairline-strong); }
+  .ld-views :global(.icon) { width: 1.05em; height: 1.05em; }
+  .ld-wide { display: none !important; }
+  .ld-caption { min-height: 4.8em; margin-bottom: 16px; color: var(--body); font-size: 0.9375rem; }
+  .ld:not(.ready) .ld-caption, .ld:not(.ready) .ld-empty { display: none; }
+
+  .ld-panes { display: grid; gap: 16px; }
+  .ld-panes[data-view="customer"] .ld-owner, .ld-panes[data-view="owner"] .ld-customer { display: none; }
+  .ld-pane { min-width: 0; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
+  .ld-pane-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--hairline-soft); color: var(--ink); font-size: 0.875rem; font-weight: 600; }
+  .ld-pane-head :global(.icon) { color: var(--cyan); width: 1.1em; height: 1.1em; }
+  .ld-who { margin-left: auto; color: var(--muted); font-size: 0.8125rem; font-weight: 500; }
+  .ld-thread, .ld-owner-body { display: grid; gap: 12px; align-content: start; padding: 16px; min-height: 340px; }
+
+  .ld-msg { position: relative; max-width: 88%; padding: 10px 14px 8px; border-radius: 16px; font-size: 0.9375rem; line-height: 1.5; }
+  .ld-msg p { margin: 0; }
+  .ld-msg.in { justify-self: start; background: var(--surface-strong); color: var(--ink); border-bottom-left-radius: 6px; }
+  .ld-msg.out { justify-self: end; background: var(--button); color: #fff; border-bottom-right-radius: 6px; }
+  .ld-time { display: block; margin-top: 4px; font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ld-msg.out .ld-time { color: #f8fafc; text-align: right; }
+  .ld-tag { display: inline-block; margin-bottom: 4px; font-size: 0.8125rem; font-weight: 600; }
+  .ld-tag.auto { color: var(--cyan); }
+  .ld-tag.person { color: #fcd34d; }
+  .ld-form { max-width: 94%; }
+  .ld-form-title { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.875rem; margin-bottom: 6px !important; overflow-wrap: anywhere; }
+  .ld-form dl { display: grid; gap: 4px; margin: 0 0 6px; font-size: 0.875rem; }
+  .ld-form dl div { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 6px; }
+  .ld-form dt { color: #f8fafc; }
+  .ld-form dd { margin: 0; }
+  .ld-consent { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; }
+  .ld-empty { padding: 12px 14px; border: 1px dashed var(--hairline-strong); border-radius: var(--r-md); color: var(--muted); font-size: 0.875rem; }
+
+  .ld-log { display: grid; gap: 8px; list-style: none; font-size: 0.875rem; color: var(--body); }
+  .ld-log li { display: grid; grid-template-columns: 7.2em minmax(0, 1fr); gap: 8px; }
+  .ld-log .ld-time { margin: 0; }
+  .ld-alert { padding: 12px 14px; border-radius: var(--r-md); border: 1px solid rgba(59, 130, 246, 0.45); background: rgba(37, 99, 235, 0.12); font-size: 0.875rem; color: var(--body); }
+  .ld-alert.good { border-color: rgba(52, 211, 153, 0.45); background: rgba(52, 211, 153, 0.1); }
+  .ld-alert-title { display: flex; align-items: center; gap: 6px; margin-bottom: 4px !important; color: var(--ink); font-weight: 600; font-size: 0.9375rem; }
+  .ld-alert-title :global(.icon) { color: var(--link); }
+  .ld-alert.good .ld-alert-title :global(.icon) { color: var(--ok); }
+  .ld-alert-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px !important; }
+  .ld-alert-actions span { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: var(--r-full); background: var(--surface-strong); color: var(--ink); font-size: 0.8125rem; font-weight: 600; }
+  .ld-alert-actions :global(.icon) { width: 1em; height: 1em; }
+  .ld-lead { padding: 14px; border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: var(--bg-2); }
+  .ld-lead-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 10px; font-size: 0.9375rem; }
+  .ld-lead-head span { color: var(--muted); font-size: 0.8125rem; }
+  .ld-stages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-bottom: 12px; list-style: none; }
+  .ld-stages li { padding: 5px 4px; border-radius: 6px; background: var(--surface-strong); color: var(--muted); font-size: 0.8125rem; font-weight: 600; text-align: center; }
+  .ld-stages li.past { color: var(--body); }
+  .ld-stages li.on { background: var(--button); color: #fff; }
+  .ld-lead-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 0; font-size: 0.8125rem; }
+  .ld-lead-facts dt { color: var(--muted); }
+  .ld-lead-facts dd { margin: 0; color: var(--ink); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ld.ready .is-new { animation: ld-in 420ms var(--ease) both; }
+  }
+  @keyframes ld-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  @media (min-width: 900px) {
+    .ld-grid { grid-template-columns: 290px minmax(0, 1fr); }
+    .ld-side { border-bottom: 0; border-right: 1px solid var(--hairline-soft); }
+    .ld-steps { grid-template-columns: 1fr; gap: 2px; }
+    .ld-step { flex-direction: row; align-items: center; gap: 12px; padding: 8px 10px; }
+    .ld-step-text { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; display: grid; }
+    .ld-step[aria-current="step"] { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.35); }
+    .ld-stage { padding: 22px; }
+  }
+  @media (min-width: 1060px) {
+    .ld-wide { display: inline-flex !important; }
+    .ld-panes[data-view="both"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 380px) {
+    .ld-side, .ld-stage { padding: 14px; }
+    .ld-msg { max-width: 94%; }
+    .ld-log li { grid-template-columns: 1fr; gap: 0; }
+  }
+</style>

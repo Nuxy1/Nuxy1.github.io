@@ -46,7 +46,7 @@ export const examples: Example[] = [
   },
   {
     slug: "lead-follow-up", tab: "Lead follow-up", title: "Lead follow-up for a plumber", who: "Northfield Plumbing Co.", kind: "plumber",
-    service: { id: "follow-up", name: "Lead follow-up", price: "$450" },
+    service: { id: "follow-up", name: "Lead response & follow-up", price: "$450" },
     problem: "A plumber on a job can’t answer email or the website form. Inquiries sit for hours, and the customer books the next plumber on Google.",
     built: [
       "An instant reply to every inquiry: when you’ll call back, and what to do in an emergency",

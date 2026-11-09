@@ -1,0 +1,68 @@
+---
+// The hero's picture: one inquiry going through a lead-response automation, step by step. Labelled as simulated;
+// the business and customer are made up (the same story as LeadDemo).
+import Icon from "./Icon.astro";
+import type { IconName } from "./Icon.astro";
+
+const nodes: { icon: IconName; title: string; detail: string; time: string }[] = [
+  { icon: "tray", title: "New quote request", detail: "Water heater leaking · website form", time: "9:42 PM" },
+  { icon: "paperPlaneTilt", title: "Customer gets a reply", detail: "“Thanks Dana, we got your request…”", time: "9:42 PM" },
+  { icon: "bellRinging", title: "Owner gets the details", detail: "Name, job, area, best time to call", time: "9:42 PM" },
+  { icon: "arrowsClockwise", title: "Follow-up if it goes quiet", detail: "Stops the moment she replies", time: "Wed 8:05 AM" },
+  { icon: "calendarCheck", title: "Visit booked", detail: "The owner takes it from here", time: "Thu 7:30 AM" },
+];
+---
+<figure class="flow" aria-labelledby="flow-cap">
+  <div class="flow-head">
+    <span class="flow-title"><Icon name="flowArrow" />Lead response, start to finish</span>
+    <span class="chip plain">Simulated example</span>
+  </div>
+  <ol class="flow-list">
+    {nodes.map((n, i) => (
+      <li class="flow-node" style={`--i:${i}`}>
+        <span class="flow-dot"><Icon name={n.icon} /></span>
+        <span class="flow-text">
+          <span class="flow-name">{n.title}</span>
+          <span class="flow-detail">{n.detail}</span>
+        </span>
+        <span class="flow-time">{n.time}</span>
+      </li>
+    ))}
+  </ol>
+  <figcaption id="flow-cap" class="flow-cap">Hollow Oak Plumbing and Dana are made up. Your version runs in your own email, form and calendar tools.</figcaption>
+</figure>
+
+<style>
+  .flow {
+    margin: 0; padding: 20px; border: 1px solid var(--hairline); border-radius: var(--r-lg);
+    background: linear-gradient(180deg, #14203a 0%, var(--panel) 100%); box-shadow: var(--shadow);
+  }
+  .flow-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
+  .flow-title { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
+  .flow-title :global(.icon) { color: var(--cyan); }
+  .flow-list { position: relative; display: grid; gap: 10px; list-style: none; }
+  .flow-list::before { content: ""; position: absolute; left: 19px; top: 20px; bottom: 20px; width: 2px; background: linear-gradient(var(--blue), var(--cyan)); opacity: 0.45; }
+  .flow-node {
+    position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+    padding: 10px 12px 10px 0; border-radius: var(--r-md);
+  }
+  .flow-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #0e1a30; border: 1px solid var(--hairline-strong); color: var(--link); }
+  .flow-dot :global(.icon) { width: 19px; height: 19px; }
+  .flow-node:last-child .flow-dot { background: var(--button); border-color: var(--button); color: #fff; }
+  .flow-text { display: grid; min-width: 0; }
+  .flow-name { color: var(--ink); font-size: 0.9375rem; font-weight: 600; line-height: 1.35; }
+  .flow-detail { color: var(--muted); font-size: 0.8125rem; line-height: 1.4; overflow-wrap: anywhere; }
+  .flow-time { color: var(--muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .flow-cap { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hairline-soft); color: var(--muted); font-size: 0.8125rem; line-height: 1.5; }
+  @media (prefers-reduced-motion: no-preference) {
+    .flow-node { animation: node-in 520ms var(--ease) both; animation-delay: calc(var(--i) * 140ms + 150ms); }
+    .flow-node:last-child .flow-dot { animation: done 600ms var(--ease) both; animation-delay: 900ms; }
+  }
+  @keyframes node-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes done { from { background: #0e1a30; border-color: var(--hairline-strong); color: var(--link); } to { background: var(--button); border-color: var(--button); color: #fff; } }
+  @media (max-width: 380px) {
+    .flow { padding: 16px; }
+    .flow-node { grid-template-columns: 40px minmax(0, 1fr); }
+    .flow-time { grid-column: 2; margin-top: -6px; }
+  }
+</style>

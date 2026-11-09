@@ -1,0 +1,193 @@
+---
+// Pricing: how paying works, every one-time price, the monthly plans (#plans, #care, #automation-care,
+// #automation-partner) and the questions (#faq). Old homepage links (/#plans, /#faq, /#care...) land here (Base.astro).
+// Every price and plan term comes from data/services.ts and is the PUBLISHED one. The proposed website packages and
+// care tiers (business/site-upgrade/proposals.md) stay out until the owner approves them.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import { groups, plans, planNote, bundle, faqs, keep } from "../../data/services";
+import type { IconName } from "../../components/Icon.astro";
+// (the lowest monthly plan, from the data, so a plan price change follows into the description)
+const cheapest = [...plans].sort((x, y) => Number(x.amount.replace(/\D/g, "")) - Number(y.amount.replace(/\D/g, "")))[0];
+
+const site = "https://nuxyautomation.com";
+const watch = keep.find((k) => k.icon === "bellSimple")!;
+
+const paying: { icon: IconName; title: string; text: string }[] = [
+  { icon: "sealCheck", title: "A written plan and price first", text: "Within one business day of your request: what we’ll build, what it costs and what it needs from you. Nothing is charged until you agree." },
+  { icon: "creditCard", title: "50% to start, 50% at handover", text: "By a secure Stripe invoice: card, Apple Pay, Google Pay or bank transfer. Monthly plans are billed monthly." },
+  { icon: "listChecks", title: "Two or more cost less", text: `Order 2 one-time services together and the total is ${bundle.two}% off; 3 or more, ${bundle.three}% off. Add-ons count.` },
+  { icon: watch.icon, title: watch.title, text: watch.text },
+];
+
+const data = [
+  {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    "@id": `${site}/pricing/#plans`,
+    name: "Monthly plans",
+    url: `${site}/pricing/#plans`,
+    itemListElement: plans.map((p) => ({
+      "@type": "Offer",
+      name: p.name,
+      description: p.points.join(". "),
+      url: `${site}/pricing/#${p.id}`,
+      price: p.amount.replace(/[^0-9.]/g, ""),
+      priceCurrency: "USD",
+      priceSpecification: { "@type": "UnitPriceSpecification", price: p.amount.replace(/[^0-9.]/g, ""), priceCurrency: "USD", unitCode: "MON", unitText: "month" },
+      seller: { "@id": `${site}/#business` },
+    })),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "@id": `${site}/pricing/#faq`,
+    mainEntity: faqs.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+  },
+];
+---
+<Base title="Pricing & Monthly Plans · Nuxy Automation" description={`Fixed one-time prices for every service, agreed in writing: 50% to start, 50% at handover. Optional plans from ${cheapest.price} for your site or automations.`} wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(data)} />
+
+  <section class="pr-hero">
+    <div class="wrap">
+      <p class="eyebrow">Pricing</p>
+      <h1>Fixed prices, and plans you don’t have to take.</h1>
+      <p class="lead">Every service has a one-time price, written into your plan before you pay anything. Monthly plans are optional, for when you’d like your website or automations watched and fixed after launch.</p>
+      <ul class="paying" role="list">
+        {paying.map((p) => (
+          <li>
+            <Icon name={p.icon} />
+            <div><h2>{p.title}</h2><p>{p.text}</p></div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section band" id="services" aria-labelledby="prices-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">One-time prices</p>
+        <h2 id="prices-h">Every service and its price</h2>
+        <p>What other companies charge, like a website builder’s plan, is paid to them directly and named in your written plan. The services page shows what each one fixes and what it needs from you.</p>
+      </div>
+      <div class="price-lists">
+        {groups.map((g) => (
+          <table class="price-list">
+            <caption><a href={`/solutions/#${g.id}`}>{g.title}</a></caption>
+            <thead class="sr-only"><tr><th scope="col">Service</th><th scope="col">Price</th></tr></thead>
+            <tbody>
+              {g.items.map((s) => (
+                <tr>
+                  <th scope="row"><a href={`/solutions/#${s.id}`}>{s.name}</a>{s.addon && <span class="chip plain">Add-on</span>}</th>
+                  <td>{s.price}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ))}
+      </div>
+      <p class="more-line"><a class="text-link" href="/solutions/">Compare every service in detail<Icon name="arrowRight" /></a></p>
+    </div>
+  </section>
+
+  <section class="section" id="plans" aria-labelledby="plans-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Monthly plans</p>
+        <h2 id="plans-h">Want it watched after launch?</h2>
+        <p>Not required: everything we build is yours, with or without a plan. Plans are billed monthly by Stripe; cancel any time and the plan ends with the month already paid.</p>
+      </div>
+      <ul class="plans" role="list">
+        {plans.map((p, i) => (
+          <li class={`plan${i === plans.length - 1 ? " featured" : ""}`} id={p.id}>
+            {i === plans.length - 1 && <span class="chip blue badge">Most complete</span>}
+            <h3>{p.name}</h3>
+            <p class="plan-who">{p.who}</p>
+            <p class="plan-price"><strong>{p.amount}</strong> a month</p>
+            <ul class="ticks" role="list">{p.points.map((point) => <li><Icon name="check" />{point}</li>)}</ul>
+            <a class={`button wide${i === plans.length - 1 ? "" : " secondary"}`} href={`/contact/?service=${p.id}`} data-track="plan_ask">Ask about {p.name}</a>
+          </li>
+        ))}
+      </ul>
+      <p class="plan-note"><Icon name="info" />{planNote}</p>
+    </div>
+  </section>
+
+  <section class="section band" id="faq" aria-labelledby="faq-h">
+    <div class="wrap faq-wrap">
+      <div class="section-head">
+        <p class="eyebrow">Questions</p>
+        <h2 id="faq-h">Questions about prices and paying</h2>
+      </div>
+      <div class="faq">
+        {faqs.map(([q, a]) => (
+          <details>
+            <summary><span>{q}</span><Icon name="plus" /></summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>Get your written plan and price</h2>
+          <p>Tell us what slows you down or what you’d like built. Within one business day you’ll get a written plan with the exact price. No call needed.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="button" href="/contact/" data-track="cta_pricing">Get a Free Assessment</a>
+          <a class="button secondary" href="/solutions/">See all services</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .pr-hero { padding-block: clamp(40px, 6vw, 80px) clamp(48px, 7vw, 88px); }
+  .pr-hero h1 { max-width: 20ch; font-size: clamp(2.125rem, 1.5rem + 2.6vw, 3.25rem); }
+  .pr-hero .lead { margin-top: 18px; max-width: 62ch; }
+  .paying { display: grid; gap: 24px 32px; margin: clamp(32px, 4vw, 48px) 0 0; padding: 0; list-style: none; }
+  @media (min-width: 640px) { .paying { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1120px) { .paying { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .paying li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .paying li > :global(.icon) { width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
+  .paying h2 { font-size: 1.0625rem; }
+  .paying p { margin-top: 4px; color: var(--body); font-size: 0.9375rem; }
+
+  .price-lists { display: grid; gap: 28px 40px; align-items: start; }
+  @media (min-width: 900px) { .price-lists { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .price-list { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+  .price-list caption { padding-bottom: 10px; text-align: left; font-size: 1.125rem; font-weight: 650; }
+  .price-list caption a { color: var(--ink); text-decoration: none; }
+  .price-list caption a:hover { color: var(--link); }
+  .price-list tr { border-top: 1px solid var(--hairline); }
+  .price-list tr:last-child { border-bottom: 1px solid var(--hairline); }
+  .price-list th, .price-list td { padding: 11px 0; vertical-align: baseline; }
+  .price-list th { padding-right: 16px; font-weight: 500; text-align: left; }
+  .price-list th a { color: var(--body); text-decoration: none; }
+  .price-list th a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .price-list th .chip { margin-left: 8px; padding: 2px 8px; font-size: 0.75rem; vertical-align: 1px; }
+  .price-list td { color: var(--ink); font-weight: 650; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .more-line { margin-top: 28px; }
+
+  .plans { display: grid; gap: 20px; margin: 0; padding: 0; list-style: none; }
+  @media (min-width: 1024px) { .plans { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .plan { position: relative; display: flex; flex-direction: column; gap: 14px; padding: clamp(22px, 3vw, 30px); border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); scroll-margin-top: calc(var(--nav-h) + 20px); }
+  .plan.featured { border-color: rgba(59, 130, 246, 0.55); }
+  .plan:target { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+  .plan .badge { position: absolute; top: 0; right: clamp(22px, 3vw, 30px); transform: translateY(-50%); border: 1px solid rgba(59, 130, 246, 0.55); background: var(--panel); }
+  .plan h3 { font-size: 1.25rem; }
+  .plan-who { color: var(--muted); font-size: 0.9375rem; }
+  .plan-price { color: var(--muted); }
+  .plan-price strong { margin-right: 4px; color: var(--ink); font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .plan .ticks { margin: 0 0 8px; padding: 14px 0 0; border-top: 1px solid var(--hairline-soft); color: var(--body); font-size: 0.9375rem; }
+  .plan .button { margin-top: auto; }
+  .plan-note { display: flex; gap: 10px; align-items: flex-start; max-width: 80ch; margin-top: 24px; color: var(--muted); font-size: 0.9375rem; }
+  .plan-note :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
+</style>

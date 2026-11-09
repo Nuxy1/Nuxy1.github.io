@@ -1,0 +1,384 @@
+---
+// Example website: Mossgate Home Cleaning, a made-up cleaning company (data/demo-sites.ts). Shows an instant price
+// range by home size, a booking request with preferred days, and what each clean includes, written plainly.
+// Prices and details are invented for the demonstration.
+import DemoSite from "../../layouts/DemoSite.astro";
+
+const phone = "(507) 555-0163";
+const beds = [1, 2, 3, 4, 5];
+const baths = [1, 2, 3, 4];
+const types = [
+  { id: "standard", name: "Standard", note: "Regular upkeep" },
+  { id: "deep", name: "Deep", note: "Top to bottom" },
+  { id: "move", name: "Move-out", note: "Empty home" },
+];
+const freqs = [
+  { id: "once", name: "One time", note: "" },
+  { id: "biweekly", name: "Every 2 weeks", note: "Save 10%" },
+  { id: "weekly", name: "Weekly", note: "Save 15%" },
+];
+// the default the page shows before JavaScript runs: a standard one-time clean of a 1-bed, 1-bath home
+// (90 + 25 + 20 = 135, range x0.95 to x1.1 rounded to $5: 130 to 150)
+const startLow = 130;
+const startHigh = 150;
+const standard = [
+  "Kitchen counters, sink, stovetop and the outside of appliances",
+  "Bathrooms: toilet, shower, tub, sink and mirrors",
+  "Floors vacuumed and mopped in every room",
+  "Dusting of every surface we can reach",
+  "Beds made and trash taken out",
+];
+const deep = [
+  "Inside the oven, fridge and microwave",
+  "Baseboards, door frames and light switches",
+  "Inside windows, sills and tracks",
+  "Cabinet fronts and handles",
+  "Behind and under furniture we can move",
+];
+const questions = [
+  ["Do I need to be home?", "No. Most customers give us a door code or leave a key. We text when we arrive and when we leave."],
+  ["Do you bring supplies?", "Yes, everything, including a vacuum. If you’d like us to use your own products, leave them out and tell us in the notes."],
+  ["What if I need to change the day?", "Reply to your reminder text at least a day ahead and we’ll find a new time. There’s no fee for moving a clean."],
+  ["How do I pay?", "You get an invoice by email after each clean and can pay by card. Nothing is charged before the clean is done."],
+  ["Is the estimate the final price?", "It’s a range for a typical home. We confirm the exact price before your first clean, and it only changes if you ask for more."],
+];
+---
+<DemoSite slug="mossgate-cleaning" theme="#173b33" description="Mossgate Home Cleaning is a made-up cleaning company: a demonstration website by Nuxy Automation.">
+  <header class="top">
+    <div class="in top-in">
+      <a class="logo" href="#home">
+        <svg viewBox="0 0 36 36" width="34" height="34" aria-hidden="true"><rect width="36" height="36" rx="10" fill="#2f6f5e" /><path d="M9 25V15l9-6 9 6v10Z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" /><path d="M18 14l1.4 3.2 3.2 1.4-3.2 1.4L18 23.2l-1.4-3.2-3.2-1.4 3.2-1.4Z" fill="#f2b8a6" /></svg>
+        <span><b>Mossgate</b> <small>Home Cleaning</small></span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="#price">Prices</a>
+        <a href="#included">What’s included</a>
+        <a href="#faq">Questions</a>
+      </nav>
+      <a class="btn small" href="#price">Get a price</a>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="in hero-in">
+        <div class="hero-copy">
+          <h1>A clean home, without the <span class="nowrap">back-and-forth.</span></h1>
+          <p class="hero-lead">See your price in seconds, pick the days that suit you, and we’ll confirm by text. No quote visit, no phone tag.</p>
+          <div class="hero-btns">
+            <a class="btn" href="#price">See your price</a>
+            <a class="btn soft" href="#book">Request a clean</a>
+          </div>
+          <ul class="hero-facts" role="list">
+            <li>Supplies included</li>
+            <li>Same cleaner each visit</li>
+            <li>Pay after the clean</li>
+          </ul>
+        </div>
+        <svg class="hero-art" viewBox="0 0 460 380" role="img" aria-label="Illustration of a bright, tidy room with a window, a plant and a cleaning caddy">
+          <rect width="460" height="380" rx="28" fill="#e6efea" />
+          <rect x="250" y="44" width="168" height="150" rx="10" fill="#fff" stroke="#2f6f5e" stroke-width="6" />
+          <path d="M334 44v150M250 119h168" stroke="#2f6f5e" stroke-width="5" />
+          <path d="M268 64l30 30M290 60l36 36" stroke="#d9ebe3" stroke-width="7" stroke-linecap="round" />
+          <rect x="0" y="292" width="460" height="88" fill="#d3e3db" />
+          <path d="M0 292h460" stroke="#b6cfc3" stroke-width="3" />
+          <rect x="48" y="168" width="150" height="124" rx="14" fill="#2f6f5e" /><rect x="60" y="182" width="126" height="44" rx="8" fill="#3d8571" /><rect x="60" y="236" width="126" height="44" rx="8" fill="#3d8571" />
+          <circle cx="106" cy="204" r="4" fill="#e6efea" /><circle cx="140" cy="204" r="4" fill="#e6efea" /><circle cx="106" cy="258" r="4" fill="#e6efea" /><circle cx="140" cy="258" r="4" fill="#e6efea" />
+          <path d="M92 168c-6-30 6-52 30-62-4 22-2 42-8 62Z" fill="#5b9a7f" /><path d="M128 168c2-34 22-52 46-54-10 20-18 40-30 54Z" fill="#4a8a6f" /><rect x="96" y="150" width="54" height="22" rx="6" fill="#e0785c" />
+          <rect x="292" y="244" width="110" height="52" rx="10" fill="#e0785c" /><path d="M312 244c0-26 70-26 70 0" fill="none" stroke="#173b33" stroke-width="7" stroke-linecap="round" />
+          <rect x="306" y="212" width="22" height="40" rx="5" fill="#fff" stroke="#173b33" stroke-width="4" /><path d="M310 212v-10h14l8 8" fill="none" stroke="#173b33" stroke-width="4" stroke-linejoin="round" />
+          <rect x="346" y="222" width="34" height="30" rx="6" fill="#f2b8a6" stroke="#173b33" stroke-width="4" />
+          <path d="M224 98l5 11 11 5-11 5-5 11-5-11-11-5 11-5Z" fill="#e0785c" /><path d="M420 228l3.5 8 8 3.5-8 3.5-3.5 8-3.5-8-8-3.5 8-3.5Z" fill="#2f6f5e" /><path d="M232 252l3 6 6 3-6 3-3 6-3-6-6-3 6-3Z" fill="#2f6f5e" />
+        </svg>
+      </div>
+    </section>
+
+    <section class="block alt" id="price" aria-labelledby="price-h">
+      <div class="in">
+        <p class="kicker">Instant estimate</p>
+        <h2 id="price-h">See your price</h2>
+        <p class="sub">Tell us about your home. The estimate updates as you choose.</p>
+        <div class="est">
+          <form method="dialog" class="est-form" data-estimator aria-label="Price estimate">
+            <fieldset>
+              <legend>Bedrooms</legend>
+              <div class="chips">
+                {beds.map((n) => <label class="chip"><input type="radio" name="bed" value={n} checked={n === 1} /><span>{n === 5 ? "5+" : n}</span></label>)}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Bathrooms</legend>
+              <div class="chips">
+                {baths.map((n) => <label class="chip"><input type="radio" name="bath" value={n} checked={n === 1} /><span>{n === 4 ? "4+" : n}</span></label>)}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Type of clean</legend>
+              <div class="chips wide">
+                {types.map((t) => <label class="chip"><input type="radio" name="type" value={t.id} checked={t.id === "standard"} /><span><b>{t.name}</b><small>{t.note}</small></span></label>)}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>How often</legend>
+              <div class="chips wide">
+                {freqs.map((f) => <label class="chip"><input type="radio" name="freq" value={f.id} checked={f.id === "once"} /><span><b>{f.name}</b>{f.note && <small>{f.note}</small>}</span></label>)}
+              </div>
+              <p class="est-hint" data-move-note hidden>Move-out cleans are one time only.</p>
+            </fieldset>
+          </form>
+          <aside class="est-out" aria-labelledby="est-h">
+            <h3 id="est-h">Your estimate</h3>
+            <p class="est-price" aria-live="polite" aria-atomic="true"><span data-est-range>${startLow} – ${startHigh}</span> <small>per clean</small></p>
+            <p class="est-what" data-est-what>Standard clean · 1 bedroom · 1 bathroom · one time</p>
+            <a class="btn wide" href="#book" data-est-go>Request this clean</a>
+            <p class="est-small">A range for a typical home. We confirm the exact price before your first clean.</p>
+            <noscript><p class="est-small">Turn on JavaScript to update the estimate. Deep cleans cost about 1.5 times a standard clean.</p></noscript>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="included" aria-labelledby="inc-h">
+      <div class="in">
+        <p class="kicker">What’s included</p>
+        <h2 id="inc-h">No surprises about what gets cleaned</h2>
+        <div class="inc">
+          <div class="inc-card">
+            <h3>Standard clean</h3>
+            <ul class="checks" role="list">{standard.map((s) => <li>{s}</li>)}</ul>
+          </div>
+          <div class="inc-card deep">
+            <h3>Deep clean <small>everything in Standard, plus</small></h3>
+            <ul class="checks" role="list">{deep.map((s) => <li>{s}</li>)}</ul>
+          </div>
+        </div>
+        <p class="inc-note"><b>Move-out clean:</b> everything in Deep, plus inside every cabinet and drawer, for an empty home.</p>
+      </div>
+    </section>
+
+    <section class="block alt" id="book" aria-labelledby="book-h">
+      <div class="in book-in">
+        <div class="book-copy">
+          <p class="kicker">Request a clean</p>
+          <h2 id="book-h">Pick the days that suit you</h2>
+          <p>We’ll text you within a few hours with a time and your cleaner’s name. Nothing is charged until the clean is done.</p>
+        </div>
+        <div class="book-card">
+          <form method="dialog" data-demo-form="mg-sent" class="form">
+            <p class="summary"><span>Your clean</span> <b data-summary>Standard clean · 1 bedroom · 1 bathroom · one time · ${startLow} – ${startHigh}</b></p>
+            <fieldset>
+              <legend>Preferred days <small>choose any</small></legend>
+              <div class="chips days">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => <label class="chip"><input type="checkbox" name="days" value={d} /><span>{d}</span></label>)}
+              </div>
+            </fieldset>
+            <label>Time of day
+              <select name="window" required>
+                <option value="">Choose one</option>
+                <option>Morning (8 am – 12 pm)</option>
+                <option>Afternoon (12 – 4 pm)</option>
+                <option>Either is fine</option>
+              </select>
+            </label>
+            <div class="row2">
+              <label>Your name<input name="name" autocomplete="name" required /></label>
+              <label>Phone or email<input name="contact" autocomplete="email" required /></label>
+            </div>
+            <label><span>Anything we should know? <span class="opt">(optional)</span></span><textarea name="notes" rows="3" placeholder="Pets, parking, a door code to send later…"></textarea></label>
+            <button class="btn wide" type="submit">Request my clean</button>
+            <p class="demo-hint">Demo only: this form sends nothing.</p>
+          </form>
+          <div class="demo-sent" id="mg-sent" tabindex="-1" hidden>
+            <strong>Demo only — nothing was sent.</strong>
+            <p>On a real Mossgate website, this request would go straight to the office with your estimate attached, and you’d get a text back to confirm the time.</p>
+            <button class="btn soft" type="button" data-demo-again>Start again</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="faq" aria-labelledby="faq-h">
+      <div class="in faq-in">
+        <h2 id="faq-h">Questions</h2>
+        <div class="faq">
+          {questions.map(([q, a]) => (
+            <details>
+              <summary>{q}</summary>
+              <p>{a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="in foot-in">
+      <div>
+        <p class="foot-name">Mossgate Home Cleaning</p>
+        <p>Mon–Sat, 8 am – 5 pm · <a href="#call" data-demo-action={`Demo: on a real site this button calls the office at ${phone}.`}>{phone}</a> · hello@mossgate.example</p>
+      </div>
+      <p>Mossgate Home Cleaning is a fictional business. This is a demonstration website made by <a href="/websites/" target="_top">Nuxy Automation</a>.</p>
+    </div>
+  </footer>
+
+  <nav aria-label="Quick action"><a class="dock" href="#price">See your price</a></nav>
+</DemoSite>
+
+<style>
+  :global(body) { background: #fff; color: #23332e; }
+  .in { width: 100%; max-width: 1120px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
+  h1, h2, h3 { color: #173b33; letter-spacing: -0.02em; }
+  h2 { margin-top: 8px; font-size: clamp(1.75rem, 1.25rem + 2vw, 2.5rem); line-height: 1.15; font-weight: 750; }
+  .kicker { color: #2f6f5e; font-size: 0.875rem; font-weight: 700; }
+  .sub { margin-top: 10px; color: #4a5c56; max-width: 52ch; }
+  .alt { background: #f3f7f5; }
+
+  .btn { white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; border: 0; border-radius: 999px; background: #2f6f5e; color: #fff; font-weight: 650; text-decoration: none; transition: background 150ms ease-out; }
+  .btn:hover { background: #255a4c; }
+  .btn.small { min-height: 44px; padding: 0 18px; font-size: 0.9375rem; }
+  .btn.wide { width: 100%; }
+  .btn.soft { background: #fff; color: #173b33; box-shadow: inset 0 0 0 1.5px #b6cfc3; }
+  .btn.soft:hover { box-shadow: inset 0 0 0 1.5px #2f6f5e; }
+
+  .top { position: sticky; top: 0; z-index: 20; background: rgba(255, 255, 255, 0.97); border-bottom: 1px solid #e3ece8; }
+  .top-in { display: flex; align-items: center; gap: 20px; min-height: 66px; }
+  .logo { display: flex; align-items: center; gap: 10px; margin-right: auto; color: #173b33; font-size: 1rem; text-decoration: none; }
+  .logo b { display: block; font-size: 1.125rem; font-weight: 800; line-height: 1.1; }
+  .logo small { display: block; color: #5b6d67; font-size: 0.75rem; font-weight: 500; }
+  .nowrap { white-space: nowrap; }
+  .nav { display: none; gap: 24px; }
+  .nav a { color: #3b4d47; font-size: 0.9375rem; text-decoration: none; }
+  .nav a:hover { color: #173b33; text-decoration: underline; text-underline-offset: 4px; }
+  @media (min-width: 820px) { .nav { display: flex; } }
+
+  .hero { padding-block: clamp(32px, 6vw, 80px); }
+  .hero-in { display: grid; gap: 36px; align-items: center; }
+  @media (min-width: 880px) { .hero-in { grid-template-columns: 1.05fr 0.95fr; } }
+  .hero h1 { font-size: clamp(2.25rem, 1.4rem + 3.4vw, 3.75rem); line-height: 1.06; font-weight: 800; max-width: 14ch; }
+  .hero-lead { margin-top: 18px; max-width: 46ch; color: #4a5c56; font-size: 1.125rem; }
+  .hero-btns { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .hero-facts { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 26px; color: #3b4d47; font-size: 0.9375rem; }
+  .hero-facts li { display: flex; align-items: center; gap: 8px; }
+  .hero-facts li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #e0785c; }
+  .hero-art { width: 100%; max-width: 520px; height: auto; justify-self: center; }
+
+  .block { padding-block: clamp(56px, 8vw, 96px); }
+
+  .est { display: grid; gap: 24px; margin-top: 32px; align-items: start; }
+  @media (min-width: 900px) { .est { grid-template-columns: 1.35fr 0.65fr; } }
+  .est-form { display: grid; gap: 22px; padding: clamp(20px, 3vw, 30px); border-radius: 18px; background: #fff; border: 1px solid #dce8e2; }
+  legend { margin-bottom: 10px; color: #173b33; font-weight: 700; }
+  legend small { color: #5b6d67; font-weight: 400; }
+  .chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+  /* three choices each, so always three across (two plus an orphan looked broken) */
+  .chips.wide { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .chips.wide .chip > span { padding-inline: 6px; }
+  @media (max-width: 359px) { .chips.wide { grid-template-columns: 1fr; } }
+  .chips.days { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+  .chip { position: relative; display: block; }
+  .chip input { position: absolute; inset: 0; margin: 0; opacity: 0; }
+  .chip > span { display: grid; place-items: center; gap: 1px; min-height: 48px; padding: 8px 10px; border: 1.5px solid #cfdfd7; border-radius: 12px; background: #fff; color: #23332e; font-weight: 600; text-align: center; transition: border-color 120ms ease-out, background 120ms ease-out; }
+  .chip :global(small) { color: #5b6d67; font-size: 0.8125rem; font-weight: 400; }
+  .chip:hover > span { border-color: #2f6f5e; }
+  .chip input:checked + span { border-color: #2f6f5e; background: #e3f0ea; box-shadow: inset 0 0 0 1px #2f6f5e; color: #173b33; }
+  .chip input:disabled + span { opacity: 0.45; }
+  .chip input:focus-visible + span { outline: 3px solid #2563eb; outline-offset: 2px; }
+  .est-hint { margin-top: 8px; color: #5b6d67; font-size: 0.875rem; }
+  .est-hint[hidden] { display: none; }
+
+  .est-out { display: grid; gap: 12px; padding: clamp(22px, 3vw, 30px); border-radius: 18px; background: #173b33; color: #e6efea; }
+  @media (min-width: 900px) { .est-out { position: sticky; top: 90px; } }
+  .est-out h3 { color: #c9ddd3; font-size: 0.9375rem; font-weight: 600; letter-spacing: 0; }
+  .est-price { color: #fff; font-size: clamp(2rem, 1.6rem + 1.6vw, 2.75rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  .est-price small { color: #c9ddd3; font-size: 1rem; font-weight: 500; letter-spacing: 0; }
+  .est-what { color: #c9ddd3; font-size: 0.9375rem; }
+  .est-out .btn { margin-top: 6px; background: #fff; color: #173b33; }
+  .est-out .btn:hover { background: #e3f0ea; }
+  .est-small { color: #a9c4b8; font-size: 0.8125rem; }
+
+  .inc { display: grid; gap: 20px; margin-top: 32px; }
+  @media (min-width: 760px) { .inc { grid-template-columns: 1fr 1fr; } }
+  .inc-card { padding: clamp(20px, 3vw, 30px); border-radius: 18px; border: 1px solid #dce8e2; }
+  .inc-card.deep { background: #f3f7f5; }
+  .inc-card h3 { font-size: 1.25rem; }
+  .inc-card h3 small { display: block; margin-top: 2px; color: #5b6d67; font-size: 0.875rem; font-weight: 500; letter-spacing: 0; }
+  .checks { display: grid; gap: 12px; margin-top: 18px; }
+  .checks li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; color: #3b4d47; }
+  .checks li::before { content: ""; width: 22px; height: 22px; border-radius: 50%; background: #2f6f5e url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 14px no-repeat; }
+  .inc-note { margin-top: 20px; color: #3b4d47; }
+  .inc-note b { color: #173b33; }
+
+  .book-in { display: grid; gap: 32px; align-items: start; }
+  @media (min-width: 900px) { .book-in { grid-template-columns: 0.8fr 1.2fr; } }
+  .book-copy p { margin-top: 14px; max-width: 40ch; color: #4a5c56; }
+  .book-card { padding: clamp(20px, 3vw, 32px); border-radius: 18px; background: #fff; border: 1px solid #dce8e2; }
+  .form { display: grid; gap: 18px; }
+  .form > label, .row2 label { display: grid; gap: 6px; color: #173b33; font-weight: 650; font-size: 0.9375rem; }
+  .opt { color: #5b6d67; font-weight: 400; }
+  .row2 { display: grid; gap: 16px; }
+  @media (min-width: 560px) { .row2 { grid-template-columns: 1fr 1fr; } }
+  .form input:not([type="checkbox"]), .form select, .form textarea { width: 100%; min-height: 46px; padding: 10px 12px; border: 1.5px solid #cfdfd7; border-radius: 10px; background: #fff; color: #23332e; font-weight: 400; }
+  .form textarea { resize: vertical; }
+  .form input:focus, .form select:focus, .form textarea:focus { border-color: #2f6f5e; outline: 3px solid rgba(47, 111, 94, 0.25); outline-offset: 0; }
+  .summary { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: #f3f7f5; font-size: 0.9375rem; }
+  .summary span { color: #5b6d67; font-size: 0.8125rem; }
+  .summary b { color: #173b33; }
+  .demo-hint { color: #5b6d67; font-size: 0.8125rem; text-align: center; }
+  .book-card :global(.demo-sent) { color: #173b33; }
+  .book-card :global(.demo-sent p) { color: #4a5c56; }
+  .book-card :global(.demo-sent .btn) { justify-self: start; }
+
+  .faq-in { display: grid; gap: 24px; }
+  @media (min-width: 880px) { .faq-in { grid-template-columns: 0.6fr 1.4fr; } }
+  .faq details { border-bottom: 1px solid #dce8e2; }
+  .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding-block: 12px; color: #173b33; font-weight: 650; cursor: pointer; list-style: none; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #e3f0ea; color: #2f6f5e; font-size: 1.25rem; line-height: 1; transition: transform 160ms ease-out; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details p { padding-bottom: 18px; color: #4a5c56; max-width: 62ch; }
+
+  .foot { padding-block: 36px 104px; background: #173b33; color: #c9ddd3; font-size: 0.9375rem; }
+  @media (min-width: 720px) { .foot { padding-bottom: 36px; } }
+  .foot-in { display: grid; gap: 16px; }
+  @media (min-width: 760px) { .foot-in { grid-template-columns: 1fr 1fr; align-items: end; } }
+  .foot-name { color: #fff; font-weight: 750; }
+  .foot a { color: #fff; }
+
+  .dock { position: fixed; inset: auto 12px calc(12px + env(safe-area-inset-bottom)); z-index: 30; display: grid; place-items: center; min-height: 52px; border-radius: 999px; background: #2f6f5e; color: #fff; font-weight: 700; text-decoration: none; box-shadow: 0 10px 30px rgba(23, 59, 51, 0.3); }
+  @media (min-width: 720px) { .dock { display: none; } }
+</style>
+
+<script>
+  // Instant estimate: base $90 + $25 a bedroom + $20 a bathroom, times the type of clean, less the repeat discount,
+  // shown as a range (x0.95 to x1.1) rounded to $5. Made-up numbers for a made-up business.
+  const form = document.querySelector<HTMLFormElement>("[data-estimator]");
+  if (form) {
+    const pick = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const label = (name: string) => form.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)!.closest("label")!.querySelector("b")!.textContent!.trim();
+    const range = document.querySelector<HTMLElement>("[data-est-range]")!;
+    const what = document.querySelector<HTMLElement>("[data-est-what]")!;
+    const summary = document.querySelector<HTMLElement>("[data-summary]");
+    const moveNote = document.querySelector<HTMLElement>("[data-move-note]")!;
+    const freqInputs = form.querySelectorAll<HTMLInputElement>('input[name="freq"]');
+    const typeX: Record<string, number> = { standard: 1, deep: 1.5, move: 1.8 };
+    const freqX: Record<string, number> = { once: 1, biweekly: 0.9, weekly: 0.85 };
+    const to5 = (n: number) => Math.round(n / 5) * 5;
+    const update = () => {
+      const isMove = pick("type") === "move";
+      freqInputs.forEach((i) => { i.disabled = isMove && i.value !== "once"; if (isMove) i.checked = i.value === "once"; });
+      moveNote.hidden = !isMove;
+      const bed = Number(pick("bed"));
+      const bath = Number(pick("bath"));
+      const price = (90 + 25 * bed + 20 * bath) * typeX[pick("type")] * freqX[pick("freq")];
+      const text = `$${to5(price * 0.95)} – $${to5(price * 1.1)}`;
+      const plural = (n: number, w: string) => `${n === 5 && w === "bedroom" ? "5+" : n === 4 && w === "bathroom" ? "4+" : n} ${w}${n === 1 ? "" : "s"}`;
+      const desc = `${label("type")} clean · ${plural(bed, "bedroom")} · ${plural(bath, "bathroom")} · ${label("freq").toLowerCase()}`;
+      range.textContent = text;
+      what.textContent = desc;
+      if (summary) summary.textContent = `${desc} · ${text}`;
+    };
+    form.addEventListener("change", update);
+    update();
+  }
+</script>

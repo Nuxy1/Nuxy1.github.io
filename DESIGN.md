@@ -1,178 +1,223 @@
 ---
 name: Nuxy Automation
-description: A warm, photo-led marketplace look (after the Airbnb reference in awesome-design-md): white canvas, near-black ink, one coral accent, soft rounded shapes.
+description: Dark navy, one blue accent, Inter. Calm and plain-spoken, built for owners of small service businesses reading on a phone between jobs.
 colors:
-  bg: "#ffffff"
-  surface: "#f7f7f7"
-  surface-strong: "#f0f0f0"
-  ink: "#222222"
-  body: "#3f3f3f"
-  muted: "#6a6a6a"
-  hairline: "#dddddd"
-  hairline-soft: "#ebebeb"
-  accent: "#dc2453"
-  accent-press: "#b8143f"
-  accent-text: "#c81d4a"
-  accent-soft: "#fdecf0"
+  bg: "#0b1220"
+  bg-2: "#111c30"
+  panel: "#162238"
+  surface-strong: "#1c2a44"
+  ink: "#f8fafc"
+  body: "#cbd5e1"
+  muted: "#94a3b8"
+  hairline: "#233350"
+  hairline-soft: "#1a2741"
+  hairline-strong: "#33466b"
+  blue: "#3b82f6"
+  cyan: "#22d3ee"
+  accent-soft: "rgba(59,130,246,0.16)"
+  button: "#2563eb"
+  button-hover: "#1d4ed8"
   on-accent: "#ffffff"
-  dark-bg: "#121212"
-  dark-surface: "#1b1b1b"
-  dark-ink: "#f3f3f3"
-  dark-accent-text: "#ff7d97"
+  link: "#7cb3ff"
+  focus: "#93c5fd"
+  ok: "#34d399"
+  warn: "#fbbf24"
+  bad: "#f87171"
 typography:
   hero:
-    fontFamily: "Figtree, -apple-system, system-ui, sans-serif"
-    fontSize: "clamp(2.25rem, 3.3vw, 2.875rem)"
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(2.25rem, 1.3rem + 3.6vw, 3.75rem)"
     fontWeight: 700
-    lineHeight: 1.08
-    letterSpacing: "-0.03em"
+    lineHeight: 1.06
+    letterSpacing: "-0.035em"
   section:
-    fontFamily: "Figtree, -apple-system, system-ui, sans-serif"
-    fontSize: "clamp(1.75rem, 3vw, 2.25rem)"
-    fontWeight: 700
-    lineHeight: 1.15
-    letterSpacing: "-0.02em"
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.75rem, 1.25rem + 1.9vw, 2.5rem)"
+    fontWeight: 650
+    lineHeight: 1.12
+    letterSpacing: "-0.03em"
   card-title:
-    fontFamily: "Figtree, -apple-system, system-ui, sans-serif"
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.1875rem"
-    fontWeight: 700
-    lineHeight: 1.3
+    fontWeight: 650
+    lineHeight: 1.2
   body:
-    fontFamily: "Figtree, -apple-system, system-ui, sans-serif"
-    fontSize: "16px"
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1rem"
     fontWeight: 400
-    lineHeight: 1.55
+    lineHeight: 1.6
   meta:
-    fontFamily: "Figtree, -apple-system, system-ui, sans-serif"
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.5
+  eyebrow:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.8125rem"
+    fontWeight: 600
+    letterSpacing: "0.08em"
+    textTransform: "uppercase"
   button:
-    fontFamily: "Figtree, -apple-system, system-ui, sans-serif"
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 600
-    lineHeight: 1.25
-  price:
-    fontFamily: "Figtree, -apple-system, system-ui, sans-serif"
-    fontSize: "1.0625rem"
-    fontWeight: 700
-    fontFeature: "tnum, lnum"
+    lineHeight: 1.2
 rounded:
   sm: "8px"
-  md: "14px"
-  lg: "20px"
+  button: "10px"
+  md: "12px"
+  lg: "18px"
   full: "999px"
 spacing:
-  section: "clamp(56px, 7vw, 88px)"
+  section: "clamp(64px, 9vw, 112px)"
+  section-tight: "clamp(48px, 6vw, 72px)"
   container: "1200px"
   gutter: "clamp(16px, 4vw, 40px)"
-  card-gap: "40px 24px"
-  nav-height: "72px"
+  nav-height: "64px"
+  tap-target: "44px for buttons, toggles, menu links and form fields (main buttons 48px); 24px with spacing for text links"
 components:
   button-primary:
-    backgroundColor: "{colors.accent}"
+    backgroundColor: "{colors.button}"
     textColor: "{colors.on-accent}"
     typography: "{typography.button}"
-    rounded: "{rounded.sm}"
-    height: "48px"
+    rounded: "{rounded.button}"
+    minHeight: "48px"
   button-secondary:
     backgroundColor: "transparent"
+    borderColor: "{colors.hairline-strong}"
     textColor: "{colors.ink}"
-    border: "1px inset {colors.ink}"
-    rounded: "{rounded.sm}"
-    height: "48px"
-  nav-pill:
-    backgroundColor: "{colors.accent}"
-    textColor: "{colors.on-accent}"
+    rounded: "{rounded.button}"
+  panel:
+    backgroundColor: "{colors.panel}"
+    borderColor: "{colors.hairline}"
+    rounded: "{rounded.lg}"
+  chip:
+    backgroundColor: "rgba(34,211,238,0.1)"
+    textColor: "{colors.cyan}"
     rounded: "{rounded.full}"
-    height: "40px"
-  service-card:
-    rounded: "{rounded.md}"
-    padding: "20px"
-    border: "1px {colors.hairline}"
-    hover: "lift 3px + the lifted shadow"
-  category-strip:
-    active: "ink label + 2px ink underline"
-    inactive: "muted label"
-  ticket:
-    backgroundColor: "{colors.bg}"
-    rounded: "{rounded.md}"
-    padding: "24px"
 ---
 
 # Design System: Nuxy Automation
 
+The tokens live in one place: the `:root` block in `src/layouts/Base.astro`. This file describes them and the rules
+for using them. If the two ever disagree, `Base.astro` is what ships; fix this file.
+
 ## Overview
 
-The site reads like a friendly marketplace, the world small-business owners already shop in. The canvas is white (near-black in dark mode), the ink is near-black, and one coral accent carries the single action: **Request a setup**. It sells to every kind of small business (appointments, trades, restaurants, shops, offices), so the only photo is the hero: a shop owner at work. Generated stock, never presented as a client. Everything else is type, icons and motion that shows the product working.
+A dark navy site with one blue accent. It should read as a calm, competent small business, not a tech startup:
+plain words, real prices, real screenshots of real demos. The reader is a busy owner of a local service business,
+often on a phone, deciding in under a minute whether this is worth a message.
 
-Built from three skills: **awesome-design-md** (the Airbnb reference: white canvas, one accent, category strip, reservation card and its sticky phone bar), **taste-skill** (design read, anti-slop rules, pre-flight) and Vercel's **web design guidelines** (accessibility, focus, motion, content handling).
-
-**Design read:** a landing page for small-business owners of every kind, reading on a phone or laptop, in a clean, warm marketplace language, built with native CSS and a little vanilla JS in Astro. Dials: variance 6, motion 6, density 4.
-
-**Key characteristics**
-- One accent. Coral fills only the request action (nav pill, hero button, request card, phone bar) and the request on a service an email linked to. Everywhere else is ink, greys and the one photo.
-- The hero photo carries live notifications ("Website inquiry answered", "Invoice paid"...) that arrive and leave every few seconds, marked "Examples of what runs while you work".
-- One service catalog: Airbnb's category strip (All, Appointments, Trades, Restaurants, Shops, Offices) filters the cards and puts each kind's usual first steps first ("Start here"). Four groups: Win and keep customers, Less admin, Websites and Google, Add-ons.
-- Service cards: icon, name and price, the problem it fixes, then "What's included" opening the details and the request. No repeated request rows down the page.
-- The request card is the reservation card; on phones a sticky bar carries the same action once the hero is gone.
-- Bundles: a + on each card (Airbnb's save heart) adds it to a bundle; a floating bar shows the services, the total with 10% off for 2 and 15% off for 3 or more, a nudge to the next step ("Add 1 more for 15% off") and one request email for the lot. It replaces the phone bar while it's open.
-- Works without client-side JavaScript: every service is shown, the strip stays hidden, details open by tap. The scripts only enhance.
+What it is not: no robots or AI imagery, no glowing gradients, no heavy glass or 3D, no fake dashboards, no invented
+numbers, logos or reviews. Decoration never stands in for evidence.
 
 ## Colors
 
-- **Ink** (#222222): headings, prices, nav, the focus ring. Never pure black.
-- **Body** (#3f3f3f) for running text; **Muted** (#6a6a6a) for meta lines ("Fixes: ..."), captions and the legal band.
-- **Coral** (#dc2453, pressed #b8143f): the request action only. White text on it is 4.9:1.
-- **Coral text** (#c81d4a light, #ff7d97 dark): link hover and the check marks in the request card.
-- **Coral soft** (#fdecf0 / #3b1621): selection and the demo's auto-filled words.
-- **Surfaces**: #f7f7f7 for the How it works band, the footer and quiet notes; #f0f0f0 behind icons and loading photos.
-- **Dark mode** follows the system (`prefers-color-scheme`): the same roles on #121212, ink #f3f3f3. Coral stays the same fill.
-
-**The One Coral Rule.** If something is coral, it is the way to ask for a setup. Package cards use a quiet ink link; only the package an email linked to (`:target`) turns its link into the coral button.
+- **Navy layers:** `bg` for the page, `bg-2` for alternating sections, `panel` for cards, `surface-strong` for
+  raised parts inside a card. Edges are drawn with `hairline` lines rather than shadows.
+- **One accent:** blue. `button` (#2563eb) is the filled button colour, chosen over `blue` so white button text passes
+  AA. `link` is the lighter blue for text links on navy. `cyan` is used only for small labels (eyebrows, chips).
+- **Text:** `ink` for headings, `body` for paragraphs, `muted` for supporting text. All three pass WCAG AA on every
+  navy layer.
+- **Status:** `ok`, `warn`, `bad` only for real states (sent, needs attention, failed), never decoration.
+- **Focus:** a visible `focus` ring on every interactive element; never removed.
+- The demo websites under `/example-sites/` and the salon inside `/demo/` are made-up businesses with their own palettes and fonts on
+  purpose. They don't follow these tokens.
 
 ## Typography
 
-**Figtree** (variable 300-900, self-hosted, preloaded; SIL Open Font License), the closest free match to Airbnb's Cereal. One family for everything.
-
-- **Hero**: 700, two lines on desktop, -0.03em.
-- **Section titles**: 700, about 28-36px. No eyebrows above them.
-- **Card titles**: 700 at 19px with the price right-aligned on the same line (tabular numerals).
-- **Body** 16px / 1.55; **meta** 15px muted.
-- Sentence case throughout (the Airbnb voice), including buttons. No em or en dashes anywhere on the site.
+- **Inter** (variable, latin subset), self-hosted at `public/fonts/inter-var-latin.woff2` and preloaded, with a
+  metric-matched "Inter Fallback" face so text doesn't jump when the font arrives. No font requests to other sites.
+- Headings 650-700 weight with slight negative tracking; `text-wrap: balance` on headings.
+- Body 16px / 1.6. Paragraphs stay under about 70 characters wide.
+- Prices use tabular figures where they line up in tables.
 
 ## Layout
 
-- Container 1200px with a 16-40px gutter; sticky white header 72px with a hairline; the nav marks the section being read.
-- Hero: copy (1.1fr) beside the photo (1fr, 20px radius) with the notification stack on it, three promises under the buttons. Stacks on phones with the photo below.
-- Tools: a full-width row of the tools the work is built in, drifting slowly (held on hover).
-- Services: the strip sticks under the header while the catalog scrolls; cards 3 across (Websites and Google 4 across), 2 on tablets, 1 on phones. Groups hold 6, 6, 4 and 3 so rows fill.
-- Monthly plans: three cards, the most complete one set apart.
-- How it works: a grey band, four steps on a line that draws in as you scroll; vertical on phones.
-- Projects: the relay video beside three projects.
-- Questions: sticky title on the left, answers that slide open on the right.
-- Request: details on the left, the sticky ticket on the right.
-- Footer: three link columns and a legal band ("No cookies, no tracking.").
+- Content sits in `.wrap`: max 1200px, side gutter 16px on phones up to 40px.
+- Sections breathe: `.section` padding 64-112px; `.section-head` holds the eyebrow, h2 and one-line intro.
+- Built phone first and checked at 320, 375, 390, 768, 1024 and 1440px wide, with no sideways scroll at any width.
+- Buttons, toggles, menu links and form fields are at least 44px tall (main buttons 48px). Text links in footers, breadcrumbs and sentences meet the WCAG 2.2 AA minimum instead: 24px, or spaced so a 24px circle on each touches no other target. `tests/pages.test.mjs` checks both on every page.
+- Wide tables inside the docs pages scroll sideways inside their own box instead of widening the page. `Doc.astro`
+  wraps every table in a `.table-scroll` region named after the heading above it; Tab reaches the box (and arrow keys
+  scroll it) only while it overflows, and a soft shadow at the cut edge shows there is more.
 
-## Shapes and elevation
+### Pages
 
-Radius rule: **buttons 8px, cards and photos 14px, hero photo and large framed cards 20px, pills and round icons full.** One shadow tier (`--shadow`) for the menu and the demo video, and a lifted tier (`--shadow-lift`) for the ticket, the notifications, the featured plan and hovered cards. No other shadows.
+| Page | Job |
+|---|---|
+| `/` | Who it's for, the four main services, the flagship, how it works, the live demo, one clear next step |
+| `/websites/` | Website building: own-it-outright vs optional monthly care, what you own, ownership promises |
+| `/get-a-website/` | Short landing page for businesses without a website; links to the demo websites |
+| `/automation/` | Lead response and follow-up, missed-call text-back, review requests and the other automations |
+| `/solutions/` | Every service, grouped, with search and filters (all services visible without JavaScript) |
+| `/pricing/` | Published one-time prices, the monthly plans, bundle discount, FAQ |
+| `/about/` | How we work and what we won't do |
+| `/contact/` | The inquiry form (and `/contact/thanks/`) |
+| `/demos/` | Index of the demos: the interactive lead demo, demo websites and technical write-ups |
+| `/examples/*` | One page per demo website: computer and phone view, what it shows, the services it demonstrates; the business is labelled made up |
+| `/example-sites/*` | Full demo websites for made-up businesses (noindex, labelled as demos) |
+| `/demo/` | "See it working": a made-up salon showing booking, reminders and missed-call text-back (labelled made up at the top) |
+| `/work/*` | Case studies of the four open-source automations, each on a made-up business (said at the top), with the real output |
+| `/docs/*` | Technical write-ups for the open-source projects |
+| `/policies/` | Terms, plan terms and privacy |
+| `404` | Plain way back to the main pages |
+
+## Components
+
+- **Buttons:** primary (filled blue) for the one main action in a view; secondary (outlined) for the alternative.
+  One primary per view where possible. `.small`, `.wide` and `.pill` are size and shape variants.
+- **Panel:** the card surface (`panel` background, hairline border, 18px radius). No shadow on navy except the
+  header and floating parts, which use `--shadow`.
+- **Eyebrow and chip:** small cyan uppercase labels; chips for tags like "Popular" or "Add-on".
+- **FAQ:** native `<details>`; the plus icon turns 45 degrees when open.
+- **ServiceCard:** name, price, one-line outcome, who it suits, what you need, running costs, and an "Ask about
+  this" link that pre-selects the service in the form.
+- **InquiryForm:** name, business name, email, type of business, what they'd like help with, and optional fields
+  (the service or plan they're asking about, website, phone, tools, budget, best way to reach you). On success
+  it shows a reference number; on failure it says plainly that the message was not sent and shows the email
+  address instead. It never claims a message arrived when it didn't.
+- **LeadDemo:** an interactive phone-frame demo of the flagship. It runs in the page only and sends nothing.
+- **DeviceShot / DemoSites:** screenshots of the demo websites in a phone or laptop frame, each marked as a demo.
+  Each screenshot comes in several widths (`shotWidths` in `src/data/demo-sites.ts`, with `srcset` and `sizes`), so a
+  phone downloads a small file. `scripts/example-shots.mjs` remakes them from the demo pages.
+- **CaseStudy:** the case-study layout. It shows only what really happened in a demonstration project and is
+  labelled as one; it has no slots for invented results or quotes.
+- **Icon:** Phosphor icons (regular weight), inlined as SVG so they take the text colour and cost no request.
+  Decorative icons are hidden from screen readers.
+- **Mark:** the Nuxy logo mark. Pass `label=""` where the words "Nuxy Automation" sit right beside it, so screen
+  readers skip it; otherwise it is announced by its label.
+
+All prices, services and plans come from `src/data/services.ts`; components never type a Nuxy price.
 
 ## Motion
 
-Motion level 6: lively, always meaning something.
-- Hero copy rises in (staggered 90ms), the photo settles from 1.04 scale, then the notifications arrive one by one and keep cycling every 2.8s (paused while the tab is hidden).
-- The tools row drifts (48s a loop, held on hover).
-- The category strip filters with a View Transition: cards slide to their new places.
-- Service details and answers slide open (`::details-content` with `interpolate-size`); carets turn, the answer's plus turns into a cross.
-- Cards lift 3px on hover and their icon fills ink; the request arrow nudges 3px; buttons press to 0.98.
-- Sections rise as they enter, and the How it works line draws step to step (CSS scroll-driven animations where supported; elsewhere everything is simply there).
-- `prefers-reduced-motion`: all of it off, the tools wrap still, the notifications stand still, the demo video waits for its play button.
+- Short and functional: 160-200ms colour, border and transform changes on hover and open, easing
+  `cubic-bezier(0.16, 1, 0.3, 1)`.
+- The only motion nobody asked for is small and runs once: the home page flow diagram's steps fade in on load, and
+  `.reveal` sections fade up as they scroll into view (only in browsers with scroll-driven animations).
+- The lead demo plays only after the visitor starts it.
+- `prefers-reduced-motion: reduce` turns off smooth scrolling and cuts every animation and transition to an instant
+  change (a global rule at the end of `Base.astro`).
 
-## Icons
+## Analytics hooks
 
-Phosphor (regular), inlined by `src/components/Icon.astro` so they take the text colour. One family only; decorative icons are `aria-hidden`.
+Clicks on elements with `data-track="<event>"` (and on email links) are counted anonymously: an event name and the
+page path, sent to Nuxy's own server, counted per day. No cookies, no IP address stored, never anything typed into a
+form, and nothing at all when the browser sends Do Not Track or Global Privacy Control, or when the page is not on
+the real address (local previews, tests and copies count nothing). Name new events in
+`snake_case`, for example `cta_hero`, `service_ask`, `example_open`. The privacy section of `/policies/` lists what
+is counted.
 
-## Anchors
+## Anchors and old links
 
-Outreach emails link to every service id (`#booking`, `#follow-up`, `#reviews`, `#quotes`, `#email-list`, `#ordering`, `#ai-replies`, `#invoices`, `#store`, `#reports`, `#data`, `#integrations`, `#new-website`, `#site-fixes`, `#online-shop`, `#google-profile`, `#missed-calls`, `#deposits`, `#gift-cards`), the plans (`#care`, `#automation-care`, `#automation-partner`) and `#services`, `#how`, `#work`, `#faq`, `#request`. A link to a service shows every service, opens that card and turns its request coral. Keep these ids stable.
+The site used to be one long page. Old links like `/#lead-follow-up` or `/#request` still work: the home page maps
+the old anchor to its new place.
+
+- Every service id goes to `/solutions/#<id>`; ids of services that were merged go to their group,
+  `/solutions/#<group>`.
+- Every monthly plan id goes to `/pricing/#<id>`.
+- `#request` goes to `/contact/`, `#services` and `#kinds` to `/solutions/`, `#plans` and `#faq` to the pricing page,
+  `#work` to `/demos/#technical`, `#keep` to `/about/#how-we-work`.
+
+Service ids are permanent: never reuse or rename one, because outreach emails and old links point at them.

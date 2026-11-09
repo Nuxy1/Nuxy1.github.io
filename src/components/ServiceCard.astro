@@ -1,0 +1,64 @@
+---
+// One service from data/services.ts. `compact` (homepage) shows the problem, what's built and the price; the full
+// card (/solutions/) adds who it suits, what's needed and other companies' costs. `anchor={false}` drops the id, for a
+// card shown a second time on a page or a variant of a service (the "Full rebuild" card on /websites/ asks about new-website).
+// `shownAbove="#id"`: the service is laid out in full higher up the same page, so the card keeps its place, problem and
+// price but points back up instead of repeating the description (the flagship's card on /automation/).
+import Icon from "./Icon.astro";
+import type { Service } from "../data/services";
+
+interface Props { service: Service; compact?: boolean; level?: "h3" | "h4"; anchor?: boolean; shownAbove?: string }
+const { service: s, compact = false, level = "h3", anchor = !compact, shownAbove } = Astro.props;
+const H = level;
+const ask = `/contact/?service=${s.id}`;
+---
+<article class="svc" id={anchor ? s.id : undefined} data-fits={s.fits} data-search={compact ? undefined : `${s.name} ${s.fixes} ${s.text} ${s.who}`.toLowerCase()}>
+  <div class="svc-top">
+    <span class="svc-icon"><Icon name={s.icon} /></span>
+    <span class="svc-tags">
+      {s.popular && <span class="chip">Popular</span>}
+      {s.addon && <span class="chip plain">Add-on</span>}
+    </span>
+  </div>
+  <H class="svc-name">{s.name}</H>
+  <p class="svc-fixes">Fixes: {s.fixes.charAt(0).toLowerCase() + s.fixes.slice(1)}</p>
+  <p class="svc-text">{shownAbove ? "Shown in full just above: what happens, step by step, and what it costs." : s.text}</p>
+  {!compact && (
+    <dl class="svc-facts">
+      <div><dt>Suits</dt><dd>{s.who}</dd></div>
+      <div><dt>We need from you</dt><dd>{s.needs}</dd></div>
+      <div><dt>Other companies’ costs</dt><dd>{s.costs}</dd></div>
+    </dl>
+  )}
+  <div class="svc-foot">
+    <p class="svc-price"><span class="sr-only">Price: </span>{s.price}{s.addon ? <span class="note"> add-on</span> : <span class="note"> one-time</span>}</p>
+    {shownAbove
+      ? <a class="text-link" href={shownAbove} data-track="service_up">See how it works<span class="sr-only">: {s.name}</span><Icon name="arrowUp" /></a>
+      : <a class="text-link" href={ask} data-track="service_ask">Ask about this<span class="sr-only">: {s.name}</span><Icon name="arrowRight" /></a>}
+  </div>
+</article>
+
+<style>
+  .svc {
+    display: flex; flex-direction: column; gap: 10px; height: 100%;
+    padding: 22px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel);
+    transition: border-color 160ms ease-out, transform 200ms var(--ease);
+    scroll-margin-top: calc(var(--nav-h) + 20px);
+  }
+  .svc:hover { border-color: var(--hairline-strong); }
+  .svc:target { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+  .svc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .svc-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
+  .svc-icon :global(.icon) { width: 22px; height: 22px; }
+  .svc-tags { display: flex; gap: 6px; }
+  .svc-name { font-size: 1.125rem; }
+  .svc-fixes { color: var(--cyan); font-size: 0.875rem; font-weight: 500; }
+  .svc-text { color: var(--body); font-size: 0.9375rem; }
+  .svc-facts { display: grid; gap: 10px; margin: 6px 0 0; padding-top: 12px; border-top: 1px solid var(--hairline-soft); font-size: 0.875rem; }
+  .svc-facts dt { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.02em; }
+  .svc-facts dd { margin: 2px 0 0; color: var(--body); }
+  .svc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--hairline-soft); }
+  .svc-price { color: var(--ink); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
+  .svc-price .note { font-size: 0.8125rem; font-weight: 500; }
+  .svc-foot .text-link { min-height: 44px; }
+</style>

@@ -1,0 +1,177 @@
+---
+// The viewer for each example website (data/demo-sites.ts): the demo at /example-sites/<slug>/ in a frame, switchable
+// between a computer and a phone, with what it shows and which services it demonstrates. The demo sites are made-up
+// businesses; this page says so above the frame, and the demo itself says so in its banner and footer.
+// Without JavaScript the frame simply fills the column at a fixed height, and the toggle stays hidden.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import { demoSites, type DemoSite } from "../../data/demo-sites";
+import { serviceById } from "../../data/services";
+
+export function getStaticPaths() {
+  return demoSites.map((demo, i) => ({ params: { slug: demo.slug }, props: { demo, i } }));
+}
+const { demo: d, i } = Astro.props as { demo: DemoSite; i: number };
+const prev = demoSites[(i + demoSites.length - 1) % demoSites.length];
+const next = demoSites[(i + 1) % demoSites.length];
+const src = `/example-sites/${d.slug}/`;
+const host = `${d.slug.split("-")[0]}.example`;
+const services = d.services.map((id) => serviceById[id]);
+const where = (id: string) => (id === "new-website" ? "/websites/#new-website" : `/solutions/#${id}`);
+---
+<Base title={`${d.kind.replace(/\b\w/g, (c) => c.toUpperCase())} Website Example · Nuxy Automation`} description={`Demo website for a made-up ${d.summary.replace(/^A /, "").replace(/\.$/, "")}, on a computer and a phone.`} wide>
+  <div class="wrap ex">
+    <p class="crumbs"><a href="/websites/#examples">Example websites</a><span aria-hidden="true">/</span>{d.name}</p>
+    <header class="ex-head">
+      <div>
+        <p class="eyebrow">{d.kind} · demonstration</p>
+        <h1>{d.name}</h1>
+        <p class="lead">{d.summary}</p>
+      </div>
+    </header>
+    <p class="made-up"><Icon name="info" /><span><strong>{d.name} is a made-up business</strong>, not a client. This example shows the layout, features and finish we aim for. Forms on it send nothing.</span></p>
+
+    <div class="toolbar">
+      <div class="toggle" role="group" aria-label="Preview size" data-toggle hidden>
+        <button type="button" data-mode="desktop" aria-pressed="true"><Icon name="desktop" />Computer</button>
+        <button type="button" data-mode="phone" aria-pressed="false"><Icon name="deviceMobile" />Phone</button>
+      </div>
+      <a class="text-link" href={src} data-track="example_full">Open the full site<Icon name="arrowRight" /></a>
+    </div>
+
+    <div class="stage" data-stage data-mode="desktop">
+      <div class="device">
+        <div class="bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="url">{host}</span></div>
+        <div class="screen" data-screen>
+          <iframe src={src} title={`${d.name}, demonstration website`} width="1280" height="800"></iframe>
+        </div>
+      </div>
+    </div>
+    <p class="note stage-note">The preview is a live page: scroll it, open the menu, try the form.</p>
+
+    <div class="ex-info">
+      <section aria-labelledby="shows-h">
+        <h2 id="shows-h">What this example shows</h2>
+        <ul class="ticks">{d.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
+      </section>
+      <section aria-labelledby="svc-h">
+        <h2 id="svc-h">Services it demonstrates</h2>
+        <ul class="svc-list" role="list">
+          {services.map((s) => (
+            <li><a href={where(s.id)}><Icon name={s.icon} /><span>{s.name}</span><span class="svc-price">{s.price}</span></a></li>
+          ))}
+        </ul>
+        <p class="note">Your own site is built in your own Squarespace or Wix account, so the details follow what your website builder can do.</p>
+      </section>
+    </div>
+
+    <section class="ex-cta panel" aria-labelledby="cta-h">
+      <div>
+        <h2 id="cta-h">Want a website like this?</h2>
+        <p>Tell us about your business. Within one business day you’ll get a written plan and a fixed price, with nothing charged until you agree.</p>
+      </div>
+      <a class="button" href="/contact/?service=new-website" data-track="cta_example_quote">Get a Free Website Quote</a>
+    </section>
+
+    <nav class="ex-more" aria-label="Other examples">
+      <a href={`/examples/${prev.slug}/`}><span class="dir"><Icon name="caretLeft" />Previous</span><span>{prev.name}</span></a>
+      <a href={`/examples/${next.slug}/`} class="next"><span class="dir">Next<Icon name="caretRight" /></span><span>{next.name}</span></a>
+    </nav>
+  </div>
+</Base>
+
+<style>
+  .ex { padding-block: clamp(28px, 4vw, 48px) clamp(64px, 8vw, 96px); }
+  .crumbs { display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 0.875rem; }
+  .crumbs a { color: var(--link); }
+  .ex-head { margin-top: 20px; }
+  .ex-head h1 { margin-top: 6px; }
+  .ex-head .lead { margin-top: 14px; max-width: 60ch; }
+  .made-up { display: flex; align-items: flex-start; gap: 10px; margin-top: 20px; max-width: 72ch; padding: 12px 16px; border-radius: var(--r-md); background: var(--accent-soft); color: var(--body); font-size: 0.9375rem; }
+  .made-up :global(.icon) { flex: none; margin-top: 0.2em; color: var(--link); }
+  .made-up strong { color: var(--ink); }
+
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-top: 32px; }
+  .toggle { display: inline-flex; padding: 4px; border-radius: var(--r-full); background: var(--panel); border: 1px solid var(--hairline); }
+  .toggle[hidden] { display: none; }
+  .toggle button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: var(--r-full); background: transparent; color: var(--body); font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: background 150ms var(--ease), color 150ms var(--ease); }
+  .toggle button:hover { color: var(--ink); }
+  .toggle button[aria-pressed="true"] { background: var(--button); color: #fff; }
+  .toolbar .text-link { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; }
+
+  .stage { display: flex; justify-content: center; margin-top: 16px; }
+  .device { width: 100%; border-radius: 14px; overflow: hidden; background: #0e1626; border: 1px solid var(--hairline-strong); box-shadow: var(--shadow); }
+  .bar { display: flex; align-items: center; gap: 14px; height: 38px; padding: 0 14px; background: #1a2539; }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 10px; height: 10px; border-radius: 50%; background: #34425c; }
+  .url { flex: 0 1 320px; margin-inline: auto; padding: 3px 12px; border-radius: var(--r-full); background: #0e1626; color: var(--muted); font-size: 0.75rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .screen { position: relative; overflow: hidden; background: #fff; }
+  /* without JavaScript: the demo fills the column at its natural responsive layout */
+  .screen iframe { display: block; width: 100%; height: min(760px, 75vh); border: 0; }
+  /* with JavaScript: the demo renders at a real device size and is scaled to fit (script below) */
+  .stage.fitted .screen iframe { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+  .stage[data-mode="phone"] .device { width: auto; padding: 12px; border-radius: 46px; background: #05080f; box-shadow: var(--shadow), inset 0 0 0 2px #1f2a3d; }
+  .stage[data-mode="phone"] .bar { display: none; }
+  .stage[data-mode="phone"] .screen { border-radius: 34px; }
+  .stage-note { margin-top: 12px; text-align: center; }
+
+  .ex-info { display: grid; gap: 32px; margin-top: clamp(48px, 6vw, 72px); }
+  @media (min-width: 880px) { .ex-info { grid-template-columns: 1fr 1fr; gap: 56px; } }
+  .ex-info h2 { font-size: 1.375rem; }
+  .ex-info .ticks { margin-top: 16px; }
+  .svc-list { display: grid; gap: 8px; margin: 16px 0 14px; padding: 0; list-style: none; }
+  .svc-list a { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 14px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--hairline); color: var(--ink); text-decoration: none; transition: border-color 150ms var(--ease); }
+  .svc-list a:hover { border-color: var(--hairline-strong); }
+  .svc-list :global(.icon) { flex: none; color: var(--link); }
+  .svc-price { margin-left: auto; color: var(--muted); font-size: 0.9375rem; white-space: nowrap; }
+
+  .ex-cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px; margin-top: clamp(48px, 6vw, 72px); padding: clamp(22px, 4vw, 36px); }
+  .ex-cta h2 { font-size: 1.5rem; }
+  .ex-cta p { margin-top: 8px; max-width: 58ch; color: var(--body); }
+  @media (max-width: 479px) { .ex-cta .button { flex: 1 1 100%; } }
+
+  .ex-more { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 40px; }
+  .ex-more a { display: grid; gap: 4px; min-height: 64px; padding: 14px 16px; border-radius: var(--r-md); border: 1px solid var(--hairline); color: var(--ink); font-weight: 600; text-decoration: none; transition: border-color 150ms var(--ease); }
+  .ex-more a:hover { border-color: var(--hairline-strong); }
+  .ex-more .next { text-align: right; }
+  .dir { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.8125rem; font-weight: 500; }
+  .next .dir { justify-self: end; }
+</style>
+
+<script>
+  // Render the demo at a real device size (computer 1280x800, phone 390x780) and scale it down to fit the column.
+  const stage = document.querySelector<HTMLElement>("[data-stage]");
+  const toggle = document.querySelector<HTMLElement>("[data-toggle]");
+  if (stage && toggle) {
+    const screen = stage.querySelector<HTMLElement>("[data-screen]")!;
+    const frame = screen.querySelector("iframe")!;
+    const sizes = { desktop: [1280, 800], phone: [390, 780] } as const;
+    type Mode = keyof typeof sizes;
+    let mode: Mode = window.matchMedia("(max-width: 719px)").matches ? "phone" : "desktop";
+    const fit = () => {
+      const [w, h] = sizes[mode];
+      const room = stage.clientWidth - (mode === "phone" ? 26 : 2); // the bezel (12px a side) or the 1px border
+      // a phone also has to fit the window's height, so the whole screen is visible at once
+      const scale = Math.min(1, room / w, mode === "phone" ? Math.max(0.5, (window.innerHeight - 140) / h) : 1);
+      frame.style.width = `${w}px`;
+      frame.style.height = `${h}px`;
+      frame.style.transform = `scale(${scale})`;
+      screen.style.width = `${Math.floor(w * scale)}px`;
+      screen.style.height = `${Math.floor(h * scale)}px`;
+    };
+    const set = (next: Mode) => {
+      mode = next;
+      stage.dataset.mode = mode;
+      toggle.querySelectorAll<HTMLButtonElement>("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+      fit();
+    };
+    toggle.hidden = false;
+    stage.classList.add("fitted");
+    toggle.addEventListener("click", (e) => {
+      const b = (e.target as Element).closest<HTMLButtonElement>("button[data-mode]");
+      if (b) set(b.dataset.mode as Mode);
+    });
+    new ResizeObserver(fit).observe(stage);
+    set(mode);
+  }
+</script>

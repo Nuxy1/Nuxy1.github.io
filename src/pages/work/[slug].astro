@@ -13,13 +13,15 @@ const { example: e } = Astro.props as { example: Example };
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const others = examples.filter((x) => x.slug !== e.slug);
 ---
-<Base title={`${e.title} · Example · Nuxy Automation`} description={`${e.problem} How a ${e.service.name.toLowerCase()} setup handles it, shown on a made-up ${e.kind} with working, open-source code.`}>
+<Base title={`${e.title} · Example · Nuxy Automation`} description={`${e.title}: what goes wrong, what was built and the real output of working, open-source code. The ${e.kind} is made up.`}>
+  <!-- The video's poster is the largest thing on screen; announcing it in the head lets the browser fetch it first. -->
+  <link slot="head" rel="preload" as="image" type="image/webp" href={`${base}/videos/${e.slug}-poster.webp`} fetchpriority="high" />
   <p class="crumbs"><a href={`${base}/#work`}>Working examples</a><span aria-hidden="true">/</span>{e.tab}</p>
   <h1>{e.title}</h1>
   <p class="made-up"><Icon name="sealCheck" /><span><strong>{e.who}</strong> is made up for this example. The code is real and open: <a href="https://github.com/Nuxy1/small-business-automations">read it or run it</a>.</span></p>
 
   <figure id="video" class="video">
-    <video src={`${base}/videos/${e.slug}.mp4`} poster={`${base}/videos/${e.slug}-poster.jpg`} width="1920" height="1080" controls playsinline preload="metadata" aria-describedby="video-note"><track kind="captions" src={`${base}/videos/${e.slug}.vtt`} srclang="en" label="English" /></video>
+    <video src={`${base}/videos/${e.slug}.mp4`} poster={`${base}/videos/${e.slug}-poster.webp`} width="1920" height="1080" controls playsinline preload="metadata" aria-describedby="video-note"><track kind="captions" src={`${base}/videos/${e.slug}.vtt`} srclang="en" label="English" /></video>
     <figcaption id="video-note">The week below, in about a minute, with a voice-over (captions in the player). Every line and every email is the code’s real output.</figcaption>
   </figure>
 

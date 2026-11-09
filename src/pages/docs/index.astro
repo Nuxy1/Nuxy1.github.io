@@ -1,15 +1,20 @@
 ---
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
-const pages = Object.values(import.meta.glob("./*.md", { eager: true })) as { frontmatter: { title: string; description: string }; url: string }[];
+// Each link comes from the file name ("./csv-cleaner.md" -> "/docs/csv-cleaner/"), not from Astro's `url`, which is
+// wrong when the project sits under a folder named "pages" (it then gives "/src/pages/docs/csv-cleaner").
+const pages = Object.entries(import.meta.glob("./*.md", { eager: true })).map(([file, page]) => ({
+  ...(page as { frontmatter: { title: string; description: string } }),
+  url: `/docs/${file.slice(2, -3)}/`,
+}));
 ---
-<Base title="Docs · Nuxy Automation">
+<Base title="Docs · Nuxy Automation" description="Guides to Nuxy Automation's open-source projects: small-business automations, a webhook relay, Zapier and n8n code steps, a CSV cleaner and a Discord bot.">
   <h1>Docs</h1>
   <p class="lead">Setup guides for each project, written for the person who has to run it.</p>
   <ul class="guides">
     {pages.map((p) => (
       <li>
-        <a href={p.url.endsWith("/") ? p.url : `${p.url}/`}>
+        <a href={p.url}>
           <span class="guide-title">{p.frontmatter.title}</span>
           <span class="guide-text">{p.frontmatter.description}</span>
           <Icon name="arrowRight" class="guide-arrow" />

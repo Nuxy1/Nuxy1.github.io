@@ -1,0 +1,86 @@
+---
+// The contact page: the assessment form (components/InquiryForm.astro) and plain email as the alternative.
+// The booking link appears only when data/site.ts calUrl is set.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import InquiryForm from "../../components/InquiryForm.astro";
+import { calUrl, inbox } from "../../data/site";
+import { ask, gmail, outlook } from "../../lib/request";
+
+const next = [
+  ["We read it", "A person reads every request. No call needed, and no sales sequence."],
+  ["You get a written plan and price", "Within one business day: what we’d build, what it costs, what we’d need from you and how long it takes."],
+  ["You decide", "Nothing is charged and no work starts until you agree to the plan. If it isn’t a fit, we’ll say so."],
+];
+---
+<Base title="Get a Free Assessment · Nuxy Automation" description="Tell us what you’d like help with and get a written plan and fixed price within one business day. No call needed, and nothing is charged until you agree." wide>
+  <section class="section contact">
+    <div class="wrap contact-grid">
+      <div class="contact-main">
+        <p class="eyebrow">Free assessment</p>
+        <h1>Tell us what you’d like to fix.</h1>
+        <p class="lead">Websites, booking, follow-ups, invoices or anything repetitive. We reply within one business day with a written plan and a fixed price. No call required.</p>
+        <div class="panel form-panel">
+          <InquiryForm />
+        </div>
+      </div>
+
+      <aside class="contact-aside" aria-label="About your request">
+        <div class="aside-block">
+          <h2>What happens next</h2>
+          <ol class="next">
+            {next.map(([title, text], i) => (
+              <li><span class="num" aria-hidden="true">{i + 1}</span><div><h3>{title}</h3><p>{text}</p></div></li>
+            ))}
+          </ol>
+        </div>
+
+        <div class="aside-block">
+          <h2>Prefer email?</h2>
+          <p>Write to <a href={ask()}>{inbox}</a>. If nothing opens when you click, use <a href={gmail()} target="_blank" rel="noopener">Gmail</a> or <a href={outlook()} target="_blank" rel="noopener">Outlook</a> in your browser.</p>
+        </div>
+
+        {calUrl && (
+          <div class="aside-block">
+            <h2>Rather talk it through?</h2>
+            <p>Pick a time for a free 20-minute call.</p>
+            <a class="button secondary small" href={calUrl} target="_blank" rel="noopener" data-track="cal_open"><Icon name="calendarCheck" />Book a call</a>
+          </div>
+        )}
+
+        <div class="aside-block">
+          <h2>Your information</h2>
+          <ul class="ticks small">
+            <li><Icon name="check" />Used only to reply about your project</li>
+            <li><Icon name="check" />Never sold, shared or added to a mailing list</li>
+            <li><Icon name="check" />We never ask for passwords or card numbers here</li>
+          </ul>
+          <p class="fine"><a href="/policies/#privacy">Privacy policy</a></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .contact { padding-top: clamp(40px, 6vw, 72px); }
+  .contact-grid { display: grid; gap: clamp(40px, 5vw, 64px); align-items: start; }
+  @media (min-width: 1024px) { .contact-grid { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); } }
+  .contact h1 { font-size: clamp(2rem, 1.4rem + 2.6vw, 3rem); }
+  .contact .lead { margin-top: 16px; max-width: 60ch; color: var(--muted); }
+  .form-panel { margin-top: clamp(28px, 4vw, 40px); padding: clamp(20px, 4vw, 36px); }
+  .contact-aside { display: grid; gap: 32px; }
+  @media (min-width: 1024px) { .contact-aside { position: sticky; top: 96px; padding-top: 8px; } }
+  .aside-block { display: grid; gap: 12px; padding-bottom: 32px; border-bottom: 1px solid var(--hairline); }
+  .aside-block:last-child { padding-bottom: 0; border-bottom: 0; }
+  .aside-block h2 { font-size: 1.125rem; letter-spacing: -0.01em; }
+  .aside-block p { color: var(--body); font-size: 0.9375rem; line-height: 1.6; overflow-wrap: anywhere; }
+  .aside-block .button { justify-self: start; }
+  .next { display: grid; gap: 18px; margin: 4px 0 0; padding: 0; list-style: none; }
+  .next li { display: grid; grid-template-columns: 32px 1fr; gap: 14px; align-items: start; }
+  .num { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft); color: var(--link); font-size: 0.875rem; font-weight: 650; }
+  .next h3 { font-size: 1rem; font-weight: 600; }
+  .next p { margin-top: 4px; color: var(--muted); }
+  .ticks.small { font-size: 0.9375rem; }
+  .fine { font-size: 0.875rem; }
+</style>

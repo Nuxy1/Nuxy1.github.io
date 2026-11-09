@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Doc.astro
 title: "Small-business automations"
-description: "Four working automations for made-up local businesses: booking reminders for a dog groomer, lead follow-up for a plumber, invoice reminders for a cleaning company and review requests for a salon."
+description: "Four working automations for made-up local businesses: booking reminders, lead follow-up, invoice reminders and review requests, with tests and a demo week."
 repo: small-business-automations
 ---
 

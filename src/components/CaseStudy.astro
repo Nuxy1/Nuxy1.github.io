@@ -1,0 +1,62 @@
+---
+// One real client story from data/site.ts `caseStudies`. Only add an entry with the client's written consent
+// (recorded in `consent`) and results the client can confirm; each result names where the number came from.
+// Renders nothing without consent, so a half-filled entry can't reach the page.
+import Icon from "./Icon.astro";
+import type { CaseStudyData } from "../data/site";
+
+interface Props { study: CaseStudyData }
+const { study: c } = Astro.props;
+const ok = Boolean(c?.consent?.trim());
+---
+{ok && (
+  <article class="case" id={`case-${c.slug}`}>
+    <header class="case-head">
+      <p class="case-kind">{c.industry} · {c.location}</p>
+      <h3>{c.business}</h3>
+    </header>
+    <div class="case-body">
+      <div>
+        <h4>The problem</h4>
+        <p>{c.problem}</p>
+      </div>
+      <div>
+        <h4>What we built</h4>
+        <ul class="ticks">{c.built.map((b) => <li><Icon name="check" />{b}</li>)}</ul>
+      </div>
+    </div>
+    {c.results.length > 0 && (
+      <dl class="case-results">
+        {c.results.map((r) => (
+          <div>
+            <dt>{r.label}</dt>
+            <dd><span class="case-value">{r.value}</span><span class="case-source">Source: {r.source}</span></dd>
+          </div>
+        ))}
+      </dl>
+    )}
+    {c.quote && (
+      <blockquote class="case-quote">
+        <p>“{c.quote.text}”</p>
+        <footer>{c.quote.name}, {c.business}</footer>
+      </blockquote>
+    )}
+  </article>
+)}
+
+<style>
+  .case { display: grid; gap: 20px; padding: 28px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
+  .case-kind { color: var(--cyan); font-size: 0.8125rem; font-weight: 600; margin-bottom: 4px; }
+  .case-body { display: grid; gap: 20px; }
+  .case h4 { margin-bottom: 8px; color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .case-results { display: grid; gap: 12px; margin: 0; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .case-results > div { padding: 16px; border-radius: var(--r-md); background: var(--bg-2); }
+  .case-results dt { color: var(--muted); font-size: 0.875rem; }
+  .case-results dd { display: grid; gap: 4px; margin: 4px 0 0; }
+  .case-value { color: var(--ink); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .case-source { color: var(--muted); font-size: 0.8125rem; }
+  .case-quote { margin: 0; padding-left: 16px; border-left: 3px solid var(--blue); }
+  .case-quote p { color: var(--ink); font-size: 1.0625rem; }
+  .case-quote footer { margin-top: 8px; color: var(--muted); font-size: 0.875rem; }
+  @media (min-width: 760px) { .case-body { grid-template-columns: 1fr 1fr; } }
+</style>

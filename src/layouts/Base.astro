@@ -1,21 +1,48 @@
 ---
-// The page frame: white canvas, near-black ink, one coral accent, soft rounded shapes (DESIGN.md). Light or dark
-// follows the visitor's system. No client-side JavaScript is needed to read or use any page.
-// wide: the page lays out its own full-width sections (the homepage); otherwise a readable column.
+// Every page's frame: head tags, the design tokens (DESIGN.md), header, footer, old-link redirects and the
+// anonymous page counter. `wide` pages lay out their own sections; other pages get the reading column (.page).
 import Mark from "../components/Mark.astro";
 import Icon from "../components/Icon.astro";
+import { inbox } from "../data/site";
+import { groups, plans } from "../data/services";
 
 interface Props {
   title: string;
   description?: string;
   wide?: boolean;
+  noindex?: boolean;
+  image?: string;
 }
-const { title, description = "Automations, integrations and websites for small businesses of every kind. Fixed prices, no calls. Faribault, Minnesota.", wide = false } = Astro.props;
-const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const {
+  title,
+  description = "Websites and automations for small service businesses: instant replies to inquiries, online booking, follow-ups and invoices. Fixed prices. Faribault, MN.",
+  wide = false,
+  noindex = false,
+  image = "/og.jpg",
+} = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
-const shareImage = new URL(`${base}/og.jpg`, Astro.site);
-const inbox = "nuxy@nuxyautomation.com";
-const sections = [["Services", "services"], ["Plans", "plans"], ["How it works", "how"], ["Examples", "work"], ["Questions", "faq"]];
+const ogImage = new URL(image, Astro.site);
+const path = Astro.url.pathname;
+
+const nav: [string, string][] = [
+  ["Websites", "/websites/"],
+  ["Automation", "/automation/"],
+  ["Services", "/solutions/"],
+  ["Demos", "/demos/"],
+  ["Pricing", "/pricing/"],
+  ["About", "/about/"],
+  ["Contact", "/contact/"],
+];
+const current = (href: string) => !href.includes("#") && path.startsWith(href);
+
+// The old one-page site's anchors (outreach emails link to /#<service id>): sent on to where each now lives.
+const legacy: Record<string, string> = { request: "/contact/", services: "/solutions/", kinds: "/solutions/", plans: "/pricing/#plans", faq: "/pricing/#faq", work: "/demos/#technical", keep: "/about/#how-we-work", "reviews-from-clients": "/" };
+for (const g of groups) {
+  for (const s of g.items) legacy[s.id] = `/solutions/#${s.id}`;
+  for (const old of g.legacy) legacy[old] = `/solutions/#${g.id}`;
+}
+for (const p of plans) legacy[p.id] = `/pricing/#${p.id}`;
+const isHome = path === "/";
 ---
 <!doctype html>
 <html lang="en">
@@ -24,223 +51,399 @@ const sections = [["Services", "services"], ["Plans", "plans"], ["How it works",
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex ? <meta name="robots" content="noindex, nofollow" /> : <link rel="canonical" href={canonical} />}
+    <meta name="theme-color" content="#0B1220" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Nuxy Automation" />
-    <meta property="og:url" content={canonical} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={shareImage} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Nuxy Automation: your tools connected, your busywork automated." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
-    <link rel="icon" href={`${base}/favicon.ico`} sizes="48x48" />
-    <link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
-    <link rel="apple-touch-icon" href={`${base}/apple-touch-icon.png`} />
-    <link rel="preload" href={`${base}/fonts/figtree-var.woff2`} as="font" type="font/woff2" crossorigin />
-    <style is:global>
-      @font-face { font-family: "Figtree"; font-weight: 300 900; font-display: swap; src: url("/fonts/figtree-var.woff2") format("woff2"); }
-      :root {
-        --bg: #ffffff; --surface: #f7f7f7; --surface-strong: #f0f0f0;
-        --ink: #222222; --body: #3f3f3f; --muted: #6a6a6a; --hairline: #dddddd; --hairline-soft: #ebebeb;
-        --accent: #dc2453; --accent-press: #b8143f; --accent-text: #c81d4a; --accent-soft: #fdecf0; --on-accent: #ffffff;
-        /* the one shadow: cards when lifted, the menu, the request card */
-        --shadow: 0 0 0 1px rgb(0 0 0 / 0.02), 0 2px 6px rgb(0 0 0 / 0.04), 0 4px 8px rgb(0 0 0 / 0.1);
-        --shadow-lift: 0 0 0 1px rgb(0 0 0 / 0.02), 0 6px 16px rgb(0 0 0 / 0.08), 0 12px 24px rgb(0 0 0 / 0.1);
-        --r-sm: 8px; --r-md: 14px; --r-lg: 20px; --r-full: 999px;
-        --font: "Figtree", -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-        --nav-h: 72px;
-        --ease: cubic-bezier(0.16, 1, 0.3, 1);
-        color-scheme: light dark;
-        accent-color: var(--accent);
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #121212; --surface: #1b1b1b; --surface-strong: #262626;
-          --ink: #f3f3f3; --body: #d2d2d2; --muted: #a3a3a3; --hairline: #343434; --hairline-soft: #282828;
-          --accent-text: #ff7d97; --accent-soft: #3b1621;
-          --shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 2px 6px rgb(0 0 0 / 0.3), 0 4px 8px rgb(0 0 0 / 0.4);
-          --shadow-lift: 0 0 0 1px rgb(255 255 255 / 0.08), 0 6px 16px rgb(0 0 0 / 0.4), 0 12px 24px rgb(0 0 0 / 0.45);
-        }
-      }
-      *, *::before, *::after { box-sizing: border-box; }
-      [hidden] { display: none !important; } /* (a class's own display must never bring a hidden thing back) */
-      html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
-      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-      body { margin: 0; background: var(--bg); color: var(--body); font: 400 1rem/1.55 var(--font); -webkit-font-smoothing: antialiased; }
-      h1, h2, h3, h4 { color: var(--ink); text-wrap: balance; letter-spacing: -0.012em; }
-      p, li { text-wrap: pretty; }
-      ::selection { background: var(--accent-soft); color: var(--ink); }
-      a { color: var(--ink); text-decoration-thickness: from-font; text-underline-offset: 0.18em; }
-      a:hover { color: var(--accent-text); }
-      a, button, summary, label { touch-action: manipulation; }
-      :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
-      [id] { scroll-margin-top: calc(var(--nav-h) + 20px); }
-      img, video { display: block; max-width: 100%; height: auto; }
-      .wrap { max-width: 1200px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
-      .icon { width: 1.25em; height: 1.25em; flex: none; }
-      .skip { position: absolute; left: 16px; top: -100px; z-index: 30; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: var(--r-sm); text-decoration: none; }
-      .skip:focus { top: 12px; color: var(--bg); }
-
-      /* Buttons: coral for the one action (Request a setup), outlined for everything else. */
-      .button {
-        display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px;
-        border: 0; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); font: 600 1rem/1.25 var(--font);
-        text-decoration: none; white-space: nowrap; cursor: pointer;
-        transition: background-color 160ms ease-out, box-shadow 160ms ease-out, transform 120ms ease-out;
-      }
-      .button:hover { background: var(--accent-press); color: var(--on-accent); }
-      .button:active { transform: scale(0.98); }
-      .button.secondary { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-      .button.secondary:hover { background: var(--surface); color: var(--ink); }
-      .button.pill { min-height: 40px; padding: 0 18px; border-radius: var(--r-full); font-size: 0.9375rem; }
-      @media (prefers-reduced-motion: reduce) { .button { transition: none; } .button:active { transform: none; } }
-
-      /* Sections rise into place as they scroll in (browsers with scroll-driven animations; elsewhere they're simply there). */
-      @media (prefers-reduced-motion: no-preference) {
-        @supports (animation-timeline: view()) {
-          .reveal { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
-        }
-      }
-      @keyframes rise { from { opacity: 0; transform: translateY(28px); } }
-
-      .site-head { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--hairline-soft); }
-      .head-inner { height: var(--nav-h); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-      .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 700; font-size: 1.125rem; letter-spacing: -0.015em; text-decoration: none; white-space: nowrap; }
-      .brand:hover { color: var(--ink); }
-      .brand svg { width: 34px; height: 34px; }
-      .nav { display: flex; align-items: center; gap: 4px; }
-      .nav-link { padding: 10px 14px; border-radius: var(--r-full); color: var(--ink); font-weight: 600; font-size: 0.9375rem; text-decoration: none; transition: background-color 160ms ease-out; }
-      .nav-link:hover, .nav-link[aria-current="true"] { background: var(--surface); color: var(--ink); }
-      .nav .button { margin-left: 8px; }
-      .menu { display: none; position: relative; }
-      .menu summary {
-        display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-full); list-style: none; cursor: pointer;
-        color: var(--ink); box-shadow: inset 0 0 0 1px var(--hairline); transition: box-shadow 160ms ease-out;
-      }
-      .menu summary::-webkit-details-marker { display: none; }
-      .menu summary:hover, .menu[open] summary { box-shadow: inset 0 0 0 1px var(--hairline), var(--shadow); }
-      .menu-panel {
-        position: absolute; right: 0; top: calc(100% + 10px); min-width: 230px; padding: 8px 0; margin: 0; list-style: none;
-        background: var(--bg); border-radius: var(--r-md); box-shadow: var(--shadow-lift);
-      }
-      .menu-panel a { display: block; padding: 12px 18px; color: var(--ink); font-weight: 500; text-decoration: none; }
-      .menu-panel a:hover { background: var(--surface); }
-      .menu-panel li + li.split { border-top: 1px solid var(--hairline-soft); margin-top: 8px; padding-top: 8px; }
-      @media (max-width: 860px) {
-        .nav-link { display: none; }
-        .menu { display: block; }
-      }
-      @media (max-width: 520px) { .nav .button { display: none; } }
-
-      /* Inner pages: a readable column. */
-      .page { max-width: 760px; margin: 0 auto; padding: 40px clamp(16px, 4vw, 24px) 88px; }
-      .page h1 { font-size: clamp(2rem, 4.2vw, 2.75rem); line-height: 1.1; letter-spacing: -0.025em; margin: 8px 0 16px; }
-      .page h2 { font-size: 1.5rem; line-height: 1.2; margin: 48px 0 12px; }
-      .page h3 { font-size: 1.125rem; line-height: 1.3; margin: 32px 0 8px; }
-      .page ul, .page ol { padding-left: 1.25em; }
-      .page li + li { margin-top: 8px; }
-      .page img { border-radius: var(--r-md); }
-      .lead { font-size: 1.1875rem; line-height: 1.55; color: var(--body); max-width: 62ch; }
-      pre { background: var(--surface); border: 1px solid var(--hairline-soft); border-radius: var(--r-md); padding: 16px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }
-      code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 0.9em; }
-      :not(pre) > code { background: var(--surface-strong); border-radius: 6px; padding: 0.1em 0.35em; }
-      table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
-      th, td { border-bottom: 1px solid var(--hairline); padding: 8px 12px; text-align: left; vertical-align: top; }
-      th { color: var(--ink); font-weight: 600; }
-
-      .site-foot { background: var(--surface); border-top: 1px solid var(--hairline-soft); padding: 48px 0 28px; font-size: 0.9375rem; }
-      .foot-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 24px; }
-      .foot-cols h2 { font-size: 0.9375rem; font-weight: 600; margin: 0 0 14px; }
-      .foot-cols ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-      .foot-cols a { color: var(--body); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-      .foot-cols a:hover { color: var(--ink); text-decoration: underline; }
-      .legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 0.875rem; }
-      @media (max-width: 720px) { .foot-cols { grid-template-columns: 1fr; } }
-    </style>
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin />
+    {isHome && <script is:inline define:vars={{ legacy }}>
+      // (runs before the page draws, so an old link never flashes the homepage first)
+      var to = legacy[decodeURIComponent(location.hash.slice(1))];
+      if (to) location.replace(to);
+    </script>}
+    <slot name="head" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-head">
-      <div class="wrap head-inner">
-        <a class="brand" href={`${base}/`} translate="no"><Mark />Nuxy Automation</a>
+      <div class="wrap head-row">
+        <a class="brand" href="/" aria-label="Nuxy Automation, home"><Mark class="brand-mark" label="" /><span>Nuxy Automation</span></a>
         <nav class="nav" aria-label="Main">
-          {sections.map(([label, id]) => <a class="nav-link" href={`${base}/#${id}`}>{label}</a>)}
-          <a class="button pill" href={`${base}/#request`}>Request a setup</a>
-          <details class="menu">
-            <summary aria-label="Menu"><Icon name="list" /></summary>
-            <ul class="menu-panel">
-              {sections.map(([label, id]) => <li><a href={`${base}/#${id}`}>{label}</a></li>)}
-              <li><a href={`${base}/demo/`}>Booking demo</a></li>
-              <li class="split"><a href={`${base}/#request`}>Request a setup</a></li>
-            </ul>
-          </details>
+          <ul class="nav-list">
+            {nav.map(([name, href]) => <li><a class="nav-link" href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
+          </ul>
         </nav>
+        <a class="button small head-cta" href="/contact/" data-track="cta_header">Get a Free Assessment</a>
+        <details class="menu" data-menu>
+          <summary aria-label="Menu"><Icon name="list" /><Icon name="x" /></summary>
+          <div class="menu-panel">
+            <ul>
+              <li><a href="/" aria-current={isHome ? "page" : undefined}>Home</a></li>
+              {nav.map(([name, href]) => <li><a href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
+            </ul>
+            <a class="button" href="/contact/" data-track="cta_menu">Get a Free Assessment</a>
+          </div>
+        </details>
       </div>
     </header>
-    <main id="main" class={wide ? undefined : "page"}><slot /></main>
+
+    <main id="main" class={wide ? "" : "wrap page"}>
+      <slot />
+    </main>
+
     <footer class="site-foot">
       <div class="wrap">
-        <div class="foot-cols">
-          <section aria-labelledby="foot-packages">
-            <h2 id="foot-packages">Services</h2>
-            <ul>
-              <li><a href={`${base}/#customers`}>Win and keep customers</a></li>
-              <li><a href={`${base}/#admin`}>Less admin</a></li>
-              <li><a href={`${base}/#web`}>Websites and Google</a></li>
-              <li><a href={`${base}/#integrations`}>Custom integrations</a></li>
-              <li><a href={`${base}/#add-ons`}>Add-ons</a></li>
-              <li><a href={`${base}/#plans`}>Monthly plans</a></li>
-            </ul>
-          </section>
-          <section aria-labelledby="foot-about">
-            <h2 id="foot-about" translate="no">Nuxy Automation</h2>
-            <ul>
-              <li><a href={`${base}/#how`}>How it works</a></li>
-              <li><a href={`${base}/#faq`}>Questions</a></li>
-              <li><a href={`${base}/demo/`}>Booking demo</a></li>
-              <li><a href={`${base}/#work`}>Working examples</a></li>
-              <li><a href={`${base}/work/lead-follow-up/`}>Examples</a></li>
-              <li><a href={`${base}/docs/`}>Docs</a></li>
-              <li><a href={`${base}/policies/`}>Refunds, terms &amp; privacy</a></li>
-            </ul>
-          </section>
-          <section aria-labelledby="foot-contact">
-            <h2 id="foot-contact">Contact</h2>
-            <ul>
-              <li><a href={`mailto:${inbox}`}><Icon name="envelopeSimple" />{inbox}</a></li>
-              <li><a href="https://github.com/Nuxy1"><Icon name="githubLogo" />github.com/Nuxy1</a></li>
-            </ul>
-          </section>
+        <div class="foot-top">
+          <div class="foot-brand">
+            <a class="brand" href="/"><Mark class="brand-mark" label="" /><span>Nuxy Automation</span></a>
+            <p>Websites and automations for small businesses, built in the tools you already use. Based in Faribault, Minnesota, working with southern Minnesota, the Twin Cities and remotely across the US.</p>
+            <a class="foot-mail" href={`mailto:${inbox}`}><Icon name="envelopeSimple" />{inbox}</a>
+          </div>
+          <nav class="foot-cols" aria-label="Footer">
+            <div>
+              <h2>Services</h2>
+              <ul>
+                <li><a href="/websites/">Website development</a></li>
+                <li><a href="/websites/#redesign">Website redesign</a></li>
+                <li><a href="/get-a-website/">No website yet?</a></li>
+                <li><a href="/automation/">Business automation</a></li>
+                <li><a href="/automation/#lead-response">Lead response & follow-up</a></li>
+                <li><a href="/solutions/">All services</a></li>
+              </ul>
+            </div>
+            <div>
+              <h2>Company</h2>
+              <ul>
+                <li><a href="/about/#how-we-work">How it works</a></li>
+                <li><a href="/pricing/">Pricing and plans</a></li>
+                <li><a href="/about/">About</a></li>
+                <li><a href="/contact/">Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h2>See the work</h2>
+              <ul>
+                <li><a href="/demos/">Interactive demos</a></li>
+                <li><a href="/demos/#websites">Example websites</a></li>
+                <li><a href="/demos/#technical">Technical projects</a></li>
+                <li><a href="/docs/">Docs</a></li>
+              </ul>
+            </div>
+          </nav>
         </div>
-        <p class="legal"><span>© 2026 <span translate="no">Nuxy Automation</span>, Faribault, Minnesota</span><span>No cookies, no tracking.</span></p>
+        <div class="legal">
+          <p>© 2026 Nuxy Automation, Faribault, Minnesota</p>
+          <p><a href="/policies/">Policies and privacy</a><span aria-hidden="true">·</span>No cookies, no personal tracking<span aria-hidden="true">·</span><a href="https://github.com/Nuxy1">GitHub</a></p>
+        </div>
       </div>
     </footer>
-    <script is:inline>
-      // The small-screen menu closes once a link in it is chosen, or on a tap anywhere else.
-      document.querySelectorAll("details.menu").forEach((menu) => {
-        menu.addEventListener("click", (e) => { if (e.target.closest("a")) menu.open = false; });
-        document.addEventListener("click", (e) => { if (menu.open && !menu.contains(e.target)) menu.open = false; });
-        document.addEventListener("keydown", (e) => { if (e.key === "Escape" && menu.open) { menu.open = false; menu.querySelector("summary").focus(); } });
-      });
-      // The header shows which part of the page you're reading (the homepage's sections).
-      const links = [...document.querySelectorAll(".nav-link")].map((a) => [a, document.getElementById(a.hash.slice(1))]).filter(([, el]) => el);
-      if (links.length && "IntersectionObserver" in window) {
-        const on = new Set();
-        const mark = () => {
-          const current = links.find(([, el]) => on.has(el));
-          for (const [a] of links) a.toggleAttribute("aria-current", false);
-          if (current) current[0].setAttribute("aria-current", "true");
-        };
-        const watcher = new IntersectionObserver((entries) => {
-          for (const e of entries) e.isIntersecting ? on.add(e.target) : on.delete(e.target);
-          mark();
-        }, { rootMargin: "-45% 0px -50% 0px" });
-        links.forEach(([, el]) => watcher.observe(el));
+
+    <script>
+      // Astro builds this script and lists its hash in the page's security policy (astro.config.mjs), so the
+      // browser runs it; a script typed straight into the page (is:inline) would be blocked unless it sits above
+      // the policy in <head>, like the old-link redirect.
+      import { hitUrl } from "../data/site";
+
+      // Menu: closes on a link, outside click or Escape.
+      const menu = document.querySelector<HTMLDetailsElement>("[data-menu]");
+      if (menu) {
+        menu.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) menu.open = false; });
+        document.addEventListener("click", (e) => { if (menu.open && !menu.contains(e.target as Node)) menu.open = false; });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && menu.open) { menu.open = false; menu.querySelector("summary")?.focus(); }
+        });
       }
+
+      // Anonymous counts: an event name and the page path, sent to our own server, counted per day. No cookies, no
+      // IP address stored, nothing typed into a form, and nothing at all when the browser asks not to be tracked. Only
+      // the real site counts, so local previews, tests and copies of the site add nothing.
+      const hit = import.meta.env.DEV ? "" : hitUrl;
+      const host = new URL(import.meta.env.SITE).hostname;
+      const real = location.hostname === host || location.hostname === "www." + host;
+      const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
+      const off = !hit || !real || nav.doNotTrack === "1" || nav.globalPrivacyControl === true || !nav.sendBeacon;
+      const send = (e: string) => {
+        if (off) return;
+        const body = new URLSearchParams({ e, p: location.pathname });
+        if (e === "view") {
+          try { const h = new URL(document.referrer).hostname; if (h && h !== location.hostname) body.set("r", h); } catch {}
+        }
+        try { nav.sendBeacon(hit, body); } catch {}
+      };
+      (window as unknown as { nuxyTrack: (e: string) => void }).nuxyTrack = send;
+      send("view");
+      document.addEventListener("click", (ev) => {
+        const t = (ev.target as Element).closest?.<HTMLElement>("[data-track], a[href^='mailto:']");
+        if (t) send(t.dataset.track || "email_click");
+      });
     </script>
   </body>
 </html>
+
+<style is:global>
+  @font-face {
+    font-family: "Inter";
+    src: url("/fonts/inter-var-latin.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  /* Arial sized to Inter's metrics, so the swap moves nothing (CLS 0) */
+  @font-face {
+    font-family: "Inter Fallback";
+    src: local("Arial");
+    ascent-override: 90.49%;
+    descent-override: 22.56%;
+    line-gap-override: 0%;
+    size-adjust: 107.06%;
+  }
+
+  :root {
+    color-scheme: dark;
+    /* brief palette */
+    --bg: #0b1220;
+    --bg-2: #111c30;
+    --panel: #162238;
+    --blue: #3b82f6;
+    --cyan: #22d3ee;
+    --ink: #f8fafc;
+    --muted: #94a3b8;
+    /* derived */
+    --body: #cbd5e1;
+    --surface: var(--bg-2);
+    --surface-strong: #1c2a44;
+    --hairline: #233350;
+    --hairline-soft: #1a2741;
+    --hairline-strong: #33466b;
+    --accent: var(--blue);
+    --accent-soft: rgba(59, 130, 246, 0.16);
+    --on-accent: #ffffff;
+    --button: #2563eb;
+    --button-hover: #1d4ed8;
+    --link: #7cb3ff;
+    --focus: #93c5fd;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --shadow: 0 1px 2px rgba(2, 6, 23, 0.5), 0 12px 32px rgba(2, 6, 23, 0.35);
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 18px;
+    --r-full: 999px;
+    --nav-h: 64px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --font: "Inter", "Inter Fallback", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: calc(var(--nav-h) + 16px); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  body {
+    margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    background: var(--bg); color: var(--body);
+    font: 400 1rem/1.6 var(--font); font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  }
+  main { flex: 1; }
+  img, svg, video { display: block; max-width: 100%; }
+  img, video { height: auto; }
+  h1, h2, h3, h4 { color: var(--ink); margin: 0; font-weight: 650; letter-spacing: -0.02em; line-height: 1.2; text-wrap: balance; }
+  h1 { font-size: clamp(2.25rem, 1.3rem + 3.6vw, 3.75rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.06; }
+  h2 { font-size: clamp(1.75rem, 1.25rem + 1.9vw, 2.5rem); letter-spacing: -0.03em; line-height: 1.12; }
+  h3 { font-size: 1.1875rem; }
+  h4 { font-size: 1.0625rem; }
+  p { margin: 0; text-wrap: pretty; }
+  a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+  a:hover { color: var(--ink); }
+  strong { color: var(--ink); font-weight: 600; }
+  ul, ol { margin: 0; padding: 0; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+  ::selection { background: rgba(59, 130, 246, 0.4); color: #fff; }
+
+  .wrap { width: 100%; max-width: 1200px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
+  .icon { width: 1.25em; height: 1.25em; flex: none; }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .skip { position: absolute; left: 16px; top: -80px; z-index: 100; padding: 10px 16px; border-radius: var(--r-sm); background: var(--ink); color: var(--bg); font-weight: 600; }
+  .skip:focus { top: 12px; }
+
+  /* Buttons */
+  .button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 48px; padding: 0 22px; border: 1px solid transparent; border-radius: 10px;
+    background: var(--button); color: #fff; font-weight: 600; font-size: 1rem; line-height: 1.2; text-align: center;
+    text-decoration: none; cursor: pointer; transition: background-color 160ms ease-out, border-color 160ms ease-out, transform 160ms var(--ease);
+  }
+  .button:hover { background: var(--button-hover); color: #fff; }
+  .button:active { transform: translateY(1px); }
+  .button.secondary { background: transparent; border-color: var(--hairline-strong); color: var(--ink); }
+  .button.secondary:hover { background: rgba(148, 163, 184, 0.08); border-color: #46608f; }
+  .button.small { min-height: 44px; padding: 0 16px; font-size: 0.9375rem; }
+  .button.wide { width: 100%; }
+  .button.pill { border-radius: var(--r-full); }
+  .button .icon { width: 1.1em; height: 1.1em; }
+  .text-link { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; text-decoration: none; }
+  .text-link .icon { width: 1em; height: 1em; transition: transform 160ms var(--ease); }
+  .text-link:hover .icon { transform: translateX(3px); }
+
+  /* Shared section pieces */
+  .section { padding-block: clamp(64px, 9vw, 112px); }
+  .section.tight { padding-block: clamp(48px, 6vw, 72px); }
+  .band { background: var(--bg-2); border-block: 1px solid var(--hairline-soft); }
+  .section-head { max-width: 720px; margin-bottom: clamp(32px, 4vw, 48px); }
+  .section-head.center { margin-inline: auto; text-align: center; }
+  .section-head p:not(.eyebrow) { margin-top: 14px; font-size: 1.125rem; color: var(--muted); }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; color: var(--cyan); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .panel { background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--r-lg); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-full); background: rgba(34, 211, 238, 0.1); color: var(--cyan); font-size: 0.8125rem; font-weight: 600; line-height: 1.3; }
+  .chip.blue { background: var(--accent-soft); color: var(--link); }
+  .chip.plain { background: var(--surface-strong); color: var(--body); }
+  .ticks { display: grid; gap: 10px; list-style: none; }
+  .ticks li { display: flex; gap: 10px; align-items: flex-start; }
+  .ticks .icon { color: var(--cyan); margin-top: 0.15em; width: 1.15em; height: 1.15em; }
+  .note { font-size: 0.9375rem; color: var(--muted); }
+  .grid-2 { display: grid; gap: 20px; }
+  .grid-3 { display: grid; gap: 20px; }
+  .grid-4 { display: grid; gap: 20px; }
+  @media (min-width: 720px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  /* Questions (a list of details) and the closing call-to-action band, shared by the service and pricing pages */
+  .faq-wrap { max-width: 860px; }
+  .faq { display: grid; margin-top: 24px; border-top: 1px solid var(--hairline); }
+  .faq details { border-bottom: 1px solid var(--hairline); }
+  .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; min-height: 44px; color: var(--ink); font-weight: 600; cursor: pointer; list-style: none; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary .icon { flex: none; color: var(--muted); transition: transform 200ms var(--ease); }
+  .faq details[open] summary .icon { transform: rotate(45deg); }
+  .faq details p { padding: 0 0 20px; max-width: 70ch; color: var(--body); }
+  @media (prefers-reduced-motion: reduce) { .faq summary .icon { transition: none; } }
+
+  .cta-band { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px; padding: clamp(24px, 4vw, 40px); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: var(--r-lg); background: rgba(37, 99, 235, 0.1); }
+  .cta-band h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
+  .cta-band p { margin-top: 8px; max-width: 60ch; color: var(--body); }
+  .cta-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  @media (max-width: 559px) { .cta-actions, .cta-actions .button { width: 100%; } }
+
+  /* Gentle scroll-in, only where the browser supports it and motion is welcome */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal { animation: reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 28%; }
+    }
+  }
+  @keyframes reveal { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  /* Header */
+  .site-head {
+    position: sticky; top: 0; z-index: 50; height: var(--nav-h);
+    background: rgba(11, 18, 32, 0.86); border-bottom: 1px solid var(--hairline-soft);
+    backdrop-filter: saturate(140%) blur(12px);
+  }
+  .head-row { display: flex; align-items: center; gap: 16px; height: 100%; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 650; font-size: 1.0625rem; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
+  .brand:hover { color: var(--ink); }
+  .brand-mark { width: 30px; height: 30px; }
+  .nav { display: none; margin-left: auto; }
+  .nav-list { display: flex; gap: 2px; list-style: none; }
+  .nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 11px; border-radius: var(--r-sm); color: var(--body); font-size: 0.9375rem; font-weight: 500; text-decoration: none; white-space: nowrap; }
+  .nav-link:hover { color: var(--ink); background: rgba(148, 163, 184, 0.08); }
+  .nav-link[aria-current="page"] { color: var(--ink); background: rgba(148, 163, 184, 0.1); }
+  .head-cta { display: none; margin-left: auto; }
+  .menu { margin-left: 8px; }
+  .menu > summary { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-sm); border: 1px solid var(--hairline); color: var(--ink); cursor: pointer; list-style: none; }
+  .menu > summary::-webkit-details-marker { display: none; }
+  .menu > summary .icon { width: 22px; height: 22px; }
+  .menu > summary .icon:last-child, .menu[open] > summary .icon:first-child { display: none; }
+  .menu[open] > summary .icon:last-child { display: block; }
+  .menu-panel {
+    position: absolute; left: 0; right: 0; top: var(--nav-h); padding: 12px clamp(16px, 4vw, 40px) 24px;
+    background: var(--bg); border-bottom: 1px solid var(--hairline); box-shadow: var(--shadow);
+    max-height: calc(100dvh - var(--nav-h)); overflow-y: auto;
+  }
+  .menu-panel ul { list-style: none; display: grid; margin-bottom: 16px; }
+  .menu-panel li a { display: flex; align-items: center; min-height: 48px; color: var(--ink); font-size: 1.0625rem; font-weight: 500; text-decoration: none; border-bottom: 1px solid var(--hairline-soft); }
+  .menu-panel li a[aria-current="page"] { color: var(--cyan); }
+  .menu-panel .button { width: 100%; }
+  @media (min-width: 560px) { .head-cta { display: inline-flex; } .menu { margin-left: 0; } }
+  @media (min-width: 1120px) {
+    .nav { display: block; }
+    .head-cta { margin-left: 8px; }
+    .menu { display: none; }
+  }
+
+  /* Reading column (docs, policies, case studies) */
+  .page { max-width: 800px; padding-top: clamp(40px, 6vw, 72px); padding-bottom: clamp(64px, 8vw, 96px); }
+  .page > h1 { margin-bottom: 16px; font-size: clamp(2rem, 1.4rem + 2.4vw, 2.75rem); }
+  .page h2 { margin: 48px 0 14px; font-size: clamp(1.375rem, 1.1rem + 1vw, 1.75rem); }
+  .page h3 { margin: 32px 0 10px; }
+  .page p, .page ul, .page ol, .page pre, .page table, .page blockquote { margin-bottom: 16px; }
+  /* Docs tables (rendered READMEs, each put in a .table-scroll box by astro.config.mjs) size to their content like on
+     GitHub; a wide one scrolls inside its box, never the page. The box takes keyboard focus so arrow keys scroll it, and
+     a soft light edge shows on each side that has more to see: the "local" covers in the page colour move with the
+     table and hide an edge once it is scrolled to that end. */
+  .page > .table-scroll {
+    width: fit-content; max-width: 100%; margin-bottom: 16px; overflow-x: auto;
+    background:
+      linear-gradient(to right, var(--bg) 40%, rgba(11, 18, 32, 0)) left / 32px 100% no-repeat local,
+      linear-gradient(to left, var(--bg) 40%, rgba(11, 18, 32, 0)) right / 32px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgba(148, 163, 184, 0.3), rgba(148, 163, 184, 0)) left / 12px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(148, 163, 184, 0.3), rgba(148, 163, 184, 0)) right / 12px 100% no-repeat scroll;
+  }
+  .page > .table-scroll > table { width: auto; margin-bottom: 0; }
+  .page ul, .page ol { padding-left: 1.3em; }
+  .page li { margin-bottom: 6px; }
+  .page li::marker { color: var(--muted); }
+  .lead { font-size: 1.1875rem; color: var(--body); }
+  .page blockquote { margin-left: 0; padding: 4px 0 4px 18px; border-left: 3px solid var(--hairline-strong); color: var(--muted); }
+  code { font-family: var(--mono); font-size: 0.875em; padding: 2px 6px; border-radius: 6px; background: var(--surface-strong); color: var(--ink); }
+  pre { overflow-x: auto; position: relative; padding: 16px 18px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: #0a1020; font-size: 0.875rem; line-height: 1.55; }
+  pre code { padding: 0; background: none; font-size: inherit; }
+  /* inline code that wraps keeps padding and rounded ends on every line; Doc.astro marks short code .whole and
+     hyphenated words in longer code .nobr, so code never breaks at a hyphen */
+  :not(pre) > code { -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  code.whole, code .nobr { white-space: nowrap; }
+  .table-wrap { position: relative; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+  th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hairline); }
+  th { color: var(--ink); font-weight: 600; }
+
+  /* Footer */
+  .site-foot { margin-top: auto; padding: clamp(48px, 6vw, 72px) 0 28px; background: #09101d; border-top: 1px solid var(--hairline-soft); font-size: 0.9375rem; }
+  .foot-top { display: grid; gap: 40px; }
+  .foot-brand p { max-width: 36ch; margin: 14px 0 16px; color: var(--muted); }
+  .foot-mail { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+  .foot-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+  .foot-cols h2 { margin-bottom: 10px; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .foot-cols ul { list-style: none; }
+  .foot-cols a { display: inline-flex; align-items: center; min-height: 36px; color: var(--body); text-decoration: none; }
+  .foot-cols a:hover { color: var(--ink); text-decoration: underline; }
+  .legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--hairline-soft); color: var(--muted); font-size: 0.875rem; }
+  .legal p { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .legal a { color: var(--muted); display: inline-flex; align-items: center; min-height: 32px; }
+  .legal a:hover { color: var(--ink); }
+  /* on a phone the line wraps, which left a lone "·" at a line end: stack the three items instead */
+  @media (max-width: 479px) { .legal p:last-child { flex-direction: column; align-items: flex-start; gap: 0; } .legal p span[aria-hidden] { display: none; } }
+  @media (min-width: 720px) { .foot-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .foot-top { grid-template-columns: 1.1fr 1.6fr; gap: 64px; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+    }
+  }
+</style>

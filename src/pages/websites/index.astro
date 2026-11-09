@@ -1,0 +1,312 @@
+---
+// Website development (brief 2) with client ownership and the optional monthly plan (brief 3).
+// Prices are the PUBLISHED ones from data/services.ts and the Care plan from data/services.ts plans. The proposed
+// website packages and care tiers live only in the private business/site-upgrade/proposals.md until the owner
+// approves them: never add them here.
+// Approval needed before deploy: the handover list (#ownership) and the "If you stop the monthly plan" steps are new
+// written commitments (business/site-upgrade/approvals.md).
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import ServiceCard from "../../components/ServiceCard.astro";
+import DemoSites from "../../components/DemoSites.astro";
+import DeviceShot from "../../components/DeviceShot.astro";
+import { serviceById, plans, faqs } from "../../data/services";
+import type { IconName } from "../../components/Icon.astro";
+
+const site = "https://nuxyautomation.com";
+const web = serviceById["new-website"];
+const fixes = serviceById["site-fixes"];
+const care = plans.find((p) => p.id === "care")!;
+// a full rebuild is the published New website, offered to sites past saving (the contact link asks about new-website)
+const rebuild = { ...web, name: "Full rebuild", icon: "arrowsClockwise" as IconName, popular: false,
+  fixes: "A site too old, slow or broken to repair",
+  text: "The same as a new website: up to 4 phone-friendly pages in your own Squarespace or Wix account, with your current domain connected to it, so your web address doesn’t change.",
+  who: "Sites that would cost more to patch than to replace.",
+  needs: "Access to your current site and domain, and the photos and text you want to keep." };
+const faq = (q: string) => faqs.find(([k]) => k === q)![1];
+
+const included: { icon: IconName; title: string; text: string }[] = [
+  { icon: "deviceMobile", title: "Built for phones first", text: "Most of your visitors are on a phone. Every page is laid out for a small screen first, then checked on tablets and computers." },
+  { icon: "listChecks", title: "Up to 4 clear pages", text: "Your services and prices, hours, area and a map, written so a customer knows in seconds that you do what they need." },
+  { icon: "calendarCheck", title: "A Book, Quote or Order button", text: "One clear next step on every screen, plus tap-to-call. If you take bookings, it opens your own booking tool." },
+  { icon: "envelopeSimple", title: "A contact form that reaches you", text: "Tested before launch, so inquiries land in your inbox instead of disappearing." },
+  { icon: "magnifyingGlass", title: "The basics search engines look for", text: "Page titles, descriptions, your service area and a link to your Google Business Profile. No ranking promises: see the questions below." },
+  { icon: "globeSimple", title: "On your own domain", text: "Your web address, registered in your name. If you don’t have one yet, we help you pick and register it, in your name." },
+];
+
+const handover = [
+  ["Live in your own account", "The site runs in your own Squarespace or Wix account, on a plan in your name and on your card."],
+  ["Your domain, in your name", "We check the domain is registered to you before launch. It is never registered under our accounts."],
+  ["Every page tested", "Each page, button and form is checked on a phone and a computer, and the form is tested end to end."],
+  ["Your files and a how-to", "Your logo, photos and text, plus a short video showing how to change prices, hours and photos yourself."],
+  ["You’re the owner", "You hold the owner login for the website and the domain. We work as an invited user and never ask for your passwords."],
+  ["Our access removed", "Once you confirm everything works, and at the latest when the 30-day launch watch ends, we remove our access, unless you choose the monthly plan."],
+];
+
+const promises: { icon: IconName; title: string; text: string }[] = [
+  { icon: "globeSimple", title: "Your domain stays yours", text: "Registered in your name, never under our accounts, so no one can take your web address away." },
+  { icon: "creditCard", title: "Your accounts, your card", text: "The website builder, the domain and any paid plan are in your name and billed to you directly." },
+  { icon: "lockSimple", title: "Invited access, never passwords", text: "We work as an invited user. You can remove our access at any time, in a couple of clicks." },
+  { icon: "shieldCheck", title: "Never held hostage", text: "Stopping a monthly plan never takes your site down, locks you out or costs a release fee." },
+];
+
+const leaving = [
+  "Tell us by email, or use the cancel link in your monthly receipt.",
+  "We confirm in writing when the plan ends: the end of the month you’ve already paid for.",
+  "We send you a copy of your site’s text, images and logo files, and notes on any settings we changed.",
+  "We check that you can sign in as the owner of the website, the domain and any connected tools.",
+  "You get short written notes: where everything runs, renewal dates, and who to contact for what.",
+  "We remove our access and tell you when it’s done.",
+  "Billing stops. You’re never charged again.",
+];
+
+const questions: [string, string][] = [
+  ["Can I edit the website myself?", "Yes. It’s built in your own Squarespace or Wix account, which have simple editors. You get a short video showing how to change prices, hours and photos, and you can always ask us instead."],
+  ["Who owns the domain and the website?", faq("Who owns what you build?")],
+  ["Do I have to sign up for a monthly plan?", faq("Do I have to sign up for a monthly plan?")],
+  ["What will I pay other companies?", `${web.costs} We tell you the exact current price of the plan your site needs in the written plan, before you sign up for anything.`],
+  ["Can you promise more customers or a top Google ranking?", faq("Can you promise more customers or a top Google ranking?")],
+  ["How long does it take?", "Your written plan gives the timeline before you agree to anything. The biggest factor is usually how quickly the photos, prices and text come together, and we help with that."],
+  ["I already have a website. Do I need a new one?", `Often not. Quick fixes (${fixes.price}) cover secure https, a phone-friendly layout, a booking or quote button and a working form on the site you already have. If it’s past saving, a new website is ${web.price}.`],
+  ["How do I pay?", faq("How do I pay?")],
+];
+
+const service = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": `${site}/websites/#service`,
+  name: "Website development",
+  serviceType: "Website design and development",
+  url: `${site}/websites/`,
+  description: "Phone-friendly websites for small service businesses, built in the client’s own Squarespace or Wix account on their own domain, plus quick fixes and redesigns of existing sites.",
+  provider: { "@id": `${site}/#business` },
+  areaServed: [{ "@type": "AdministrativeArea", name: "Southern Minnesota" }, { "@type": "Country", name: "United States" }],
+  offers: [
+    { "@type": "Offer", name: web.name, price: "900", priceCurrency: "USD", url: `${site}/websites/#new-website` },
+    { "@type": "Offer", name: fixes.name, priceSpecification: { "@type": "PriceSpecification", minPrice: "150", priceCurrency: "USD" }, url: `${site}/websites/#redesign` },
+  ],
+};
+---
+<Base title="Website Development for Small Businesses · Nuxy Automation" description={`Fast, phone-friendly websites for small businesses in southern Minnesota and the US: ${web.price} one-time, on your own domain and account. No monthly plan needed.`} wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(service)} />
+
+  <section class="hero-web">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Website development</p>
+        <h1>Websites that make it easy to choose you.</h1>
+        <p class="lead">We build fast, modern, mobile-friendly websites that help customers find your business, explore your services, and contact you.</p>
+        <div class="hero-actions">
+          <a class="button" href="/contact/?service=new-website" data-track="cta_web_quote">Get a Free Website Quote</a>
+          <a class="button secondary" href="#examples">See Example Websites</a>
+        </div>
+        <ul class="hero-facts" role="list">
+          <li><Icon name="receipt" /><span><strong>{web.price}</strong> one-time, written price</span></li>
+          <li><Icon name="globeSimple" /><span>Your domain, your site</span></li>
+          <li><Icon name="creditCard" /><span>No monthly plan required</span></li>
+        </ul>
+      </div>
+      <DeviceShot slug="lantern-row-barbers" />
+    </div>
+  </section>
+
+  <section class="section" id="new-website" aria-labelledby="new-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">New website</p>
+        <h2 id="new-h">Everything a customer looks for, on every screen</h2>
+        <p>{web.text}</p>
+      </div>
+      <div class="new-grid">
+        <ul class="included" role="list">
+          {included.map((i) => (
+            <li><Icon name={i.icon} /><div><h3>{i.title}</h3><p>{i.text}</p></div></li>
+          ))}
+        </ul>
+        <aside class="price-panel panel" aria-labelledby="price-h">
+          <p class="price-name" id="price-h">{web.name}</p>
+          <p class="price"><span>{web.price}</span> one-time</p>
+          <p class="price-sub">Half to start, half at handover, by a secure Stripe invoice. Nothing is charged until you agree to the written plan.</p>
+          <dl class="facts">
+            <div><dt>Suits</dt><dd>{web.who}</dd></div>
+            <div><dt>We need from you</dt><dd>{web.needs}</dd></div>
+            <div><dt>Paid to other companies</dt><dd>{web.costs} We tell you the exact cost first.</dd></div>
+          </dl>
+          <a class="button wide" href="/contact/?service=new-website" data-track="cta_web_quote">Get a Free Website Quote</a>
+          <p class="price-foot">Includes a 30-day launch watch. A monthly plan is optional.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" id="redesign" aria-labelledby="redesign-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Redesign & modernization</p>
+        <h2 id="redesign-h">Already have a website?</h2>
+        <p>Keep what works and fix what doesn’t. If your site looks dated or breaks on a phone, quick fixes usually solve it on the site you already have. If it’s past saving, we rebuild it.</p>
+      </div>
+      <div class="grid-2 svc-pair">
+        <ServiceCard service={fixes} />
+        <ServiceCard service={rebuild} anchor={false} />
+      </div>
+      <p class="more-line">Selling online too? See the <a href="/solutions/#online-shop">online shop</a> ({serviceById["online-shop"].price}) and <a href="/solutions/#gift-cards">online gift cards</a> ({serviceById["gift-cards"].price} add-on).</p>
+    </div>
+  </section>
+
+  <section class="section" id="examples" aria-labelledby="examples-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Example websites</p>
+        <h2 id="examples-h">See what a Nuxy website looks like</h2>
+        <p>Three demonstration sites for made-up local businesses. Open any of them to see it on a computer and on a phone, buttons and forms included.</p>
+      </div>
+      <DemoSites />
+    </div>
+  </section>
+
+  <section class="section band" id="ownership" aria-labelledby="ownership-h">
+    <div class="wrap">
+      <div class="section-head center">
+        <p class="eyebrow">Two ways to work with us</p>
+        <h2 id="ownership-h">Buy it outright, or let us look after it</h2>
+        <p>Either way the website, the domain and the accounts are yours. The monthly plan is optional: most businesses only need the website.</p>
+      </div>
+      <div class="ways">
+        <article class="way panel">
+          <span class="way-icon"><Icon name="handshake" /></span>
+          <h3>Buy your website outright</h3>
+          <p class="way-price"><strong>{web.price}</strong> one-time · no monthly fee to us</p>
+          <p>At handover:</p>
+          <ol class="steps-list">
+            {handover.map(([t, d]) => <li><strong>{t}.</strong> {d}</li>)}
+          </ol>
+        </article>
+        <article class="way panel">
+          <span class="way-icon"><Icon name="wrench" /></span>
+          <h3>Let Nuxy look after it</h3>
+          <p class="way-price"><strong>{care.price}</strong> · {care.name} · optional</p>
+          <p>Everything in “buy it outright”, and then we keep watching it:</p>
+          <ul class="ticks">
+            {care.points.map((p) => <li><Icon name="check" />{p}</li>)}
+          </ul>
+          <p class="way-note">Start it at handover or any time later. Stop it whenever you like: it ends with the month you’ve paid for, and your site stays exactly where it is. <a href="/policies/#cancel">Plan terms</a></p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="own-h">
+    <div class="wrap own-grid">
+      <div>
+        <div class="section-head">
+          <p class="eyebrow">Ownership</p>
+          <h2 id="own-h">You own it. Always.</h2>
+          <p>A website should never be something you rent from the person who built it.</p>
+        </div>
+        <ul class="promises" role="list">
+          {promises.map((p) => (
+            <li><Icon name={p.icon} /><div><h3>{p.title}</h3><p>{p.text}</p></div></li>
+          ))}
+        </ul>
+      </div>
+      <div class="leave panel">
+        <h3>If you stop the monthly plan</h3>
+        <ol class="leave-list">
+          {leaving.map((t) => <li>{t}</li>)}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" aria-labelledby="faq-h">
+    <div class="wrap faq-wrap">
+      <div class="section-head">
+        <p class="eyebrow">Questions</p>
+        <h2 id="faq-h">Website questions, answered</h2>
+      </div>
+      <div class="faq">
+        {questions.map(([q, a]) => (
+          <details>
+            <summary><span>{q}</span><Icon name="plus" /></summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>Get a free website quote</h2>
+          <p>Tell us about your business. Within one business day you’ll get a written plan with what we’d build, the price and the timeline. No call required.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="button" href="/contact/?service=new-website" data-track="cta_web_quote">Get a Free Website Quote</a>
+          <a class="button secondary" href="/get-a-website/">No website yet?</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero-web { padding-block: clamp(40px, 6vw, 80px) clamp(32px, 5vw, 64px); }
+  .hero-grid { display: grid; gap: clamp(40px, 5vw, 64px); align-items: center; }
+  @media (min-width: 1024px) { .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); } }
+  .hero-copy h1 { max-width: 16ch; }
+  .hero-copy .lead { margin-top: 20px; max-width: 54ch; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  @media (max-width: 479px) { .hero-actions .button { flex: 1 1 100%; } }
+  .hero-facts { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 28px; padding: 0; list-style: none; color: var(--body); font-size: 0.9375rem; }
+  .hero-facts li { display: inline-flex; align-items: center; gap: 8px; }
+  .hero-facts :global(.icon) { color: var(--cyan); }
+  .hero-facts strong { color: var(--ink); }
+
+
+  .new-grid { display: grid; gap: clamp(32px, 4vw, 56px); align-items: start; }
+  @media (min-width: 1024px) { .new-grid { grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr); } }
+  .included { display: grid; gap: 28px 32px; margin: 0; padding: 0; list-style: none; }
+  @media (min-width: 640px) { .included { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .included li, .promises li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .included li > :global(.icon), .promises li > :global(.icon) { width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
+  .included h3, .promises h3 { font-size: 1.0625rem; }
+  .included p, .promises p { margin-top: 4px; color: var(--body); font-size: 0.9375rem; }
+
+  .price-panel { display: grid; gap: 14px; padding: clamp(22px, 3vw, 32px); }
+  @media (min-width: 1024px) { .price-panel { position: sticky; top: 96px; } }
+  .price-name { color: var(--cyan); font-size: 0.875rem; font-weight: 600; }
+  .price { color: var(--muted); }
+  .price span { color: var(--ink); font-size: 2.5rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; margin-right: 4px; }
+  .price-sub, .price-foot { color: var(--body); font-size: 0.9375rem; }
+  .price-foot { color: var(--muted); font-size: 0.875rem; text-align: center; }
+  .facts { display: grid; gap: 12px; margin: 4px 0; padding-block: 16px; border-block: 1px solid var(--hairline); }
+  .facts dt { color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
+  .facts dd { margin: 2px 0 0; color: var(--body); font-size: 0.9375rem; }
+
+  .svc-pair { align-items: stretch; }
+  .more-line { margin-top: 24px; color: var(--body); }
+
+  /* each card is as tall as its own content: stretching the short one left a big empty hole above its note */
+  .ways { display: grid; gap: 24px; align-items: start; margin-top: clamp(28px, 4vw, 44px); }
+  @media (min-width: 900px) { .ways { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .way { display: flex; flex-direction: column; gap: 12px; padding: clamp(22px, 3vw, 32px); }
+  .way-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
+  .way h3 { font-size: 1.375rem; }
+  .way-price { color: var(--body); }
+  .way-price strong { color: var(--ink); font-size: 1.25rem; }
+  .way p { color: var(--body); }
+  .way-note { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--hairline); font-size: 0.9375rem; }
+  .steps-list, .leave-list { display: grid; gap: 10px; margin: 0; padding-left: 1.4em; color: var(--body); }
+  .steps-list li::marker, .leave-list li::marker { color: var(--cyan); font-weight: 650; }
+  .steps-list strong { color: var(--ink); }
+
+  .own-grid { display: grid; gap: clamp(32px, 4vw, 56px); align-items: start; }
+  @media (min-width: 1024px) { .own-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); } }
+  .promises { display: grid; gap: 24px; margin: 0; padding: 0; list-style: none; }
+  @media (min-width: 640px) { .promises { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .leave { display: grid; gap: 16px; padding: clamp(22px, 3vw, 32px); }
+  .leave h3 { font-size: 1.25rem; }
+</style>

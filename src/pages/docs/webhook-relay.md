@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Doc.astro
 title: "Shopify Order Webhook Relay"
-description: "Every new Shopify order lands as a clean row in a Google Sheet and pings your team on Discord or Slack. It happens within seconds, never twice, and is never silently lost."
+description: "Every new Shopify order lands as a clean row in a Google Sheet and pings your team on Discord or Slack: within seconds, never twice, never silently lost."
 repo: shopify-webhook-relay
 ---
 
@@ -9,7 +9,7 @@ repo: shopify-webhook-relay
 
 Every new Shopify order lands as a clean row in a Google Sheet and pings your team on Discord or Slack. It happens within seconds, never twice, and is never silently lost.
 
-![Demo: the tests, a signed order arriving, the row it writes, a forged request refused](/relay-demo.gif)
+<figure class="doc-video"><video src="/videos/relay-demo.mp4" poster="/videos/relay-demo-poster.webp" width="800" height="450" controls muted playsinline preload="none"></video><figcaption>Demo: the tests, a signed order arriving, the row it writes, a forged request refused. 35 seconds, no sound.</figcaption></figure>
 
 *(Diagram: see the README on GitHub.)*
 
@@ -32,7 +32,7 @@ Every new Shopify order lands as a clean row in a Google Sheet and pings your te
 ## Try it in one minute (no accounts needed)
 
 ```bash
-npm test              # 10 tests: signatures, duplicates, retries, dead letters, the HTTP server, the Sheets login
+npm test              # 11 tests: signatures, duplicates, retries, dead letters, the HTTP server, the Sheets login, formula-safe cells
 npm start             # terminal 1: listens on :3000 with the CSV backup only
 npm run demo          # terminal 2: sends the sample order, signed as Shopify signs it
 cat data/orders.csv   # the row
@@ -67,5 +67,6 @@ scripts/            send-test-webhook.js, replay-dead-letters.js
 ## Notes for production
 
 - Duplicate detection is kept in memory, which is right for one instance. Behind a load balancer with several instances, move it to Redis or a database table.
+- Every request's HMAC signature is checked against the raw body before anything is read (timing-safe; a wrong or missing one gets 401), and a customer's text that a spreadsheet would run as a formula (`=HYPERLINK(...)` as a name) reaches the sheet and the CSV with a leading `'`, so it shows as plain text.
 - The CSV backup and the dead letters hold customer details. Keep `data/` on private storage, and rotate or delete it as the store's privacy policy requires.
 - To add another destination (Airtable, HubSpot, an email), add one file in `src/sinks/` that exposes `write(values, row)`.

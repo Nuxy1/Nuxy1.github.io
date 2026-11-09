@@ -9,3 +9,7 @@ const query = (fields: Record<string, string>) => new URLSearchParams(fields).to
 export const ask = (p?: Item) => `mailto:${inbox}?` + query({ subject: subject(p), body: body(p) });
 export const gmail = (p?: Item) => "https://mail.google.com/mail/?" + query({ view: "cm", fs: "1", to: inbox, su: subject(p), body: body(p) });
 export const outlook = (p?: Item) => "https://outlook.live.com/mail/0/deeplink/compose?" + query({ to: inbox, subject: subject(p), body: body(p) });
+// The contact form's fallback when sending fails: the customer's own answers as an email, same "Setup request"
+// subject so it lands in the inbox like every other request.
+export const askWith = (answers: [string, string][], p?: Item) =>
+  `mailto:${inbox}?` + query({ subject: subject(p), body: answers.filter(([, v]) => v.trim()).map(([k, v]) => (v.includes("\n") ? `${k}:\n${v}` : `${k}: ${v}`)).join("\n") + "\n" });

@@ -1,0 +1,334 @@
+---
+// The assessment request form. It posts to the agent's src/inquiry.js (data/site.ts inquiryUrl), which checks it
+// again, saves it and emails the business inbox. The page says "received" only when the server answers with a
+// reference; any failure says NOT sent and offers the same answers as a ready-to-send email instead.
+// Without JavaScript it is an ordinary form: the server shows its own error page or the thank-you page.
+// Rules mirror FIELDS in the inquiry service's src/inquiry.js (private business repo): change both together.
+import Icon from "./Icon.astro";
+import { inquiryUrl, inbox } from "../data/site";
+import { groups, plans } from "../data/services";
+import { ask } from "../lib/request";
+---
+<div class="inq" data-inquiry>
+  <form class="inq-form" method="post" action={inquiryUrl} accept-charset="UTF-8" data-endpoint={inquiryUrl}>
+    <p class="inq-legend">Required unless marked optional. Takes about two minutes.</p>
+
+    <div class="inq-grid">
+      <div class="field">
+        <label for="f-name">Your name</label>
+        <input id="f-name" name="name" type="text" autocomplete="name" required maxlength="100" aria-describedby="f-name-err" />
+        <p class="err" id="f-name-err" hidden></p>
+      </div>
+      <div class="field">
+        <label for="f-business">Business name</label>
+        <input id="f-business" name="business" type="text" autocomplete="organization" required maxlength="120" aria-describedby="f-business-err" />
+        <p class="err" id="f-business-err" hidden></p>
+      </div>
+      <div class="field">
+        <label for="f-email">Email</label>
+        <input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254" spellcheck="false" aria-describedby="f-email-help f-email-err" />
+        <p class="help" id="f-email-help">Where we send your written plan and price.</p>
+        <p class="err" id="f-email-err" hidden></p>
+      </div>
+      <div class="field">
+        <label for="f-type">Type of business</label>
+        <input id="f-type" name="type" type="text" required maxlength="80" list="f-type-list" aria-describedby="f-type-help f-type-err" />
+        <datalist id="f-type-list">
+          {["Landscaping & lawn care", "Cleaning", "Plumbing", "HVAC", "Electrical", "Contractor & remodeling", "Barber, salon or spa", "Auto repair", "Restaurant or café", "Retail shop", "Office or professional services"].map((t) => <option value={t} />)}
+        </datalist>
+        <p class="help" id="f-type-help">For example: plumbing, house cleaning, barber shop.</p>
+        <p class="err" id="f-type-err" hidden></p>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f-service">What are you interested in? <span class="opt">(optional)</span></label>
+      <select id="f-service" name="service" aria-describedby="f-service-err">
+        <option value="">Not sure yet: help me decide</option>
+        {groups.map((g) => (
+          <optgroup label={g.title}>
+            {g.items.map((s) => <option value={s.id} data-name={s.name} data-price={s.price}>{s.name} ({s.price})</option>)}
+          </optgroup>
+        ))}
+        <optgroup label="Monthly plans">
+          {plans.map((p) => <option value={p.id} data-name={p.name} data-price={p.price}>{p.name} ({p.price})</option>)}
+        </optgroup>
+      </select>
+      <p class="err" id="f-service-err" hidden></p>
+    </div>
+
+    <div class="field">
+      <label for="f-need">What would you like help with?</label>
+      <textarea id="f-need" name="need" rows="5" required minlength="10" maxlength="3000" aria-describedby="f-need-help f-need-err"></textarea>
+      <p class="help" id="f-need-help">A few sentences is plenty. For example: “We miss calls while we’re on jobs and lose quote requests.”</p>
+      <p class="err" id="f-need-err" hidden></p>
+    </div>
+
+    <details class="inq-more">
+      <summary><Icon name="plus" />More details <span class="opt">(optional)</span></summary>
+      <div class="inq-grid">
+        <div class="field">
+          <label for="f-website">Website <span class="opt">(optional)</span></label>
+          <input id="f-website" name="website" type="text" inputmode="url" autocomplete="url" maxlength="200" spellcheck="false" placeholder="yourbusiness.com" aria-describedby="f-website-err" />
+          <p class="err" id="f-website-err" hidden></p>
+        </div>
+        <div class="field">
+          <label for="f-phone">Phone <span class="opt">(optional)</span></label>
+          <input id="f-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" aria-describedby="f-phone-err" />
+          <p class="err" id="f-phone-err" hidden></p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-tools">Tools you use now <span class="opt">(optional)</span></label>
+        <input id="f-tools" name="tools" type="text" maxlength="400" aria-describedby="f-tools-help f-tools-err" />
+        <p class="help" id="f-tools-help">Booking, invoicing, email, website builder… for example: Gmail, Square, Wix.</p>
+        <p class="err" id="f-tools-err" hidden></p>
+      </div>
+      <div class="inq-grid">
+        <div class="field">
+          <label for="f-budget">Budget <span class="opt">(optional)</span></label>
+          <select id="f-budget" name="budget">
+            <option value="">Prefer not to say</option>
+            <option value="unsure">Not sure yet</option>
+            <option value="lt300">Under $300</option>
+            <option value="300-600">$300–$600</option>
+            <option value="600-1200">$600–$1,200</option>
+            <option value="gt1200">Over $1,200</option>
+          </select>
+        </div>
+        <fieldset class="field radios">
+          <legend>Best way to reach you <span class="opt">(optional)</span></legend>
+          <label><input type="radio" name="contact" value="email" /> Email</label>
+          <label><input type="radio" name="contact" value="phone" /> Phone</label>
+          <label><input type="radio" name="contact" value="either" /> Either</label>
+        </fieldset>
+      </div>
+    </details>
+
+    <!-- (people never see this field; automated senders fill it in) -->
+    <div class="hp" aria-hidden="true">
+      <label for="f-hp">Leave this empty</label>
+      <input id="f-hp" name="nx_hp" type="text" tabindex="-1" autocomplete="off" />
+    </div>
+    <input type="hidden" name="t" value="" />
+
+    <p class="inq-privacy"><Icon name="lockSimple" /><span>We use what you send only to reply about your project. It is never sold, shared or added to a mailing list. <a href="/policies/#privacy">Privacy policy</a></span></p>
+
+    <div class="inq-actions">
+      <button class="button" type="submit" data-submit><span data-label>Send my request</span><Icon name="paperPlaneTilt" /></button>
+      <p class="inq-alt">or email <a href={ask()}>{inbox}</a></p>
+    </div>
+    <p class="sr-only" role="status" aria-live="polite" data-status></p>
+  </form>
+
+  <div class="inq-done" tabindex="-1" hidden data-done>
+    <span class="inq-badge ok"><Icon name="checkCircle" /></span>
+    <h2>Thanks, we got your request.</h2>
+    <p>Your reference is <strong class="inq-ref" data-ref></strong>. We’ll reply to <strong data-email></strong> within one business day with what we’d build, what it costs and what we’d need from you.</p>
+    <p class="note">Nothing is charged and nothing happens until you agree to a written plan. If our reply doesn’t arrive, check your spam folder or email <a href={`mailto:${inbox}`}>{inbox}</a> with your reference.</p>
+  </div>
+
+  <div class="inq-fail" tabindex="-1" role="alert" hidden data-fail>
+    <span class="inq-badge bad"><Icon name="warningCircle" /></span>
+    <h2>Your request was NOT sent.</h2>
+    <p data-fail-text>Something went wrong on our side.</p>
+    <p>Your answers are still in the form. You can try again, or send them as an email: it opens with everything filled in.</p>
+    <div class="inq-fail-actions">
+      <a class="button" href={ask()} data-mailto><Icon name="envelopeSimple" />Email it instead</a>
+      <button class="button secondary" type="button" data-retry><Icon name="arrowCounterClockwise" />Back to the form</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .inq-form { display: grid; gap: 20px; }
+  .inq-legend { color: var(--muted); font-size: 0.9375rem; }
+  .inq-grid { display: grid; gap: 20px; }
+  @media (min-width: 640px) { .inq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .field { display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .field > label, .field > legend { color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
+  .opt { color: var(--muted); font-weight: 400; }
+  .field input:not([type="radio"]), .field select, .field textarea {
+    width: 100%; min-height: 48px; padding: 11px 14px; border: 1px solid var(--hairline-strong); border-radius: 10px;
+    background: #0e1a30; color: var(--ink); font-size: 1rem; line-height: 1.4;
+    transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+  }
+  .field textarea { min-height: 132px; resize: vertical; }
+  .field select { appearance: none; padding-right: 40px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 21px, calc(100% - 15px) 21px; background-size: 5px 5px; background-repeat: no-repeat; }
+  .field input::placeholder { color: #64748b; }
+  .field input:hover, .field select:hover, .field textarea:hover { border-color: #46608f; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35); }
+  .field [aria-invalid="true"] { border-color: var(--bad); }
+  .field [aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.3); }
+  .help { color: var(--muted); font-size: 0.875rem; line-height: 1.45; }
+  .err { display: flex; gap: 6px; color: #fca5a5; font-size: 0.875rem; font-weight: 500; line-height: 1.45; }
+  .radios { margin: 0; padding: 0; border: 0; }
+  .radios legend { padding: 0; margin-bottom: 6px; }
+  .radios label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-right: 18px; color: var(--body); cursor: pointer; }
+  .radios input { width: 20px; height: 20px; margin: 0; accent-color: var(--blue); }
+  .inq-more { border: 1px solid var(--hairline); border-radius: var(--r-md); background: rgba(14, 26, 48, 0.5); }
+  .inq-more > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 52px; padding: 12px 16px; color: var(--ink); font-weight: 600; cursor: pointer; list-style: none; }
+  .inq-more > summary::-webkit-details-marker { display: none; }
+  .inq-more > summary .icon { color: var(--cyan); transition: transform 200ms var(--ease); }
+  .inq-more[open] > summary .icon { transform: rotate(45deg); }
+  .inq-more[open] { padding-bottom: 16px; }
+  .inq-more > .inq-grid, .inq-more > .field { padding-inline: 16px; }
+  .inq-more > * + * { margin-top: 16px; }
+  .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .inq-privacy { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); font-size: 0.875rem; line-height: 1.5; }
+  .inq-privacy .icon { margin-top: 0.1em; color: var(--cyan); }
+  .inq-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  .inq-actions .button[aria-busy="true"] { opacity: 0.8; cursor: progress; }
+  .inq-actions .button[aria-busy="true"] .icon { animation: spin 900ms linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .inq-alt { color: var(--muted); font-size: 0.9375rem; overflow-wrap: anywhere; }
+  .inq-done, .inq-fail { display: grid; gap: 14px; justify-items: start; outline: none; scroll-margin-top: calc(clamp(20px, 4vw, 36px) + 8px); } /* (the card edge stays below the sticky header) */
+  .inq-done h2, .inq-fail h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 1.875rem); }
+  .inq-badge { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; }
+  .inq-badge .icon { width: 28px; height: 28px; }
+  .inq-badge.ok { background: rgba(52, 211, 153, 0.14); color: var(--ok); }
+  .inq-badge.bad { background: rgba(248, 113, 113, 0.14); color: var(--bad); }
+  .inq-ref { font-family: var(--mono); letter-spacing: 0.02em; }
+  .inq-fail-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+  @media (max-width: 479px) { .inq-actions .button, .inq-fail-actions .button { width: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .inq-actions .button[aria-busy="true"] .icon { animation: none; } }
+</style>
+
+<script>
+  import { askWith } from "../lib/request";
+
+  // (the same rules as the server; it checks everything again)
+  const RULES: Record<string, { required?: boolean; min?: number; max: number; test?: (v: string) => boolean; label: string; problem?: string }> = {
+    name: { required: true, max: 100, label: "Your name" },
+    business: { required: true, max: 120, label: "Business name" },
+    email: { required: true, max: 254, label: "Email", test: (v) => /^[^\s@<>"(),;:\\[\]]+@[^\s@<>"'(),;:\\[\]]+\.[a-z]{2,}$/i.test(v), problem: "Enter an email address like name@business.com." },
+    type: { required: true, max: 80, label: "Type of business" },
+    need: { required: true, min: 10, max: 3000, label: "What you’d like help with" },
+    website: { max: 200, label: "Website", test: (v) => /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(:\d{2,5})?(\/\S*)?$/i.test(v), problem: "Enter a web address like yourbusiness.com, or leave it empty." },
+    phone: { max: 40, label: "Phone", test: (v) => /^[0-9+().\-\s x]+$/i.test(v) && (v.match(/\d/g) ?? []).length >= 7, problem: "Enter a phone number with at least 7 digits, or leave it empty." },
+    tools: { max: 400, label: "Tools you use now" },
+  };
+  const LABELS: [string, string][] = [["name", "Name"], ["business", "Business name"], ["type", "Type of business"], ["email", "Email"], ["phone", "Phone"], ["website", "Website"], ["tools", "Tools I use now"], ["need", "What I'd like help with"]];
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-inquiry]")) {
+    const form = root.querySelector("form")!;
+    const endpoint = form.dataset.endpoint!;
+    const button = form.querySelector<HTMLButtonElement>("[data-submit]")!;
+    const label = button.querySelector("[data-label]")!;
+    const status = form.querySelector("[data-status]")!;
+    const done = root.querySelector<HTMLElement>("[data-done]")!;
+    const fail = root.querySelector<HTMLElement>("[data-fail]")!;
+    const opened = performance.now();
+    const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement | null;
+    form.noValidate = true; // (our own messages, next to each field)
+
+    // ?service=<id> from a service's "Ask about this" link picks it in the list (only a real service id)
+    const wanted = new URLSearchParams(location.search).get("service") ?? "";
+    const select = field("service") as unknown as HTMLSelectElement;
+    if (/^[a-z0-9-]{1,40}$/.test(wanted) && select.querySelector(`option[value="${wanted}"]`)) select.value = wanted;
+
+    const show = (name: string, message: string) => {
+      const input = field(name);
+      const err = form.querySelector<HTMLElement>(`#f-${name}-err`);
+      if (!input || !err) return;
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+      err.textContent = message;
+      err.hidden = !message;
+    };
+    const check = (name: string) => {
+      const r = RULES[name];
+      const v = (field(name)?.value ?? "").trim();
+      const length = [...v].length;
+      let message = "";
+      if (!v) message = r.required ? `${r.label} is required.` : "";
+      else if (length > r.max) message = `${r.label} is too long (${r.max} characters at most).`;
+      else if (r.min && length < r.min) message = `Please write a little more (at least ${r.min} characters).`;
+      else if (r.test && !r.test(v)) message = r.problem ?? "";
+      show(name, message);
+      return !message;
+    };
+    // (fields are checked when you leave them, and re-checked as you type once they've shown an error)
+    for (const name of Object.keys(RULES)) {
+      const input = field(name);
+      input?.addEventListener("blur", () => input.value.trim() && check(name));
+      input?.addEventListener("input", () => input.getAttribute("aria-invalid") === "true" && check(name));
+    }
+
+    const setBusy = (busy: boolean) => {
+      button.disabled = busy;
+      button.setAttribute("aria-busy", String(busy));
+      label.textContent = busy ? "Sending…" : "Send my request";
+      status.textContent = busy ? "Sending your request…" : "";
+    };
+    const answers = () => {
+      const o = select.selectedOptions[0];
+      const pick = o?.value ? { name: o.dataset.name ?? "", price: o.dataset.price ?? "" } : undefined;
+      return { pick, list: LABELS.map(([k, l]) => [l, field(k)?.value ?? ""] as [string, string]) };
+    };
+    const failed = (text: string) => {
+      const { pick, list } = answers();
+      fail.querySelector("[data-fail-text]")!.textContent = text;
+      // (long messages are cut so the email link still opens everywhere)
+      fail.querySelector<HTMLAnchorElement>("[data-mailto]")!.href = askWith(list.map(([k, v]) => [k, v.slice(0, 1500)]), pick);
+      form.hidden = true;
+      fail.hidden = false;
+      fail.focus();
+      fail.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    };
+    fail.querySelector("[data-retry]")!.addEventListener("click", () => {
+      fail.hidden = true;
+      form.hidden = false;
+      button.focus();
+    });
+
+    let sending = false;
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (sending) return; // (a second click while the first is on its way)
+      const bad = Object.keys(RULES).filter((name) => !check(name));
+      if (bad.length) {
+        const first = field(bad[0])!;
+        if (first.closest("details") && !first.closest("details")!.open) first.closest("details")!.open = true;
+        first.focus();
+        status.textContent = `${bad.length === 1 ? "One field needs" : `${bad.length} fields need`} fixing.`;
+        return;
+      }
+      field("t")!.value = String(Math.round(performance.now() - opened));
+      sending = true;
+      setBusy(true);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15_000);
+      try {
+        const res = await fetch(endpoint, { method: "POST", body: new URLSearchParams(new FormData(form) as unknown as Record<string, string>), headers: { accept: "application/json" }, signal: controller.signal, credentials: "omit" });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok && /^NX-\d{6}-[A-Z0-9]{4}$/.test(data.ref ?? "")) {
+          done.querySelector("[data-ref]")!.textContent = data.ref;
+          done.querySelector("[data-email]")!.textContent = field("email")!.value.trim();
+          form.hidden = true;
+          done.hidden = false;
+          done.focus();
+          done.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+          (window as any).nuxyTrack?.("form_submit");
+          form.reset();
+          return;
+        }
+        if (res.status === 400 && data.errors) {
+          const names = Object.keys(data.errors);
+          for (const name of names) show(name, data.errors[name]);
+          field(names[0])?.focus();
+          status.textContent = "Some fields need fixing.";
+          return;
+        }
+        failed(data.message || "Something went wrong on our side.");
+      } catch (error) {
+        failed((error as Error).name === "AbortError"
+          ? "Our server took too long to answer, so we can’t confirm it arrived. Please treat it as not sent."
+          : "Your browser couldn’t reach our server (the connection may be down, or something blocked it).");
+      } finally {
+        clearTimeout(timer);
+        sending = false;
+        setBusy(false);
+      }
+    });
+  }
+</script>

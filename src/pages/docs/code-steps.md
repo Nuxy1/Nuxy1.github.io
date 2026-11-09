@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Doc.astro
 title: "Paste-Ready Code Steps for Zapier, n8n and Make"
-description: "No-code automations break on messy data: a phone typed five ways, a name in CAPS, a date in someone else's time zone, \"1.234,56 €\", or an order's items as a JSON blob. Each file here is one small, tested fix you paste into a code step."
+description: "Small, tested code steps for Zapier, n8n and Make that fix messy data: phones typed five ways, names in CAPS, time zones, \"1.234,56 €\" and JSON line items."
 repo: automation-code-steps
 ---
 

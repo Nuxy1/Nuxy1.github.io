@@ -1,0 +1,143 @@
+---
+// Landing page for businesses with no website yet (brief 2: headline, text and both buttons are the brief's words).
+// The page outreach links to. Published prices only (data/services.ts); the full offer is on /websites/.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import DemoSites from "../../components/DemoSites.astro";
+import DeviceShot from "../../components/DeviceShot.astro";
+import { serviceById, steps } from "../../data/services";
+import type { IconName } from "../../components/Icon.astro";
+
+const web = serviceById["new-website"];
+
+const gaps: { icon: IconName; title: string; text: string }[] = [
+  { icon: "magnifyingGlass", title: "People look you up before they call", text: "Even when a neighbor recommends you, many people check online first: what you do, where you work and whether you look established." },
+  { icon: "clock", title: "They want answers at 9 pm", text: "Your services, prices, hours and area, there whenever a customer is deciding, without anyone having to pick up the phone." },
+  { icon: "chatCircleText", title: "One easy way to reach you", text: "A tap-to-call button, a quote or booking form, and directions. Fewer missed calls and fewer “are you open?” messages." },
+];
+
+const gets = [
+  "Up to 4 pages built for phones first",
+  "Your services, prices, hours, area and a map",
+  "A Book, Quote or Order button and tap-to-call",
+  "A contact form, tested so inquiries reach you",
+  "The basics search engines look for",
+  "Your own domain, registered in your name",
+  "A short video showing how to edit it yourself",
+  "A 30-day launch watch after it goes live",
+];
+---
+<Base title="Get a Professional Website for Your Business · Nuxy Automation" description={`No website yet? We build fast, phone-friendly websites for small businesses: ${web.price} one-time, on your own domain. Free written quote within one business day.`} wide>
+  <div class="wrap lp">
+  <section class="lp-hero">
+    <div class="lp-hero-copy">
+    <p class="eyebrow">No website yet?</p>
+    <h1>Your Business Deserves a Professional Website.</h1>
+    <p class="lead">We build fast, modern, mobile-friendly websites that help customers find your business, explore your services, and contact you.</p>
+    <div class="lp-actions">
+      <a class="button" href="/contact/?service=new-website" data-track="cta_lp_quote">Get a Free Website Quote</a>
+      <a class="button secondary" href="#examples">See Example Websites</a>
+    </div>
+    <p class="note lp-fine"><Icon name="checkCircle" /><span>{web.price} one-time. You own the domain and the site. No monthly plan required.</span></p>
+    </div>
+    <DeviceShot slug="fernway-lawn" />
+  </section>
+
+  <section class="lp-section" aria-labelledby="why-h">
+    <h2 id="why-h">What a website does for a small business</h2>
+    <ul class="gaps" role="list">
+      {gaps.map((g) => (
+        <li><Icon name={g.icon} /><div><h3>{g.title}</h3><p>{g.text}</p></div></li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="lp-section panel lp-offer" aria-labelledby="offer-h">
+    <div class="offer-head">
+      <h2 id="offer-h">What you get</h2>
+      <p class="offer-price"><strong>{web.price}</strong> one-time</p>
+    </div>
+    <ul class="ticks offer-list">
+      {gets.map((g) => <li><Icon name="check" />{g}</li>)}
+    </ul>
+    <p class="offer-costs"><strong>Paid to other companies:</strong> {web.costs} We tell you the exact cost in your written plan, before you sign up for anything.</p>
+    <a class="button" href="/contact/?service=new-website" data-track="cta_lp_quote">Get a Free Website Quote</a>
+  </section>
+
+  </div>
+
+  <div class="wrap">
+  <section class="lp-section" id="examples" aria-labelledby="ex-h">
+    <h2 id="ex-h">Example websites</h2>
+    <p class="lp-sub">Open one to see it on a computer and on a phone.</p>
+    <DemoSites level="h3" />
+  </section>
+
+  </div>
+
+  <div class="wrap lp">
+  <section class="lp-section" aria-labelledby="how-h">
+    <h2 id="how-h">How it works</h2>
+    <ol class="how" role="list">
+      {steps.map((s, i) => (
+        <li><span class="num" aria-hidden="true">{i + 1}</span><div><h3>{s.title}</h3><p>{s.text}</p></div></li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="lp-section lp-own" aria-labelledby="own-h">
+    <h2 id="own-h">It’s yours, not rented</h2>
+    <p>Your website is built in your own Squarespace or Wix account and your domain is registered in your name. We work as an invited user, never with your passwords, and remove our access when the job is done. If you want, our monthly care plan keeps it watched afterwards, but it is never required. <a href="/websites/#ownership">How ownership works</a></p>
+  </section>
+
+  <section class="lp-section lp-cta" aria-labelledby="cta-h">
+    <h2 id="cta-h">Get your free website quote</h2>
+    <p>Tell us your business and what you offer. Within one business day you’ll get a written plan and a fixed price. No call needed, and nothing is charged until you agree.</p>
+    <div class="lp-actions">
+      <a class="button" href="/contact/?service=new-website" data-track="cta_lp_quote">Get a Free Website Quote</a>
+      <a class="button secondary" href="/websites/">Full website details</a>
+    </div>
+  </section>
+  </div>
+</Base>
+
+<style>
+  .lp > section { max-width: 880px; }
+  /* the hero alone spans the full width, so the right half of a wide screen shows an example site instead of nothing */
+  .lp > section.lp-hero { max-width: none; }
+  .lp-hero { display: grid; gap: clamp(40px, 5vw, 64px); align-items: center; padding-block: clamp(40px, 6vw, 80px) 8px; }
+  @media (min-width: 1024px) { .lp-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .lp-hero h1 { max-width: 18ch; }
+  .lp-hero .lead { margin-top: 20px; max-width: 56ch; }
+  .lp-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  @media (max-width: 479px) { .lp-actions .button { flex: 1 1 100%; } }
+  .lp-fine { display: flex; align-items: flex-start; gap: 8px; margin-top: 20px; }
+  .lp-fine :global(.icon) { flex: none; margin-top: 0.2em; color: var(--ok); }
+
+  .lp-section { margin-top: clamp(56px, 8vw, 96px); }
+  .lp-section h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
+  .lp-sub { margin: 8px 0 24px; color: var(--body); }
+
+  .gaps { display: grid; gap: 24px; margin: 28px 0 0; padding: 0; list-style: none; }
+  .gaps li, .how li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .gaps li > :global(.icon) { width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
+  .gaps h3, .how h3 { font-size: 1.0625rem; }
+  .gaps p, .how p { margin-top: 4px; color: var(--body); }
+
+  .lp-offer { display: grid; gap: 20px; padding: clamp(22px, 4vw, 36px); }
+  .offer-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+  .offer-price { color: var(--muted); }
+  .offer-price strong { color: var(--ink); font-size: 2rem; letter-spacing: -0.02em; margin-right: 4px; }
+  .offer-list { display: grid; gap: 10px 24px; }
+  @media (min-width: 640px) { .offer-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .offer-costs { color: var(--body); font-size: 0.9375rem; }
+  .offer-costs strong { color: var(--ink); }
+  .lp-offer .button { justify-self: start; }
+  @media (max-width: 479px) { .lp-offer .button { justify-self: stretch; } }
+
+  .how { display: grid; gap: 22px; margin: 28px 0 0; padding: 0; list-style: none; }
+  .num { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--link); font-weight: 650; }
+
+  .lp-own p, .lp-cta p { margin-top: 12px; max-width: 68ch; color: var(--body); }
+  .lp-cta { padding-bottom: clamp(64px, 8vw, 96px); }
+</style>

@@ -1,0 +1,285 @@
+---
+// AI & business automation: the flagship (lead response & follow-up), then the lead and booking services (#leads,
+// where the homepage's fourth primary service links), admin automations (#admin) and AI (#ai), how automations are
+// kept safe, the working examples and the questions. Services and prices come from data/services.ts (published).
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import ServiceCard from "../../components/ServiceCard.astro";
+import { groups, serviceById, keep, faqs } from "../../data/services";
+import { examples } from "../../data/examples";
+import type { IconName } from "../../components/Icon.astro";
+
+const site = "https://nuxyautomation.com";
+const group = (id: string) => groups.find((g) => g.id === id)!;
+const leads = group("get-customers");
+const admin = group("save-time");
+const ai = group("advanced");
+const flagship = serviceById["follow-up"];
+
+// Lowest published price in a group, for the hero's "from $X" (prices are strings like "$450" or "from $200")
+const from = (g: typeof leads) => "$" + Math.min(...g.items.map((s) => Number(s.price.replace(/[^0-9]/g, "")))).toLocaleString("en-US");
+const parts: [string, string, typeof leads, IconName][] = [
+  ["#leads", "Leads, booking & follow-ups", leads, "chatsCircle"],
+  ["#admin", "Admin automations", admin, "receipt"],
+  ["#ai", "AI & custom connections", ai, "sparkle"],
+];
+
+const flow: [string, string][] = [
+  ["An inquiry comes in", "From your website form, your email, Facebook or Instagram, at any hour."],
+  ["The customer gets a reply in seconds", "In your words, written in advance: thanks, when you’ll be in touch, and what happens next."],
+  ["You get the details at once", "One alert with the name, the job and the best time to call back. No digging through emails."],
+  ["A friendly follow-up if it goes quiet", "At most 2, and they stop the moment the customer replies, so you take over the conversation."],
+];
+
+const asked = ["Do you need my passwords?", "What if something breaks after launch?", "Do I have to sign up for a monthly plan?", "Do we need to get on a call?"];
+const questions = asked.map((q) => faqs.find(([fq]) => fq === q)!);
+
+const data = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": `${site}/automation/#service`,
+  name: "Business automation and lead follow-up",
+  serviceType: "Business process automation",
+  url: `${site}/automation/`,
+  provider: { "@id": `${site}/#business` },
+  hasOfferCatalog: { "@id": `${site}/solutions/#catalog` },
+};
+---
+<Base title="Business Automation & Lead Follow-Up · Nuxy Automation" description={`Lead response & follow-up (${flagship.price}), online booking and reminders, invoice reminders and reports, built in your own accounts at fixed, written prices.`} wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(data)} />
+
+  <section class="au-hero">
+    <div class="wrap au-grid">
+      <div>
+      <p class="eyebrow">AI &amp; business automation</p>
+      <h1>Automations that answer, remind and follow up for you.</h1>
+      <p class="lead">Every inquiry answered in seconds, bookings with reminders, invoices that chase themselves and replies drafted for you to approve. Built in the accounts you already have, at a fixed price agreed in writing.</p>
+      <div class="hero-actions">
+        <a class="button" href="/contact/" data-track="cta_automation_hero">Get a Free Assessment<Icon name="arrowRight" /></a>
+        <a class="button secondary" href="/demos/#try"><Icon name="play" />Try the lead demo</a>
+      </div>
+      <ul class="hero-facts" role="list">
+        <li><Icon name="lockSimple" />Built in your own accounts</li>
+        <li><Icon name="bellSimple" />Every failure alerts us</li>
+        <li><Icon name="shieldCheck" />An off switch you control</li>
+      </ul>
+      </div>
+      <nav class="parts panel" aria-label="Automation services on this page">
+        <ul role="list">
+          {parts.map(([href, name, g, icon]) => (
+            <li><a href={href}><Icon name={icon} /><span><strong>{name}</strong><span>{g.items.length} services, from {from(g)}</span></span><Icon name="arrowRight" /></a></li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  </section>
+
+  <section class="section band" id="lead-response" aria-labelledby="flag-h">
+    <div class="wrap flag">
+      <div class="flag-copy">
+        <p class="eyebrow">Most asked for</p>
+        <h2 id="flag-h">{flagship.name}</h2>
+        <p class="flag-fixes">Fixes: {flagship.fixes.charAt(0).toLowerCase() + flagship.fixes.slice(1)}</p>
+        <p>{flagship.text}</p>
+        <p class="flag-price"><strong>{flagship.price}</strong> one time</p>
+        <p class="flag-costs">Other companies’ costs: {flagship.costs.charAt(0).toLowerCase() + flagship.costs.slice(1)}</p>
+        <div class="flag-actions">
+          <a class="button" href={`/contact/?service=${flagship.id}`} data-track="flagship_ask">Ask about lead follow-up</a>
+          <a class="text-link" href="/demos/#try">Watch it handle one inquiry<Icon name="arrowRight" /></a>
+        </div>
+      </div>
+      <ol class="flow" role="list">
+        {flow.map(([title, text], i) => (
+          <li>
+            <span class="flow-num" aria-hidden="true">{i + 1}</span>
+            <div><h3>{title}</h3><p>{text}</p></div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="leads" aria-labelledby="leads-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Booking, leads &amp; customer follow-ups</p>
+        <h2 id="leads-h">{leads.title}</h2>
+        <p>{leads.lead}</p>
+      </div>
+      <div class="grid-4 cards">
+        {leads.items.map((s) => <ServiceCard service={s} compact shownAbove={s.id === flagship.id ? "#lead-response" : undefined} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" id="admin" aria-labelledby="admin-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Admin automations</p>
+        <h2 id="admin-h">{admin.title}</h2>
+        <p>{admin.lead}</p>
+      </div>
+      <div class="grid-3 cards">
+        {admin.items.map((s) => <ServiceCard service={s} compact />)}
+        <div class="tile">
+          <Icon name="question" />
+          <h3>Something else eating your week?</h3>
+          <p>Describe the task you keep repeating. If it can be automated safely you’ll get a written plan and price; if it isn’t worth automating, we’ll say so.</p>
+          <a class="text-link" href="/contact/" data-track="cta_automation_other">Describe the problem<Icon name="arrowRight" /></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="ai" aria-labelledby="ai-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">AI, used carefully</p>
+        <h2 id="ai-h">AI and custom connections</h2>
+        <p>{ai.lead}</p>
+      </div>
+      <div class="grid-3 cards">
+        {ai.items.map((s) => <ServiceCard service={s} compact />)}
+        <div class="tile">
+          <Icon name="sealCheck" />
+          <h3>How AI is used here</h3>
+          <ul class="ticks ai-ticks" role="list">
+            <li><Icon name="check" /><span><strong>AI drafts, you approve.</strong> A drafted answer waits in your inbox for you to approve.</span></li>
+            <li><Icon name="check" /><span><strong>Nothing is sent without your rules.</strong> What goes out on its own is named in your written plan first.</span></li>
+            <li><Icon name="check" /><span><strong>Tested on your real, messy data first.</strong> A dry run on a copy of your records before anything goes live.</span></li>
+          </ul>
+          <a class="text-link" href="/about/#how-we-work" data-track="ai_how_we_work">How a job runs<Icon name="arrowRight" /></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" aria-labelledby="safe-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">After launch</p>
+        <h2 id="safe-h">How an automation keeps working</h2>
+      </div>
+      <ul class="keep" role="list">
+        {keep.map((k) => (
+          <li>
+            <Icon name={k.icon} />
+            <div><h3>{k.title}</h3><p>{k.text}</p></div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="ex-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Working examples</p>
+        <h2 id="ex-h">Four of these, running on made-up businesses</h2>
+        <p>Each example shows a week of what came in, what went out and how messy data was handled. The code is open source.</p>
+      </div>
+      <ul class="ex-list" role="list">
+        {examples.map((e) => (
+          <li><a href={`/work/${e.slug}/`}><span>{e.title}</span><Icon name="arrowRight" /></a></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section band" aria-labelledby="faq-h">
+    <div class="wrap faq-wrap">
+      <div class="section-head">
+        <p class="eyebrow">Questions</p>
+        <h2 id="faq-h">Before you ask</h2>
+      </div>
+      <div class="faq">
+        {questions.map(([q, a]) => (
+          <details>
+            <summary><span>{q}</span><Icon name="plus" /></summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
+      <p class="more-line"><a class="text-link" href="/pricing/#faq">Questions about prices and paying<Icon name="arrowRight" /></a></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>Find out what you could automate</h2>
+          <p>Tell us what takes up your time. You’ll get a written plan and a fixed price within one business day, or an honest “this isn’t worth automating”.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="button" href="/contact/" data-track="cta_automation">Get a Free Assessment</a>
+          <a class="button secondary" href="/pricing/">See prices</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .au-hero { padding-block: clamp(40px, 6vw, 80px) clamp(48px, 7vw, 88px); }
+  .au-grid { display: grid; gap: 40px 64px; }
+  @media (min-width: 1024px) { .au-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); align-items: center; } }
+  .parts { padding: 8px; }
+  .parts ul { display: grid; margin: 0; padding: 0; list-style: none; }
+  .parts li + li { border-top: 1px solid var(--hairline-soft); }
+  .parts a { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 64px; padding: 12px 14px; border-radius: var(--r-md); color: var(--ink); text-decoration: none; }
+  .parts a:hover { background: var(--surface-strong); color: var(--ink); }
+  .parts a > :global(.icon:first-child) { width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
+  .parts a > span { display: grid; gap: 2px; }
+  .parts a > span > span { color: var(--muted); font-size: 0.875rem; }
+  .parts a > :global(.icon:last-child) { color: var(--link); }
+  .au-hero h1 { max-width: 18ch; font-size: clamp(2.125rem, 1.5rem + 2.6vw, 3.25rem); }
+  .au-hero .lead { margin-top: 18px; max-width: 60ch; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  @media (max-width: 479px) { .hero-actions .button { width: 100%; } }
+  .hero-facts { display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 28px 0 0; padding: 0; list-style: none; color: var(--body); font-size: 0.9375rem; }
+  .hero-facts li { display: inline-flex; align-items: center; gap: 8px; }
+  .hero-facts :global(.icon) { color: var(--cyan); }
+
+  .flag { display: grid; gap: clamp(32px, 4vw, 56px); }
+  @media (min-width: 960px) { .flag { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+  .flag-copy { display: grid; gap: 14px; justify-items: start; color: var(--body); }
+  .flag-copy .eyebrow { margin: 0; }
+  .flag-copy h2 { color: var(--ink); }
+  .flag-fixes { color: var(--cyan); font-weight: 500; }
+  .flag-price { color: var(--muted); font-size: 0.9375rem; }
+  .flag-price strong { margin-right: 4px; color: var(--ink); font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+  .flag-costs { margin-top: -8px; color: var(--muted); font-size: 0.875rem; }
+  .flag-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 6px; }
+  .flag-actions .text-link { min-height: 44px; }
+  @media (max-width: 479px) { .flag-actions .button { width: 100%; } }
+  .flow { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+  .flow li { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px; padding-bottom: 24px; }
+  .flow li:not(:last-child)::before { content: ""; position: absolute; left: 19px; top: 44px; bottom: 4px; width: 2px; background: var(--hairline); }
+  .flow-num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--button); color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .flow h3 { padding-top: 8px; font-size: 1.0625rem; }
+  .flow p { margin-top: 4px; color: var(--body); font-size: 0.9375rem; }
+
+  .tile { display: flex; flex-direction: column; gap: 10px; padding: 22px; border: 1px dashed var(--hairline-strong); border-radius: var(--r-lg); color: var(--body); font-size: 0.9375rem; }
+  .tile > :global(.icon) { width: 28px; height: 28px; color: var(--cyan); }
+  .tile h3 { color: var(--ink); font-size: 1.125rem; }
+  .tile .text-link { min-height: 44px; margin-top: auto; }
+  .tile .ticks { margin: 0; }
+  .ai-ticks { gap: 14px; }
+  .ai-ticks strong { display: block; color: var(--ink); font-weight: 600; }
+
+  .keep { display: grid; gap: 28px 32px; margin: 0; padding: 0; list-style: none; }
+  .keep li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .keep li > :global(.icon) { width: 44px; height: 44px; padding: 10px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
+  .keep h3 { margin-bottom: 6px; font-size: 1.0625rem; }
+  .keep p { color: var(--body); font-size: 0.9375rem; }
+  @media (min-width: 720px) { .keep { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1120px) { .keep { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  .ex-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  @media (min-width: 720px) { .ex-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ex-list a { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding: 14px 20px; border: 1px solid var(--hairline); border-radius: var(--r-md, 12px); background: var(--panel); color: var(--ink); font-weight: 600; text-decoration: none; }
+  .ex-list a:hover { border-color: var(--hairline-strong); color: var(--ink); }
+  .ex-list a :global(.icon) { flex: none; color: var(--link); }
+  .more-line { margin-top: 24px; }
+</style>

@@ -1,19 +1,21 @@
 ---
 import Base from "../layouts/Base.astro";
+import { serviceById } from "../data/services";
 
-// A made-up salon showing each package working. Nothing here is a real business, person or phone number
+// A made-up salon showing each service working. Prices come from data/services.ts, so they never drift. Nothing here is a real business, person or phone number
 // (555 numbers and the .example domain are reserved for exactly this).
 const salon = "Juniper & Rose";
 const services = [["Women’s cut", "$55"], ["Men’s cut", "$35"], ["Color", "from $95"], ["Blowout", "$40"]];
 const times = ["10:30", "1:00", "2:15", "4:45"];
+const price = (id: string) => serviceById[id].price;
 ---
 <Base title="Demo salon · Nuxy Automation" description="See online booking, reminders, missed-call text-back, instant replies and review requests working on a made-up salon.">
   <h1>See it working</h1>
-  <p class="lead">{salon} is a made-up salon: no real business, people or phone numbers. This is what the packages look like once they’re set up. The highlighted parts are filled in automatically for each client.</p>
+  <p class="lead">{salon} is a made-up salon: no real business, people or phone numbers. This is what the services look like once they’re set up. The highlighted parts are filled in automatically for each client.</p>
 
   <section class="exhibit" aria-labelledby="ex-booking">
     <h2 id="ex-booking">Online booking</h2>
-    <p class="note">Before, clients had to call. After, they book themselves from the website, Google and Instagram. <a href="/#booking">The package: $400</a></p>
+    <p class="note">Before, clients had to call. After, they book themselves from the website, Google and Instagram. <a href="/solutions/#booking">{serviceById.booking.name}: {price("booking")}</a></p>
     <div class="switch">
       <input class="sr" type="radio" name="booking-view" id="view-before" checked />
       <input class="sr" type="radio" name="booking-view" id="view-after" />
@@ -44,7 +46,7 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
         </div>
       </div>
     </div>
-    <p class="note after-note">Choose After, then Book now. The booking page also takes a deposit to cut no-shows (<a href="/#deposits">add-on: $150</a>) and sells gift cards (<a href="/#gift-cards">add-on: $150</a>).</p>
+    <p class="note after-note">Choose After, then Book now. The booking page also takes a deposit to cut no-shows (<a href="/solutions/#deposits">add-on: {price("deposits")}</a>) and sells gift cards (<a href="/solutions/#gift-cards">add-on: {price("gift-cards")}</a>).</p>
   </section>
 
   <section class="exhibit phones" aria-label="Messages clients receive">
@@ -54,7 +56,7 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
         <li class="in">Hi <b class="fill">Maya</b>, a reminder of your <b class="fill">women’s cut with Jess</b> tomorrow at <b class="fill">2:15 PM</b> at {salon}. Need to change it? <span class="link">juniperandrose.example/book</span></li>
         <li class="out">See you then!</li>
       </ol>
-      <figcaption>Sent the day before, by the booking tool you already use. <a href="/#booking">Part of online booking</a></figcaption>
+      <figcaption>Sent the day before, by the booking tool you already use. <a href="/solutions/#booking">Part of online booking</a></figcaption>
     </figure>
 
     <figure class="phone">
@@ -64,7 +66,7 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
         <li class="in">Sorry we missed your call! We’re with a client. Book online any time: <span class="link">juniperandrose.example/book</span></li>
         <li class="out">Perfect, just booked Saturday</li>
       </ol>
-      <figcaption>Goes out within a minute when nobody can pick up. <a href="/#missed-calls">Add-on: $250</a></figcaption>
+      <figcaption>Goes out within a minute when nobody can pick up. <a href="/solutions/#missed-calls">Add-on: {price("missed-calls")}</a></figcaption>
     </figure>
 
     <figure class="phone">
@@ -75,26 +77,26 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
         <li class="event">Next day, if they haven’t booked</li>
         <li class="in">Hi <b class="fill">Sam</b>, just checking you found a time. Saturday still has <b class="fill">1:00</b> open.</li>
       </ol>
-      <figcaption>Every website, Facebook and Instagram message answered at once, with an alert to the salon. <a href="/#follow-up">Lead follow-up: $450</a></figcaption>
+      <figcaption>Every website, Facebook and Instagram message answered at once, with an alert to the salon. <a href="/solutions/#follow-up">{serviceById["follow-up"].name}: {price("follow-up")}</a></figcaption>
     </figure>
 
     <figure class="phone">
       <h2 class="phone-title">Review requests</h2>
       <ol class="thread">
-        <li class="in">Thanks for coming in today, <b class="fill">Maya</b>! If you have a minute, a Google review helps a small salon a lot: <span class="link">g.page/juniper-and-rose/review</span></li>
+        <li class="in">Thanks for coming in today, <b class="fill">Maya</b>! If you have a minute, a Google review helps a small salon a lot: <span class="link">juniperandrose.example/review</span></li>
         <li class="out">Done! Love the cut</li>
       </ol>
-      <figcaption>Sent to every client after their visit, not only the happy ones (Google’s rules). <a href="/#reviews">Review requests: $250</a></figcaption>
+      <figcaption>Sent to every client after their visit, not only the happy ones (Google’s rules). <a href="/solutions/#reviews">{serviceById.reviews.name}: {price("reviews")}</a></figcaption>
     </figure>
   </section>
 
   <section class="close" aria-labelledby="ex-yours">
     <h2 id="ex-yours">Want this for your business?</h2>
     <p>Everything above is built inside your own accounts, with the booking tool you already use where possible. Fixed prices, in writing, no calls needed.</p>
-    <p class="actions"><a class="button" href="/#request">Request a setup</a> <a href="/#services">See all services and prices</a></p>
+    <p class="actions"><a class="button" href="/contact/">Request a setup</a> <a href="/solutions/">See all services and prices</a></p>
   </section>
 
-  <script is:inline>
+  <script>
     // Messages arrive one by one as each phone comes into view. Without this script they're simply all there.
     if (matchMedia("(prefers-reduced-motion: no-preference)").matches && "IntersectionObserver" in window) {
       document.documentElement.classList.add("deal");
@@ -118,7 +120,7 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
   /* Before / After: a segmented pill; the radio buttons stay in the page for keyboards and screen readers. */
   .sr { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
   .views { display: inline-flex; gap: 4px; margin: 0 0 16px; padding: 4px; border-radius: var(--r-full); background: var(--surface-strong); }
-  .views label { display: inline-flex; align-items: center; min-height: 40px; padding: 0 22px; border-radius: var(--r-full); cursor: pointer; font-weight: 600; color: var(--muted); transition: background-color 160ms ease-out, color 160ms ease-out, box-shadow 160ms ease-out; }
+  .views label { display: inline-flex; align-items: center; min-height: 44px; padding: 0 22px; border-radius: var(--r-full); cursor: pointer; font-weight: 600; color: var(--muted); transition: background-color 160ms ease-out, color 160ms ease-out, box-shadow 160ms ease-out; }
   .views label:hover { color: var(--ink); }
   #view-before:checked ~ .views label[for="view-before"],
   #view-after:checked ~ .views label[for="view-after"] { background: var(--bg); color: var(--ink); box-shadow: var(--shadow); }

@@ -3,13 +3,53 @@
 import Base from "./Base.astro";
 import Icon from "../components/Icon.astro";
 const { frontmatter } = Astro.props;
+// Each table goes in a box that scrolls sideways when the table is wider than the screen (.table-scroll in Base.astro).
+// The box takes keyboard focus, so arrow keys scroll it too (WCAG 2.1.1), and is named after the heading above the
+// table. It wraps the table because a role on the table itself would hide that it is a table. Heading text arrives
+// already escaped for HTML, so only quotes need escaping for the attribute.
+const plain = (html: string) => html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+let heading = "";
+const WHOLE = 28;
+// Code that may wrap: a hyphenated word is kept whole, and a slash (or `//`) offers a break after it, which browsers
+// don't do on their own. Neither adds a character, so copied code is unchanged.
+const breakable = (code: string) => code.split(/(\/+)/).map((part, i) =>
+  i % 2 ? `${part}<wbr>` : part.replace(/[^\s]*-[^\s]*/g, (word) => `<span class="nobr">${word}</span>`)).join("");
+const body = (await Astro.slots.render("default")).replace(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>|<table\b[^>]*>[\s\S]*?<\/table>/g, (match, _level, text) => {
+  if (text !== undefined) { heading = plain(text); return match; }
+  const label = (heading ? `Table: ${heading}` : "Table").replace(/"/g, "&quot;");
+  return `<div class="table-scroll" role="region" tabindex="0" aria-label="${label}">${match}</div>`;
+}).replace(/<pre\b[\s\S]*?<\/pre>|<h([1-6])\b[\s\S]*?<\/h\1>|<code>([^<]*)<\/code>/g, (match, level, text) => {
+  // Inline code never breaks at a hyphen: split there on a phone, `needs-review.csv` reads as two words and nobody can
+  // tell where the real break is. A short piece in body text stays on one line (28 characters still fit a 320px
+  // screen inside a list); a longer one, or one in a heading's larger type, may break only at a space or after a slash,
+  // and each line keeps its own box (Base.astro).
+  if (level) return match.replace(/<code>([^<]*)<\/code>/g, (_m, t) => `<code>${breakable(t)}</code>`);
+  if (text === undefined) return match;
+  return text.replace(/&[#a-z0-9]+;/gi, "x").length <= WHOLE ? `<code class="whole">${text}</code>` : `<code>${breakable(text)}</code>`;
+});
+// A demo video's poster is the largest thing on screen; announcing it in the head lets the browser fetch it first.
+const poster = body.match(/<video[^>]*poster="([^"]+)"/)?.[1];
 ---
 <Base title={`${frontmatter.title} · Docs · Nuxy Automation`} description={frontmatter.description}>
+  {poster && <link slot="head" rel="preload" as="image" type="image/webp" href={poster} fetchpriority="high" />}
   <p class="doc-links"><a href="/docs/">All docs</a><a href={`https://github.com/Nuxy1/${frontmatter.repo}`}><Icon name="githubLogo" />Code on GitHub</a></p>
-  <slot />
+  <Fragment set:html={body} />
 </Base>
+
+<script>
+  // A table box that doesn't need to scroll (a wide screen) leaves the Tab order; it rejoins when the window narrows.
+  // Without JavaScript every box stays focusable, which is the safe side.
+  for (const box of document.querySelectorAll<HTMLElement>(".table-scroll")) {
+    const check = () => { box.tabIndex = box.scrollWidth > box.clientWidth ? 0 : -1; };
+    new ResizeObserver(check).observe(box);
+  }
+</script>
 
 <style>
   .doc-links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; font-size: 0.9375rem; font-weight: 600; }
   .doc-links a { display: inline-flex; align-items: center; gap: 6px; }
+  /* the relay demo video that scripts/sync-docs.mjs puts in place of the README's GIF */
+  :global(.doc-video) { margin: 24px 0; }
+  :global(.doc-video video) { width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-md); background: #0d1117; }
+  :global(.doc-video figcaption) { margin-top: 8px; color: var(--muted); font-size: 0.875rem; }
 </style>
