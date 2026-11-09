@@ -1,0 +1,259 @@
+---
+// E-commerce (brief 4 §7): the published online shop, what it includes, how the store stays the client's (Shopify's
+// own collaborator and client-transfer flows, never a password), the extras for stores, the example store and the
+// questions. Prices come from data/services.ts and are the published ones. The example store is a made-up business
+// whose cart works but whose checkout is switched off.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import DeviceShot from "../../components/DeviceShot.astro";
+import ServiceCard from "../../components/ServiceCard.astro";
+import { serviceById, plans, bundle } from "../../data/services";
+import { demoSiteBySlug } from "../../data/demo-sites";
+import { shopifyPartner } from "../../data/site";
+import type { IconName } from "../../components/Icon.astro";
+
+const shop = serviceById["online-shop"];
+const extras = ["store", "gift-cards", "ordering"].map((id) => serviceById[id]);
+const care = plans.find((p) => p.id === "care")!;
+const demo = demoSiteBySlug["quillfern-candles"];
+
+// What the online shop includes (brief 4 §7). Store automations are the one paid extra in this list, with its own price.
+const included: { icon: IconName; title: string; text: string }[] = [
+  { icon: "storefront", title: "Your storefront", text: "A clean theme set up with your logo, colors and photos, with pages for your products, your story and how to reach you." },
+  { icon: "shoppingBag", title: "Up to 25 products", text: "Added from the photos, prices and descriptions you send, with sizes or colors as options where you need them." },
+  { icon: "squaresFour", title: "Collections", text: "Products grouped the way your customers shop, for example by type, occasion or season, so they find things fast." },
+  { icon: "list", title: "Clear navigation", text: "A simple menu, search and footer, and a Shop button on your existing website if you have one." },
+  { icon: "deviceMobile", title: "Built for phones", text: "Most shoppers buy on a phone, so every page and the checkout are checked on a small screen first." },
+  { icon: "creditCard", title: "Payments set up", text: "You connect your own payout account (Shopify Payments, Square or PayPal) with your own bank details; we set up the checkout around it." },
+  { icon: "mapTrifold", title: "Shipping, pickup and tax settings", text: "Shipping rates, local pickup and the store’s tax settings, set up with you. What to charge for tax is your accountant’s call: we enter what they advise." },
+  { icon: "envelopeSimple", title: "A contact form", text: "Questions and custom-order requests reach your inbox, tested end to end before launch." },
+  { icon: "handshake", title: "Handover", text: "A short video on adding products and handling orders. Then we remove our access, unless you choose a monthly plan." },
+  { icon: "lightning", title: "Automations, if you want them", text: `Orders into your spreadsheet or accounting, low-stock alerts, and abandoned-cart and thank-you emails, for ${serviceById["store"].price} more. See the extras below.` },
+];
+
+const promises: { icon: IconName; title: string; text: string }[] = [
+  { icon: "lockSimple", title: "No passwords, ever", text: "We work through the platform’s own invited access. You approve what we can reach and can remove us at any time." },
+  { icon: "creditCard", title: "Your plan, your billing", text: "The Shopify or Square plan and any apps are in your name, billed to you directly. We never resell them." },
+  { icon: "users", title: "Your customers stay yours", text: "Orders, customer details and payouts live in your store and your payment account, never in ours." },
+  { icon: "shieldCheck", title: "Never held hostage", text: "Stopping a monthly plan never closes your store, locks you out or costs a release fee." },
+];
+
+const questions: [string, string][] = [
+  ["Shopify or Square Online?", "Shopify suits shops that ship products and want room to grow. Square Online suits shops that already take payments with Square in person, because your items and stock stay in one place. Tell us how you sell today and we’ll recommend one in your written plan."],
+  ["What will I pay Shopify or Square?", `${shop.costs} Your written plan names the plan your store needs and its current price, before you sign up for anything. You pay them directly; we never add a markup.`],
+  ["Do you need my password?", "No. On Shopify you send us a 4-digit collaborator request code, then approve our request and the exact parts of the store we can reach. On Square, you invite us with Square’s own team access. You can remove us at any time."],
+  ["Can I add products myself later?", "Yes. The store runs in your own account, with Shopify’s or Square’s editor. The handover video shows how to add a product, change a price and handle an order."],
+  ["Who handles sales tax?", "You and your accountant decide what to charge. We switch on the platform’s tax settings and enter what you’re advised; we don’t give tax advice."],
+  ["Is the example store a real shop?", `No. ${demo.name} is a made-up business we designed to show a store’s layout and features. You can fill its cart, but checkout is switched off, so nothing can be bought, and every page says it’s a demonstration.`],
+];
+
+const site = "https://nuxyautomation.com";
+const service = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": `${site}/ecommerce/#service`,
+  name: "E-commerce store setup",
+  serviceType: "Online store setup on Shopify or Square Online",
+  url: `${site}/ecommerce/`,
+  description: "Online stores for small businesses on Shopify or Square Online, set up in the client’s own account: up to 25 products, payments, pickup or shipping, and a handover, at a fixed price.",
+  provider: { "@id": `${site}/#business` },
+  areaServed: [{ "@type": "AdministrativeArea", name: "Southern Minnesota" }, { "@type": "Country", name: "United States" }],
+  offers: [{ "@type": "Offer", name: shop.name, price: shop.price.replace(/[$,]/g, ""), priceCurrency: "USD", url: `${site}/ecommerce/#included` }],
+};
+---
+<Base title="E-Commerce Stores for Small Businesses · Shopify & Square Online · Nuxy Automation" description={`An online store on Shopify or Square Online, set up in your own account: up to 25 products, payments, pickup or shipping. ${shop.price} one-time; you own the store.`} wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(service)} />
+
+  <section class="hero-shop">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">E-commerce stores</p>
+        <h1>An online store that’s yours from day one.</h1>
+        <p class="lead">We set up your Shopify or Square Online store in your own account, with your products, payments, and pickup or shipping, ready to take orders. You pay the platform directly, and the store belongs to you.</p>
+        <div class="hero-actions">
+          <a class="button" href="/contact/?service=online-shop" data-track="cta_shop_quote">Get a Free Store Quote</a>
+          <a class="button secondary" href={`/examples/${demo.slug}/`} data-track="example_open">See the Example Store</a>
+        </div>
+        <ul class="hero-facts" role="list">
+          <li><Icon name="receipt" /><span><strong>{shop.price}</strong> one-time, written price</span></li>
+          <li><Icon name="storefront" /><span>Your account, your store</span></li>
+          <li><Icon name="lockSimple" /><span>No passwords shared</span></li>
+        </ul>
+      </div>
+      <DeviceShot slug={demo.slug} />
+    </div>
+  </section>
+
+  <section class="section" id="included" aria-labelledby="included-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Online shop · {shop.price}</p>
+        <h2 id="included-h">Everything a store needs to take its first order</h2>
+        <p>{shop.text}</p>
+      </div>
+      <ul class="included" role="list">
+        {included.map((i) => (
+          <li><Icon name={i.icon} /><div><h3>{i.title}</h3><p>{i.text}</p></div></li>
+        ))}
+      </ul>
+      <dl class="facts">
+        <div><dt>What we need from you</dt><dd>{shop.needs}</dd></div>
+        <div><dt>What you pay other companies</dt><dd>{shop.costs}</dd></div>
+      </dl>
+      <p class="more-line"><a class="button" href="/contact/?service=online-shop" data-track="cta_shop_quote">Ask about an online shop<Icon name="arrowRight" /></a></p>
+    </div>
+  </section>
+
+  <section class="section band" id="ownership" aria-labelledby="ownership-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Who owns the store</p>
+        <h2 id="ownership-h">Your store, in your account, from the start</h2>
+        <p>We use the platform’s own access tools, so you never hand over a password, and the store is never in our name.</p>
+      </div>
+      <div class:list={["paths", { single: !shopifyPartner }]}>
+        <article class="path panel">
+          <span class="path-icon"><Icon name="userCircle" /></span>
+          <h3>You open the store, we’re invited in</h3>
+          <ol class="path-list">
+            <li>You start a Shopify account in your own name and choose your plan.</li>
+            <li>You send us the 4-digit collaborator request code from <strong>Settings &gt; Users &gt; Security</strong>.</li>
+            <li>We send a collaborator request. You see exactly which parts of the store we’d reach, and approve it.</li>
+            <li>When the work is done, you remove our access from the same screen, or we do it for you.</li>
+          </ol>
+          <p class="path-note">On Square Online the store lives in your Square account, and you invite us with Square’s own team access.</p>
+        </article>
+        {shopifyPartner && (
+          <article class="path panel">
+            <span class="path-icon"><Icon name="arrowsClockwise" /></span>
+            <h3>We start the store, then transfer it to you</h3>
+            <ol class="path-list">
+              <li>We build the store as a Shopify client transfer store, while nothing is billed to you.</li>
+              <li>When it’s ready, we start Shopify’s transfer to your email address.</li>
+              <li>You accept the email within 7 days, become the owner, and choose and pay for your own plan.</li>
+              <li>You switch on Shopify Payments yourself. Our access stays as a collaborator account you can remove.</li>
+            </ol>
+          </article>
+        )}
+      </div>
+      <ul class="promises" role="list">
+        {promises.map((p) => (
+          <li><Icon name={p.icon} /><div><h3>{p.title}</h3><p>{p.text}</p></div></li>
+        ))}
+      </ul>
+      <p class="more-line">After launch, the optional {care.name.toLowerCase()} ({care.price}) keeps the store watched. Stop it whenever you like and the store stays exactly where it is. <a href="/websites/#ownership">How ownership works</a></p>
+    </div>
+  </section>
+
+  <section class="section" id="example" aria-labelledby="example-h">
+    <div class="wrap ex-grid">
+      <a class="ex-shot" href={`/examples/${demo.slug}/`} data-track="example_open" aria-hidden="true" tabindex="-1">
+        <img src={`/images/examples/${demo.slug}-desktop.webp`} srcset={`/images/examples/${demo.slug}-desktop-400.webp 400w, /images/examples/${demo.slug}-desktop-640.webp 640w, /images/examples/${demo.slug}-desktop.webp 800w`} sizes="(min-width: 1200px) 600px, (min-width: 1024px) 52vw, calc(100vw - 34px)" alt="" width="800" height="500" loading="lazy" decoding="async" />
+      </a>
+      <div class="ex-copy">
+        <p class="eyebrow"><Icon name={demo.icon} />{demo.kind} · demonstration</p>
+        <h2 id="example-h">See an example store</h2>
+        <p>{demo.name} is a made-up business. {demo.summary}</p>
+        <ul class="ticks">{demo.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
+        <p class="note"><Icon name="info" />You can fill its cart, but checkout is switched off: nothing can be bought, and every page says it’s a demonstration. Your own store runs on Shopify or Square Online, so the details follow what that platform can do.</p>
+        <a class="button secondary" href={`/examples/${demo.slug}/`} data-track="example_open">Open the example store<Icon name="arrowRight" /></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" id="extras" aria-labelledby="extras-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Extras for stores</p>
+        <h2 id="extras-h">Already selling? Keep orders moving.</h2>
+        <p>Fixed prices, for a new store or one you already run. Order two one-time services together and save {bundle.two}%; three or more, {bundle.three}%.</p>
+      </div>
+      <div class="grid-3">
+        {extras.map((s) => <ServiceCard service={s} anchor={false} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="faq-h">
+    <div class="wrap faq-wrap">
+      <div class="section-head">
+        <p class="eyebrow">Questions</p>
+        <h2 id="faq-h">Online store questions, answered</h2>
+      </div>
+      <div class="faq">
+        {questions.map(([q, a]) => (
+          <details>
+            <summary><span>{q}</span><Icon name="plus" /></summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight-top">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>Get a free store quote</h2>
+          <p>Tell us what you sell and how you sell it today. Within one business day you’ll get a written plan with the platform we’d use, the price and the timeline. No call required.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="button" href="/contact/?service=online-shop" data-track="cta_shop_quote">Get a Free Store Quote</a>
+          <a class="button secondary" href="/websites/">Need a website too?</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero-shop { padding-block: clamp(40px, 6vw, 80px) clamp(32px, 5vw, 64px); }
+  .hero-grid { display: grid; gap: clamp(40px, 5vw, 64px); align-items: center; }
+  @media (min-width: 1024px) { .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); } }
+  .hero-copy h1 { max-width: 16ch; }
+  .hero-copy .lead { margin-top: 20px; max-width: 54ch; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  @media (max-width: 479px) { .hero-actions .button { flex: 1 1 100%; } }
+  .hero-facts { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 28px; padding: 0; list-style: none; color: var(--body); font-size: 0.9375rem; }
+  .hero-facts li { display: inline-flex; align-items: center; gap: 8px; }
+  .hero-facts :global(.icon) { color: var(--cyan); }
+  .hero-facts strong { color: var(--ink); }
+
+  .included { display: grid; gap: 28px 32px; margin: 0; padding: 0; list-style: none; }
+  @media (min-width: 640px) { .included { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .included { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .included li, .promises li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .included li > :global(.icon), .promises li > :global(.icon) { width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
+  .included h3, .promises h3 { font-size: 1.0625rem; }
+  .included p, .promises p { margin-top: 4px; color: var(--body); font-size: 0.9375rem; }
+  .facts { display: grid; gap: 16px 32px; margin: clamp(32px, 4vw, 44px) 0 0; padding-block: 20px; border-block: 1px solid var(--hairline); }
+  @media (min-width: 720px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .facts dt { color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
+  .facts dd { margin: 4px 0 0; color: var(--body); }
+  .more-line { margin-top: 24px; color: var(--body); }
+
+  .paths { display: grid; gap: 24px; align-items: start; }
+  @media (min-width: 900px) { .paths:not(.single) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .paths.single { max-width: 760px; }
+  .path { display: grid; gap: 14px; padding: clamp(22px, 3vw, 32px); }
+  .path-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
+  .path h3 { font-size: 1.375rem; }
+  .path-list { display: grid; gap: 10px; margin: 0; padding-left: 1.4em; color: var(--body); }
+  .path-list li::marker { color: var(--cyan); font-weight: 650; }
+  .path-list strong { color: var(--ink); font-weight: 600; }
+  .path-note { padding-top: 12px; border-top: 1px solid var(--hairline); color: var(--body); font-size: 0.9375rem; }
+  .promises { display: grid; gap: 24px 32px; margin: clamp(32px, 4vw, 44px) 0 0; padding: 0; list-style: none; }
+  @media (min-width: 640px) { .promises { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .promises { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  .ex-grid { display: grid; gap: clamp(28px, 4vw, 56px); align-items: center; }
+  @media (min-width: 1024px) { .ex-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); } }
+  .ex-shot { display: block; aspect-ratio: 16 / 10; border: 1px solid var(--hairline-strong); border-radius: var(--r-lg); overflow: hidden; background: var(--surface-strong); box-shadow: var(--shadow); }
+  .ex-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .ex-copy { display: grid; gap: 16px; justify-items: start; }
+  .ex-copy .eyebrow { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
+  .ex-copy .note { display: flex; align-items: flex-start; gap: 8px; }
+  .ex-copy .note :global(.icon) { flex: none; margin-top: 0.2em; width: 1.05em; height: 1.05em; }
+  .tight-top { padding-top: 0; }
+</style>

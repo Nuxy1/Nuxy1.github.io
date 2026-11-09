@@ -21,12 +21,12 @@ The businesses are invented for the demo: every address ends in `.example` and e
 ## Try it
 
 ```
-npm test        # 16 tests, messy data included
+npm test        # 18 tests, messy data included
 npm run demo    # a simulated week of all four; every email lands in demo/outbox/
 npm run bench   # 5,000 messy records through each one, timed
 ```
 
-On my PC (a Ryzen 7 desktop), `npm run bench` gives: 5,000 form submissions with repeats, typos and bad emails in 0.14 s, with no customer emailed twice; a 5,000-row invoice export read and checked in 0.18 s; 5,000 salon visits in 0.08 s; and 5,000 bookings confirmed and checked for reminders in 1.4 s. A small business's whole year fits in well under a second.
+On my PC (a Ryzen 7 desktop), `npm run bench` gives: 5,000 form submissions with repeats, typos and bad emails in under 0.2 s, with no customer emailed twice; a 5,000-row invoice export read and checked in under 0.2 s; 5,000 salon visits in under 0.1 s; and 5,000 bookings confirmed and checked for reminders in under 2 s. Thousands of records take seconds, not hours.
 
 The demo prints the week as it happens:
 
@@ -50,7 +50,7 @@ Lead follow-up: Northfield Plumbing Co. (made up)
 
 **Never silently.** A send that fails is retried three times with growing waits, then the owner is told what didn't go and why, and it's tried again on the next run. A send that was cut off halfway (a crash, a lost connection) is *not* repeated blindly: the owner gets a "check by hand" note instead. If even the owner's alert can't be sent, it is written to the state file and printed.
 
-**Messy data, nothing guessed.** Names in capitals, emails with typos (`@gmial.com`), phones in any format, dates as `10/02/2026`, `Oct 25 2026` or `2026-10-20`, money as `$1,240.00`. What can be cleaned is; what can't (an impossible date, an email with no `@`) goes to the owner with the reason, never into an email. ([core/normalize.js](https://github.com/Nuxy1/small-business-automations/blob/main/core/normalize.js), shared with [csv-contact-cleaner](https://github.com/Nuxy1/csv-contact-cleaner))
+**Messy data, no silent guesses.** Names in capitals, phones in any format, dates as `10/02/2026`, `Oct 25 2026` or `2026-10-20`, money as `$1,240.00`. What can be cleaned is; what can't (an impossible date, an email with no `@`) goes to the owner with the reason, never into an email. A likely typo of a big email provider (`@gmial.com`) is read as the likely address and marked as a guess: an instant reply or a booking confirmation goes there and the owner is told what was typed; an invoice reminder or a review request waits until the owner corrects it. ([core/normalize.js](https://github.com/Nuxy1/small-business-automations/blob/main/core/normalize.js), shared with [csv-contact-cleaner](https://github.com/Nuxy1/csv-contact-cleaner))
 
 **Business hours and quiet hours.** Time is the business's own (America/Chicago here), daylight saving included: a reminder is never a day early, follow-ups and review requests wait for 9 a.m. instead of arriving at night, and invoice reminders go out on weekdays only. An instant reply is the exception: the customer just wrote. ([core/time.js](https://github.com/Nuxy1/small-business-automations/blob/main/core/time.js))
 

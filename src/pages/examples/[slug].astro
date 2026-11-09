@@ -17,11 +17,14 @@ const next = demoSites[(i + 1) % demoSites.length];
 const src = `/example-sites/${d.slug}/`;
 const host = `${d.slug.split("-")[0]}.example`;
 const services = d.services.map((id) => serviceById[id]);
-const where = (id: string) => (id === "new-website" ? "/websites/#new-website" : `/solutions/#${id}`);
+const where = (id: string) => (id === "new-website" ? "/websites/#new-website" : id === "online-shop" ? "/ecommerce/" : `/solutions/#${id}`);
+// The candle shop is a store, not a website: its title, platform note and quote link say so.
+const store = d.project === "E-commerce store";
+const kindTitle = d.kind.replace(/\b\w/g, (c) => c.toUpperCase());
 ---
-<Base title={`${d.kind.replace(/\b\w/g, (c) => c.toUpperCase())} Website Example · Nuxy Automation`} description={`Demo website for a made-up ${d.summary.replace(/^A /, "").replace(/\.$/, "")}, on a computer and a phone.`} wide>
+<Base title={store ? `${kindTitle} Example · Nuxy Automation` : `${kindTitle} Website Example · Nuxy Automation`} description={`Demo ${store ? "store" : "website"} for a made-up ${d.summary.replace(/^A /, "").replace(/\.$/, "")}, on a computer and a phone.`} wide>
   <div class="wrap ex">
-    <p class="crumbs"><a href="/websites/#examples">Example websites</a><span aria-hidden="true">/</span>{d.name}</p>
+    <p class="crumbs"><a href="/portfolio/">Portfolio</a><span aria-hidden="true">/</span>{d.name}</p>
     <header class="ex-head">
       <div>
         <p class="eyebrow">{d.kind} · demonstration</p>
@@ -29,25 +32,25 @@ const where = (id: string) => (id === "new-website" ? "/websites/#new-website" :
         <p class="lead">{d.summary}</p>
       </div>
     </header>
-    <p class="made-up"><Icon name="info" /><span><strong>{d.name} is a made-up business</strong>, not a client. This example shows the layout, features and finish we aim for. Forms on it send nothing.</span></p>
+    <p class="made-up"><Icon name="info" /><span><strong>{d.name} is a made-up business</strong>, not a client. This example shows the layout, features and finish we aim for. Forms on it send nothing{store ? ", and its checkout is switched off, so nothing can be bought" : ""}.</span></p>
 
     <div class="toolbar">
       <div class="toggle" role="group" aria-label="Preview size" data-toggle hidden>
         <button type="button" data-mode="desktop" aria-pressed="true"><Icon name="desktop" />Computer</button>
         <button type="button" data-mode="phone" aria-pressed="false"><Icon name="deviceMobile" />Phone</button>
       </div>
-      <a class="text-link" href={src} data-track="example_full">Open the full site<Icon name="arrowRight" /></a>
+      <a class="text-link" href={src} data-track="example_full">Open the full {store ? "store" : "site"}<Icon name="arrowRight" /></a>
     </div>
 
     <div class="stage" data-stage data-mode="desktop">
       <div class="device">
         <div class="bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="url">{host}</span></div>
         <div class="screen" data-screen>
-          <iframe src={src} title={`${d.name}, demonstration website`} width="1280" height="800"></iframe>
+          <iframe src={src} title={`${d.name}, demonstration ${store ? "store" : "website"}`} width="1280" height="800"></iframe>
         </div>
       </div>
     </div>
-    <p class="note stage-note">The preview is a live page: scroll it, open the menu, try the form.</p>
+    <p class="note stage-note">{store ? "The preview is a live page: scroll it, filter the products, add some to the cart." : "The preview is a live page: scroll it, open the menu, try the form."}</p>
 
     <div class="ex-info">
       <section aria-labelledby="shows-h">
@@ -61,16 +64,18 @@ const where = (id: string) => (id === "new-website" ? "/websites/#new-website" :
             <li><a href={where(s.id)}><Icon name={s.icon} /><span>{s.name}</span><span class="svc-price">{s.price}</span></a></li>
           ))}
         </ul>
-        <p class="note">Your own site is built in your own Squarespace or Wix account, so the details follow what your website builder can do.</p>
+        <p class="note">{store
+          ? "Your own store is built in your own Shopify or Square Online account, so the details follow what your store platform can do."
+          : "Your own site is built in your own Squarespace or Wix account, so the details follow what your website builder can do."}</p>
       </section>
     </div>
 
     <section class="ex-cta panel" aria-labelledby="cta-h">
       <div>
-        <h2 id="cta-h">Want a website like this?</h2>
+        <h2 id="cta-h">Want {store ? "a store" : "a website"} like this?</h2>
         <p>Tell us about your business. Within one business day you’ll get a written plan and a fixed price, with nothing charged until you agree.</p>
       </div>
-      <a class="button" href="/contact/?service=new-website" data-track="cta_example_quote">Get a Free Website Quote</a>
+      <a class="button" href={store ? "/contact/?service=online-shop" : "/contact/?service=new-website"} data-track="cta_example_quote">{store ? "Get a Free Store Quote" : "Get a Free Website Quote"}</a>
     </section>
 
     <nav class="ex-more" aria-label="Other examples">

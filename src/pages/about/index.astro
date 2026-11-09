@@ -93,8 +93,8 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">How we work</p>
-        <h2 id="how-h">Four steps, all in writing</h2>
-        <p>No sales call and no long contract. You can stop after any step.</p>
+        <h2 id="how-h">Five steps, all in writing</h2>
+        <p>No sales call and no long contract. Nothing is charged until you agree to the written plan.</p>
       </div>
       <ol class="steps" role="list">
         {steps.map((s, i) => (
@@ -163,7 +163,7 @@ const data = {
           <p>A short form, then a written plan and a fixed price within one business day, or an honest “this isn’t worth automating”.</p>
         </div>
         <div class="cta-actions">
-          <a class="button" href="/contact/" data-track="cta_about">Get a Free Assessment</a>
+          <a class="button" href="/contact/" data-track="cta_about">Get a Free Quote</a>
           <a class="button secondary" href="/demos/">See the demos</a>
         </div>
       </div>
@@ -197,13 +197,18 @@ const data = {
   @media (min-width: 720px) { .values, .keep { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (min-width: 1120px) { .values { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
-  .steps { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; }
-  .step { padding: 24px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
-  .step-num { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 16px; border-radius: 50%; background: var(--button); color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .step h3 { margin-bottom: 8px; }
-  .step p { font-size: 0.9375rem; }
-  @media (min-width: 720px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (min-width: 1024px) { .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  /* the five steps as numbered rows, as on the homepage */
+  .steps { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--hairline); }
+  .page .steps li + li, .steps li + li { margin-top: 0; }
+  .step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px 20px; align-items: center; padding: 22px 0; border-bottom: 1px solid var(--hairline); }
+  .step-num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--button); color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .step h3 { font-size: 1.1875rem; }
+  .step p { grid-column: 2; color: var(--body); }
+  @media (min-width: 880px) {
+    .step { grid-template-columns: 40px minmax(0, 17rem) minmax(0, 1fr); gap: 0 28px; align-items: start; padding: 26px 0; }
+    .step h3 { line-height: 40px; }
+    .step p { grid-column: 3; padding-top: 8px; }
+  }
   .sub-h { margin: clamp(40px, 5vw, 56px) 0 20px; font-size: 1.25rem; }
   .keep { display: grid; gap: 24px 32px; margin: 0; padding: 0; list-style: none; }
 

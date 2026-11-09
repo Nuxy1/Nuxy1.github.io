@@ -148,9 +148,9 @@ const service = {
       </div>
       <div class="grid-2 svc-pair">
         <ServiceCard service={fixes} />
-        <ServiceCard service={rebuild} anchor={false} />
+        <ServiceCard service={rebuild} anchor={false} want="redesign" />
       </div>
-      <p class="more-line">Selling online too? See the <a href="/solutions/#online-shop">online shop</a> ({serviceById["online-shop"].price}) and <a href="/solutions/#gift-cards">online gift cards</a> ({serviceById["gift-cards"].price} add-on).</p>
+      <p class="more-line">Selling online too? See <a href="/ecommerce/">online stores</a> (an online shop is {serviceById["online-shop"].price}) and <a href="/ecommerce/#extras">online gift cards</a> ({serviceById["gift-cards"].price} add-on).</p>
     </div>
   </section>
 
@@ -161,7 +161,7 @@ const service = {
         <h2 id="examples-h">See what a Nuxy website looks like</h2>
         <p>Three demonstration sites for made-up local businesses. Open any of them to see it on a computer and on a phone, buttons and forms included.</p>
       </div>
-      <DemoSites />
+      <DemoSites only={["fernway-lawn", "lantern-row-barbers", "mossgate-cleaning"]} />
     </div>
   </section>
 
@@ -181,6 +181,7 @@ const service = {
           <ol class="steps-list">
             {handover.map(([t, d]) => <li><strong>{t}.</strong> {d}</li>)}
           </ol>
+          <p class="way-note">No GitHub, code or hosting knowledge needed: your site runs in a website builder with a simple editor. If a project ever needs a custom-coded site instead, you still own the code and the account it runs in, but later changes usually need a developer: us, or anyone you choose.</p>
         </article>
         <article class="way panel">
           <span class="way-icon"><Icon name="wrench" /></span>
@@ -190,6 +191,7 @@ const service = {
           <ul class="ticks">
             {care.points.map((p) => <li><Icon name="check" />{p}</li>)}
           </ul>
+          <p class="way-note">Changes aren’t unlimited: small changes are quick edits to what’s already there, such as prices, hours, photos or a line of text. Anything new, like a page, a form or a tool, is quoted in writing first.</p>
           <p class="way-note">Start it at handover or any time later. Stop it whenever you like: it ends with the month you’ve paid for, and your site stays exactly where it is. <a href="/policies/#cancel">Plan terms</a></p>
         </article>
       </div>
@@ -299,6 +301,7 @@ const service = {
   .way-price strong { color: var(--ink); font-size: 1.25rem; }
   .way p { color: var(--body); }
   .way-note { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--hairline); font-size: 0.9375rem; }
+  .way-note + .way-note { margin-top: 0; padding-top: 0; border-top: 0; }
   .steps-list, .leave-list { display: grid; gap: 10px; margin: 0; padding-left: 1.4em; color: var(--body); }
   .steps-list li::marker, .leave-list li::marker { color: var(--cyan); font-weight: 650; }
   .steps-list strong { color: var(--ink); }

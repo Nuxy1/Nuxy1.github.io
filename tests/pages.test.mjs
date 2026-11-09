@@ -318,7 +318,8 @@ test("count beacons carry only an event name, the page path and another site's n
     await page.goto(real + "/contact/");
     await page.fill("input[name='name']", "Private Person");
     await page.fill("input[name='email']", "private@example.com");
-    await page.goto(real + "/");
+    // the lead-reply demo moved off the homepage in the 2026-11 sprint; it lives on /demos/ now
+    await page.goto(real + "/demos/");
     await page.locator("[data-play]").first().click();
     await page.waitForTimeout(300);
     assert.ok(tab.beacons.length >= 3, `beacons: ${JSON.stringify(tab.beacons)}`);
@@ -342,7 +343,7 @@ test("count beacons carry only an event name, the page path and another site's n
     const quiet = await open({ width: 1440, base });
     try {
       await quiet.page.addInitScript(setup);
-      await quiet.page.goto(base + "/");
+      await quiet.page.goto(base + "/demos/");
       await quiet.page.locator("[data-play]").first().click();
       await quiet.page.waitForTimeout(300);
       assert.deepEqual(quiet.beacons, [], `nothing counted with ${why}`);
@@ -374,24 +375,31 @@ test("old one-page links land on their new page", async () => {
   }
 });
 
-test("the form's list offers every service and plan, and ?service= picks one (only a real one)", async () => {
+test("the form knows every service and plan, ?service= names one (only a real one), and every link to it is real", async () => {
   const tab = await open({ width: 390 });
   const { page } = tab;
   try {
     await go(page, "/contact/");
-    const offered = await page.locator("select[name='service'] option").evaluateAll((o) => o.map((x) => x.value).filter(Boolean));
-    assert.deepEqual([...offered].sort(), [...services.map((s) => s.id), ...plans.map((p) => p.id)].sort());
-    for (const id of [plans[0].id, services[0].id]) {
-      await go(page, `/contact/?service=${id}`);
-      assert.equal(await page.locator("select[name='service']").inputValue(), id);
+    const known = await page.locator("[data-inquiry]").evaluate((el) => JSON.parse(el.dataset.services));
+    assert.deepEqual(Object.keys(known).sort(), [...services.map((s) => s.id), ...plans.map((p) => p.id)].sort());
+    const answers = await page.locator("[name=want]").evaluateAll((r) => r.map((x) => x.value));
+    for (const [id, s] of Object.entries(known)) assert.ok(answers.includes(s.want), `${id} picks ${s.want}`);
+    for (const item of [plans[0], services[0]]) {
+      await go(page, `/contact/?service=${item.id}`);
+      assert.equal(await page.locator("[name=service]").inputValue(), item.id);
+      assert.ok((await page.locator("[data-about]").textContent()).includes(item.name), item.id);
     }
     await go(page, "/contact/?service=not-a-service");
-    assert.equal(await page.locator("select[name='service']").inputValue(), "");
-    // every "Ask about this" link on the site points at an id the list has
-    for (const u of ["/solutions/", "/pricing/", "/automation/", "/websites/"]) {
-      await go(page, u);
-      const ids = await page.locator("a[href*='/contact/?service=']").evaluateAll((a) => a.map((x) => new URL(x.href).searchParams.get("service")));
-      for (const id of ids) assert.ok(offered.includes(id), `${u}: ?service=${id}`);
+    assert.equal(await page.locator("[name=service]").inputValue(), "");
+    // every "Ask about this" or quote link on the site points at an id the form knows and an answer it has
+    for (const u of ["/", "/solutions/", "/pricing/", "/automation/", "/websites/", "/ecommerce/", "/get-a-website/"]) {
+      const res = await go(page, u);
+      if (res.status() === 404) continue;
+      const links = await page.locator("a[href*='/contact/?']").evaluateAll((a) => a.map((x) => Object.fromEntries(new URL(x.href).searchParams)));
+      for (const q of links) {
+        if (q.service) assert.ok(q.service in known, `${u}: ?service=${q.service}`);
+        if (q.want) assert.ok(answers.includes(q.want), `${u}: ?want=${q.want}`);
+      }
     }
   } finally {
     await tab.context.close();

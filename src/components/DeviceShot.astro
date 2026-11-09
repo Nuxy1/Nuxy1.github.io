@@ -1,26 +1,32 @@
 ---
 // One of the example websites (data/demo-sites.ts) shown on a computer with a phone in front, from the thumbnails in
-// public/images/examples/. Used in the hero of /websites/ and /get-a-website/. The caption says the business is made up.
+// public/images/examples/. Used in the hero of the homepage, /websites/, /get-a-website/ and /ecommerce/, and for each example on /portfolio/. The caption says the business is made up.
 import Icon from "./Icon.astro";
 import { demoSiteBySlug, shotSrcset } from "../data/demo-sites";
 
-interface Props { slug: string }
-const { slug } = Astro.props;
+interface Props {
+  slug: string;
+  /** further down a page (the portfolio): load when near, not first */
+  lazy?: boolean;
+}
+const { slug, lazy = false } = Astro.props;
+const load = lazy ? { loading: "lazy" as const } : { fetchpriority: "high" as const };
 const demo = demoSiteBySlug[slug];
+const what = demo.project === "E-commerce store" ? "store" : "website";
 // How wide each picture is drawn (measured on /websites/ and /get-a-website/): the computer 246px at 320 wide, 316 at
 // 390, 641 at 768, 414 at 1024, 490 at 1440; the phone in front 90 to 96px on phones, 174 at 768, 115 to 140 on desktops.
 const deskSizes = "(min-width: 1200px) 490px, (min-width: 1024px) 41vw, (min-width: 720px) 84vw, calc(100vw - 74px)";
 const phoneSizes = "(min-width: 1024px) 140px, (min-width: 720px) 175px, 96px";
 ---
-<figure class="shot" aria-label={`Example website for a made-up ${demo.kind.toLowerCase()}, on a computer and a phone`}>
+<figure class="shot" aria-label={`Example ${what} for a made-up ${demo.kind.toLowerCase()}, on a computer and a phone`}>
   <span class="frame desk">
     <span class="frame-bar" aria-hidden="true"><i></i><i></i><i></i></span>
-    <img src={`/images/examples/${slug}-desktop.webp`} srcset={shotSrcset(slug, "desktop")} sizes={deskSizes} alt="" width="800" height="500" decoding="async" fetchpriority="high" />
+    <img src={`/images/examples/${slug}-desktop.webp`} srcset={shotSrcset(slug, "desktop")} sizes={deskSizes} alt="" width="800" height="500" decoding="async" {...load} />
   </span>
   <span class="frame phone">
-    <img src={`/images/examples/${slug}-phone.webp`} srcset={shotSrcset(slug, "phone")} sizes={phoneSizes} alt="" width="390" height="780" decoding="async" />
+    <img src={`/images/examples/${slug}-phone.webp`} srcset={shotSrcset(slug, "phone")} sizes={phoneSizes} alt="" width="390" height="780" decoding="async" loading={lazy ? "lazy" : undefined} />
   </span>
-  <figcaption><Icon name="info" />Example website for a made-up business</figcaption>
+  <figcaption><Icon name="info" />Example {what} for a made-up business</figcaption>
 </figure>
 
 <style>

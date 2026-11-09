@@ -31,7 +31,7 @@ const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE 
 const UPDATE = process.env.UPDATE_BASELINES === "1";
 
 const PAGES = { home: "/", automation: "/automation/", websites: "/websites/", "get-a-website": "/get-a-website/",
-  pricing: "/pricing/", demos: "/demos/", about: "/about/", contact: "/contact/" };
+  pricing: "/pricing/", demos: "/demos/", about: "/about/", contact: "/contact/", ecommerce: "/ecommerce/", portfolio: "/portfolio/" };
 const SCREENS = [{ width: 390, height: 844 }, { width: 1440, height: 900 }];
 // A pixel counts as changed when a colour channel moves by more than CHANNEL; a page fails when more than SHARE of
 // its pixels changed. The same build on the same setup gives 0 changed pixels; the slack is for edge smoothing only.

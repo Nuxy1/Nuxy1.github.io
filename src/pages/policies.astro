@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import { calService, calUrl } from "../data/site";
 
 const contact = "nuxy@nuxyautomation.com";
 ---
@@ -43,6 +44,7 @@ const contact = "nuxy@nuxyautomation.com";
     <li><strong>Your customers’ data:</strong> stays in your own accounts. I use it only to do the work you asked for, and I never sell or share it.</li>
     <li><strong>The contact form:</strong> your answers go to my own server, which saves them and emails them to my inbox. It doesn’t keep your IP address. I use them only to reply about your project and never add you to a mailing list. Requests are deleted after a year unless you become a client; messages flagged as spam are deleted after 30 days.</li>
     <li><strong>This website:</strong> no cookies and no advertising or tracking scripts. It counts visits anonymously: which page, which button (for example “started the demo”), the day, and the site you came from. Nothing you type, no IP address and nothing that identifies you. If your browser sends Do Not Track or Global Privacy Control, nothing is counted. The site is hosted by GitHub Pages, which keeps its own server logs.</li>
+    {calUrl && <li><strong>Booking a call:</strong> the booking page is run by {calService}. What you enter there (your name, email, the time you pick and any note) is kept by {calService} under its own privacy policy and sent to me so I can call you. It shows only the times I’m free, never what is in my calendar.</li>}
     <li><strong>Email:</strong> if I emailed you about your website and you reply “unsubscribe”, I never email you again.</li>
     <li><strong>Your requests:</strong> email me to see, correct or delete what I have about you.</li>
   </ul>

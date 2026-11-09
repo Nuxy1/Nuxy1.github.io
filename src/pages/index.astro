@@ -1,34 +1,36 @@
 ---
-// Homepage: who it's for, the four primary services, the problems, how it works, the flagship demo, example
-// websites, popular services, why Nuxy, proof, and one clear next step. Services and prices come from
-// data/services.ts; nothing on this page is a client result.
+// Homepage (brief 4): what Nuxy builds, the four primary services, the portfolio of labeled examples, the five steps,
+// customer ownership, why Nuxy, and one clear next step. Services and prices come from data/services.ts; nothing on
+// this page is a client result. Section ids avoid the old one-page anchors that Base.astro forwards (any service or
+// plan id, "services", "plans", "work", ...), or the forwarding script would send the visitor away.
 import Base from "../layouts/Base.astro";
 import Icon from "../components/Icon.astro";
-import HeroFlow from "../components/HeroFlow.astro";
-import LeadDemo from "../components/LeadDemo.astro";
-import ServiceCard from "../components/ServiceCard.astro";
-import CaseStudy from "../components/CaseStudy.astro";
-import { primary, steps, serviceById, services, tools, areas } from "../data/services";
+import DeviceShot from "../components/DeviceShot.astro";
 import DemoSites from "../components/DemoSites.astro";
+import CaseStudy from "../components/CaseStudy.astro";
+import { primary, steps, services, tools, areas } from "../data/services";
 import { inbox, caseStudies } from "../data/site";
 import type { IconName } from "../components/Icon.astro";
 
-const problems: { icon: IconName; title: string; text: string; link: [string, string] }[] = [
-  { icon: "chatCircleText", title: "Never miss an inquiry", text: "Quote requests come in while you’re on a job, and by the time you call back they’ve hired someone else. Every inquiry gets a friendly reply in seconds, and you get the details right away.", link: ["Lead response & follow-up", "/automation/#leads"] },
-  { icon: "calendarCheck", title: "Reduce scheduling work", text: "Phone tag, double bookings and no-shows eat your day. Customers book themselves online, get reminders and move their own appointments.", link: ["Online booking & reminders", "/solutions/#booking"] },
-  { icon: "arrowsClockwise", title: "Automate repetitive tasks", text: "Typing the same invoice, chasing the same payment, copying details from one app to another. Set it up once and it runs, with an alert if anything fails.", link: ["Admin automations", "/solutions/#save-time"] },
+// The cheapest and dearest one-time prices, for search engines' price range: read from the price list so it can't drift.
+const oneTime = services.map((s) => Number(s.price.replace(/[^0-9]/g, ""))).filter(Boolean);
+
+// Customer ownership: the same terms as /websites/#ownership and contract items 4 and 7.
+const owned: { icon: IconName; title: string; text: string }[] = [
+  { icon: "globeSimple", title: "Your domain, in your name", text: "Registered to you and paid by you, never held in our account." },
+  { icon: "creditCard", title: "Your accounts, your billing", text: "The website or store plan is in your name, paid by you directly to Squarespace, Wix, Shopify or Square." },
+  { icon: "lockSimple", title: "No passwords handed over", text: "We work as an invited user that you can remove at any time. You never share your password." },
+  { icon: "shieldCheck", title: "Management is optional", text: "Stop the monthly plan whenever you like. Your website, domain and content stay yours, and nothing is switched off." },
 ];
 
 const why: { icon: IconName; title: string; text: string }[] = [
-  { icon: "receipt", title: "Written, fixed prices", text: "You see the plan and the price in writing before anything starts. No hourly meter, no surprise invoice." },
-  { icon: "lockSimple", title: "Your accounts, your property", text: "Built in your own accounts as an invited user, never with your passwords. Once it’s paid, everything built for you is yours." },
-  { icon: "checkCircle", title: "Tested before handover", text: "Every piece is tried with realistic examples first, and you get a short video showing it working." },
-  { icon: "bellSimple", title: "30-day launch watch", text: "For the first 30 days every failure alerts us, and anything our work breaks is fixed at no charge." },
-  { icon: "creditCard", title: "No monthly plan required", text: "Every service is a one-time price. Monthly care is there if you want it, never a condition." },
-  { icon: "chatsCircle", title: "Plain English, in writing", text: "No jargon and no call you have to schedule. Questions and updates come in writing, with screen recordings." },
+  { icon: "receipt", title: "Transparent pricing", text: "Every price is published on this site, and your fixed price is in writing before anything starts. No hourly meter, no surprise invoice." },
+  { icon: "listChecks", title: "Clear scopes", text: "The written plan says what’s included. One round of changes is included; anything new is quoted in writing first." },
+  { icon: "browser", title: "Professional development", text: "Modern sites built for phones first, with clear pages, readable text and a quote or contact form that works." },
+  { icon: "lockSimple", title: "Customer-owned accounts", text: "Built in your own accounts as an invited user, never with your passwords. Once it’s paid, everything built for you is yours." },
+  { icon: "checkCircle", title: "Tested websites", text: "Pages, forms and buttons are tried on a phone and a computer before launch, and you get a short video showing it working." },
+  { icon: "bellSimple", title: "Optional support", text: "Every job includes a 30-day launch watch. After that, monthly care is there if you want it, never a condition." },
 ];
-
-const featured = ["follow-up", "booking", "new-website", "site-fixes", "reviews", "invoices"].map((id) => serviceById[id]);
 
 const site = "https://nuxyautomation.com";
 const business = {
@@ -40,7 +42,7 @@ const business = {
   logo: `${site}/logo.png`,
   image: `${site}/og.jpg`,
   email: inbox,
-  description: "Websites and business automation for small service businesses: lead response and follow-up, online booking and reminders, invoices and admin automations, built in the client’s own accounts at fixed, written prices.",
+  description: "Websites, online stores and business automation for small businesses: business websites, Shopify and Square Online stores, lead response and follow-up, online booking and reminders, and invoice and admin automations, built in the client’s own accounts at fixed, published prices.",
   address: { "@type": "PostalAddress", addressLocality: "Faribault", addressRegion: "MN", addressCountry: "US" },
   areaServed: [
     ...["Faribault", "Northfield", "Owatonna", "Lakeville"].map((name) => ({ "@type": "City", name: `${name}, Minnesota` })),
@@ -48,10 +50,10 @@ const business = {
     { "@type": "AdministrativeArea", name: "Minneapolis–Saint Paul metropolitan area" },
     { "@type": "Country", name: "United States" },
   ],
-  priceRange: "$150-$1200",
+  priceRange: `$${Math.min(...oneTime)}-$${Math.max(...oneTime)}`,
   hasOfferCatalog: {
     "@type": "OfferCatalog",
-    name: "Website and automation services",
+    name: "Website, online store and automation services",
     itemListElement: services.map((s) => ({
       "@type": "Offer",
       url: `${site}/solutions/#${s.id}`,
@@ -61,26 +63,26 @@ const business = {
   },
 };
 ---
-<Base title="Nuxy Automation · Websites & lead follow-up for small businesses · Faribault, MN" wide>
+<Base title="Nuxy Automation · Websites, Online Stores & Automation · Faribault, MN" wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(business)} />
 
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow">Websites & automation for small service businesses</p>
-        <h1>Spend Less Time Chasing Leads. More Time Running Your Business.</h1>
-        <p class="hero-lead">We help small businesses save time, respond to customers faster, and automate repetitive work using the tools they already have.</p>
+        <p class="eyebrow">Websites, online stores & automation · Faribault, MN</p>
+        <h1><span>Professional Websites.</span> <span>Smarter Business.</span></h1>
+        <p class="hero-lead">We build modern websites, online stores, and automations that help small businesses get found, attract customers, and save time.</p>
         <div class="hero-actions">
-          <a class="button" href="/contact/" data-track="cta_hero">Get a Free Automation Assessment<Icon name="arrowRight" /></a>
-          <a class="button secondary" href="#how" data-track="cta_how">See How It Works</a>
+          <a class="button" href="/contact/" data-track="cta_hero">Get a Free Quote<Icon name="arrowRight" /></a>
+          <a class="button secondary" href="/portfolio/" data-track="cta_work">See Our Work</a>
         </div>
         <ul class="trust" aria-label="How we work">
-          <li><Icon name="check" />Transparent, written pricing.</li>
-          <li><Icon name="check" />Built in your own accounts.</li>
-          <li><Icon name="check" />Tested before handover.</li>
+          <li><Icon name="check" />Fixed, published prices</li>
+          <li><Icon name="check" />Your accounts, your website</li>
+          <li><Icon name="check" />Tested before launch</li>
         </ul>
       </div>
-      <HeroFlow />
+      <DeviceShot slug="mossgate-cleaning" />
     </div>
   </section>
 
@@ -91,12 +93,12 @@ const business = {
     </div>
   </section>
 
-  <section class="section" id="services" aria-labelledby="services-h">
+  <section class="section" id="what-we-build" aria-labelledby="build-h">
     <div class="wrap">
       <div class="section-head">
-        <p class="eyebrow">What we do</p>
-        <h2 id="services-h">Websites that bring in work. Automations that give you time back.</h2>
-        <p>Start with one. Each is a fixed, written price, and none of them needs a monthly plan.</p>
+        <p class="eyebrow">What we build</p>
+        <h2 id="build-h">Websites, online stores and automations, at fixed prices</h2>
+        <p>Every build is a fixed, written price, in your own accounts. Management after launch is optional, never a condition.</p>
       </div>
       <div class="grid-4 primary">
         {primary.map((p) => (
@@ -110,25 +112,26 @@ const business = {
           </article>
         ))}
       </div>
+      <p class="more"><a class="button secondary" href="/solutions/" data-track="cta_services">See all {services.length} services<Icon name="arrowRight" /></a><a class="text-link" href="/pricing/">Pricing and monthly plans<Icon name="arrowRight" /></a></p>
     </div>
   </section>
 
-  <section class="section band" aria-labelledby="problems-h">
+  <section class="section band" id="portfolio" aria-labelledby="portfolio-h">
     <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Sound familiar?</p>
-        <h2 id="problems-h">The busywork that quietly costs you customers</h2>
+      <div class="web-head">
+        <div class="section-head">
+          <p class="eyebrow">Portfolio</p>
+          <h2 id="portfolio-h">See what we build, on a computer and a phone</h2>
+          <p>Example websites and an online store for made-up businesses, each labeled as a demonstration. Open one to try it at full size.</p>
+        </div>
+        <div class="web-actions">
+          <a class="button" href="/portfolio/" data-track="cta_portfolio">See the full portfolio</a>
+          <a class="button secondary" href="/demos/">Try the interactive demos</a>
+        </div>
       </div>
-      <div class="grid-3">
-        {problems.map((p) => (
-          <article class="problem reveal">
-            <span class="problem-icon"><Icon name={p.icon} /></span>
-            <h3>{p.title}</h3>
-            <p>{p.text}</p>
-            <a class="text-link" href={p.link[1]}>{p.link[0]}<Icon name="arrowRight" /></a>
-          </article>
-        ))}
-      </div>
+      <DemoSites />
+      <p class="note tech-note"><Icon name="githubLogo" /><span>Looking for the technical side? Automations we’ve published as open source, each with its tests and docs, are under <a href="/demos/#technical">Technical projects</a>, kept apart from the website examples.</span></p>
+      {caseStudies.length > 0 && <div class="cases">{caseStudies.map((c) => <CaseStudy study={c} />)}</div>}
     </div>
   </section>
 
@@ -136,8 +139,8 @@ const business = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">How it works</p>
-        <h2 id="how-h">Four steps, all in writing</h2>
-        <p>No sales call, no long contract. You can stop after any step.</p>
+        <h2 id="how-h">Five steps, all in writing</h2>
+        <p>No sales call and no long contract. Nothing is charged until you agree to the written plan.</p>
       </div>
       <ol class="steps">
         {steps.map((s, i) => (
@@ -151,56 +154,26 @@ const business = {
     </div>
   </section>
 
-  <section class="section band" id="demo" aria-labelledby="demo-h">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">See it working</p>
-        <h2 id="demo-h">One quote request, from first message to booked visit</h2>
-        <p>Step through what the customer sees and what the owner sees. Press Start, or pick any step.</p>
+  <section class="section band" id="ownership" aria-labelledby="ownership-h">
+    <div class="wrap own">
+      <div class="own-head">
+        <p class="eyebrow">Customer ownership</p>
+        <h2 id="ownership-h">Your website belongs to you. Always.</h2>
+        <p>Buy it once and it’s yours. You pay your website builder and domain directly, never a fee to us to keep it online, and you don’t need to know anything about code or hosting to own it. If you choose our monthly management, you can stop it at any time and keep everything.</p>
+        <a class="text-link" href="/websites/#ownership">How ownership and handover work<Icon name="arrowRight" /></a>
       </div>
-      <LeadDemo />
-      <div class="demo-cta">
-        <div>
-          <h3>Want This for Your Business?</h3>
-          <p>Lead response & follow-up is {serviceById["follow-up"].price}, one time, built in the email and form tools you already have.</p>
-        </div>
-        <a class="button" href="/contact/?service=follow-up" data-track="cta_demo">Get a Free Assessment<Icon name="arrowRight" /></a>
-      </div>
+      <ul class="own-list">
+        {owned.map((o) => (
+          <li class="reveal">
+            <Icon name={o.icon} />
+            <div><h3>{o.title}</h3><p>{o.text}</p></div>
+          </li>
+        ))}
+      </ul>
     </div>
   </section>
 
-  <section class="section" id="websites" aria-labelledby="websites-h">
-    <div class="wrap">
-      <div class="web-head">
-        <div class="section-head">
-          <p class="eyebrow">Website development</p>
-          <h2 id="websites-h">Your business deserves a professional website</h2>
-          <p>Fast, modern and built for phones, with your services, your area and a way to call, book or ask for a quote on every screen. You own the domain and the site.</p>
-        </div>
-        <div class="web-actions">
-          <a class="button" href="/websites/" data-track="cta_websites">Website development</a>
-          <a class="button secondary" href="/get-a-website/">No website yet?</a>
-        </div>
-      </div>
-      <DemoSites />
-    </div>
-  </section>
-
-  <section class="section band" aria-labelledby="featured-h">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Popular starting points</p>
-        <h2 id="featured-h">Fixed prices, written down before you pay</h2>
-        <p>Order two one-time services together and save 10%; three or more, 15%.</p>
-      </div>
-      <div class="grid-3">
-        {featured.map((s) => <ServiceCard service={s} compact />)}
-      </div>
-      <p class="more"><a class="button secondary" href="/solutions/">See all {services.length} services<Icon name="arrowRight" /></a><a class="text-link" href="/pricing/">Monthly care plans<Icon name="arrowRight" /></a></p>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="why-h">
+  <section class="section" id="why" aria-labelledby="why-h">
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Why Nuxy</p>
@@ -217,31 +190,7 @@ const business = {
     </div>
   </section>
 
-  <section class="section band" aria-labelledby="proof-h">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Proof, not promises</p>
-        <h2 id="proof-h">See the work before you spend a dollar</h2>
-      </div>
-      <div class="grid-2">
-        <a class="proof reveal" href="/demos/">
-          <Icon name="play" />
-          <h3>Interactive demos</h3>
-          <p>The lead demo above, a demo salon with booking, reminders and missed-call text-back, and example websites you can try on desktop and phone.</p>
-          <span class="text-link">Open the demos<Icon name="arrowRight" /></span>
-        </a>
-        <a class="proof reveal" href="/demos/#technical">
-          <Icon name="githubLogo" />
-          <h3>For the technical details</h3>
-          <p>Working automations published as open source on GitHub, each with its own automated tests and plain-English docs, for anyone who wants to look under the hood.</p>
-          <span class="text-link">Technical projects<Icon name="arrowRight" /></span>
-        </a>
-      </div>
-      {caseStudies.length > 0 && <div class="cases">{caseStudies.map((c) => <CaseStudy study={c} />)}</div>}
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="about-h">
+  <section class="section band" aria-labelledby="about-h">
     <div class="wrap about">
       <div>
         <p class="eyebrow"><Icon name="mapPin" />Faribault, Minnesota</p>
@@ -257,10 +206,10 @@ const business = {
 
   <section class="final" aria-labelledby="final-h">
     <div class="wrap"><div class="final-box">
-      <h2 id="final-h">Let’s Find Out What Your Business Could Automate.</h2>
-      <p>Tell us about your business and what takes up your time. You’ll get a written plan and a fixed price within one business day, or an honest “this isn’t worth automating”. No call required.</p>
+      <h2 id="final-h">Ready to Improve Your Business Online?</h2>
+      <p>Tell us about your business and what you need: a new website, a redesign, an online store or an automation. You’ll get a written plan and a fixed price within one business day. No call required.</p>
       <div class="final-actions">
-        <a class="button" href="/contact/" data-track="cta_final">Get Your Free Assessment<Icon name="arrowRight" /></a>
+        <a class="button" href="/contact/" data-track="cta_final">Request a Free Quote<Icon name="arrowRight" /></a>
         <a class="final-mail" href={`mailto:${inbox}`}><Icon name="envelopeSimple" />{inbox}</a>
       </div>
     </div></div>
@@ -274,13 +223,15 @@ const business = {
     background: radial-gradient(60% 60% at 70% 30%, rgba(59, 130, 246, 0.16), transparent 70%);
   }
   .hero-grid { position: relative; display: grid; gap: clamp(40px, 6vw, 64px); align-items: center; }
-  .hero h1 { max-width: 15ch; }
+  /* (each sentence on its own line on wide screens; the headline is a little smaller than other pages' so both fit) */
+  .hero h1 { font-size: clamp(2.25rem, 1.2rem + 3vw, 3.125rem); }
+  .hero h1 span { display: inline-block; }
   .hero-lead { max-width: 54ch; margin-top: 22px; font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem); color: var(--body); }
   .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
   .trust { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 28px; list-style: none; color: var(--muted); font-size: 0.9375rem; }
   .trust li { display: inline-flex; align-items: center; gap: 6px; }
   .trust :global(.icon) { color: var(--cyan); width: 1.05em; height: 1.05em; }
-  @media (min-width: 1024px) { .hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); } }
+  @media (min-width: 1024px) { .hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); } }
   @media (max-width: 479px) { .hero-actions .button { width: 100%; } }
 
   .tools-band { border-block: 1px solid var(--hairline-soft); padding-block: 28px; }
@@ -295,31 +246,38 @@ const business = {
   .prim .ticks { font-size: 0.9375rem; gap: 8px; }
   .prim-price { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--hairline-soft); color: var(--ink); font-weight: 650; }
   .prim .text-link { min-height: 44px; }
-
-  .problem { padding: 26px; border-radius: var(--r-lg); border: 1px solid var(--hairline); background: var(--panel); display: flex; flex-direction: column; gap: 12px; }
-  .problem-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: rgba(34, 211, 238, 0.1); color: var(--cyan); }
-  .problem-icon :global(.icon) { width: 24px; height: 24px; }
-  .problem p { flex: 1; }
-  .problem .text-link { min-height: 44px; }
-
-  .steps { display: grid; gap: 16px; list-style: none; counter-reset: step; }
-  .step { position: relative; padding: 24px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
-  .step-num { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 16px; border-radius: 50%; background: var(--button); color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .step h3 { margin-bottom: 8px; }
-  .step p { font-size: 0.9375rem; }
-  @media (min-width: 720px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (min-width: 1024px) { .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-
-  .demo-cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; margin-top: 24px; padding: 24px; border: 1px solid rgba(59, 130, 246, 0.4); border-radius: var(--r-lg); background: rgba(37, 99, 235, 0.1); }
-  .demo-cta h3 { font-size: 1.375rem; margin-bottom: 6px; }
-  .demo-cta p { color: var(--body); }
-  @media (max-width: 559px) { .demo-cta .button { width: 100%; } }
+  .more { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 32px; }
 
   .web-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0 24px; }
   .web-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: clamp(32px, 4vw, 48px); }
   @media (max-width: 479px) { .web-actions .button { flex: 1 1 100%; } }
+  .tech-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; max-width: 80ch; }
+  .tech-note :global(.icon) { flex: none; margin-top: 0.2em; width: 1.05em; height: 1.05em; }
+  .cases { display: grid; gap: 20px; margin-top: 24px; }
 
-  .more { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 32px; }
+  /* the five steps as numbered rows: number, title, then the text in its own column on wide screens */
+  .steps { list-style: none; border-top: 1px solid var(--hairline); }
+  .step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px 20px; align-items: center; padding: 22px 0; border-bottom: 1px solid var(--hairline); }
+  .step-num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--button); color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .step h3 { font-size: 1.1875rem; }
+  .step p { grid-column: 2; color: var(--body); }
+  @media (min-width: 880px) {
+    .step { grid-template-columns: 40px minmax(0, 17rem) minmax(0, 1fr); gap: 0 28px; align-items: start; padding: 26px 0; }
+    .step h3 { line-height: 40px; }
+    .step p { grid-column: 3; padding-top: 8px; }
+  }
+
+  .own { display: grid; gap: 32px 64px; }
+  .own-head { display: grid; gap: 16px; justify-items: start; align-content: start; }
+  .own-head p:not(.eyebrow) { font-size: 1.0625rem; }
+  .own-head .eyebrow { margin-bottom: -4px; }
+  .own-list { display: grid; gap: 16px; list-style: none; }
+  .own-list li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; padding: 20px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
+  .own-list li > :global(.icon) { width: 44px; height: 44px; padding: 10px; border-radius: 12px; background: rgba(34, 211, 238, 0.1); color: var(--cyan); }
+  .own-list h3 { font-size: 1.0625rem; margin-bottom: 6px; }
+  .own-list p { font-size: 0.9375rem; }
+  @media (min-width: 640px) { .own-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .own { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); align-items: start; } }
 
   .why { display: grid; gap: 28px 32px; list-style: none; }
   .why li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; }
@@ -329,18 +287,11 @@ const business = {
   @media (min-width: 720px) { .why { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (min-width: 1024px) { .why { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-  .proof { display: flex; flex-direction: column; gap: 12px; padding: 28px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); color: inherit; text-decoration: none; transition: border-color 160ms ease-out; }
-  .proof:hover { color: inherit; border-color: var(--hairline-strong); }
-  .proof > :global(.icon) { width: 32px; height: 32px; color: var(--cyan); }
-  .proof p { flex: 1; }
-  .proof .text-link { color: var(--link); }
-  .cases { display: grid; gap: 20px; margin-top: 20px; }
-
   .about { display: grid; gap: 20px 64px; }
   .about-text { display: grid; gap: 14px; justify-items: start; font-size: 1.0625rem; }
   @media (min-width: 900px) { .about { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: start; } }
 
-  .final { padding: 0 0 clamp(64px, 9vw, 112px); }
+  .final { padding: clamp(64px, 9vw, 112px) 0; }
   .final-box {
     padding: clamp(40px, 6vw, 72px) clamp(20px, 5vw, 64px); text-align: center;
     border: 1px solid var(--hairline); border-radius: 24px;

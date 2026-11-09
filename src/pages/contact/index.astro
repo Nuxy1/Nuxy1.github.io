@@ -1,10 +1,10 @@
 ---
-// The contact page: the assessment form (components/InquiryForm.astro) and plain email as the alternative.
+// The contact page: the quote form (components/InquiryForm.astro) and plain email as the alternative.
 // The booking link appears only when data/site.ts calUrl is set.
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import InquiryForm from "../../components/InquiryForm.astro";
-import { calUrl, inbox } from "../../data/site";
+import { calMinutes, calUrl, inbox } from "../../data/site";
 import { ask, gmail, outlook } from "../../lib/request";
 
 const next = [
@@ -13,13 +13,13 @@ const next = [
   ["You decide", "Nothing is charged and no work starts until you agree to the plan. If it isn’t a fit, we’ll say so."],
 ];
 ---
-<Base title="Get a Free Assessment · Nuxy Automation" description="Tell us what you’d like help with and get a written plan and fixed price within one business day. No call needed, and nothing is charged until you agree." wide>
+<Base title="Get a Free Quote · Nuxy Automation" description="Tell us what you need and get a written plan and fixed price within one business day. No call needed, and nothing is charged until you agree." wide>
   <section class="section contact">
     <div class="wrap contact-grid">
       <div class="contact-main">
-        <p class="eyebrow">Free assessment</p>
-        <h1>Tell us what you’d like to fix.</h1>
-        <p class="lead">Websites, booking, follow-ups, invoices or anything repetitive. We reply within one business day with a written plan and a fixed price. No call required.</p>
+        <p class="eyebrow">Free quote</p>
+        <h1>Tell us what you need.</h1>
+        <p class="lead">A new website, a Shopify store, an automation or a fix to what you have. We reply within one business day with a written plan and a fixed price. No call required.</p>
         <div class="panel form-panel">
           <InquiryForm />
         </div>
@@ -43,7 +43,7 @@ const next = [
         {calUrl && (
           <div class="aside-block">
             <h2>Rather talk it through?</h2>
-            <p>Pick a time for a free 20-minute call.</p>
+            <p>Pick a time for a free {calMinutes}-minute call. It’s optional: the form or an email gets the same written plan.</p>
             <a class="button secondary small" href={calUrl} target="_blank" rel="noopener" data-track="cal_open"><Icon name="calendarCheck" />Book a call</a>
           </div>
         )}

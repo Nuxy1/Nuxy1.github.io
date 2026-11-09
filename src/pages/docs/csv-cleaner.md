@@ -11,7 +11,7 @@ Before you import a contact list into a CRM, an email tool or a new database, ru
 
 ```bash
 node bin/clean-csv.js contacts.csv --map "email=Email,phone=Phone,name=Full Name,date=Signed up" --out out
-# contacts.csv: 11 read, 6 clean (1 duplicates merged), 4 to check -> out/
+# contacts.csv: 11 read, 5 clean (1 duplicates merged), 5 to check -> out/
 ```
 
 The input file is never changed. You get three files:
@@ -29,7 +29,7 @@ The input file is never changed. You get three files:
 | `JORDAN EXAMPLE`, `Jordan.Example@Example.com `, `(555) 010-4477`, `10/27/2026` | `Jordan Example`, `jordan.example@example.com`, `+15550104477`, `2026-10-27` |
 | A second Jordan row from 2026-09-02 with a note | Merged into the row above: the newest signup wins and the blank Notes cell is filled from the older row |
 | `Chen, Wei` (last name first) | `Wei Chen`, first `Wei`, last `Chen` |
-| `priya.patel@gmial.com` | `priya.patel@gmail.com` (only unambiguous provider typos) |
+| `priya.patel@gmial.com` | Sent for review: "looks mistyped, maybe priya.patel@gmail.com" (a person confirms it; the row stays as typed) |
 | `27.10.2026`, `Oct 3, 2026`, `9/15/26` | `2026-10-27`, `2026-10-03`, `2026-09-15` |
 | `+44 20 7946 0958`, `0049 30 1234567` | `+442079460958`, `+49301234567` |
 | `not-an-email` | Sent for review: "invalid email" |

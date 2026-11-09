@@ -2,7 +2,8 @@
 // a 1280x800 computer view and a 390x780 phone view, each captured at 2x, then saved as WebP at every width in
 // shotWidths (src/data/demo-sites.ts). Run it after changing a demo site or adding one:
 //   npx astro build
-//   PLAYWRIGHT_CORE=<path to a playwright-core folder> BROWSER=<path to chrome.exe or msedge.exe> node scripts/example-shots.mjs
+//   PLAYWRIGHT_CORE=<path to a playwright-core folder> BROWSER=<path to chrome.exe or msedge.exe> node scripts/example-shots.mjs [slug ...]
+// Name one or more slugs to remake only those (so the other pictures stay byte-for-byte as they are).
 // Needs ffmpeg (with libwebp) on PATH. Then build again so dist/ has the new pictures, and look at them before committing.
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, statSync } from "node:fs";
@@ -16,13 +17,16 @@ import { demoSites, shotWidths } from "../src/data/demo-sites.ts";
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE || "playwright-core");
 const root = fileURLToPath(new URL("..", import.meta.url));
 const out = join(root, "public", "images", "examples");
+const only = process.argv.slice(2);
+const unknown = only.filter((s) => !demoSites.some((d) => d.slug === s));
+if (unknown.length) throw new Error(`not a demo site: ${unknown.join(", ")}`);
 const views = { desktop: { width: 1280, height: 800 }, phone: { width: 390, height: 780 } };
 
 const web = await serveDist(join(root, "dist"));
 const browser = await chromium.launch({ executablePath: process.env.BROWSER, headless: true });
 const work = mkdtempSync(join(tmpdir(), "example-shots-"));
 try {
-  for (const { slug } of demoSites) {
+  for (const { slug } of demoSites.filter((d) => !only.length || only.includes(d.slug))) {
     for (const [view, viewport] of Object.entries(views)) {
       // Reduced motion, so anything that fades in is already shown; fonts loaded, so the text is the real face.
       const context = await browser.newContext({ viewport, deviceScaleFactor: 2, reducedMotion: "reduce" });

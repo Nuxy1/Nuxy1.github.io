@@ -93,6 +93,8 @@ const filterKinds = kinds.filter((k) => k.id !== "all");
 
       {groups.map((g) => (
         <section class="group" id={g.id} aria-labelledby={`${g.id}-h`} data-group>
+          {/* old category anchors (/solutions/#save-time and the like, from before brief 4) land on the new category */}
+          {g.legacy.filter((old) => !serviceById[old]).map((old) => <span id={old} class="old-anchor" />)}
           <div class="group-head">
             <h2 id={`${g.id}-h`}>{g.title}</h2>
             <p>{g.lead}</p>
@@ -133,7 +135,7 @@ const filterKinds = kinds.filter((k) => k.id !== "all");
           <p>Tell us what slows you down. Within one business day you’ll get a written plan with what we’d build and the price. No call needed, and nothing is charged until you agree.</p>
         </div>
         <div class="cta-actions">
-          <a class="button" href="/contact/" data-track="cta_solutions">Get a Free Assessment</a>
+          <a class="button" href="/contact/" data-track="cta_solutions">Get a Free Quote</a>
           <a class="button secondary" href="/demo/">Try the demo</a>
         </div>
       </div>
@@ -187,6 +189,7 @@ const filterKinds = kinds.filter((k) => k.id !== "all");
   .count { margin-left: auto; color: var(--muted); font-size: 0.9375rem; white-space: nowrap; }
 
   .group { padding-top: clamp(40px, 5vw, 64px); scroll-margin-top: calc(var(--nav-h) + 8px); }
+  .old-anchor { display: block; scroll-margin-top: calc(var(--nav-h) + 8px); }
   .group-head { display: grid; gap: 8px; max-width: 720px; margin-bottom: 24px; }
   .group-head h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
   .group-head p { color: var(--muted); font-size: 1.0625rem; }

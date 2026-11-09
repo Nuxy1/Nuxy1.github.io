@@ -1,19 +1,30 @@
 ---
-// The three example websites (data/demo-sites.ts) as cards, each opening its desktop/phone viewer at /examples/<slug>/.
-// Used on the homepage, /websites/ and /demos/. The note under the cards is part of the component on purpose: the
-// cards never appear without saying they are made-up businesses.
+// The example websites and the example store (data/demo-sites.ts) as cards, each opening its desktop/phone viewer at
+// /examples/<slug>/. Used on the homepage, /websites/, /ecommerce/ and /demos/. The note under the cards is part of the
+// component on purpose: the cards never appear without saying they are made-up businesses.
 import Icon from "./Icon.astro";
 import { demoSites, shotSrcset } from "../data/demo-sites";
 
-interface Props { level?: "h3" | "h4" }
-const { level = "h3" } = Astro.props;
+interface Props {
+  level?: "h3" | "h4";
+  /** show only these demos (by slug), in this order; all of them when left out */
+  only?: string[];
+}
+const { level = "h3", only } = Astro.props;
 const H = level;
-// How wide a card's picture is drawn: one card per row, then two from 720px, three from 1024px, 360px at most (.grid-3
-// and .wrap in Base.astro). Measured: 286px at 320 wide, 356 at 390, 341 at 768, 299 at 1024, 358 at 1440.
-const sizes = "(min-width: 1200px) 360px, (min-width: 1024px) calc(33vw - 40px), (min-width: 720px) calc(46vw - 10px), calc(100vw - 34px)";
+const list = only ? only.map((slug) => demoSites.find((d) => d.slug === slug)!) : demoSites;
+// Three cards sit in a row of three; any other number in rows of two, so no card is left alone on a row.
+const cols = list.length % 3 === 0 ? 3 : 2;
+const hasStore = list.some((d) => d.project === "E-commerce store");
+// How wide a card's picture is drawn (.grid-2/.grid-3 and .wrap in Base.astro): one card per row, then two from
+// 720px; in threes, three from 1024px. Grid of three measured: 286px at 320 wide, 356 at 390, 341 at 768, 299 at
+// 1024, 358 at 1440. Grid of two: 550px from 1200 wide, half the screen less the gutters from 720.
+const sizes = cols === 3
+  ? "(min-width: 1200px) 360px, (min-width: 1024px) calc(33vw - 40px), (min-width: 720px) calc(46vw - 10px), calc(100vw - 34px)"
+  : "(min-width: 1200px) 550px, (min-width: 720px) calc(50vw - 50px), calc(100vw - 34px)";
 ---
-<ul class="demo-grid grid-3" role="list">
-  {demoSites.map((d) => (
+<ul class:list={["demo-grid", cols === 3 ? "grid-3" : "grid-2"]} role="list">
+  {list.map((d) => (
     <li class="demo-site reveal">
       <span class="demo-shot">
         <img src={`/images/examples/${d.slug}-desktop.webp`} srcset={shotSrcset(d.slug, "desktop")} sizes={sizes} alt="" width="800" height="500" loading="lazy" decoding="async" />
@@ -21,13 +32,14 @@ const sizes = "(min-width: 1200px) 360px, (min-width: 1024px) calc(33vw - 40px),
       <span class="demo-meta">
         <span class="demo-kind"><Icon name={d.icon} />{d.kind} · demonstration</span>
         <H class="demo-name"><a href={`/examples/${d.slug}/`} data-track="example_open">{d.name}</a></H>
+        <span class="demo-project">{d.project}</span>
         <span class="demo-sum">{d.summary}</span>
         <span class="text-link" aria-hidden="true">View on desktop and phone<Icon name="arrowRight" /></span>
       </span>
     </li>
   ))}
 </ul>
-<p class="note demo-note"><Icon name="info" /><span>These are example websites for made-up businesses, built to show the layout, features and finish we aim for. They are not clients. Your own site is built in your own Squarespace or Wix account, so the details follow what your website builder can do.</span></p>
+<p class="note demo-note"><Icon name="info" /><span>These are examples for made-up businesses, built to show the layout, features and finish we aim for. They are not clients.{hasStore && " The candle shop is a design example: you can fill its cart, but checkout is switched off, so nothing can be bought."} Your own site is built in your own account (Squarespace or Wix for a website, Shopify or Square Online for a store), so the details follow what that platform can do.</span></p>
 
 <style>
   .demo-grid { list-style: none; margin: 0; padding: 0; }
@@ -44,6 +56,7 @@ const sizes = "(min-width: 1200px) 360px, (min-width: 1024px) calc(33vw - 40px),
   .demo-name a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
   .demo-name a:focus-visible { outline: none; }
   .demo-name a:focus-visible::after { outline: 2px solid var(--focus); outline-offset: -2px; }
+  .demo-project { margin-top: -4px; color: var(--muted); font-size: 0.875rem; font-weight: 600; }
   .demo-sum { color: var(--body); font-size: 0.9375rem; flex: 1; }
   .demo-site .text-link { margin-top: 6px; color: var(--link); }
   .demo-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 20px; max-width: 80ch; }

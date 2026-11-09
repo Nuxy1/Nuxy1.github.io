@@ -76,7 +76,7 @@ const repo = "https://github.com/Nuxy1/small-business-automations";
           <li class="example">
             <h3><a href={`/work/${e.slug}/`}>{e.title}</a></h3>
             <p>{e.problem}</p>
-            <p class="example-meta"><Icon name="lightning" />{e.speed}</p>
+            <p class="example-meta"><Icon name="lightning" />{e.speed}, measured on a desktop PC</p>
             <p class="example-svc">Service: <a href={`/solutions/#${e.service.id}`}>{serviceById[e.service.id].name}</a>, {serviceById[e.service.id].price}</p>
           </li>
         ))}
@@ -85,7 +85,7 @@ const repo = "https://github.com/Nuxy1/small-business-automations";
         <a class="button secondary" href={repo} rel="noopener" data-track="github_open"><Icon name="githubLogo" />The code on GitHub<Icon name="arrowUpRight" /></a>
         <a class="button secondary" href="/docs/"><Icon name="clipboardText" />Docs and setup guides</a>
       </div>
-      <p class="note"><Icon name="info" /><span>The businesses in these examples are made up. The speeds were measured on a desktop PC with <code>npm run bench</code>; a small business’s whole year fits in under a second.</span></p>
+      <p class="note"><Icon name="info" /><span>The businesses in these examples are made up. The speeds come from each project’s <code>npm run bench</code>: thousands of records take seconds, not hours.</span></p>
     </div>
   </section>
 
@@ -97,7 +97,7 @@ const repo = "https://github.com/Nuxy1/small-business-automations";
           <p>Tell us what you’d like to fix. Within one business day you’ll get a written plan with the exact price. No call needed.</p>
         </div>
         <div class="cta-actions">
-          <a class="button" href="/contact/" data-track="cta_demos">Get a Free Assessment</a>
+          <a class="button" href="/contact/" data-track="cta_demos">Get a Free Quote</a>
           <a class="button secondary" href="/solutions/">See all services</a>
         </div>
       </div>

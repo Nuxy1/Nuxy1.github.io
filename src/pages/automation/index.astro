@@ -6,19 +6,23 @@ import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import ServiceCard from "../../components/ServiceCard.astro";
 import { groups, serviceById, keep, faqs } from "../../data/services";
+import type { Service } from "../../data/services";
 import { examples } from "../../data/examples";
 import type { IconName } from "../../components/Icon.astro";
 
 const site = "https://nuxyautomation.com";
-const group = (id: string) => groups.find((g) => g.id === id)!;
-const leads = group("get-customers");
-const admin = group("save-time");
-const ai = group("advanced");
+// The "Business automation" category split in two for this page, plus the custom group. (The Google profile now sits
+// with websites, and store automations, ordering and gift cards with e-commerce: the tiles below point there.)
+type Part = { title: string; lead: string; items: Service[] };
+const pick = (ids: string[]): Service[] => ids.map((id) => serviceById[id]);
+const leads: Part = { title: "Get more customers", lead: "Answer every inquiry fast, make booking easy and keep in touch with the customers you have.", items: pick(["follow-up", "booking", "quotes", "missed-calls", "reviews", "email-list"]) };
+const admin: Part = { title: "Save admin time", lead: "Fewer hours of typing, chasing and copying between apps.", items: pick(["invoices", "deposits", "reports", "data"]) };
+const ai: Part = groups.find((g) => g.id === "custom")!;
 const flagship = serviceById["follow-up"];
 
 // Lowest published price in a group, for the hero's "from $X" (prices are strings like "$450" or "from $200")
-const from = (g: typeof leads) => "$" + Math.min(...g.items.map((s) => Number(s.price.replace(/[^0-9]/g, "")))).toLocaleString("en-US");
-const parts: [string, string, typeof leads, IconName][] = [
+const from = (g: Part) => "$" + Math.min(...g.items.map((s) => Number(s.price.replace(/[^0-9]/g, "")))).toLocaleString("en-US");
+const parts: [string, string, Part, IconName][] = [
   ["#leads", "Leads, booking & follow-ups", leads, "chatsCircle"],
   ["#admin", "Admin automations", admin, "receipt"],
   ["#ai", "AI & custom connections", ai, "sparkle"],
@@ -55,7 +59,7 @@ const data = {
       <h1>Automations that answer, remind and follow up for you.</h1>
       <p class="lead">Every inquiry answered in seconds, bookings with reminders, invoices that chase themselves and replies drafted for you to approve. Built in the accounts you already have, at a fixed price agreed in writing.</p>
       <div class="hero-actions">
-        <a class="button" href="/contact/" data-track="cta_automation_hero">Get a Free Assessment<Icon name="arrowRight" /></a>
+        <a class="button" href="/contact/" data-track="cta_automation_hero">Get a Free Quote<Icon name="arrowRight" /></a>
         <a class="button secondary" href="/demos/#try"><Icon name="play" />Try the lead demo</a>
       </div>
       <ul class="hero-facts" role="list">
@@ -106,9 +110,10 @@ const data = {
         <h2 id="leads-h">{leads.title}</h2>
         <p>{leads.lead}</p>
       </div>
-      <div class="grid-4 cards">
+      <div class="grid-3 cards">
         {leads.items.map((s) => <ServiceCard service={s} compact shownAbove={s.id === flagship.id ? "#lead-response" : undefined} />)}
       </div>
+      <p class="note more-note">Want to be found on Google too? <a href="/solutions/#google-profile">{serviceById["google-profile"].name}</a> ({serviceById["google-profile"].price}) is part of our <a href="/websites/">website services</a>.</p>
     </div>
   </section>
 
@@ -126,6 +131,12 @@ const data = {
           <h3>Something else eating your week?</h3>
           <p>Describe the task you keep repeating. If it can be automated safely you’ll get a written plan and price; if it isn’t worth automating, we’ll say so.</p>
           <a class="text-link" href="/contact/" data-track="cta_automation_other">Describe the problem<Icon name="arrowRight" /></a>
+        </div>
+        <div class="tile">
+          <Icon name="storefront" />
+          <h3>Selling online?</h3>
+          <p>{serviceById.store.name} ({serviceById.store.price}), online ordering and gift cards are on the e-commerce page, next to the online shop itself.</p>
+          <a class="text-link" href="/ecommerce/#extras">E-commerce services<Icon name="arrowRight" /></a>
         </div>
       </div>
     </div>
@@ -212,7 +223,7 @@ const data = {
           <p>Tell us what takes up your time. You’ll get a written plan and a fixed price within one business day, or an honest “this isn’t worth automating”.</p>
         </div>
         <div class="cta-actions">
-          <a class="button" href="/contact/" data-track="cta_automation">Get a Free Assessment</a>
+          <a class="button" href="/contact/?want=automation" data-track="cta_automation">Get a Free Quote</a>
           <a class="button secondary" href="/pricing/">See prices</a>
         </div>
       </div>
@@ -221,6 +232,7 @@ const data = {
 </Base>
 
 <style>
+  .more-note { margin-top: 24px; }
   .au-hero { padding-block: clamp(40px, 6vw, 80px) clamp(48px, 7vw, 88px); }
   .au-grid { display: grid; gap: 40px 64px; }
   @media (min-width: 1024px) { .au-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); align-items: center; } }

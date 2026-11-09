@@ -1,0 +1,656 @@
+---
+// Example store: Quillfern Candle Co., a made-up candle maker (data/demo-sites.ts). Shows a product grid with
+// collections and filters, a product page with scent notes, sizes and stock, and a cart that explains shipping and
+// pickup before checkout. Built as plain pages to show the design: there is no shop behind it. The cart lives only in
+// this page's memory, and checkout is switched off and says so, so nothing can be bought. Products, prices and the
+// brand story are invented for the demonstration.
+import DemoSite from "../../layouts/DemoSite.astro";
+
+const phone = "(507) 555-0178";
+const freeOver = 60;
+const shipFee = 8;
+
+type Size = { label: string; price: number; burn: string };
+type Product = { id: string; name: string; collection: "everyday" | "seasonal" | "gift"; notes: string[]; includes?: string[]; sizes: Size[]; stock: "in" | "out"; blurb: string; glass: string; label: string };
+const jarSizes: Size[] = [
+  { label: "8 oz", price: 22, burn: "about 45 hours" },
+  { label: "12 oz", price: 30, burn: "about 70 hours" },
+];
+const products: Product[] = [
+  { id: "cedar-smoke", name: "Cedar & Smoke", collection: "everyday", notes: ["Smoked birch", "Cedarwood", "Vanilla bean"], sizes: jarSizes, stock: "in", glass: "#5b4a42", label: "#eadcc5",
+    blurb: "Warm and woodsy, for the first cold evenings: like a cabin after the fire has burned down." },
+  { id: "linen-line", name: "Linen Line", collection: "everyday", notes: ["Lemon peel", "Line-dried cotton", "White musk"], sizes: jarSizes, stock: "in", glass: "#e4dccf", label: "#a9bfca",
+    blurb: "Clean and bright, like sheets brought in from the line on a breezy morning." },
+  { id: "prairie-rain", name: "Prairie Rain", collection: "everyday", notes: ["Petrichor", "Sage", "Vetiver"], sizes: jarSizes, stock: "in", glass: "#8fa38c", label: "#f2ead9",
+    blurb: "Green and earthy: the fields after a summer storm, with the windows open." },
+  { id: "honey-oat", name: "Honey & Oat", collection: "everyday", notes: ["Oat milk", "Wildflower honey", "Beeswax"], sizes: jarSizes, stock: "in", glass: "#d6a35a", label: "#fbf3e3",
+    blurb: "Soft and a little sweet, like warm oatmeal with honey on a slow Sunday." },
+  { id: "orchard-fig", name: "Orchard Fig", collection: "seasonal", notes: ["Pear", "Fig leaf", "Brown sugar"], sizes: jarSizes, stock: "in", glass: "#7a4f5a", label: "#f1dfd2",
+    blurb: "Ripe fruit and green leaves, for the weeks when the orchards are picked." },
+  { id: "winter-pine", name: "Winter Pine", collection: "seasonal", notes: ["Orange peel", "Balsam fir", "Clove"], sizes: jarSizes, stock: "out", glass: "#3f5a4b", label: "#efe4cf",
+    blurb: "A walk through snowy pines, then home to oranges studded with cloves." },
+  { id: "ember-clove", name: "Ember & Clove", collection: "seasonal", notes: ["Cinnamon bark", "Clove", "Amber"], sizes: jarSizes, stock: "in", glass: "#9a4b30", label: "#f6e7d4",
+    blurb: "Spiced and glowing, for long dinners and the darkest evenings of the year." },
+  { id: "little-trio", name: "The Little Trio", collection: "gift", notes: [], includes: ["Cedar & Smoke", "Linen Line", "Honey & Oat"], sizes: [{ label: "Three 4 oz candles", price: 36, burn: "about 25 hours each" }], stock: "in", glass: "#d6a35a", label: "#fbf3e3",
+    blurb: "Three small candles in a gift box with a handwritten card: an easy present, ready to give." },
+];
+const collections = [
+  { id: "all", name: "All" },
+  { id: "everyday", name: "Everyday" },
+  { id: "seasonal", name: "Seasonal" },
+  { id: "gift", name: "Gift sets" },
+];
+const kindName: Record<string, string> = { everyday: "Everyday candle", seasonal: "Seasonal candle", gift: "Gift set" };
+const count = (id: string) => (id === "all" ? products.length : products.filter((p) => p.collection === id).length);
+const featured = products[0];
+const stockText = (p: Product) => (p.stock === "in" ? "In stock, ready to ship or pick up" : "Sold out for now: the next batch is being poured");
+
+// The jars are drawn here as SVG (no photos, no outside requests), from the same shape at any size.
+const r = (n: number) => Math.round(n * 10) / 10;
+function jar(x: number, y: number, w: number, h: number, glass: string, label: string, lit = false) {
+  const cx = x + w / 2, rim = y + h * 0.12, wax = y + h * 0.19, wick = y + h * 0.1;
+  const lx = x + w * 0.16, ly = y + h * 0.44, lw = w * 0.68, lh = h * 0.36;
+  const ink = "#3b2b22";
+  const flame = (s: number, fill: string) => {
+    const fh = h * 0.17 * s, fw = w * 0.1 * s, top = wick - fh;
+    return `<path d="M${r(cx)} ${r(top)}C${r(cx + fw)} ${r(top + fh * 0.5)} ${r(cx + fw * 0.8)} ${r(wick)} ${r(cx)} ${r(wick)}C${r(cx - fw * 0.8)} ${r(wick)} ${r(cx - fw)} ${r(top + fh * 0.5)} ${r(cx)} ${r(top)}Z" fill="${fill}"/>`;
+  };
+  return [
+    `<ellipse cx="${r(cx)}" cy="${r(y + h)}" rx="${r(w * 0.56)}" ry="${r(Math.max(3, h * 0.04))}" fill="#2d221c" opacity=".1"/>`,
+    `<rect x="${r(x)}" y="${r(rim)}" width="${r(w)}" height="${r(h * 0.88)}" rx="${r(w * 0.16)}" fill="${glass}"/>`,
+    `<ellipse cx="${r(cx)}" cy="${r(wax)}" rx="${r(w * 0.42)}" ry="${r(h * 0.045)}" fill="#f6eddd"/>`,
+    `<rect x="${r(x + w * 0.07)}" y="${r(y + h * 0.26)}" width="${r(w * 0.06)}" height="${r(h * 0.6)}" rx="${r(w * 0.03)}" fill="#fff" opacity=".26"/>`,
+    `<rect x="${r(lx)}" y="${r(ly)}" width="${r(lw)}" height="${r(lh)}" rx="${r(w * 0.04)}" fill="${label}"/>`,
+    `<path d="M${r(cx)} ${r(ly + lh * 0.6)}V${r(ly + lh * 0.14)}M${r(cx)} ${r(ly + lh * 0.48)}l${r(-lw * 0.1)} ${r(-lh * 0.12)}M${r(cx)} ${r(ly + lh * 0.48)}l${r(lw * 0.1)} ${r(-lh * 0.12)}M${r(cx)} ${r(ly + lh * 0.32)}l${r(-lw * 0.07)} ${r(-lh * 0.1)}M${r(cx)} ${r(ly + lh * 0.32)}l${r(lw * 0.07)} ${r(-lh * 0.1)}" fill="none" stroke="${ink}" stroke-width="${r(Math.max(1.2, w * 0.018))}" stroke-linecap="round"/>`,
+    `<rect x="${r(cx - lw * 0.25)}" y="${r(ly + lh * 0.72)}" width="${r(lw * 0.5)}" height="${r(lh * 0.07)}" rx="1" fill="${ink}" opacity=".6"/>`,
+    `<rect x="${r(cx - lw * 0.16)}" y="${r(ly + lh * 0.85)}" width="${r(lw * 0.32)}" height="${r(lh * 0.05)}" rx="1" fill="${ink}" opacity=".35"/>`,
+    `<path d="M${r(cx)} ${r(wax)}V${r(wick)}" stroke="#3a2b22" stroke-width="${r(Math.max(1.4, w * 0.025))}" stroke-linecap="round"/>`,
+    lit ? `<g class="flame">${flame(1, "#f2a33a")}${flame(0.55, "#ffe3a3")}</g>` : "",
+  ].join("");
+}
+const cardArt = (p: Product) => {
+  const inner = p.includes
+    ? [jar(22, 64, 50, 76, "#5b4a42", "#eadcc5"), jar(75, 64, 50, 76, "#e4dccf", "#a9bfca"), jar(128, 64, 50, 76, "#d6a35a", "#fbf3e3")].join("")
+    : jar(60, 22, 80, 118, p.glass, p.label);
+  return `<svg viewBox="0 0 200 160" aria-hidden="true" focusable="false">${inner}</svg>`;
+};
+// a fern sprig beside the hero jars: leaflets along a curved stem
+const stem: [number, number][] = [[63, 300], [60, 283], [56, 266], [51, 250], [45, 235], [39, 222], [33, 211]];
+const fern = stem.map(([x, y], i) => {
+  const s = 1 - i * 0.09;
+  return `<ellipse cx="${x - 12 * s}" cy="${y - 5}" rx="${r(15 * s)}" ry="${r(5 * s)}" transform="rotate(-28 ${x - 12 * s} ${y - 5})" fill="#6f8a6a"/><ellipse cx="${x + 12 * s}" cy="${y - 8}" rx="${r(14 * s)}" ry="${r(5 * s)}" transform="rotate(32 ${x + 12 * s} ${y - 8})" fill="#7f9a78"/>`;
+}).join("");
+const heroArt = `<svg viewBox="16 56 488 300" role="img" aria-label="Three lit candles in glass jars on a wooden shelf, beside a fern sprig">
+  <circle cx="262" cy="200" r="132" fill="#f7d9a8" opacity=".5"/>
+  <path d="M66 318C60 282 50 248 30 206" fill="none" stroke="#5f7a5b" stroke-width="3" stroke-linecap="round"/>${fern}
+  ${jar(92, 196, 98, 122, "#d6a35a", "#fbf3e3", true)}${jar(198, 150, 128, 168, "#5b4a42", "#eadcc5", true)}${jar(336, 186, 98, 132, "#8fa38c", "#f2ead9", true)}
+  <rect x="40" y="318" width="440" height="14" rx="7" fill="#c79a6b"/><rect x="62" y="332" width="396" height="8" rx="4" fill="#2d221c" opacity=".06"/>
+</svg>`;
+
+const questions = [
+  ["How long does shipping take?", `Orders leave our studio within 2 business days and usually arrive 3 to 5 days later. Shipping is $${shipFee} anywhere in the US, and free on orders over $${freeOver}.`],
+  ["How does local pickup work?", "Choose pickup in the cart and we’ll email you when your order is ready, usually the next business day. Pickup is always free."],
+  ["How do I get the best burn?", "Let the first burn melt the wax all the way to the edge of the jar, about 2 to 3 hours, and trim the wick to a quarter inch before each light."],
+  ["Can I return a candle?", "Unused candles can be sent back within 30 days. If a jar arrives broken, send us a photo and we’ll send a new one."],
+];
+const data = JSON.stringify(products.map(({ glass, label, ...p }) => p));
+---
+<DemoSite slug="quillfern-candles" theme="#2d221c" description="Quillfern Candle Co. is a made-up candle maker: a demonstration online store by Nuxy Automation. Nothing can be bought.">
+  <header class="top">
+    <div class="in top-in">
+      <a class="logo" href="#home">
+        <svg viewBox="0 0 36 36" width="34" height="34" aria-hidden="true"><rect width="36" height="36" rx="10" fill="#2d221c" /><path d="M12 15h12v11a3 3 0 0 1-3 3h-6a3 3 0 0 1-3-3Z" fill="#eadcc5" /><path d="M18 15v-3" stroke="#eadcc5" stroke-width="1.6" stroke-linecap="round" /><path d="M18 5.5c1.6 1.7 2.2 3 2.2 4a2.2 2.2 0 0 1-4.4 0c0-1 .6-2.3 2.2-4Z" fill="#f2a33a" /></svg>
+        <span><b>Quillfern</b> <small>Candle Co.</small></span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="#shop">Shop</a>
+        <a href="#story">Our story</a>
+        <a href="#custom">Custom orders</a>
+        <a href="#faq">Questions</a>
+      </nav>
+      <a class="cart-link" href="#cart">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 8h14l-1.2 11.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9Z M9 8V6.5a3 3 0 0 1 6 0V8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+        <span>Cart</span> <span class="count" data-cart-count>0</span><span class="sr-only"> items</span>
+      </a>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="in hero-in">
+        <div class="hero-copy">
+          <p class="kicker">Small-batch soy candles</p>
+          <h1>Candles poured by hand, for slow evenings at home.</h1>
+          <p class="hero-lead">Soy wax, cotton wicks and scents built from real notes, poured in small batches. Shipped anywhere in the US, or picked up free from our studio.</p>
+          <div class="hero-btns">
+            <a class="btn" href="#shop">Shop candles</a>
+            <a class="btn soft" href="#custom">Custom orders</a>
+          </div>
+          <ul class="hero-facts" role="list">
+            <li>Free shipping over ${freeOver}</li>
+            <li>Free local pickup</li>
+            <li>Reusable glass jars</li>
+          </ul>
+        </div>
+        <div class="hero-art"><Fragment set:html={heroArt} /></div>
+      </div>
+    </section>
+
+    <section class="block" id="shop" aria-labelledby="shop-h">
+      <div class="in">
+        <div class="shop-head">
+          <div>
+            <p class="kicker">Shop</p>
+            <h2 id="shop-h">All candles</h2>
+          </div>
+          <p class="shown" data-shown aria-live="polite">{products.length} products</p>
+        </div>
+        <form class="filters" method="dialog" data-filters aria-label="Filter and sort" hidden>
+          <fieldset class="chips">
+            <legend class="sr-only">Collection</legend>
+            {collections.map((c, i) => (
+              <label class="chip"><input type="radio" name="collection" value={c.id} checked={i === 0} /><span>{c.name} <small>{count(c.id)}</small></span></label>
+            ))}
+          </fieldset>
+          <div class="filter-row">
+            <label class="check"><input type="checkbox" name="instock" /><span>In stock only</span></label>
+            <label class="sort">Sort
+              <select name="sort">
+                <option value="featured">Featured</option>
+                <option value="low">Price: low to high</option>
+                <option value="high">Price: high to low</option>
+              </select>
+            </label>
+          </div>
+        </form>
+        <ul class="grid" role="list" data-grid data-products={data}>
+          {products.map((p, i) => (
+            <li class="card" data-card={p.id} data-collection={p.collection} data-stock={p.stock} data-price={p.sizes[0].price} data-order={i}>
+              <span class="card-art"><Fragment set:html={cardArt(p)} />{p.stock === "out" && <span class="badge">Sold out</span>}</span>
+              <div class="card-body">
+                <span class="card-kind">{kindName[p.collection]}</span>
+                <h3 class="card-name"><a href="#product" data-pick={p.id}>{p.name}</a></h3>
+                <span class="card-notes">{(p.includes ?? p.notes).join(" · ")}</span>
+                <span class="card-price">{p.sizes.length > 1 ? `From $${p.sizes[0].price}` : `$${p.sizes[0].price}`}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div class="empty" data-empty hidden>
+          <p>Nothing matches those filters.</p>
+          <button class="btn soft small" type="button">Show everything</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="block alt" id="product" aria-labelledby="product-h">
+      <div class="in product-in" data-detail={featured.id}>
+        <div class="product-art" data-p-art><Fragment set:html={cardArt(featured)} /></div>
+        <div class="product-copy">
+          <p class="kicker" data-p-kicker>{kindName[featured.collection]}</p>
+          <h2 id="product-h" tabindex="-1" data-p-name>{featured.name}</h2>
+          <p class="product-blurb" data-p-blurb>{featured.blurb}</p>
+          <dl class="notes" data-p-notes>
+            {featured.includes
+              ? <div><dt>Inside</dt><dd>{featured.includes.join(", ")}</dd></div>
+              : ["Top", "Heart", "Base"].map((t, i) => <div><dt>{t}</dt><dd>{featured.notes[i]}</dd></div>)}
+          </dl>
+          <form class="buy" method="dialog" data-buy>
+            <fieldset>
+              <legend>Size</legend>
+              <div class="sizes" data-p-sizes>
+                {featured.sizes.map((s, i) => (
+                  <label class="size"><input type="radio" name="size" value={i} checked={i === 0} /><span class="size-name"><b>{s.label}</b><small>{s.burn}</small></span><span class="size-price">${s.price}</span></label>
+                ))}
+              </div>
+            </fieldset>
+            <div class="buy-row">
+              <label class="qty">Quantity<input type="number" name="qty" value="1" min="1" max="9" inputmode="numeric" /></label>
+              <button class="btn" type="submit" data-add disabled={featured.stock !== "in"}>{featured.stock === "in" ? "Add to cart" : "Sold out"}</button>
+            </div>
+            <p class:list={["stock", { out: featured.stock !== "in" }]} data-p-stock>{stockText(featured)}</p>
+            <p class="added"><span role="status" data-added></span> <a href="#cart" data-added-link hidden>View cart</a></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="cart" aria-labelledby="cart-h">
+      <div class="in cart-in">
+        <div class="cart-main">
+          <p class="kicker">Your cart</p>
+          <h2 id="cart-h">Cart</h2>
+          <p class="cart-empty" data-cart-empty>Your cart is empty. <a href="#shop">Browse the candles</a></p>
+          <ul class="lines" role="list" data-cart-lines hidden></ul>
+          <div class="ways">
+            <h3>How you’ll get it</h3>
+            <p><b>Shipping:</b> ${shipFee} anywhere in the US, free on orders over ${freeOver}. Orders leave the studio within 2 business days.</p>
+            <p><b>Local pickup:</b> free. We email you when it’s ready, usually the next business day.</p>
+          </div>
+        </div>
+        <aside class="summary" aria-label="Order summary">
+          <form method="dialog" data-delivery>
+            <fieldset>
+              <legend>Delivery</legend>
+              <label class="way"><input type="radio" name="how" value="ship" checked /><span><b>Ship to me</b><small>${shipFee}, free over ${freeOver}</small></span></label>
+              <label class="way"><input type="radio" name="how" value="pickup" /><span><b>Pick up at the studio</b><small>Free, usually next business day</small></span></label>
+            </fieldset>
+          </form>
+          <dl class="totals">
+            <div><dt>Subtotal</dt><dd data-subtotal>$0</dd></div>
+            <div><dt>Delivery</dt><dd data-delivery-cost>Free</dd></div>
+            <div class="total"><dt>Total</dt><dd data-total>$0</dd></div>
+          </dl>
+          <p class="ship-note" data-ship-note hidden></p>
+          <p class="tax">Sales tax, if any, is added at checkout.</p>
+          <div class="checkout-off" role="note">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="1.8" /></svg>
+            <p><strong>Checkout is switched off.</strong> This is a demonstration store for a made-up business: nothing can be bought, and no payment details are ever asked for.</p>
+          </div>
+          <button class="btn off wide" type="button" data-demo-action="Demo: checkout is switched off, so nothing can be bought. On a real store, this button opens the platform’s secure checkout.">Checkout switched off (demo)</button>
+        </aside>
+      </div>
+    </section>
+
+    <section class="block alt" id="story" aria-labelledby="story-h">
+      <div class="in story-in">
+        <div>
+          <p class="kicker">Our story</p>
+          <h2 id="story-h">Small batches, poured by hand</h2>
+          <p class="sub">Quillfern started at a kitchen table with one scent and a market stall. Every candle is still poured by hand, 24 at a time, and cured for two weeks before it’s sold.</p>
+        </div>
+        <ul class="points" role="list">
+          <li><b>Soy wax and cotton wicks</b><span>No paraffin, and a clean, even burn.</span></li>
+          <li><b>Cured for two weeks</b><span>So the scent fills the room, not just the jar.</span></li>
+          <li><b>Jars worth keeping</b><span>Wash one out for a plant, pens or a refill.</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="custom" aria-labelledby="custom-h">
+      <div class="in custom-in">
+        <div>
+          <p class="kicker">Custom orders</p>
+          <h2 id="custom-h">Favors, gifts and your own scent</h2>
+          <p class="sub">Wedding favors, client gifts or a scent made for your shop. Tell us what you have in mind and we’ll reply with options and a price.</p>
+        </div>
+        <div class="form-card">
+          <form method="dialog" data-demo-form="qf-sent" class="form">
+            <div class="row2">
+              <label>Your name<input name="name" autocomplete="name" required /></label>
+              <label>Email<input type="email" name="email" autocomplete="email" required /></label>
+            </div>
+            <label>What’s it for?
+              <select name="occasion" required>
+                <option value="">Choose one</option>
+                <option>Wedding or event favors</option>
+                <option>Gifts for clients or staff</option>
+                <option>A scent for my shop</option>
+                <option>Something else</option>
+              </select>
+            </label>
+            <label><span>About how many? <span class="opt">(optional)</span></span><input name="howmany" inputmode="numeric" /></label>
+            <label><span>Tell us more <span class="opt">(optional)</span></span><textarea name="notes" rows="3" placeholder="Date, colors, scents you like…"></textarea></label>
+            <button class="btn wide" type="submit">Send my request</button>
+            <p class="demo-hint">Demo only: this form sends nothing.</p>
+          </form>
+          <div class="demo-sent" id="qf-sent" tabindex="-1" hidden>
+            <strong>Demo only — nothing was sent.</strong>
+            <p>On a real Quillfern store, this request would reach the studio’s inbox, and you’d get a reply with options and a price.</p>
+            <button class="btn soft" type="button" data-demo-again>Start again</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block alt" id="faq" aria-labelledby="faq-h">
+      <div class="in faq-in">
+        <h2 id="faq-h">Questions</h2>
+        <div class="faq">
+          {questions.map(([q, a]) => (
+            <details>
+              <summary>{q}</summary>
+              <p>{a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="in foot-in">
+      <div>
+        <p class="foot-name">Quillfern Candle Co.</p>
+        <p>Studio pickup Tue–Sat, 10 am – 5 pm · <a href="#call" data-demo-action={`Demo: on a real site this button calls the studio at ${phone}.`}>{phone}</a> · hello@quillfern.example</p>
+      </div>
+      <p>Quillfern Candle Co. is a fictional business. This is a demonstration store made by <a href="/ecommerce/" target="_top">Nuxy Automation</a>.</p>
+    </div>
+  </footer>
+</DemoSite>
+
+<style>
+  :global(body) { background: #fbf7f1; color: #4d3f36; }
+  .in { width: 100%; max-width: 1120px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
+  h1, h2, h3, .logo b { color: #2d221c; font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; letter-spacing: -0.01em; text-wrap: balance; }
+  h2 { margin-top: 6px; font-size: clamp(1.75rem, 1.3rem + 1.8vw, 2.5rem); line-height: 1.15; font-weight: 600; }
+  .kicker { color: #a8502f; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .sub { margin-top: 12px; max-width: 52ch; }
+  .alt { background: #f3eadf; }
+  .block { padding-block: clamp(56px, 8vw, 96px); }
+
+  .btn { white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; border: 0; border-radius: 8px; background: #a8502f; color: #fff; font-weight: 650; text-decoration: none; transition: background 150ms ease-out; }
+  .btn:hover { background: #8a3f23; }
+  .btn.soft { background: #f3e1d4; color: #7a361d; }
+  .btn.soft:hover { background: #ecd2c0; }
+  .btn.small { min-height: 44px; padding: 0 18px; font-size: 0.9375rem; }
+  .btn.wide { width: 100%; }
+  .btn:disabled { background: #d9cbbd; color: #5c4c41; cursor: not-allowed; }
+  /* the switched-off checkout: outlined and muted, so it never reads as a live "pay" button */
+  .btn.off { background: transparent; color: #5c4c41; border: 1.5px dashed #b9a594; white-space: normal; text-align: center; }
+  .btn.off:hover { background: #f3eadf; }
+
+  .top { position: sticky; top: 0; z-index: 20; background: rgba(251, 247, 241, 0.97); border-bottom: 1px solid #e6d9c8; }
+  .top-in { display: flex; align-items: center; gap: 20px; min-height: 66px; }
+  .logo { display: flex; align-items: center; gap: 10px; margin-right: auto; color: #2d221c; text-decoration: none; }
+  .logo b { display: block; font-size: 1.25rem; font-weight: 600; line-height: 1.05; }
+  .logo small { display: block; color: #6e5d51; font-size: 0.75rem; font-weight: 500; }
+  .nav { display: none; gap: 24px; }
+  .nav a { color: #4d3f36; font-size: 0.9375rem; text-decoration: none; }
+  .nav a:hover { color: #2d221c; text-decoration: underline; text-underline-offset: 4px; }
+  @media (min-width: 820px) { .nav { display: flex; } }
+  .cart-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1.5px solid #d8c6b3; border-radius: 8px; color: #2d221c; font-weight: 650; font-size: 0.9375rem; text-decoration: none; }
+  .cart-link:hover { border-color: #a8502f; }
+  .count { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #2d221c; color: #fbf7f1; font-size: 0.75rem; font-weight: 700; }
+
+  .hero { padding-block: clamp(36px, 6vw, 72px) clamp(48px, 7vw, 88px); }
+  .hero-in { display: grid; gap: 32px; align-items: center; }
+  @media (min-width: 900px) { .hero-in { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; } }
+  .hero h1 { margin-top: 12px; font-size: clamp(2.25rem, 1.4rem + 3.2vw, 3.5rem); line-height: 1.06; font-weight: 600; max-width: 16ch; }
+  .hero-lead { margin-top: 18px; font-size: 1.125rem; max-width: 46ch; }
+  .hero-btns { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  @media (max-width: 479px) { .hero-btns .btn { flex: 1 1 100%; } }
+  .hero-facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 24px; color: #6e5d51; font-size: 0.9375rem; font-weight: 600; }
+  .hero-facts li { display: inline-flex; align-items: center; gap: 8px; }
+  .hero-facts li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #a8502f; }
+  .hero-art { border-radius: 20px; background: #f1e3d0; padding: clamp(12px, 3vw, 28px); }
+  .hero-art :global(svg) { width: 100%; height: auto; }
+  .hero-art :global(.flame) { transform-box: fill-box; transform-origin: 50% 100%; animation: flicker 2.6s ease-in-out infinite alternate; }
+  @keyframes flicker { 0% { transform: scale(1, 1); } 40% { transform: scale(0.96, 1.05); } 70% { transform: scale(1.03, 0.97); } 100% { transform: scale(0.98, 1.03); } }
+
+  .shop-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .shown { color: #6e5d51; font-size: 0.9375rem; }
+  .filters { display: grid; gap: 14px; margin-top: 24px; padding-block: 16px; border-block: 1px solid #e6d9c8; }
+  @media (min-width: 820px) { .filters { grid-template-columns: 1fr auto; align-items: center; } }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; display: inline-flex; }
+  .chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .chip span { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 1.5px solid #d8c6b3; border-radius: 999px; background: #fff; color: #4d3f36; font-size: 0.9375rem; font-weight: 600; }
+  .chip small { color: #6e5d51; font-weight: 500; }
+  .chip input:checked + span { border-color: #2d221c; background: #2d221c; color: #fbf7f1; }
+  .chip input:checked + span small { color: #e2d3c3; }
+  .chip input:focus-visible + span { outline: 3px solid #2563eb; outline-offset: 2px; }
+  .filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  .check { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 0.9375rem; font-weight: 600; color: #2d221c; cursor: pointer; }
+  .check input { width: 18px; height: 18px; accent-color: #a8502f; }
+  .sort { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 600; color: #2d221c; }
+  .sort select { min-height: 44px; padding: 0 10px; border: 1.5px solid #d8c6b3; border-radius: 8px; background: #fff; font-weight: 500; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
+  @media (min-width: 760px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
+  @media (min-width: 1040px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .card { position: relative; display: flex; flex-direction: column; border-radius: 14px; background: #fff; border: 1px solid #ebdfd1; overflow: hidden; transition: border-color 150ms ease-out, transform 200ms ease-out; }
+  .card:hover { border-color: #c9b29c; transform: translateY(-2px); }
+  .card:focus-within { border-color: #2563eb; }
+  .card-art { position: relative; display: block; background: #f3eadf; }
+  .card-art :global(svg) { width: 100%; height: auto; }
+  .badge { position: absolute; top: 10px; left: 10px; padding: 3px 10px; border-radius: 999px; background: #2d221c; color: #fbf7f1; font-size: 0.75rem; font-weight: 700; }
+  .card-body { display: flex; flex-direction: column; gap: 4px; padding: 14px 14px 16px; flex: 1; }
+  .card-kind { color: #6e5d51; font-size: 0.75rem; font-weight: 600; }
+  .card-name { font-size: 1.125rem; font-weight: 600; line-height: 1.2; }
+  .card-name a { color: inherit; text-decoration: none; }
+  .card-name a::after { content: ""; position: absolute; inset: 0; }
+  .card-name a:focus-visible { outline: none; }
+  .card-notes { color: #4d3f36; font-size: 0.8125rem; line-height: 1.4; flex: 1; }
+  .card-price { margin-top: 6px; color: #2d221c; font-weight: 700; }
+  .empty { display: grid; justify-items: start; gap: 12px; margin-top: 24px; }
+
+  .product-in { display: grid; gap: 28px; align-items: start; }
+  @media (min-width: 860px) { .product-in { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; } }
+  .product-art { border-radius: 18px; background: #fbf7f1; border: 1px solid #e6d9c8; }
+  .product-art :global(svg) { width: 100%; height: auto; }
+  .product-copy h2:focus { outline: none; }
+  .product-blurb { margin-top: 12px; font-size: 1.0625rem; max-width: 48ch; }
+  .notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 22px; padding-block: 16px; border-block: 1px solid #e0d1bf; }
+  /* the product view is redrawn by the script, so its insides are styled with :global (no Astro scope class) */
+  .notes :global(div:only-child) { grid-column: 1 / -1; }
+  .notes :global(dt) { color: #6e5d51; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .notes :global(dd) { margin: 4px 0 0; color: #2d221c; font-weight: 600; }
+  .buy { display: grid; gap: 18px; margin-top: 22px; }
+  .buy legend { margin-bottom: 8px; color: #2d221c; font-weight: 650; }
+  .sizes { display: grid; gap: 10px; }
+  .sizes :global(.size) { position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 14px; border: 1.5px solid #d8c6b3; border-radius: 10px; background: #fff; cursor: pointer; }
+  .sizes :global(.size input) { width: 18px; height: 18px; margin: 0; accent-color: #a8502f; }
+  .sizes :global(.size:has(input:checked)) { border-color: #a8502f; box-shadow: 0 0 0 1px #a8502f; }
+  .sizes :global(.size-name) { display: grid; flex: 1; }
+  .sizes :global(.size-name b) { color: #2d221c; }
+  .sizes :global(.size-name small) { color: #6e5d51; font-size: 0.8125rem; }
+  .sizes :global(.size-price) { color: #2d221c; font-weight: 700; }
+  .buy-row { display: flex; align-items: end; gap: 12px; }
+  .buy-row .btn { flex: 1; }
+  .qty { display: grid; gap: 6px; color: #2d221c; font-size: 0.875rem; font-weight: 650; }
+  .qty input { width: 88px; min-height: 48px; padding: 0 12px; border: 1.5px solid #d8c6b3; border-radius: 8px; background: #fff; }
+  .stock { display: flex; align-items: center; gap: 8px; color: #2f5a3f; font-size: 0.9375rem; font-weight: 600; }
+  .stock::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .stock.out { color: #8a3f23; }
+  .added { min-height: 1.5em; color: #2d221c; font-weight: 600; }
+  .added a { color: #a8502f; }
+
+  .cart-in { display: grid; gap: 28px; align-items: start; }
+  @media (min-width: 900px) { .cart-in { grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 48px; } }
+  .cart-empty { margin-top: 16px; }
+  .cart-empty a, .ways a { color: #a8502f; }
+  .lines { margin-top: 16px; border-top: 1px solid #e6d9c8; }
+  .lines :global(li) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding-block: 14px; border-bottom: 1px solid #e6d9c8; }
+  .lines :global(.line-name) { color: #2d221c; font-weight: 650; }
+  .lines :global(.line-meta) { color: #6e5d51; font-size: 0.875rem; }
+  .lines :global(.line-side) { display: grid; }
+  .lines :global(.line-price) { color: #2d221c; font-weight: 700; text-align: right; }
+  .lines :global(.line-remove) { justify-self: end; min-height: 44px; padding: 0 4px; border: 0; background: none; color: #8a3f23; font-size: 0.875rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+  .ways { display: grid; gap: 8px; margin-top: 28px; padding: 18px 20px; border-radius: 12px; background: #f3eadf; font-size: 0.9375rem; }
+  .ways h3 { font-size: 1.125rem; font-weight: 600; }
+  .ways b { color: #2d221c; }
+  .summary { display: grid; gap: 16px; padding: 22px; border: 1px solid #e6d9c8; border-radius: 14px; background: #fff; }
+  .summary legend { margin-bottom: 8px; color: #2d221c; font-weight: 650; }
+  .summary fieldset { display: grid; gap: 8px; }
+  .way { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 12px; border: 1.5px solid #e0d1bf; border-radius: 10px; cursor: pointer; }
+  .way:has(input:checked) { border-color: #a8502f; }
+  .way input { width: 18px; height: 18px; margin: 0; accent-color: #a8502f; }
+  .way span { display: grid; }
+  .way b { color: #2d221c; font-size: 0.9375rem; }
+  .way small { color: #6e5d51; font-size: 0.8125rem; }
+  .totals { display: grid; gap: 6px; }
+  .totals div { display: flex; justify-content: space-between; gap: 12px; }
+  .totals dd { margin: 0; color: #2d221c; font-weight: 600; }
+  .totals .total { padding-top: 10px; border-top: 1px solid #e6d9c8; color: #2d221c; font-size: 1.125rem; font-weight: 700; }
+  .ship-note { color: #2f5a3f; font-size: 0.875rem; font-weight: 600; }
+  .tax { color: #6e5d51; font-size: 0.8125rem; }
+  .checkout-off { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; background: #fbf1e3; color: #5c4c41; font-size: 0.875rem; }
+  .checkout-off svg { flex: none; color: #8a3f23; }
+  .checkout-off strong { color: #2d221c; }
+
+  .story-in { display: grid; gap: 28px; }
+  @media (min-width: 860px) { .story-in { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: center; } }
+  .points { display: grid; gap: 12px; }
+  .points li { display: grid; gap: 2px; padding: 16px 18px; border-radius: 12px; background: #fbf7f1; }
+  .points b { color: #2d221c; }
+
+  .custom-in { display: grid; gap: 28px; align-items: start; }
+  @media (min-width: 860px) { .custom-in { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 56px; } }
+  .form-card { padding: clamp(20px, 3vw, 28px); border: 1px solid #e6d9c8; border-radius: 14px; background: #fff; }
+  .form { display: grid; gap: 16px; }
+  .form > label, .row2 label { display: grid; gap: 6px; color: #2d221c; font-weight: 650; font-size: 0.9375rem; }
+  .row2 { display: grid; gap: 16px; }
+  @media (min-width: 560px) { .row2 { grid-template-columns: 1fr 1fr; } }
+  .opt { color: #6e5d51; font-weight: 500; }
+  .form input, .form select, .form textarea { width: 100%; min-height: 46px; padding: 10px 12px; border: 1.5px solid #d8c6b3; border-radius: 8px; background: #fff; color: #2d221c; font-weight: 400; }
+  .form textarea { resize: vertical; }
+  .form input:focus, .form select:focus, .form textarea:focus { border-color: #a8502f; outline: 3px solid rgba(168, 80, 47, 0.25); outline-offset: 0; }
+  .demo-hint { color: #6e5d51; font-size: 0.8125rem; text-align: center; }
+  .form-card :global(.demo-sent) { color: #2d221c; }
+  .form-card :global(.demo-sent p) { color: #4d3f36; }
+  .form-card :global(.demo-sent .btn) { justify-self: start; }
+
+  .faq-in { max-width: 760px; }
+  .faq { margin-top: 20px; border-top: 1px solid #e0d1bf; }
+  .faq details { border-bottom: 1px solid #e0d1bf; }
+  .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding-block: 12px; color: #2d221c; font-weight: 650; cursor: pointer; list-style: none; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #f3e1d4; color: #8a3f23; font-size: 1.25rem; line-height: 1; transition: transform 160ms ease-out; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details p { padding-bottom: 18px; max-width: 62ch; }
+
+  .foot { padding-block: 36px; background: #2d221c; color: #e2d3c3; font-size: 0.9375rem; }
+  .foot-in { display: grid; gap: 16px; }
+  @media (min-width: 760px) { .foot-in { grid-template-columns: 1fr 1fr; align-items: end; } }
+  .foot-name { color: #fff; font-weight: 700; }
+  .foot a { color: #fff; }
+  @media (prefers-reduced-motion: reduce) { .card, .card:hover { transition: none; transform: none; } }
+</style>
+
+<script>
+  // The store's behaviour, all inside this page: filters and sorting, the product view, and a cart kept only in
+  // memory. Nothing is saved or sent, and checkout is a demo button (DemoSite.astro shows its note).
+  type Size = { label: string; price: number; burn: string };
+  type Product = { id: string; name: string; collection: string; notes: string[]; includes?: string[]; sizes: Size[]; stock: "in" | "out"; blurb: string };
+  const products: Product[] = JSON.parse(document.querySelector<HTMLElement>("[data-products]")!.dataset.products!);
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const kindName: Record<string, string> = { everyday: "Everyday candle", seasonal: "Seasonal candle", gift: "Gift set" };
+  const money = (n: number) => `$${n}`;
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // filters and sorting (the bar stays hidden without JavaScript, when every product simply shows)
+  const filters = document.querySelector<HTMLFormElement>("[data-filters]")!;
+  const grid = document.querySelector<HTMLElement>("[data-grid]")!;
+  const cards = [...grid.querySelectorAll<HTMLElement>("[data-card]")];
+  const shown = document.querySelector<HTMLElement>("[data-shown]")!;
+  const empty = document.querySelector<HTMLElement>("[data-empty]")!;
+  const apply = () => {
+    const f = new FormData(filters);
+    const col = String(f.get("collection") ?? "all"), inStock = f.get("instock") !== null, sort = String(f.get("sort") ?? "featured");
+    const num = (c: HTMLElement, k: string) => Number(c.dataset[k]);
+    const sorted = [...cards].sort((a, b) => (sort === "featured" ? 0 : (sort === "low" ? 1 : -1) * (num(a, "price") - num(b, "price"))) || num(a, "order") - num(b, "order"));
+    let n = 0;
+    for (const c of sorted) {
+      const ok = (col === "all" || c.dataset.collection === col) && (!inStock || c.dataset.stock === "in");
+      c.hidden = !ok;
+      if (ok) n++;
+      grid.append(c);
+    }
+    shown.textContent = n === cards.length ? `${n} products` : `Showing ${n} of ${cards.length} products`;
+    empty.hidden = n > 0;
+  };
+  filters.hidden = false;
+  filters.addEventListener("change", apply);
+  empty.querySelector("button")!.addEventListener("click", () => { filters.reset(); apply(); });
+
+  // the product view
+  const detail = document.querySelector<HTMLElement>("[data-detail]")!;
+  const buy = detail.querySelector<HTMLFormElement>("[data-buy]")!;
+  const add = buy.querySelector<HTMLButtonElement>("[data-add]")!;
+  const added = buy.querySelector<HTMLElement>("[data-added]")!;
+  const addedLink = buy.querySelector<HTMLElement>("[data-added-link]")!;
+  const heading = detail.querySelector<HTMLElement>("[data-p-name]")!;
+  const part = (k: string) => detail.querySelector<HTMLElement>(`[data-p-${k}]`)!;
+  let current = byId.get(detail.dataset.detail!)!;
+  const show = (p: Product) => {
+    current = p;
+    detail.dataset.detail = p.id;
+    part("art").replaceChildren(document.querySelector(`[data-card="${p.id}"] svg`)!.cloneNode(true));
+    part("kicker").textContent = kindName[p.collection];
+    heading.textContent = p.name;
+    part("blurb").textContent = p.blurb;
+    const rows = p.includes ? [["Inside", p.includes.join(", ")]] : ["Top", "Heart", "Base"].map((t, i) => [t, p.notes[i]]);
+    part("notes").replaceChildren(...rows.map(([t, d]) => { const row = el("div"); row.append(el("dt", "", t), el("dd", "", d)); return row; }));
+    part("sizes").replaceChildren(...p.sizes.map((s, i) => {
+      const label = el("label", "size"), input = el("input"), name = el("span", "size-name");
+      Object.assign(input, { type: "radio", name: "size", value: String(i), checked: i === 0 });
+      name.append(el("b", "", s.label), el("small", "", s.burn));
+      label.append(input, name, el("span", "size-price", money(s.price)));
+      return label;
+    }));
+    const inStock = p.stock === "in";
+    add.disabled = !inStock;
+    add.textContent = inStock ? "Add to cart" : "Sold out";
+    const stock = part("stock");
+    stock.textContent = inStock ? "In stock, ready to ship or pick up" : "Sold out for now: the next batch is being poured";
+    stock.classList.toggle("out", !inStock);
+    added.textContent = "";
+    addedLink.hidden = true;
+  };
+  for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-pick]")) {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      show(byId.get(a.dataset.pick!)!);
+      detail.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+      heading.focus({ preventScroll: true });
+    });
+  }
+
+  // the cart, in memory only
+  type Line = { id: string; size: number; qty: number };
+  const cart: Line[] = [];
+  const freeOver = 60, shipFee = 8;
+  const lines = document.querySelector<HTMLElement>("[data-cart-lines]")!;
+  const cartEmpty = document.querySelector<HTMLElement>("[data-cart-empty]")!;
+  const delivery = document.querySelector<HTMLFormElement>("[data-delivery]")!;
+  const out = (k: string) => document.querySelector<HTMLElement>(`[data-${k}]`)!;
+  const render = () => {
+    const sub = cart.reduce((s, l) => s + byId.get(l.id)!.sizes[l.size].price * l.qty, 0);
+    const items = cart.reduce((s, l) => s + l.qty, 0);
+    for (const c of document.querySelectorAll("[data-cart-count]")) c.textContent = String(items);
+    lines.replaceChildren(...cart.map((l, i) => {
+      const p = byId.get(l.id)!, s = p.sizes[l.size];
+      const li = el("li"), info = el("div"), side = el("div", "line-side");
+      info.append(el("p", "line-name", p.name), el("p", "line-meta", `${s.label} · ${money(s.price)} × ${l.qty}`));
+      const remove = el("button", "line-remove", "Remove");
+      remove.type = "button";
+      remove.setAttribute("aria-label", `Remove ${p.name}, ${s.label}`);
+      remove.addEventListener("click", () => { cart.splice(i, 1); render(); cartEmpty.querySelector("a")?.focus(); });
+      side.append(el("p", "line-price", money(s.price * l.qty)), remove);
+      li.append(info, side);
+      return li;
+    }));
+    lines.hidden = cart.length === 0;
+    cartEmpty.hidden = cart.length > 0;
+    const ship = new FormData(delivery).get("how") === "ship";
+    const fee = ship && sub > 0 && sub < freeOver ? shipFee : 0;
+    out("subtotal").textContent = money(sub);
+    out("delivery-cost").textContent = fee ? money(fee) : ship ? "Free" : "Free (pickup)";
+    out("total").textContent = money(sub + fee);
+    const note = out("ship-note");
+    note.hidden = !(ship && sub > 0);
+    note.textContent = sub >= freeOver ? "Your order ships free." : `Add ${money(freeOver - sub)} more for free shipping.`;
+  };
+  delivery.addEventListener("change", render);
+  buy.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (current.stock !== "in") return;
+    const f = new FormData(buy);
+    const size = Number(f.get("size") ?? 0);
+    const qty = Math.min(9, Math.max(1, Math.round(Number(f.get("qty"))) || 1));
+    const line = cart.find((l) => l.id === current.id && l.size === size);
+    if (line) line.qty = Math.min(9, line.qty + qty);
+    else cart.push({ id: current.id, size, qty });
+    render();
+    added.textContent = `Added to your cart: ${current.name}, ${current.sizes[size].label} × ${qty}.`;
+    addedLink.hidden = false;
+  });
+  render();
+</script>

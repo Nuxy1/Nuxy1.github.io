@@ -7,10 +7,11 @@
 import Icon from "./Icon.astro";
 import type { Service } from "../data/services";
 
-interface Props { service: Service; compact?: boolean; level?: "h3" | "h4"; anchor?: boolean; shownAbove?: string }
-const { service: s, compact = false, level = "h3", anchor = !compact, shownAbove } = Astro.props;
+interface Props { service: Service; compact?: boolean; level?: "h3" | "h4"; anchor?: boolean; shownAbove?: string; want?: string }
+const { service: s, compact = false, level = "h3", anchor = !compact, shownAbove, want } = Astro.props;
 const H = level;
-const ask = `/contact/?service=${s.id}`;
+// (`want` overrides the quote form's first choice: the "Full rebuild" card is the New website service, asked as a redesign)
+const ask = `/contact/?service=${s.id}${want ? `&want=${want}` : ""}`;
 ---
 <article class="svc" id={anchor ? s.id : undefined} data-fits={s.fits} data-search={compact ? undefined : `${s.name} ${s.fixes} ${s.text} ${s.who}`.toLowerCase()}>
   <div class="svc-top">

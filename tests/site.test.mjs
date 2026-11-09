@@ -44,9 +44,9 @@ const indexable = [...pages.keys()].filter((u) => !expectedNoindex.has(u));
 const legacy = JSON.parse(first(pages.get("/"), /const legacy = (\{[^;]*\});/));
 
 test("the build has every page, and the made-up data matches the pages", () => {
-  assert.equal(pages.size, 29, `pages: ${[...pages.keys()].join(" ")}`);
+  assert.equal(pages.size, 33, `pages: ${[...pages.keys()].join(" ")}`);
   for (const u of ["/", "/websites/", "/get-a-website/", "/automation/", "/solutions/", "/pricing/", "/about/",
-    "/contact/", "/contact/thanks/", "/demos/", "/demo/", "/policies/", "/docs/", "/404.html"]) {
+    "/contact/", "/contact/thanks/", "/demos/", "/demo/", "/policies/", "/docs/", "/404.html", "/ecommerce/", "/portfolio/"]) {
     assert.ok(pages.has(u), `missing ${u}`);
   }
   for (const d of demoSites) assert.ok(pages.has(`/examples/${d.slug}/`) && pages.has(`/example-sites/${d.slug}/`), d.slug);
@@ -257,4 +257,22 @@ test("pictures drawn as SVG are named or hidden, and every docs table sits in it
     }
   }
   assert.deepEqual(problems, []);
+});
+
+test("booking is shown only once a calendar link is set, and then the privacy policy names the booking service", () => {
+  // (site.ts reads import.meta.env, so its calUrl is read from the source text rather than imported)
+  const calUrl = readFileSync(join(here, "..", "src", "data", "site.ts"), "utf8").match(/export const calUrl = "([^"]*)"/)?.[1];
+  assert.notEqual(calUrl, undefined, "site.ts has no calUrl line");
+  const contact = readFileSync(join(dist, "contact", "index.html"), "utf8");
+  const policies = readFileSync(join(dist, "policies", "index.html"), "utf8");
+  if (calUrl === "") {
+    const offering = walk(dist).filter((f) => /book a call|pick a time for a free/i.test(readFileSync(f, "utf8"))).map(urlOf);
+    assert.deepEqual(offering, [], "a page offers a call with no calendar set");
+    assert.doesNotMatch(policies, /Booking a call/);
+  } else {
+    assert.match(contact, /Book a call/);
+    assert.ok(contact.includes(`href="${calUrl}"`), "the button goes to calUrl");
+    assert.match(contact, /the form or an email gets the same written plan/, "the call is offered as optional");
+    assert.match(policies, /<strong>Booking a call:<\/strong> the booking page is run by \S/);
+  }
 });

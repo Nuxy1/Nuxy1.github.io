@@ -37,7 +37,7 @@ const price = (id: string) => serviceById[id].price;
             <div class="booking">
               <p class="booking-head">Choose a service</p>
               <ul class="services">{services.map(([name, price]) => <li><span>{name}</span><span>{price}</span></li>)}</ul>
-              <p class="booking-head">Tuesday, November 4</p>
+              <p class="booking-head">Next open day: Tuesday</p>
               <ul class="times">{times.map((t) => <li>{t}</li>)}</ul>
               <p class="site-small">A $20 deposit holds your spot. Free cancellation up to 24 hours before.</p>
               <p class="site-small"><span class="gift">Buy a gift card</span></p>
@@ -93,7 +93,7 @@ const price = (id: string) => serviceById[id].price;
   <section class="close" aria-labelledby="ex-yours">
     <h2 id="ex-yours">Want this for your business?</h2>
     <p>Everything above is built inside your own accounts, with the booking tool you already use where possible. Fixed prices, in writing, no calls needed.</p>
-    <p class="actions"><a class="button" href="/contact/">Request a setup</a> <a href="/solutions/">See all services and prices</a></p>
+    <p class="actions"><a class="button" href="/contact/?want=automation" data-track="cta_demo_quote">Get a Free Quote</a> <a href="/solutions/">See all services and prices</a></p>
   </section>
 
   <script>

@@ -15,7 +15,7 @@ interface Props {
 }
 const {
   title,
-  description = "Websites and automations for small service businesses: instant replies to inquiries, online booking, follow-ups and invoices. Fixed prices. Faribault, MN.",
+  description = "Websites, online stores and automations for small businesses, built in your own accounts at fixed, published prices. Faribault, MN.",
   wide = false,
   noindex = false,
   image = "/og.jpg",
@@ -24,16 +24,19 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image, Astro.site);
 const path = Astro.url.pathname;
 
+// (brief 4's order. The full catalogue (/solutions/) and the interactive demos (/demos/) are linked from the pages
+// and the footer.)
 const nav: [string, string][] = [
+  ["Home", "/"],
   ["Websites", "/websites/"],
+  ["E-Commerce", "/ecommerce/"],
   ["Automation", "/automation/"],
-  ["Services", "/solutions/"],
-  ["Demos", "/demos/"],
+  ["Portfolio", "/portfolio/"],
   ["Pricing", "/pricing/"],
   ["About", "/about/"],
   ["Contact", "/contact/"],
 ];
-const current = (href: string) => !href.includes("#") && path.startsWith(href);
+const current = (href: string) => (href === "/" ? path === "/" : !href.includes("#") && path.startsWith(href));
 
 // The old one-page site's anchors (outreach emails link to /#<service id>): sent on to where each now lives.
 const legacy: Record<string, string> = { request: "/contact/", services: "/solutions/", kinds: "/solutions/", plans: "/pricing/#plans", faq: "/pricing/#faq", work: "/demos/#technical", keep: "/about/#how-we-work", "reviews-from-clients": "/" };
@@ -84,15 +87,14 @@ const isHome = path === "/";
             {nav.map(([name, href]) => <li><a class="nav-link" href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
           </ul>
         </nav>
-        <a class="button small head-cta" href="/contact/" data-track="cta_header">Get a Free Assessment</a>
+        <a class="button small head-cta" href="/contact/" data-track="cta_header">Get a Free Quote</a>
         <details class="menu" data-menu>
           <summary aria-label="Menu"><Icon name="list" /><Icon name="x" /></summary>
           <div class="menu-panel">
             <ul>
-              <li><a href="/" aria-current={isHome ? "page" : undefined}>Home</a></li>
               {nav.map(([name, href]) => <li><a href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
             </ul>
-            <a class="button" href="/contact/" data-track="cta_menu">Get a Free Assessment</a>
+            <a class="button" href="/contact/" data-track="cta_menu">Get a Free Quote</a>
           </div>
         </details>
       </div>
@@ -107,18 +109,18 @@ const isHome = path === "/";
         <div class="foot-top">
           <div class="foot-brand">
             <a class="brand" href="/"><Mark class="brand-mark" label="" /><span>Nuxy Automation</span></a>
-            <p>Websites and automations for small businesses, built in the tools you already use. Based in Faribault, Minnesota, working with southern Minnesota, the Twin Cities and remotely across the US.</p>
+            <p>Websites, online stores and automations for small businesses, built in the tools you already use. Based in Faribault, Minnesota, working with southern Minnesota, the Twin Cities and remotely across the US.</p>
             <a class="foot-mail" href={`mailto:${inbox}`}><Icon name="envelopeSimple" />{inbox}</a>
           </div>
           <nav class="foot-cols" aria-label="Footer">
             <div>
               <h2>Services</h2>
               <ul>
-                <li><a href="/websites/">Website development</a></li>
+                <li><a href="/websites/">Business websites</a></li>
                 <li><a href="/websites/#redesign">Website redesign</a></li>
-                <li><a href="/get-a-website/">No website yet?</a></li>
+                <li><a href="/ecommerce/">E-commerce stores</a></li>
                 <li><a href="/automation/">Business automation</a></li>
-                <li><a href="/automation/#lead-response">Lead response & follow-up</a></li>
+                <li><a href="/get-a-website/">No website yet?</a></li>
                 <li><a href="/solutions/">All services</a></li>
               </ul>
             </div>
@@ -134,8 +136,8 @@ const isHome = path === "/";
             <div>
               <h2>See the work</h2>
               <ul>
+                <li><a href="/portfolio/">Portfolio</a></li>
                 <li><a href="/demos/">Interactive demos</a></li>
-                <li><a href="/demos/#websites">Example websites</a></li>
                 <li><a href="/demos/#technical">Technical projects</a></li>
                 <li><a href="/docs/">Docs</a></li>
               </ul>
@@ -379,11 +381,14 @@ const isHome = path === "/";
   .menu-panel li a[aria-current="page"] { color: var(--cyan); }
   .menu-panel .button { width: 100%; }
   @media (min-width: 560px) { .head-cta { display: inline-flex; } .menu { margin-left: 0; } }
+  .brand, .head-cta { flex: none; white-space: nowrap; }
   @media (min-width: 1120px) {
     .nav { display: block; }
     .head-cta { margin-left: 8px; }
     .menu { display: none; }
   }
+  /* Eight links, the name and the quote button only just fit on a small laptop: tighter links until there is room. */
+  @media (min-width: 1120px) and (max-width: 1279px) { .nav-link { padding: 0 8px; } }
 
   /* Reading column (docs, policies, case studies) */
   .page { max-width: 800px; padding-top: clamp(40px, 6vw, 72px); padding-bottom: clamp(64px, 8vw, 96px); }

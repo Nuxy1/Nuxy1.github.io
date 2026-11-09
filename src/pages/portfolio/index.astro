@@ -1,0 +1,163 @@
+---
+// Portfolio: the example websites and the example store (data/demo-sites.ts), each with its industry, project type,
+// features, the services it shows, a computer-and-phone picture, the viewer (/examples/<slug>/) and the demo itself.
+// The automation code examples sit in their own section further down, so design work and technical work never mix.
+// Every business here is made up and the page says so at the top and on every example; there are no reviews, no client
+// logos and no results on this page, because there are none to show yet.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import DeviceShot from "../../components/DeviceShot.astro";
+import { demoSites } from "../../data/demo-sites";
+import { examples } from "../../data/examples";
+import { serviceById } from "../../data/services";
+
+const repo = "https://github.com/Nuxy1/small-business-automations";
+const isStore = (project: string) => project === "E-commerce store";
+const where = (id: string) => (id === "new-website" ? "/websites/#new-website" : id === "online-shop" ? "/ecommerce/" : `/solutions/#${id}`);
+const sites = demoSites.filter((d) => !isStore(d.project)).length;
+const stores = demoSites.length - sites;
+const count = (n: number, one: string, many: string) => `${["no", "one", "two", "three", "four", "five", "six"][n] ?? n} ${n === 1 ? one : many}`;
+---
+<Base title="Portfolio: Example Websites & an Online Store · Nuxy Automation" description="Example websites and an online store for made-up businesses: a landscaper, a barber shop, a cleaning company and a candle shop, on a computer and a phone." wide>
+  <section class="pf-hero">
+    <div class="wrap pf-grid">
+      <div>
+        <p class="eyebrow">Portfolio</p>
+        <h1>Example work you can click through.</h1>
+        <p class="lead">{count(sites, "business website", "business websites").replace(/^\w/, (c) => c.toUpperCase())} and {count(stores, "online store", "online stores")}, each built for a made-up business so you can see the layout, features and finish we aim for. Open any of them on a computer or a phone, and try the forms.</p>
+        <p class="made-up"><Icon name="info" /><span><strong>These are examples, not client projects.</strong> Every business on this page is made up and labeled that way. There are no reviews or results here, because examples have none to show.</span></p>
+      </div>
+      <nav class="jump" aria-labelledby="jump-h">
+        <h2 id="jump-h" class="jump-h">On this page</h2>
+        <ul role="list">
+          {demoSites.map((d) => (
+            <li><a href={`#${d.slug}`}><Icon name={d.icon} /><span><strong>{d.name}</strong><span>{d.project}</span></span></a></li>
+          ))}
+          <li><a href="#technical"><Icon name="githubLogo" /><span><strong>Automations, with the code</strong><span>{count(examples.length, "open-source example", "open-source examples").replace(/^\w/, (c) => c.toUpperCase())}</span></span></a></li>
+        </ul>
+      </nav>
+    </div>
+  </section>
+
+  <section class="section cases" aria-label="Example projects">
+    <div class="wrap">
+      {demoSites.map((d, i) => {
+        const store = isStore(d.project);
+        return (
+          <article class:list={["case", { flip: i % 2 === 1 }]} id={d.slug} aria-labelledby={`${d.slug}-h`}>
+            <div class="case-shot"><DeviceShot slug={d.slug} lazy={i > 0} /></div>
+            <div class="case-copy">
+              <p class="case-kind"><Icon name={d.icon} />{d.kind} · demonstration</p>
+              <h2 id={`${d.slug}-h`}>{d.name}</h2>
+              <p class="case-sum">{d.summary}</p>
+              <dl class="case-facts">
+                <div><dt>Industry</dt><dd>{d.kind}</dd></div>
+                <div><dt>Project</dt><dd>{d.project}</dd></div>
+                <div><dt>Your version</dt><dd>{store ? "Built in your own Shopify or Square Online account" : "Built in your own Squarespace or Wix account"}</dd></div>
+              </dl>
+              <h3 class="case-h3">Features</h3>
+              <ul class="ticks case-ticks">{d.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
+              <p class="case-svc">Services it shows: {d.services.map((id, j) => (
+                <>{j > 0 && ", "}<a href={where(id)}>{serviceById[id].name}</a> ({serviceById[id].price})</>
+              ))}</p>
+              {store && <p class="case-note"><Icon name="lockSimple" /><span>Its cart works, but checkout is switched off: nothing can be bought.</span></p>}
+              <div class="case-actions">
+                <a class="button" href={`/examples/${d.slug}/`} data-track="example_open">View on desktop and phone</a>
+                <a class="button secondary" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the full {store ? "store" : "site"}</a>
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  </section>
+
+  <section class="section band" id="technical" aria-labelledby="technical-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Technical work</p>
+        <h2 id="technical-h">Automations, with the code</h2>
+        <p>Separate from the website examples: {count(examples.length, "working automation", "working automations")}, published as open source with automated tests and plain-English docs. Each example page walks through a made-up business’s week.</p>
+      </div>
+      <ul class="tech grid-2" role="list">
+        {examples.map((e) => (
+          <li class="tech-item">
+            <h3><a href={`/work/${e.slug}/`}>{e.title}</a></h3>
+            <p>{e.problem}</p>
+            <p class="tech-svc">Service: <a href={`/solutions/#${e.service.id}`}>{serviceById[e.service.id].name}</a>, {serviceById[e.service.id].price}</p>
+          </li>
+        ))}
+      </ul>
+      <div class="tech-links">
+        <a class="button secondary" href={repo} rel="noopener" data-track="github_open"><Icon name="githubLogo" />The code on GitHub<Icon name="arrowUpRight" /></a>
+        <a class="button secondary" href="/demos/" data-track="portfolio_demos"><Icon name="play" />Interactive demos</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>Want something like this for your business?</h2>
+          <p>Tell us what you need. Within one business day you’ll get a written plan and a fixed price, with nothing charged until you agree.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="button" href="/contact/" data-track="cta_portfolio_quote">Request a Free Quote</a>
+          <a class="button secondary" href="/pricing/">See pricing</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .pf-hero { padding-block: clamp(40px, 6vw, 80px) clamp(8px, 2vw, 24px); }
+  .pf-hero h1 { max-width: 20ch; font-size: clamp(2.125rem, 1.5rem + 2.6vw, 3.25rem); }
+  .pf-hero .lead { margin-top: 18px; max-width: 62ch; }
+  .made-up { display: flex; gap: 10px; align-items: flex-start; max-width: 72ch; margin-top: 24px; padding: 14px 16px; border: 1px solid var(--hairline); border-radius: var(--r-md, 12px); background: var(--panel); color: var(--body); font-size: 0.9375rem; }
+  .made-up :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
+  .made-up strong { color: var(--ink); }
+  .pf-grid { display: grid; gap: 32px; }
+  @media (min-width: 960px) { .pf-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: 56px; align-items: end; } }
+  .jump-h { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .jump ul { display: grid; gap: 2px; margin: 10px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--hairline); }
+  .jump li { border-bottom: 1px solid var(--hairline); }
+  .jump a { display: flex; gap: 12px; align-items: center; min-height: 52px; padding: 8px 4px; color: var(--ink); text-decoration: none; }
+  .jump a:hover strong { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+  .jump a :global(.icon) { flex: none; color: var(--cyan); }
+  .jump a > span { display: grid; }
+  .jump strong { font-size: 0.9375rem; font-weight: 600; }
+  .jump strong + span { color: var(--muted); font-size: 0.8125rem; }
+
+  .cases .wrap { display: grid; gap: clamp(56px, 8vw, 104px); }
+  .case { display: grid; gap: 28px; align-items: center; scroll-margin-top: 96px; }
+  @media (min-width: 960px) {
+    .case { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 56px; }
+    .case.flip .case-shot { order: 2; }
+  }
+  .case-kind { display: inline-flex; align-items: center; gap: 8px; color: var(--cyan); font-size: 0.875rem; font-weight: 600; }
+  .case h2 { margin-top: 8px; font-size: clamp(1.625rem, 1.3rem + 1.2vw, 2.125rem); }
+  .case-sum { margin-top: 12px; color: var(--body); max-width: 56ch; }
+  .case-facts { display: grid; gap: 10px; margin-top: 20px; padding-block: 14px; border-block: 1px solid var(--hairline); }
+  .case-facts div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 12px; }
+  .case-facts dt { color: var(--muted); font-size: 0.875rem; font-weight: 600; }
+  .case-facts dd { margin: 0; color: var(--ink); font-size: 0.9375rem; }
+  .case-h3 { margin-top: 20px; font-size: 1rem; }
+  .case-ticks { margin-top: 10px; color: var(--body); }
+  .case-svc { margin-top: 16px; color: var(--muted); font-size: 0.9375rem; }
+  .case-note { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; color: var(--body); font-size: 0.9375rem; }
+  .case-note :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
+  .case-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  @media (max-width: 479px) { .case-actions .button { width: 100%; } }
+
+  .tech { margin: 0; padding: 0; list-style: none; }
+  .tech-item { display: flex; flex-direction: column; gap: 10px; padding: 24px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
+  .tech-item h3 { font-size: 1.125rem; }
+  .tech-item h3 a { color: var(--ink); text-decoration: none; }
+  .tech-item h3 a:hover { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+  .tech-item p { color: var(--body); font-size: 0.9375rem; }
+  .tech-item .tech-svc { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--hairline-soft); color: var(--muted); }
+  .tech-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  @media (max-width: 479px) { .tech-links .button { width: 100%; } }
+</style>

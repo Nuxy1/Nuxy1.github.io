@@ -43,7 +43,7 @@ const others = examples.filter((x) => x.slug !== e.slug);
     <figcaption>The demo’s simulated week (<code>npm run demo</code>), word for word.</figcaption>
   </figure>
   <ul class="stats">{e.numbers.map(([n, what]) => <li><strong>{n}</strong><span>{what}</span></li>)}</ul>
-  <p class="speed"><Icon name="lightning" /><span><strong>Speed:</strong> {e.speed} on a desktop PC (<code>npm run bench</code>). A small business’s whole year fits in under a second.</span></p>
+  <p class="speed"><Icon name="lightning" /><span><strong>Speed:</strong> {e.speed} on a desktop PC (<code>npm run bench</code>). Thousands of records take seconds, not hours.</span></p>
 
   <h2>For your business</h2>
   <p>{e.fit}</p>
