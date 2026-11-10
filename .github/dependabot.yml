@@ -1,0 +1,7 @@
+# Proposes an update when a pinned GitHub Action gets a new release (the workflow pins exact commits).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
