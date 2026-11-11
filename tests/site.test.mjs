@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { services, plans, primary, groups, health, wants, variants, bundles, bundleMath, money as usd } from "../src/data/services.ts";
 import { demoSites } from "../src/data/demo-sites.ts";
 import { examples } from "../src/data/examples.ts";
+import { caseStudies } from "../src/data/case-studies.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, "..", "dist");
@@ -232,6 +233,8 @@ test("old one-page links (/#id) are mapped to a section that exists", () => {
   for (const s of services) assert.ok(legacy[s.id], `old link /#${s.id} is not mapped`);
   for (const p of plans) assert.ok(legacy[p.id], `old link /#${p.id} is not mapped`);
   for (const g of groups) for (const old of g.legacy) assert.ok(legacy[old], `old link /#${old} is not mapped`);
+  // homepage sections that were live before the conversion upgrade and are now named or placed differently
+  for (const old of ["what-we-build", "why", "ownership"]) assert.ok(legacy[old] && !pages.get("/").includes(`id="${old}"`), `old link /#${old} is not mapped`);
   for (const [from, to] of Object.entries(legacy)) {
     const [path, hash] = to.split("#");
     const target = pages.get(path);
@@ -359,5 +362,32 @@ test("the approved prices stay as approved, and every bundle beats the multi-ser
     const { separately } = bundleMath(b);
     const off = b.items.length >= 3 ? 0.85 : 0.9;
     assert.ok(Number(b.price.replace(/\D/g, "")) < separately * off, `${b.id}: ${b.price} is not below ${separately} with the discount`);
+  }
+});
+
+test("a client case study is published only with recorded consent, sourced results and described pictures; no page invents one", () => {
+  const home = pages.get("/");
+  for (const c of caseStudies) {
+    assert.ok(c.consent?.trim().length >= 20, `${c.slug}: consent says who agreed, when and to what`);
+    assert.match(c.slug, /^[a-z0-9-]+$/);
+    for (const k of ["business", "industry", "location", "problem"]) assert.ok(c[k]?.trim(), `${c.slug}: ${k}`);
+    assert.ok(c.built.length > 0, `${c.slug}: what was built`);
+    for (const r of c.results) assert.ok(r.value.trim() && r.label.trim() && r.source.trim(), `${c.slug}: every result names its source`);
+    if (c.quote) assert.ok(c.quote.text.trim() && c.quote.name.trim(), `${c.slug}: a quote has its speaker`);
+    for (const p of [...(c.shots ?? []), ...(c.beforeAfter ? [c.beforeAfter.before, c.beforeAfter.after] : [])]) {
+      assert.ok(p.alt.trim().length >= 10, `${c.slug}: ${p.src} is described`);
+      assert.ok(p.width > 0 && p.height > 0, `${c.slug}: ${p.src} has its size, so the page doesn't jump`);
+      assert.ok(existsSync(join(dist, p.src)), `${c.slug}: ${p.src} exists`);
+    }
+    assert.ok(home.includes(`id="case-${c.slug}"`), `${c.slug} is on the homepage`);
+    assert.ok(pages.get("/portfolio/").includes(`id="case-${c.slug}"`), `${c.slug} is on /portfolio/`);
+  }
+  // /portfolio/ says "every business on this page is made up" exactly while that is true
+  assert.equal(/Every business on this page is made up/.test(decode(pages.get("/portfolio/"))), caseStudies.length === 0, "the portfolio's made-up note follows the data");
+  // nothing that reads as a client story appears anywhere unless an entry above put it there
+  const ids = new Set(caseStudies.map((c) => `case-${c.slug}`));
+  for (const [url, html] of pages) {
+    for (const m of html.matchAll(/<article class="case[^"]*" id="(case-[^"]+)"/g)) assert.ok(ids.has(m[1]), `${url}: ${m[1]} is not in caseStudies`);
+    if (!caseStudies.length) assert.doesNotMatch(decode(html.replace(/<script[\s\S]*?<\/script>/g, "")), /Client project ·/, `${url} shows a client project`);
   }
 });

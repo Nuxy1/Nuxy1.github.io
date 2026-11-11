@@ -28,9 +28,6 @@ export const shopifyPartner = false;
 export type Person = { name: string; role: string; bio: string; photo?: string };
 export const team: Person[] = [];
 
-// Real client case studies (src/components/CaseStudy.astro). Empty until there is a client who agreed to be named.
-export type CaseStudyData = {
-  slug: string; business: string; industry: string; location: string; problem: string; built: string[];
-  results: { value: string; label: string; source: string }[]; quote?: { text: string; name: string }; consent: string;
-};
-export const caseStudies: CaseStudyData[] = [];
+// Real client case studies live in ./case-studies.ts (empty until a client agrees in writing to be named).
+export { caseStudies } from "./case-studies";
+export type { CaseStudyData, CaseShot } from "./case-studies";

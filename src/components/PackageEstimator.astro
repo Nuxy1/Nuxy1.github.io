@@ -1,0 +1,226 @@
+---
+// "Build Your Automation Package" (conversion brief, Phase 7): tick services, see an estimated starting price, and
+// carry the choice to the quote form. Not a quote: the page says so, and the written plan sets the real price.
+//
+// Every name, price and rule comes from data/services.ts, and the sum is done by data/estimate.ts (tested on its own):
+// the 10% / 15% multi-service discount and the preset bundle prices never stack; the estimate uses whichever is lower.
+// Services that are scoped in a consultation first can be ticked so they travel with the request, but they are never
+// added into the total. Dollar totals are written by the script only; without JavaScript the list still shows every
+// price and the button still opens the quote form with the ticked services in the address.
+// Nothing here is sent anywhere: the only count is the button's anonymous click (event name and page, no choices).
+import Icon from "./Icon.astro";
+import { groups, estimable, bundle, bundles, dollars, statusWords, thirdPartyCosts } from "../data/services";
+
+const order = ["leads", "scheduling", "sales", "operations", "custom", "websites"];
+const rank = (id: string) => (order.indexOf(id) + 1 || order.length + 1);
+const lists = groups
+  .map((g) => ({
+    id: g.id, title: g.title,
+    items: estimable.find((e) => e.id === g.id)?.items ?? [],
+    consult: g.items.filter((s) => s.status === "consult"),
+  }))
+  .filter((g) => g.items.length + g.consult.length > 0)
+  .sort((a, b) => rank(a.id) - rank(b.id));
+const rules = { two: bundle.two, three: bundle.three, bundles: bundles.map((b) => ({ id: b.id, name: b.name, price: dollars(b.price), items: b.items })) };
+---
+<section class="section band" id="package" aria-labelledby="package-h">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Price estimator</p>
+      <h2 id="package-h">Build Your Automation Package</h2>
+      <p>Choose what your business needs and see an estimated starting price. Your final scope and price are confirmed in writing before work begins.</p>
+    </div>
+
+    <form class="est" action="/contact/" method="get" data-estimator data-rules={JSON.stringify(rules)}>
+      <div class="est-groups">
+        {lists.map((g, i) => (
+          <details class="est-group reveal" open={i < 2}>
+            <summary><span>{g.title}</span><span class="est-count" data-count hidden></span><Icon name="caretDown" /></summary>
+            <ul class="est-items">
+              {g.items.map((s) => (
+                <li>
+                  <label class="est-item">
+                    <input type="checkbox" name="services" value={s.id} data-price={dollars(s.price)} data-label={s.price} data-name={s.name} data-alt={s.alt || undefined} />
+                    <span class="est-box" aria-hidden="true"><Icon name="check" /></span>
+                    <span class="est-text"><span class="est-name">{s.name}</span><span class="est-fixes">{s.fixes}</span></span>
+                    <span class="est-price">{s.price}</span>
+                  </label>
+                </li>
+              ))}
+              {g.consult.map((s) => (
+                <li>
+                  <label class="est-item">
+                    <input type="checkbox" name="services" value={s.id} data-consult data-label={`${s.price}${s.monthly ? ` + ${s.monthly}` : ""}`} data-name={s.name} />
+                    <span class="est-box" aria-hidden="true"><Icon name="check" /></span>
+                    <span class="est-text"><span class="est-name">{s.name}</span><span class="est-fixes">{statusWords.consult}: quoted separately, not added to the total</span></span>
+                    <span class="est-price">{s.price}{s.monthly && <span class="est-monthly"> + {s.monthly}</span>}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ))}
+      </div>
+
+      <aside class="est-sum" aria-labelledby="est-sum-h">
+        <h3 id="est-sum-h">Your estimate</h3>
+        <p class="est-empty" data-empty>Tick the services you want. Each price is shown beside it, and your choices go with you to the quote form.</p>
+        <div class="est-filled" data-filled hidden>
+          <ul class="est-lines" data-lines></ul>
+          <dl class="est-totals">
+            <div data-subtotal-row><dt>Services separately</dt><dd data-subtotal></dd></div>
+            <div class="est-saving" data-save-row hidden><dt data-save-label></dt><dd data-save></dd></div>
+            <div class="est-total" data-total-row><dt>Estimated starting total</dt><dd data-total></dd></div>
+          </dl>
+          <p class="est-hint" data-hint hidden></p>
+        </div>
+        <button class="button wide" type="submit" data-track="cta_estimator"><span data-go>Get This Setup</span><Icon name="arrowRight" /></button>
+        <p class="est-fine"><strong>Estimated starting price. Final scope and price are confirmed in writing.</strong></p>
+        <ul class="est-notes">
+          <li>Preset bundle prices and the multi-service discount don’t stack: the estimate uses whichever is lower for you.</li>
+          <li>{thirdPartyCosts}</li>
+          <li>Monthly plans are optional and not part of this total. <a href="/pricing/">See all pricing</a></li>
+        </ul>
+        <p class="sr-only" role="status" aria-live="polite" data-status></p>
+      </aside>
+    </form>
+  </div>
+</section>
+
+<script>
+  import { estimate } from "../data/estimate";
+
+  const money = (n: number) => "$" + n.toLocaleString("en-US");
+  const track = (e: string) => (window as unknown as { nuxyTrack?: (e: string) => void }).nuxyTrack?.(e);
+
+  for (const form of document.querySelectorAll<HTMLFormElement>("[data-estimator]")) {
+    const rules = JSON.parse(form.dataset.rules!);
+    const boxes = [...form.querySelectorAll<HTMLInputElement>("input[name=services]")];
+    const q = <T extends HTMLElement = HTMLElement>(s: string) => form.querySelector<T>(s)!;
+    const empty = q("[data-empty]"), filled = q("[data-filled]"), lines = q("[data-lines]");
+    const subRow = q("[data-subtotal-row]"), saveRow = q("[data-save-row]"), totalRow = q("[data-total-row]");
+    const hint = q("[data-hint]"), status = q("[data-status]"), go = q("[data-go]");
+
+    const read = () => {
+      const picked = boxes.filter((b) => b.checked);
+      const priced = picked.filter((b) => !b.hasAttribute("data-consult"));
+      return { picked, priced, consult: picked.length - priced.length, est: estimate(priced.map((b) => ({ id: b.value, price: Number(b.dataset.price) })), rules) };
+    };
+    const row = (name: string, price: string, quiet = false) => {
+      const li = document.createElement("li"), a = document.createElement("span"), b = document.createElement("span");
+      a.textContent = name; b.textContent = price; if (quiet) b.className = "quiet";
+      li.append(a, b);
+      return li;
+    };
+
+    const render = (announce: boolean) => {
+      const { picked, priced, consult, est } = read();
+      empty.hidden = picked.length > 0;
+      filled.hidden = picked.length === 0;
+      go.textContent = picked.length ? "Get This Setup" : "Get a Free Quote"; // (nothing ticked: the button is the plain quote form)
+      lines.replaceChildren(...picked.map((b) => (b.hasAttribute("data-consult") ? row(b.dataset.name!, "quoted separately", true) : row(b.dataset.name!, b.dataset.label!))));
+
+      subRow.hidden = totalRow.hidden = priced.length === 0;
+      q("[data-subtotal]").textContent = money(est.subtotal);
+      q("[data-total]").textContent = money(est.total);
+      saveRow.hidden = est.save === 0;
+      q("[data-save-label]").textContent = est.how === "bundle" ? `${est.bundles.join(" + ")} price` : `${priced.length} services together: ${est.percent}% off`;
+      q("[data-save]").textContent = "−" + money(est.save);
+
+      const tips: string[] = [];
+      if (priced.length === 1) tips.push(`Add a second one-time service and the total is ${rules.two}% off.`);
+      else if (est.how === "multi" && est.percent < rules.three) tips.push(`Add a third and the total is ${rules.three}% off.`);
+      if (consult) tips.push(`${consult === 1 ? "One service is" : `${consult} services are`} scoped with you first and quoted separately, so ${consult === 1 ? "it isn’t" : "they aren’t"} in this total.`);
+      hint.textContent = tips.join(" ");
+      hint.hidden = tips.length === 0;
+
+      for (const g of form.querySelectorAll<HTMLElement>(".est-group")) {
+        const n = g.querySelectorAll("input:checked").length, c = g.querySelector<HTMLElement>("[data-count]")!;
+        c.hidden = n === 0;
+        c.textContent = `${n} chosen`;
+      }
+      if (announce) status.textContent = picked.length === 0 ? "No services chosen." :
+        `${picked.length} ${picked.length === 1 ? "service" : "services"} chosen.` + (priced.length ? ` Estimated starting total ${money(est.total)}${est.save ? `, ${money(est.save)} less than separately` : ""}.` : "") + (consult ? ` ${consult} quoted separately.` : "");
+    };
+
+    let used = false;
+    form.addEventListener("change", (e) => {
+      const b = e.target as HTMLInputElement;
+      if (b.name !== "services") return;
+      // a smaller version and its full version are one job: choosing one clears the other
+      if (b.checked && b.dataset.alt) for (const id of b.dataset.alt.split(" ")) { const other = boxes.find((x) => x.value === id); if (other) other.checked = false; }
+      if (!used) { used = true; track("estimator_use"); }
+      render(true);
+    });
+
+    // The quote form takes one catalogue id (?service=) or a list (?services=a,b): ids only, nothing about the visitor.
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const { picked, consult, est } = read();
+      const ids = picked.map((b) => b.value);
+      location.href = ids.length === 0 ? "/contact/" : est.exact && !consult ? `/contact/?service=${est.exact}` : ids.length === 1 ? `/contact/?service=${ids[0]}` : `/contact/?services=${ids.join(",")}`;
+    });
+
+    // (the browser may bring ticks back after Back or a reload: show the estimate that matches them)
+    addEventListener("pageshow", () => render(false));
+    render(false);
+  }
+</script>
+
+<style>
+  .est { display: grid; gap: 24px; align-items: start; }
+  .est-groups { display: grid; gap: 12px; }
+  .est-group { border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); overflow: hidden; }
+  .est-group > summary { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 18px; cursor: pointer; list-style: none; color: var(--ink); font-weight: 650; user-select: none; }
+  .est-group > summary::-webkit-details-marker { display: none; }
+  .est-group > summary:hover { background: rgba(148, 163, 184, 0.06); }
+  .est-group > summary > :global(.icon) { flex: none; margin-left: auto; width: 16px; height: 16px; color: var(--muted); transition: transform var(--dur-1) ease; }
+  .est-group[open] > summary > :global(.icon) { transform: rotate(180deg); }
+  .est-count { flex: none; padding: 2px 10px; border-radius: var(--r-full); background: var(--accent-soft); color: var(--link); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
+
+  .est-items { list-style: none; border-top: 1px solid var(--hairline-soft); }
+  .est-items li + li { border-top: 1px solid var(--hairline-soft); }
+  .est-item { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 60px; padding: 10px 18px; cursor: pointer; transition: background-color var(--dur-1) ease; }
+  /* (the real checkbox covers its whole row, so the row is the tap target; the drawn box follows its state) */
+  .est-item input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .est-box { display: grid; place-items: center; width: 24px; height: 24px; border: 1.5px solid var(--hairline-strong); border-radius: 7px; color: transparent; transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
+  .est-box :global(.icon) { width: 16px; height: 16px; }
+  .est-item:hover .est-box { border-color: var(--link); }
+  .est-item input:checked + .est-box { border-color: var(--button); background: var(--button); color: #fff; }
+  .est-item input:focus-visible + .est-box { outline: 2px solid var(--focus); outline-offset: 3px; }
+  .est-item:has(input:checked) { background: rgba(59, 130, 246, 0.08); }
+  .est-text { display: grid; gap: 2px; min-width: 0; }
+  .est-name { color: var(--ink); font-weight: 600; line-height: 1.35; }
+  .est-fixes { color: var(--muted); font-size: 0.875rem; line-height: 1.4; }
+  .est-price { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .est-monthly { display: block; color: var(--muted); font-size: 0.8125rem; font-weight: 500; }
+
+  .est-sum { display: grid; gap: 16px; padding: clamp(20px, 3vw, 28px); border: 1px solid var(--hairline-strong); border-radius: var(--r-lg); background: var(--bg-2); box-shadow: var(--shadow); }
+  .est-sum h3 { font-size: 1.1875rem; }
+  .est-empty { color: var(--body); font-size: 0.9375rem; }
+  .est-filled { display: grid; gap: 14px; }
+  .est-filled[hidden] { display: none; }
+  .est-lines { display: grid; gap: 8px; list-style: none; font-size: 0.9375rem; }
+  .est-lines :global(li), .est-totals div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .est-lines :global(li > span:last-child), .est-totals dd { flex: none; color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
+  .est-lines :global(.quiet) { color: var(--muted); font-size: 0.875rem; }
+  .est-totals { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--hairline); font-size: 0.9375rem; }
+  .est-totals div[hidden] { display: none; }
+  .est-saving dt, .est-saving dd { color: var(--cyan); }
+  .est-total { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--hairline); }
+  .est-total dt { color: var(--ink); font-weight: 650; }
+  .est-total dd { font-size: 1.625rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
+  .est-hint { color: var(--body); font-size: 0.875rem; }
+  .est-fine { color: var(--ink); font-size: 0.875rem; }
+  .est-fine strong { font-weight: 600; }
+  .est-notes { display: grid; gap: 6px; padding-left: 18px; color: var(--muted); font-size: 0.8125rem; line-height: 1.5; }
+
+  @media (min-width: 960px) {
+    .est { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 32px; }
+    .est-sum { position: sticky; top: calc(var(--nav-h) + 20px); }
+  }
+  @media (max-width: 419px) {
+    .est-group > summary, .est-item { padding-inline: 14px; }
+    .est-item { gap: 12px; }
+  }
+</style>

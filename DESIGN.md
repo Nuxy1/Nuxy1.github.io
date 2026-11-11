@@ -136,7 +136,9 @@ numbers, logos or reviews. Decoration never stands in for evidence.
 
 - Content sits in `.wrap`: max 1200px, side gutter 16px on phones up to 40px.
 - Sections breathe: `.section` padding 64-112px; `.section-head` holds the eyebrow, h2 and one-line intro.
-- Built phone first and checked at 320, 375, 390, 768, 1024 and 1440px wide, with no sideways scroll at any width.
+- Built phone first and checked at 320, 375, 390, 768, 1024, 1440 and 1920px wide, with no sideways scroll at any width.
+- The header is 64px tall on every page at every width. Below 900px its links fold into the phone menu; from 900px
+  they sit in a row with the Services dropdown; the "Get a Free Quote" button shows from 768px.
 - Buttons, toggles, menu links and form fields are at least 44px tall (main buttons 48px). Text links in footers, breadcrumbs and sentences meet the WCAG 2.2 AA minimum instead: 24px, or spaced so a 24px circle on each touches no other target. `tests/pages.test.mjs` checks both on every page.
 - Wide tables inside the docs pages scroll sideways inside their own box instead of widening the page. `Doc.astro`
   wraps every table in a `.table-scroll` region named after the heading above it; Tab reaches the box (and arrow keys
@@ -146,10 +148,13 @@ numbers, logos or reviews. Decoration never stands in for evidence.
 
 | Page | Job |
 |---|---|
-| `/` | Who it's for, the four main services, the flagship, how it works, the live demo, one clear next step |
+| `/` | In this order: hero (what Nuxy does, two buttons, starting prices), the four main services, the automation demos, the goal picker, the package estimator, example work, the three ways to start, the five steps, why Nuxy, one final next step |
 | `/websites/` | Website building: own-it-outright vs optional monthly care, what you own, ownership promises |
 | `/get-a-website/` | Short landing page for businesses without a website; links to the demo websites |
 | `/automation/` | Lead response and follow-up, missed-call text-back, review requests and the other automations |
+| `/ecommerce/` | Online stores in the client's own Shopify or Square Online account, with the two published sizes |
+| `/website-security/` | Free website health consultation, repairs at a fixed written price, and security assessments only with the owner's written authorization |
+| `/portfolio/` | "Our Work": the example websites and the online store, each for a made-up business and labelled so, on a computer and a phone |
 | `/solutions/` | Every service, grouped, with search and filters (all services visible without JavaScript) |
 | `/pricing/` | Published one-time prices, the monthly plans, bundle discount, FAQ |
 | `/about/` | How we work and what we won't do |
@@ -173,16 +178,43 @@ numbers, logos or reviews. Decoration never stands in for evidence.
 - **FAQ:** native `<details>`; the plus icon turns 45 degrees when open.
 - **ServiceCard:** name, price, one-line outcome, who it suits, what you need, running costs, and an "Ask about
   this" link that pre-selects the service in the form.
+- **Header (`Base.astro`):** Services (a dropdown of six links, `details.drop[data-drop]`), Pricing, Demos, Our
+  Work, About, and one button, "Get a Free Quote". On phones the same links sit in one menu
+  (`details.menu[data-menu]`). Both are native `<details>`, so they open without JavaScript; the script only adds
+  Escape, a click outside, closing after a link is chosen, and closing the dropdown when focus moves on. Services is marked current on every service page.
 - **InquiryForm:** name, business name, email, type of business, what they'd like help with, and optional fields
   (the service or plan they're asking about, website, phone, tools, budget, best way to reach you). On success
   it shows a reference number; on failure it says plainly that the message was not sent and shows the email
-  address instead. It never claims a message arrived when it didn't.
+  address instead. It never claims a message arrived when it didn't. Above the button it says what happens next:
+  a written recommendation and price, and no sales call is required.
+  A link with `?services=<id>,<id>` (from the estimator) names those services at the top and writes them into the
+  project box, only when the box is empty, where the visitor can change them. Ids that aren't in the catalogue are
+  dropped, and nothing is sent until the visitor presses the button.
+- **PackageEstimator (`#package` on the home page):** tick services, see an estimated starting price, and carry
+  the choice to the quote form. It is not a quote and says so ("Estimated starting price. Final scope and price are
+  confirmed in writing."). Names and prices come from `data/services.ts` (`estimable`); the sum is done by
+  `data/estimate.ts`: 2 services 10% off, 3 or more 15% off, or a preset bundle at its bundle price, whichever is
+  lower, never both. Services that need a consultation first can be ticked but are never added into the total, and
+  other companies' subscriptions are named as paid to them. Without JavaScript the list still shows every price and
+  the button still opens the form with the ticked services. `tests/estimate.test.mjs` checks the arithmetic against
+  the catalogue.
+- **Phone quote bar (home page, under 720px):** one "Get a Free Quote" button fixed to the bottom of the screen. It
+  shows only while the hero, the estimator, the final box and the footer are all off screen (an
+  `IntersectionObserver`, no scroll listener), so it never sits over those sections' own buttons, and it has a close button; closing
+  it is remembered for the visit in `sessionStorage` (`nuxy-quote-bar`). Without JavaScript it never appears.
 - **LeadDemo:** an interactive phone-frame demo of the flagship. It runs in the page only and sends nothing.
 - **DeviceShot / DemoSites:** screenshots of the demo websites in a phone or laptop frame, each marked as a demo.
   Each screenshot comes in several widths (`shotWidths` in `src/data/demo-sites.ts`, with `srcset` and `sizes`), so a
   phone downloads a small file. `scripts/example-shots.mjs` remakes them from the demo pages.
-- **CaseStudy:** the case-study layout. It shows only what really happened in a demonstration project and is
-  labelled as one; it has no slots for invented results or quotes.
+- **CaseStudy:** one real client project, from `src/data/case-studies.ts` (empty today). It renders nothing unless
+  the entry's `consent` records the client's written yes (who, when, to what). Fields: business, industry, location,
+  the problem, the solution, what was built, screenshots, a before/after pair, results (each with the source of its
+  number) and a quote (only the client's own words). Optional parts show only when filled in; nothing is ever made
+  up. `tests/site.test.mjs` fails the build if an entry lacks consent, a result lacks its source, a picture lacks
+  its description or size, or any page shows a client project that isn't in the file. Entries appear in the home
+  page's `#portfolio` section and in their own section (`#clients`) above the examples on `/portfolio/`, whose note at
+  the top then says the client projects are real and the examples made up, instead of "every business on this page
+  is made up".
 - **Icon:** Phosphor icons (regular weight), inlined as SVG so they take the text colour and cost no request.
   Decorative icons are hidden from screen readers.
 - **Mark:** the Nuxy logo mark. Pass `label=""` where the words "Nuxy Automation" sit right beside it, so screen
@@ -216,6 +248,13 @@ part coming forward), `--dur-4` 520ms (section reveals, the hero's camera move);
 - **Works without JavaScript.** The hero's parts, the demo tabs and the goal picker are radio buttons switched by CSS
   `:has()`; without `:has()` every panel shows in a list. The demo player alone needs JavaScript and stays hidden
   without it (the whole example then shows).
+- **The demo player under 900px** (one column, the cards below the buttons): the cards sit in a window under half the
+  screen tall (`.ap-demo.ready .ap-feed`, `min(46svh, 26rem)`) that the player scrolls to the newest card, so the play
+  is seen without scrolling the page. The window keeps its height, so nothing below it moves. Pressing Start, Next or
+  a step brings the window on screen once, only as far as needed; the clock never scrolls the page. Before the first
+  step the window is empty and doesn't scroll; once it has cards it is a keyboard stop so keys can scroll it. From
+  900px the cards sit beside the buttons in full, as before. `tests/pages.test.mjs` checks every step at two phone
+  sizes, with and without reduced motion.
 - **Section reveals** fade up once as they enter the screen, only for sections that start below the first screen.
 - **The /solutions/ filter** glides the cards to their new places with a view transition, started only when motion is
   on.
@@ -233,6 +272,13 @@ the real address (local previews, tests and copies count nothing). Name new even
 `snake_case`, for example `cta_hero`, `service_ask`, `example_open`. The privacy section of `/policies/` lists what
 is counted.
 
+Buttons counted since the conversion upgrade: `cta_header` and `cta_menu` (the header and phone-menu quote
+buttons), `cta_hero`, `cta_see_working`, `cta_services`, `cta_home_security`, `cta_portfolio`,
+`cta_pricing_preview`, `cta_tiers_quote`, `cta_final`, `cta_sticky` (home page), `cta_estimator` and
+`estimator_use` (the estimator: the button, and the first tick per page view), `cta_portfolio_quote` and
+`portfolio_demos` (`/portfolio/`). None carries what was ticked, typed or chosen: the estimator's choices travel
+only in the address of the quote form, in the visitor's own browser. `tests/pages.test.mjs` checks that.
+
 ## Anchors and old links
 
 The site used to be one long page. Old links like `/#lead-follow-up` or `/#request` still work: the home page maps
@@ -243,5 +289,8 @@ the old anchor to its new place.
 - Every monthly plan id goes to `/pricing/#<id>`.
 - `#request` goes to `/contact/`, `#services` and `#kinds` to `/solutions/`, `#plans` and `#faq` to the pricing page,
   `#work` to `/demos/#technical`, `#keep` to `/about/#how-we-work`.
+- Home page sections renamed or moved in the conversion upgrade (2026-11): `#what-we-build` goes to `/#what-we-do`,
+  `#why` to `/#why-nuxy`, `#ownership` to `/websites/#ownership`. When a home page section id changes, add the old
+  one to `legacy` in `Base.astro`; `tests/site.test.mjs` checks every entry lands on an id that exists.
 
 Service ids are permanent: never reuse or rename one, because outreach emails and old links point at them.

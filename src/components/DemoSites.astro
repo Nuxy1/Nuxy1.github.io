@@ -1,6 +1,6 @@
 ---
-// The example websites and the example store (data/demo-sites.ts) as cards, each opening its desktop/phone viewer at
-// /examples/<slug>/. Used on the homepage, /websites/, /ecommerce/ and /demos/. The note under the cards is part of the
+// The example websites and the example store (data/demo-sites.ts) as cards: the site on a computer with its phone
+// version in front, the kind of project, what was built, and one link to its desktop/phone viewer at /examples/<slug>/. Used on the homepage, /websites/, /ecommerce/ and /demos/. The note under the cards is part of the
 // component on purpose: the cards never appear without saying they are made-up businesses.
 import Icon from "./Icon.astro";
 import { demoSites, shotSrcset } from "../data/demo-sites";
@@ -22,20 +22,31 @@ const hasStore = list.some((d) => d.project === "E-commerce store");
 const sizes = cols === 3
   ? "(min-width: 1200px) 360px, (min-width: 1024px) calc(33vw - 40px), (min-width: 720px) calc(46vw - 10px), calc(100vw - 34px)"
   : "(min-width: 1200px) 550px, (min-width: 720px) calc(50vw - 50px), calc(100vw - 34px)";
+// (the phone in front is about a fifth of the card wide: 60 to 120px)
+const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
 ---
 <ul class:list={["demo-grid", cols === 3 ? "grid-3" : "grid-2"]} role="list">
   {list.map((d) => (
     <li class="demo-site reveal">
-      <span class="demo-shot">
-        <img src={`/images/examples/${d.slug}-desktop.webp`} srcset={shotSrcset(d.slug, "desktop")} sizes={sizes} alt="" width="800" height="500" loading="lazy" decoding="async" />
-      </span>
-      <span class="demo-meta">
-        <span class="demo-kind"><Icon name={d.icon} />{d.kind} · demonstration</span>
+      <div class="demo-shot">
+        <div class="demo-desk">
+          <span class="demo-bar" aria-hidden="true"><i></i><i></i><i></i></span>
+          <img src={`/images/examples/${d.slug}-desktop.webp`} srcset={shotSrcset(d.slug, "desktop")} sizes={sizes} alt="" width="800" height="500" loading="lazy" decoding="async" />
+        </div>
+        <div class="demo-phone">
+          <img src={`/images/examples/${d.slug}-phone.webp`} srcset={shotSrcset(d.slug, "phone")} sizes={phoneSizes} alt="" width="390" height="780" loading="lazy" decoding="async" />
+        </div>
+      </div>
+      <div class="demo-meta">
+        <p class="demo-kind"><Icon name={d.icon} />{d.kind} · demonstration</p>
         <H class="demo-name"><a href={`/examples/${d.slug}/`} data-track="example_open">{d.name}</a></H>
-        <span class="demo-project">{d.project}</span>
-        <span class="demo-sum">{d.summary}</span>
-        <span class="text-link" aria-hidden="true">View on desktop and phone<Icon name="arrowRight" /></span>
-      </span>
+        <p class="demo-project">{d.project}</p>
+        <p class="demo-sum">{d.summary}</p>
+        <ul class="demo-built" aria-label="What was built">
+          {d.shows.map((s) => <li><Icon name="check" />{s}</li>)}
+        </ul>
+        <span class="text-link" aria-hidden="true">View Project<Icon name="arrowRight" /></span>
+      </div>
     </li>
   ))}
 </ul>
@@ -46,8 +57,22 @@ const sizes = cols === 3
   .demo-site { position: relative; display: flex; flex-direction: column; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); overflow: hidden; transition: border-color 160ms ease-out, transform 220ms var(--ease); }
   .demo-site:hover { border-color: var(--hairline-strong); transform: translateY(-2px); }
   .demo-site:focus-within { border-color: var(--focus); }
-  .demo-shot { display: block; aspect-ratio: 16 / 10; background: var(--surface-strong); border-bottom: 1px solid var(--hairline); overflow: hidden; }
-  .demo-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  /* the site on a computer, cut off by the card's edge, with its phone version standing in front */
+  .demo-shot {
+    position: relative; aspect-ratio: 16 / 10; padding: clamp(16px, 4%, 26px) clamp(16px, 4%, 26px) 0; border-bottom: 1px solid var(--hairline); overflow: hidden;
+    background: radial-gradient(90% 110% at 15% 0%, rgba(59, 130, 246, 0.2), transparent 70%), var(--bg-2);
+  }
+  .demo-desk { width: 88%; height: 100%; border: 1px solid var(--hairline-strong); border-bottom: 0; border-radius: 10px 10px 0 0; background: var(--surface-strong); box-shadow: var(--shadow); overflow: hidden; }
+  .demo-bar { display: flex; gap: 5px; padding: 7px 10px; border-bottom: 1px solid var(--hairline); background: var(--panel); }
+  .demo-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--hairline-strong); }
+  .demo-desk img { display: block; width: 100%; height: auto; }
+  .demo-phone { position: absolute; right: clamp(14px, 4%, 26px); bottom: -12%; width: 21%; aspect-ratio: 390 / 780; border: 3px solid #26324a; border-radius: 14px; background: var(--surface-strong); box-shadow: var(--shadow); overflow: hidden; }
+  .demo-phone img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  @media (hover: hover) and (pointer: fine) {
+    .demo-desk, .demo-phone { transition: transform 380ms var(--ease); }
+    .demo-site:hover .demo-desk { transform: translateY(-4px); }
+    .demo-site:hover .demo-phone { transform: translateY(-8px); }
+  }
   .demo-meta { display: flex; flex-direction: column; gap: 8px; padding: 20px; flex: 1; }
   .demo-kind { display: inline-flex; align-items: center; gap: 6px; color: var(--cyan); font-size: 0.8125rem; font-weight: 600; }
   .demo-name { font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
@@ -57,9 +82,13 @@ const sizes = cols === 3
   .demo-name a:focus-visible { outline: none; }
   .demo-name a:focus-visible::after { outline: 2px solid var(--focus); outline-offset: -2px; }
   .demo-project { margin-top: -4px; color: var(--muted); font-size: 0.875rem; font-weight: 600; }
-  .demo-sum { color: var(--body); font-size: 0.9375rem; flex: 1; }
+  .demo-sum { color: var(--body); font-size: 0.9375rem; }
+  .demo-built { display: grid; gap: 6px; flex: 1; align-content: start; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--hairline-soft); list-style: none; color: var(--body); font-size: 0.875rem; }
+  .demo-built li { display: grid; grid-template-columns: 1em minmax(0, 1fr); gap: 8px; align-items: start; }
+  .demo-built :global(.icon) { margin-top: 0.25em; width: 1em; height: 1em; color: var(--cyan); }
   .demo-site .text-link { margin-top: 6px; color: var(--link); }
   .demo-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 20px; max-width: 80ch; }
   .demo-note :global(.icon) { flex: none; margin-top: 0.2em; width: 1.05em; height: 1.05em; }
-  @media (prefers-reduced-motion: reduce) { .demo-site, .demo-site:hover { transition: none; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .demo-site, .demo-site:hover, .demo-site .demo-desk, .demo-site .demo-phone { transition: none; transform: none; } }
+  :global(html[data-motion="reduced"]) .demo-site, :global(html[data-motion="reduced"]) .demo-site :is(.demo-desk, .demo-phone) { transform: none; }
 </style>

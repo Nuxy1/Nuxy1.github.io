@@ -26,23 +26,29 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image, Astro.site);
 const path = Astro.url.pathname;
 
-// (brief 4's order. The full catalogue (/solutions/) and the interactive demos (/demos/) are linked from the pages
-// and the footer.)
-const nav: [string, string][] = [
-  ["Home", "/"],
-  ["Websites", "/websites/"],
+// Five things in the header (conversion brief, 2026-11): Services opens a short list, the rest are single pages.
+// Home is the name on the left and Contact is the quote button; both are also in the phone menu and the footer.
+const serviceNav: [string, string][] = [
+  ["AI & Business Automation", "/automation/"],
+  ["AI Voice Receptionist", "/automation/#voice"],
+  ["Business Websites", "/websites/"],
   ["E-Commerce", "/ecommerce/"],
-  ["Automation", "/automation/"],
-  ["Repairs", "/website-security/"],
-  ["Portfolio", "/portfolio/"],
+  ["Website Repairs & Security", "/website-security/"],
+  ["All Services", "/solutions/"],
+];
+const nav: [string, string][] = [
   ["Pricing", "/pricing/"],
+  ["Demos", "/demos/"],
+  ["Our Work", "/portfolio/"],
   ["About", "/about/"],
-  ["Contact", "/contact/"],
 ];
 const current = (href: string) => (href === "/" ? path === "/" : !href.includes("#") && path.startsWith(href));
+const inServices = serviceNav.some(([, href]) => current(href)) || path.startsWith("/get-a-website/");
 
 // The old one-page site's anchors (outreach emails link to /#<service id>): sent on to where each now lives.
-const legacy: Record<string, string> = { request: "/contact/", services: "/solutions/", kinds: "/solutions/", plans: "/pricing/#plans", faq: "/pricing/#faq", work: "/demos/#technical", keep: "/about/#how-we-work", "reviews-from-clients": "/" };
+const legacy: Record<string, string> = { request: "/contact/", services: "/solutions/", kinds: "/solutions/", plans: "/pricing/#plans", faq: "/pricing/#faq", work: "/demos/#technical", keep: "/about/#how-we-work", "reviews-from-clients": "/",
+  // homepage sections that were renamed or moved in the conversion upgrade (2026-11)
+  "what-we-build": "/#what-we-do", why: "/#why-nuxy", ownership: "/websites/#ownership" };
 for (const g of groups) {
   for (const s of g.items) legacy[s.id] = `/solutions/#${s.id}`;
   for (const old of g.legacy) legacy[old] = `/solutions/#${g.id}`;
@@ -88,6 +94,16 @@ const isHome = path === "/";
         <a class="brand" href="/" aria-label="Nuxy Automation, home"><Mark class="brand-mark" label="" /><span>Nuxy Automation</span></a>
         <nav class="nav" aria-label="Main">
           <ul class="nav-list">
+            <li>
+              {/* (a plain <details>: it opens by click, tap, Enter or Space and needs no script; the script below
+                  adds Escape, a click outside and closing when focus moves on) */}
+              <details class="drop" data-drop>
+                <summary class:list={["nav-link", { "is-current": inServices }]}>Services<Icon name="caretDown" /></summary>
+                <ul class="drop-panel">
+                  {serviceNav.map(([name, href]) => <li><a href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
+                </ul>
+              </details>
+            </li>
             {nav.map(([name, href]) => <li><a class="nav-link" href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
           </ul>
         </nav>
@@ -95,8 +111,13 @@ const isHome = path === "/";
         <details class="menu" data-menu>
           <summary aria-label="Menu"><Icon name="list" /><Icon name="x" /></summary>
           <div class="menu-panel">
-            <ul>
-              {nav.map(([name, href]) => <li><a href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
+            <p class="menu-label" id="menu-services">Services</p>
+            <ul aria-labelledby="menu-services">
+              {serviceNav.map(([name, href]) => <li><a href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
+            </ul>
+            <p class="menu-label" id="menu-more">Nuxy</p>
+            <ul aria-labelledby="menu-more">
+              {[...nav, ["Contact", "/contact/"]].map(([name, href]) => <li><a href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
             </ul>
             <a class="button" href="/contact/" data-track="cta_menu">Get a Free Quote</a>
           </div>
@@ -163,13 +184,17 @@ const isHome = path === "/";
       // the policy in <head>, like the old-link redirect.
       import { hitUrl } from "../data/site";
 
-      // Menu: closes on a link, outside click or Escape.
-      const menu = document.querySelector<HTMLDetailsElement>("[data-menu]");
-      if (menu) {
+      // The phone menu and the Services list: each closes on a link, a click outside or Escape (focus goes back to
+      // its button), and the Services list also closes when the keyboard moves on past it.
+      for (const menu of document.querySelectorAll<HTMLDetailsElement>("[data-menu], [data-drop]")) {
         menu.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) menu.open = false; });
         document.addEventListener("click", (e) => { if (menu.open && !menu.contains(e.target as Node)) menu.open = false; });
         document.addEventListener("keydown", (e) => {
           if (e.key === "Escape" && menu.open) { menu.open = false; menu.querySelector("summary")?.focus(); }
+        });
+        if (menu.hasAttribute("data-drop")) menu.addEventListener("focusout", (e) => {
+          const to = (e as FocusEvent).relatedTarget as Node | null;
+          if (to && !menu.contains(to)) menu.open = false;
         });
       }
 
@@ -364,12 +389,29 @@ const isHome = path === "/";
   .brand:hover { color: var(--ink); }
   .brand-mark { width: 30px; height: 30px; }
   .nav { display: none; margin-left: auto; }
-  .nav-list { display: flex; gap: 2px; list-style: none; }
-  .nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 9px; border-radius: var(--r-sm); color: var(--body); font-size: 0.9375rem; font-weight: 500; text-decoration: none; white-space: nowrap; }
+  .nav-list { display: flex; gap: 4px; list-style: none; }
+  .nav-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--r-sm); color: var(--body); font-size: 0.9375rem; font-weight: 500; text-decoration: none; white-space: nowrap; transition: color var(--dur-1) ease, background-color var(--dur-1) ease; }
   .nav-link:hover { color: var(--ink); background: rgba(148, 163, 184, 0.08); }
-  .nav-link[aria-current="page"] { color: var(--ink); background: rgba(148, 163, 184, 0.1); }
+  .nav-link[aria-current="page"], .nav-link.is-current { color: var(--ink); background: rgba(148, 163, 184, 0.1); }
+  /* Services: a short list under its button */
+  .drop { position: relative; }
+  .drop > summary { cursor: pointer; list-style: none; user-select: none; }
+  .drop > summary::-webkit-details-marker { display: none; }
+  .drop > summary .icon { width: 14px; height: 14px; transition: transform var(--dur-1) ease; }
+  .drop[open] > summary { color: var(--ink); background: rgba(148, 163, 184, 0.1); }
+  .drop[open] > summary .icon { transform: rotate(180deg); }
+  .drop-panel {
+    position: absolute; top: calc(100% + 10px); left: 0; z-index: 60; display: grid; min-width: 272px; padding: 8px;
+    list-style: none; border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: var(--panel); box-shadow: var(--shadow);
+  }
+  .drop[open] > .drop-panel { animation: drop-in var(--dur-1) var(--ease-out); }
+  @keyframes drop-in { from { opacity: 0; transform: translateY(-4px); } }
+  .drop-panel a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: var(--r-sm); color: var(--ink); font-size: 0.9375rem; font-weight: 500; text-decoration: none; white-space: nowrap; }
+  .drop-panel a:hover { background: rgba(148, 163, 184, 0.1); }
+  .drop-panel a[aria-current="page"] { color: var(--cyan); }
+  .drop-panel li:last-child { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--hairline); }
   .head-cta { display: none; margin-left: auto; }
-  .menu { margin-left: 8px; }
+  .menu { margin-left: auto; } /* (phones: the quote button is in the menu, so the menu button takes the right edge) */
   .menu > summary { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-sm); border: 1px solid var(--hairline); color: var(--ink); cursor: pointer; list-style: none; }
   .menu > summary::-webkit-details-marker { display: none; }
   .menu > summary .icon { width: 22px; height: 22px; }
@@ -381,18 +423,18 @@ const isHome = path === "/";
     max-height: calc(100dvh - var(--nav-h)); overflow-y: auto;
   }
   .menu-panel ul { list-style: none; display: grid; margin-bottom: 16px; }
+  .menu-label { padding-top: 8px; color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
   .menu-panel li a { display: flex; align-items: center; min-height: 48px; color: var(--ink); font-size: 1.0625rem; font-weight: 500; text-decoration: none; border-bottom: 1px solid var(--hairline-soft); }
   .menu-panel li a[aria-current="page"] { color: var(--cyan); }
   .menu-panel .button { width: 100%; }
   @media (min-width: 560px) { .head-cta { display: inline-flex; } .menu { margin-left: 0; } }
   .brand, .head-cta { flex: none; white-space: nowrap; }
-  @media (min-width: 1160px) {
+  /* (five short links, the name and the quote button fit from a small tablet in landscape) */
+  @media (min-width: 900px) {
     .nav { display: block; }
     .head-cta { margin-left: 8px; }
     .menu { display: none; }
   }
-  /* Nine links, the name and the quote button only just fit on a small laptop: tighter links until there is room. */
-  @media (min-width: 1160px) and (max-width: 1279px) { .nav-link { padding: 0 7px; } }
 
   /* Reading column (docs, policies, case studies) */
   .page { max-width: 800px; padding-top: clamp(40px, 6vw, 72px); padding-bottom: clamp(64px, 8vw, 96px); }

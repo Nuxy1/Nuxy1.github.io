@@ -7,6 +7,8 @@
 // fv=2 tells the server this page asks "What do you need?" (the six answers in data/services.ts `wants`); a page loaded
 // before that question existed sends no fv and is accepted without it. A service's "Request a proposal" link opens
 // /contact/?service=<id> (it is named at the top and picks its answer), and ?want=<id> picks an answer directly.
+// The package estimator opens /contact/?services=<id>,<id>: all of them are named at the top and listed in the
+// project box (the server takes one service id, so the first is sent as the service and the list travels as text).
 // Any service, smaller or larger version, bundle or plan can be named; a retired id names the plan that replaced it
 // and is sent as it came, so the owner sees the link was an old one.
 import Icon from "./Icon.astro";
@@ -28,7 +30,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
 
     <div class="inq-about" hidden data-about>
       <p><Icon name="info" /><span>You’re asking about <strong data-about-name></strong>.</span></p>
-      <button class="inq-link" type="button" data-about-clear>Not this one<span class="sr-only">: remove it from the request</span></button>
+      <button class="inq-link" type="button" data-about-clear><span data-about-clear-label>Not this one</span><span class="sr-only" data-about-clear-more>: remove it from the request</span></button>
     </div>
     <input type="hidden" name="service" value="" />
 
@@ -170,6 +172,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       <button class="button" type="submit" data-submit><span data-label>Request my free quote</span><Icon name="paperPlaneTilt" /></button>
       <p class="inq-alt">or email <a href={ask()}>{inbox}</a></p>
     </div>
+    <p class="inq-next"><Icon name="checkCircle" /><span>You’ll receive a written recommendation and price. No sales call is required.</span></p>
     <p class="sr-only" role="status" aria-live="polite" data-status></p>
   </form>
 
@@ -261,6 +264,8 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
   .inq-privacy { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); font-size: 0.875rem; line-height: 1.5; }
   .inq-privacy .icon { margin-top: 0.1em; color: var(--cyan); }
+  .inq-next { display: flex; gap: 10px; align-items: flex-start; margin-top: -8px; color: var(--body); font-size: 0.9375rem; line-height: 1.5; }
+  .inq-next .icon { margin-top: 0.15em; color: var(--ok, var(--cyan)); flex: none; }
   .inq-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
   .inq-actions .button[aria-busy="true"] { opacity: 0.8; cursor: progress; }
   .inq-actions .button[aria-busy="true"] .icon { animation: spin 900ms linear infinite; }
@@ -317,24 +322,42 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     const focusOf = (name: string): HTMLElement | null => (name === "want" ? chosen() ?? form.querySelector<HTMLInputElement>('input[name="want"]') : field(name));
     form.noValidate = true; // (our own messages, next to each field)
 
-    // ?service=<id> from a "Request a proposal" link: named at the top, and its answer picked (only real ids)
+    // ?service=<id> from a "Request a proposal" link: named at the top, and its answer picked (only real ids).
+    // ?services=<id>,<id> from the package estimator: the same for several, and the list is written into the project
+    // box (only when it is empty), where the visitor can change it. Nothing is sent until they press the button.
     const services: Record<string, { name: string; price: string; want: string; was?: string }> = JSON.parse(root.dataset.services ?? "{}");
     const params = new URLSearchParams(location.search);
-    const id = params.get("service") ?? "";
-    const service = /^[a-z0-9-]{1,40}$/.test(id) && Object.prototype.hasOwnProperty.call(services, id) ? services[id] : null;
+    const real = (x: string) => /^[a-z0-9-]{1,40}$/.test(x) && Object.prototype.hasOwnProperty.call(services, x);
+    const ids = [...new Set([params.get("service") ?? "", ...params.getAll("services").flatMap((v) => v.split(","))].filter(real))].slice(0, 12);
+    const id = ids[0] ?? "";
+    const service = id ? services[id] : null;
     const about = form.querySelector<HTMLElement>("[data-about]")!;
     const serviceInput = field("service")!;
+    const need = field("need")!;
+    let listed = ""; // (the line this page wrote into the project box, so "Not these" can take it back out)
     if (service) {
       serviceInput.value = id;
-      about.querySelector("[data-about-name]")!.textContent = `${service.name} (${service.price})${service.was ? `, which replaced ${service.was}` : ""}`;
+      const names = ids.map((x) => services[x].name);
+      about.querySelector("[data-about-name]")!.textContent =
+        ids.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : `${service.name} (${service.price})${service.was ? `, which replaced ${service.was}` : ""}`;
+      if (ids.length > 1) {
+        about.querySelector("[data-about-clear-label]")!.textContent = "Not these";
+        about.querySelector("[data-about-clear-more]")!.textContent = ": remove them from the request";
+        if (!need.value.trim()) need.value = listed = `I’d like a price for: ${names.join(", ")}.\n`;
+      }
       about.hidden = false;
     }
     const want = params.get("want") ?? "";
-    const pick = /^[a-z-]{1,20}$/.test(want) && radio(want) ? want : service?.want ?? "";
+    // (several services: the answer most of them belong to, the first one on a tie)
+    const answers = ids.map((x) => services[x].want);
+    const times = (w: string) => answers.filter((x) => x === w).length;
+    const common = answers.reduce((best, w) => (times(w) > times(best) ? w : best), answers[0] ?? "");
+    const pick = /^[a-z-]{1,20}$/.test(want) && radio(want) ? want : common;
     if (pick && radio(pick)) radio(pick)!.checked = true;
     about.querySelector("[data-about-clear]")!.addEventListener("click", () => {
       serviceInput.value = "";
       about.hidden = true;
+      if (listed && need.value.trim() === listed.trim()) need.value = "";
       focusOf("want")?.focus();
       status.textContent = "Removed. Choose what you need, or describe it below.";
     });

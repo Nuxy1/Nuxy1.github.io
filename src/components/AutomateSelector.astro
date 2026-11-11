@@ -29,7 +29,7 @@ const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
     <div class="section-head reveal">
       <p class="eyebrow">Find your fit</p>
       <h2 id="as-h">What Do You Want to Automate?</h2>
-      <p>Pick a goal to see the services that fit it, with their published prices. It’s a fixed list from our catalogue, not a guess about your business, and a quote is always free.</p>
+      <p>Pick a goal to see the best fits and their starting prices.</p>
     </div>
 
     <fieldset class="as-goals reveal">
@@ -64,7 +64,7 @@ const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
                 <div class="as-foot">
                   <p class="as-price"><span class="sr-only">Price: </span>{s.price}{s.monthly ? <span class="note"> + {s.monthly}</span> : <span class="note">{s.addon ? " add-on" : " one-time"}</span>}</p>
                   <div class="as-links">
-                    <a class="text-link" href={`/solutions/#${s.id}`} data-track="service_details">Details<span class="sr-only">: {s.name}</span></a>
+                    <a class="text-link" href={`/solutions/#${s.id}`} data-track="service_details">See details<span class="sr-only">: {s.name}</span></a>
                     <a class="button small" href={`/contact/?service=${s.id}`} data-track="cta_selector">Get a quote<span class="sr-only">: {s.name}</span></a>
                   </div>
                 </div>

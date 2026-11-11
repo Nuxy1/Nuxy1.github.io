@@ -6,18 +6,20 @@
 // Without JavaScript the four demos show one under another (or the chosen one, where :has() works) with every step
 // visible. With it, a demo plays one step every few seconds after the visitor presses its start button, stops at the
 // end, and pauses when it scrolls away or the tab is hidden. Cards still to come keep their place as faint outlines,
-// so nothing below them jumps as they fill in.
+// so nothing below them jumps as they fill in. Under 900px, where the cards sit below the buttons, they play inside a
+// window that scrolls by itself to the newest card, and pressing a button brings that window on screen once: the play
+// is seen where the visitor is looking and the page itself is never scrolled by the clock.
 import Icon from "./Icon.astro";
 import type { IconName } from "./Icon.astro";
 import { serviceById } from "../data/services";
 import pauseSvg from "@phosphor-icons/core/assets/regular/pause.svg?raw";
 
 type Card = { step: number; who: "caller" | "auto" | "owner"; label: string; icon: IconName; title?: string; lines?: string[]; quote?: string; slots?: string[]; pick?: number; button?: string };
-type Demo = { id: string; tab: string; icon: IconName; business: string; start: string; steps: string[]; cards: Card[]; svc: string[]; want: string };
+type Demo = { id: string; tab: string; icon: IconName; business: string; steps: string[]; cards: Card[]; svc: string[]; want: string };
 
 const demos: Demo[] = [
   {
-    id: "voice", tab: "AI Voice Receptionist", icon: "phone", business: "Birchline Heating & Air", start: "Simulate Incoming Call",
+    id: "voice", tab: "AI Voice Receptionist", icon: "phone", business: "Birchline Heating & Air",
     steps: [
       "A call comes in after hours",
       "The AI receptionist answers",
@@ -38,7 +40,7 @@ const demos: Demo[] = [
     svc: ["ai-receptionist", "ai-replies", "missed-calls"], want: "automation",
   },
   {
-    id: "missed", tab: "Missed-Call Recovery", icon: "phoneX", business: "Copperleaf Auto Repair", start: "Simulate a Missed Call",
+    id: "missed", tab: "Missed-Call Recovery", icon: "phoneX", business: "Copperleaf Auto Repair",
     steps: [
       "A call goes unanswered",
       "A text goes back within a minute",
@@ -56,7 +58,7 @@ const demos: Demo[] = [
     svc: ["missed-calls", "ai-receptionist", "follow-up"], want: "automation",
   },
   {
-    id: "estimate", tab: "Estimate Follow-Up", icon: "paperPlaneTilt", business: "Ridgeview Roofing", start: "Send the Estimate",
+    id: "estimate", tab: "Estimate Follow-Up", icon: "paperPlaneTilt", business: "Ridgeview Roofing",
     steps: [
       "The estimate goes out",
       "No reply: a friendly follow-up",
@@ -74,7 +76,7 @@ const demos: Demo[] = [
     svc: ["estimate-follow-up", "quotes", "follow-up"], want: "automation",
   },
   {
-    id: "qualify", tab: "Lead Qualification", icon: "funnel", business: "Fernwood Landscaping", start: "Submit the Form",
+    id: "qualify", tab: "Lead Qualification", icon: "funnel", business: "Fernwood Landscaping",
     steps: [
       "A new inquiry arrives",
       "Three quick questions go out",
@@ -107,7 +109,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
     <div class="section-head reveal">
       <p class="eyebrow">Simulated demos</p>
       <h2 id="ap-h">See Your Business Run on Autopilot</h2>
-      <p>Four short, made-up examples of what the automations do while you’re busy. Pick one and press start.</p>
+      <p>Try a few examples of what Nuxy can automate. These are interactive simulations: nothing is actually sent or booked.</p>
     </div>
 
     <fieldset class="ap-tabs reveal">
@@ -141,7 +143,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
                 <div class="ap-controls" data-controls hidden>
                   <button type="button" class="button" data-play aria-pressed="false">
                     <span class="ap-ico-play"><Icon name="play" /></span><span class="ap-ico-pause" set:html={pauseIcon}></span>
-                    <span data-play-label data-start={d.start}>{d.start}</span>
+                    <span data-play-label>Start Demo</span>
                   </button>
                   <div class="ap-row">
                     <button type="button" class="button secondary small" data-back><Icon name="caretLeft" />Back</button>
@@ -155,11 +157,12 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
               </div>
 
               <div class="ap-stage">
+                <div class="ap-progress" aria-hidden="true"><span data-bar></span></div>
                 <p class="ap-caption" aria-live="polite" data-caption>
                   <span data-at="0">Press start to play it, or go through it one step at a time.</span>
                   {d.steps.map((s, i) => <span data-at={i + 1}>Step {i + 1} of {n}: {s}.</span>)}
                 </p>
-                <ol class="ap-feed">
+                <ol class="ap-feed" aria-label="What happens, step by step">
                   {d.cards.map((c) => (
                     <li class={`ap-card ${c.who}`} data-from={c.step}>
                       <p class="ap-card-label"><Icon name={c.icon} /><span>{c.label}</span><span class="ap-who">{whoName[c.who]}</span></p>
@@ -194,6 +197,8 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
   const section = document.querySelector<HTMLElement>("#autopilot");
 
   if (section) {
+    // one column: the cards sit in a window of their own (see the styles)
+    const narrow = window.matchMedia("(max-width: 899px)");
     const players: { stop: () => void; hold: (on: boolean) => void }[] = [];
 
     for (const root of section.querySelectorAll<HTMLElement>("[data-ap]")) {
@@ -206,6 +211,9 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
       const back = root.querySelector<HTMLButtonElement>("[data-back]")!;
       const next = root.querySelector<HTMLButtonElement>("[data-next]")!;
       const reset = root.querySelector<HTMLButtonElement>("[data-reset]")!;
+      const bar = root.querySelector<HTMLElement>("[data-bar]")!;
+      const stage = root.querySelector<HTMLElement>(".ap-stage")!;
+      const feed = root.querySelector<HTMLElement>(".ap-feed")!;
       let cur = 0, timer = 0, playing = false, held = false, started = false, done = false;
 
       const show = (k: number, fresh = true) => {
@@ -216,6 +224,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
           c.classList.toggle("is-new", fresh && f === cur && moving());
         }
         caps.forEach((c) => (c.hidden = +c.dataset.at! !== cur));
+        bar.style.transform = `scaleX(${cur / total})`;
         steps.forEach((b) => {
           const s = +b.dataset.go!;
           b.setAttribute("aria-current", s === cur ? "step" : "false");
@@ -223,18 +232,35 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
         });
         back.disabled = cur <= 1;
         next.disabled = cur === total;
+        root.classList.toggle("at-start", cur === 0);
+        follow(fresh);
         if (cur === total) {
           stop();
           label.textContent = "Watch it again";
           if (!done) { done = true; track("demo_complete"); }
         }
       };
+      // in the window: keep the newest card inside it (its own scroll, never the page's); keys can scroll it once it has cards
+      const follow = (smooth = true) => {
+        const windowed = narrow.matches && feed.scrollHeight > feed.clientHeight + 1;
+        if (windowed && cur > 0) feed.tabIndex = 0; else feed.removeAttribute("tabindex");
+        if (!windowed) return;
+        const shown = cards.filter((c) => +c.dataset.from! <= cur);
+        let top = 0;
+        if (shown.length) {
+          const first = cards.find((c) => +c.dataset.from! === cur) ?? shown[shown.length - 1], last = shown[shown.length - 1];
+          top = Math.max(0, Math.min(first.offsetTop - 10, last.offsetTop + last.offsetHeight + 10 - feed.clientHeight));
+        }
+        feed.scrollTo({ top, behavior: smooth && moving() ? "smooth" : "auto" });
+      };
+      // a press brings the window on screen (only as far as needed, and only when the visitor pressed something)
+      const bring = () => { if (narrow.matches) stage.scrollIntoView({ block: "nearest", behavior: moving() ? "smooth" : "auto" }); };
       const tick = () => { timer = 0; if (playing && !held) { show(cur + 1); if (playing) schedule(); } };
       const schedule = () => { clearTimeout(timer); timer = window.setTimeout(tick, STEP_MS); };
       const stop = () => {
         playing = false; clearTimeout(timer); timer = 0;
         play.setAttribute("aria-pressed", "false");
-        if (cur > 0 && cur < total) label.textContent = "Play";
+        if (cur > 0 && cur < total) label.textContent = "Resume";
       };
       const begin = () => { if (!started) { started = true; track("demo_start"); } };
 
@@ -242,20 +268,22 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
         if (playing) { stop(); return; }
         begin();
         if (cur === total || cur === 0) { done = cur === total ? done : false; show(1); }
+        bring();
         playing = true;
         play.setAttribute("aria-pressed", "true");
         label.textContent = "Pause";
         schedule();
       });
-      next.addEventListener("click", () => { begin(); stop(); show(Math.max(1, cur + 1)); });
+      next.addEventListener("click", () => { begin(); stop(); show(Math.max(1, cur + 1)); bring(); });
       back.addEventListener("click", () => { stop(); show(cur - 1); });
-      reset.addEventListener("click", () => { stop(); done = false; show(0, false); label.textContent = root.querySelector<HTMLElement>("[data-start]")!.dataset.start!; });
-      steps.forEach((b) => { b.disabled = false; b.addEventListener("click", () => { begin(); stop(); show(+b.dataset.go!); }); });
+      reset.addEventListener("click", () => { stop(); done = false; show(0, false); label.textContent = "Start Demo"; });
+      steps.forEach((b) => { b.disabled = false; b.addEventListener("click", () => { begin(); stop(); show(+b.dataset.go!); bring(); }); });
 
       root.querySelector<HTMLElement>("[data-controls]")!.hidden = false;
       root.classList.add("ready");
       show(0, false);
       back.disabled = true;
+      narrow.addEventListener("change", () => follow(false));
       players.push({ stop, hold: (on) => { held = on; if (!on && playing && !timer) schedule(); } });
     }
 
@@ -327,9 +355,14 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
   .ap-price { color: var(--body); font-weight: 500; }
 
   .ap-stage { padding: 18px; min-width: 0; }
-  .ap-caption { min-height: 3em; margin-bottom: 14px; color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
+  /* how far through the demo: a thin bar over the caption (the caption says the step in words) */
+  .ap-progress { height: 4px; margin-bottom: 14px; border-radius: 2px; background: var(--hairline); overflow: hidden; }
+  .ap-progress span { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--button), var(--cyan)); transform: scaleX(0); transform-origin: left; }
+  :global(html[data-motion]:not([data-motion="reduced"])) .ap-progress span { transition: transform var(--dur-2) var(--ease-out); }
+  .ap-demo:not(.ready) .ap-progress { display: none; }
+  .ap-caption { min-height: 3.2em; margin-bottom: 14px; color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
   .ap-demo:not(.ready) .ap-caption { display: none; }
-  .ap-feed { display: grid; gap: 10px; list-style: none; }
+  .ap-feed { position: relative; display: grid; gap: 10px; list-style: none; }
   .ap-card { max-width: 34rem; padding: 12px 14px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel); font-size: 0.9375rem; color: var(--body); }
   .ap-card.caller { justify-self: start; border-color: var(--hairline-strong); }
   .ap-card.auto { justify-self: end; border-color: rgba(34, 211, 238, 0.35); background: rgba(34, 211, 238, 0.06); }
@@ -352,6 +385,19 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
   :global(html[data-motion]:not([data-motion="reduced"])) .ap-card.is-new { animation: ap-in var(--dur-3) var(--ease-out) both; }
   @keyframes ap-in { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: none; } }
 
+  /* one column (under 900px): the cards sit in a window that the player scrolls to the newest one, so the play stays on
+     screen instead of running on below the buttons. Its height never changes, so nothing below moves. Only with the
+     player: without JavaScript every card shows in full. Before the first step the window doesn't scroll (it is empty). */
+  @media (max-width: 899px) {
+    /* the page already keeps anchors clear of the header (scroll-padding-top); the bottom clears the phone quote bar */
+    .ap-demo.ready .ap-stage { scroll-margin-bottom: 92px; }
+    .ap-demo.ready .ap-feed {
+      max-height: min(46vh, 26rem); max-height: min(46svh, 26rem); overflow-y: auto; padding: 10px;
+      border: 1px solid var(--hairline-soft); border-radius: var(--r-md); background: var(--bg-2);
+      scrollbar-width: thin; scrollbar-color: var(--hairline-strong) transparent;
+    }
+    .ap-demo.ready.at-start .ap-feed { overflow-y: hidden; }
+  }
   @media (min-width: 900px) {
     .ap-grid { grid-template-columns: 300px minmax(0, 1fr); }
     .ap-side { border-bottom: 0; border-right: 1px solid var(--hairline-soft); }

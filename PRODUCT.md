@@ -29,12 +29,22 @@ optional. Built inside the client's own accounts as an invited user, never with 
 website, the domain and every account, and a monthly plan is optional, never a condition. Proof is working demos and
 open-source code anyone can open, clearly labelled as demonstrations, not testimonials.
 
-### Four main services (home page)
+### Four main services
 
 1. Business websites (one page $499, 4-page site $900)
 2. E-commerce stores (5 products $699, 25 products $1,200)
 3. AI and business automation (one-time setups from $149; the AI Voice Receptionist is available after consultation)
 4. Optional website management (Website Care $79/month)
+
+### Home page
+
+The home page has one job: a small-business owner understands within seconds what Nuxy can do for them, sees the
+automation working, sees roughly what it costs, and knows how to ask. In order: the hero (two buttons and the
+starting prices), four cards (AI Voice Receptionist, Lead Recovery Automation, Business Websites, Business
+Automation; `featured` in `src/data/services.ts`), the automation demos, the goal picker, the package estimator,
+example work, three ways to start (Starter, Growth, Custom; `tiers`), the five steps, why Nuxy, and one final
+button. Every price on it is worked out from the catalogue. The estimator gives an estimated starting price, never
+a quote. E-commerce stores and website management are reached from the Services menu and the full list.
 
 The flagship is **Lead response & follow-up**: an instant reply to every website form, email, Facebook or Instagram
 inquiry, friendly follow-ups that stop when the customer replies, and an alert to the owner.

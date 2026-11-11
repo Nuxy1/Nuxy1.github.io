@@ -332,12 +332,13 @@ export const retired: Record<string, string> = { "automation-care": "automation-
 
 export const businessHours = "Monday to Friday, 9 a.m. to 5 p.m. Central time, except US federal holidays";
 // What every plan shares (also on the Policies page, #cancel). Fair use and boundaries are defined here, once.
+export const thirdPartyCosts = "Other companies’ subscriptions and usage (your website builder, texting, AI, phone minutes) are paid by you to them, and named before you sign up.";
 export const planTerms: string[] = [
   "Month to month: cancel any time and the plan ends with the month already paid.",
   `Business days and hours are ${businessHours}. Reply times are when work on it starts, not a promise of when it’s fixed; another company’s outage is fixed as soon as they allow.`,
   "A workflow is one automation with one trigger, like “new form, then a reply and an alert”. Small changes are edits to work already built: wording, timing, a field. New pages, new workflows, redesigns and new integrations are quoted in writing.",
   "Unused minutes don’t carry over, and nothing is ever charged beyond the plan without your written yes.",
-  "Other companies’ subscriptions and usage (your website builder, texting, AI, phone minutes) are paid by you to them, and named before you sign up.",
+  thirdPartyCosts,
   "Your accounts, data and finished work stay yours, with or without a plan. Existing agreements keep the price and terms already agreed.",
 ];
 export const planNote = "Monitoring runs 24/7: websites are checked every 5 minutes, and automations alert me when a run fails. Fixes start within each plan’s stated reply time, not instantly, and you hear from me when work starts and again when it’s fixed. If a fix waits on someone else (your host, an app’s outage, a change only you can approve), it comes as soon as they allow, with updates until then.";
@@ -426,6 +427,54 @@ export const primary: Primary[] = [
   { id: "management", icon: "shieldCheck", title: "Optional Website Management", text: "After launch, we can keep your website watched and its renewals on track for a monthly fee. It’s never required.",
     points: ["Website checked every 5 minutes, 24/7", "Domain and security renewals watched", "Billed monthly, cancel any time", "Your website stays yours if you stop"], price: `${care.name}: ${care.price}, optional`, href: "/websites/#ownership", cta: "Website management" },
 ];
+
+// The four services the homepage leads with (conversion brief, 2026-11): one outcome, one sentence, one starting price
+// and one link each. Every price is read from the catalogue above, and the wording stays inside what each service's
+// own card promises. (`primary` above is still used by /website-security/ and the tests.)
+export type Featured = { id: string; icon: IconName; title: string; outcome: string; text: string; price: string; note?: string; href: string; cta: string };
+const receptionist = serviceById["ai-receptionist"];
+const leadBundle = bundleById["lead-recovery"];
+export const featured: Featured[] = [
+  { id: "voice", icon: receptionist.icon, title: "AI Voice Receptionist", outcome: "Calls answered when you can’t pick up",
+    text: "Answers the calls you choose, takes the caller’s details, books into your calendar where your tool allows, and sends you a summary.",
+    price: `Setup ${receptionist.price} + ${receptionist.monthly}`, note: statusWords[receptionist.status], href: "/automation/#voice", cta: "See the AI receptionist" },
+  { id: "lead-recovery", icon: leadBundle.icon, title: "Lead Recovery Automation", outcome: "Inquiries and missed calls answered fast",
+    text: "An instant reply to every inquiry, a text back after a missed call, and follow-ups that stop when they answer.",
+    price: `From ${serviceById["missed-calls"].price} · both as a bundle ${leadBundle.price}`, href: "/automation/#lead-response", cta: "See lead recovery" },
+  { id: "websites", icon: "browser", title: "Business Websites", outcome: "Visitors turned into customers",
+    text: "A professional website built for phones first, with a clear way to call, book or ask for a quote.",
+    price: `From ${starterSite.price}, one-time`, href: "/websites/", cta: "See business websites" },
+  { id: "automation", icon: "lightning", title: "Business Automation", outcome: "Less admin, every week",
+    text: "Your apps connected and the repetitive work done for you: bookings, reminders, invoices and reports.",
+    price: `One-time setups from ${automationFrom}`, href: "/automation/", cta: "See automation services" },
+];
+
+// The homepage's three ways in (Starter, Growth, Custom). Prices are worked out from the catalogue: the cheapest
+// website and automation, the cheapest preset bundle, and the cheapest of the consultation and custom projects.
+const cheapest = (list: { price: string }[]) => money(Math.min(...list.map((s) => dollars(s.price))));
+const customItems = services.filter((s) => s.priceType === "custom" || s.status === "consult" || s.id === "integrations");
+export const tiers: { id: string; icon: IconName; name: string; who: string; price: string; priceNote: string; points: string[] }[] = [
+  { id: "starter", icon: "rocketLaunch", name: "Starter", who: "A small website or one simple automation.",
+    price: `From ${automationFrom}`, priceNote: "one-time",
+    points: [`One automation from ${automationFrom}`, `A one-page website from ${starterSite.price}`, "No monthly plan needed"] },
+  { id: "growth", icon: "chartLineUp", name: "Growth", who: "Several automations that work together.",
+    price: `From ${cheapest(bundles)}`, priceNote: "one-time, preset bundle",
+    points: [`Preset bundles from ${cheapest(bundles)}`, `Any 2 services ${bundle.two}% off, 3 or more ${bundle.three}% off`, `Optional monthly plan from ${starter.price}`] },
+  { id: "custom", icon: "plugsConnected", name: "Custom", who: "An AI receptionist, a CRM or advanced integrations.",
+    price: `From ${cheapest(customItems)}`, priceNote: "starting price, quoted in writing",
+    points: [`${receptionist.name}: setup ${receptionist.price} + ${receptionist.monthly}`,`${serviceById["integrations"].name} ${serviceById["integrations"].price}`, `CRM systems ${serviceById["crm-system"].price}`] },
+];
+
+// What the homepage estimator may add up: the one-time services anyone can order today, with the smaller versions
+// beside their parent (choosing one clears the other). Consultation-only services are scoped first, so they are left
+// out of an automatic total and named under it instead.
+export const estimable = groups.map((g) => ({
+  id: g.id, title: g.title,
+  items: g.items.filter((s) => s.status === "active" && s.priceType !== "custom" && s.priceType !== "setup")
+    .flatMap((s) => [{ id: s.id, name: s.name, price: s.price, fixes: s.fixes, alt: s.variants?.map((v) => v.id).join(" ") ?? "" },
+      ...(s.variants ?? []).filter((v) => v.priceType !== "setup" && v.priceType !== "custom").map((v) => ({ id: v.id, name: v.name, price: v.price, fixes: `A smaller version of ${s.name}`, alt: s.id }))]),
+})).filter((g) => g.items.length > 0);
+export const consultOnly = services.filter((s) => s.status === "consult");
 
 // How a job runs. Every promise here is a published term (/policies/#refunds, "At handover", and business/contract.md
 // items 4, 5 and 7): step 4 is the policy's "you pay the other 50% after you’ve seen the work running", not a new one.

@@ -3,15 +3,21 @@
 // features, the services it shows, a computer-and-phone picture, the viewer (/examples/<slug>/) and the demo itself.
 // The automation code examples sit in their own section further down, so design work and technical work never mix.
 // Every business here is made up and the page says so at the top and on every example; there are no reviews, no client
-// logos and no results on this page, because there are none to show yet.
+// logos and no results on this page, because there are none to show yet. A real client project (data/case-studies.ts,
+// only with the client's written consent) gets its own section above the examples, and the note at the top then says
+// which is which instead of "every business on this page is made up".
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import DeviceShot from "../../components/DeviceShot.astro";
+import CaseStudy from "../../components/CaseStudy.astro";
+import { caseStudies } from "../../data/case-studies";
 import { demoSites } from "../../data/demo-sites";
 import { examples } from "../../data/examples";
 import { serviceById } from "../../data/services";
 
 const repo = "https://github.com/Nuxy1/small-business-automations";
+// real client projects: only the ones with the client's recorded yes (CaseStudy renders nothing without it)
+const clients = caseStudies.filter((c) => c.consent?.trim());
 const isStore = (project: string) => project === "E-commerce store";
 const where = (id: string) => (id === "new-website" ? "/websites/#new-website" : id === "online-shop" ? "/ecommerce/" : `/solutions/#${id}`);
 const sites = demoSites.filter((d) => !isStore(d.project)).length;
@@ -25,11 +31,16 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
         <p class="eyebrow">Portfolio</p>
         <h1>Example work you can click through.</h1>
         <p class="lead">{count(sites, "business website", "business websites").replace(/^\w/, (c) => c.toUpperCase())} and {count(stores, "online store", "online stores")}, each built for a made-up business so you can see the layout, features and finish we aim for. Open any of them on a computer or a phone, and try the forms.</p>
-        <p class="made-up"><Icon name="info" /><span><strong>These are examples, not client projects.</strong> Every business on this page is made up and labeled that way. There are no reviews or results here, because examples have none to show.</span></p>
+        {clients.length === 0 ? (
+          <p class="made-up"><Icon name="info" /><span><strong>These are examples, not client projects.</strong> Every business on this page is made up and labeled that way. There are no reviews or results here, because examples have none to show.</span></p>
+        ) : (
+          <p class="made-up"><Icon name="info" /><span><strong>Client projects and examples are kept apart.</strong> The client projects are real and shown with each client's written permission. Every example business below them is made up and labeled that way.</span></p>
+        )}
       </div>
       <nav class="jump" aria-labelledby="jump-h">
         <h2 id="jump-h" class="jump-h">On this page</h2>
         <ul role="list">
+          {clients.length > 0 && <li><a href="#clients"><Icon name="sealCheck" /><span><strong>Client projects</strong><span>Real work, shown with permission</span></span></a></li>}
           {demoSites.map((d) => (
             <li><a href={`#${d.slug}`}><Icon name={d.icon} /><span><strong>{d.name}</strong><span>{d.project}</span></span></a></li>
           ))}
@@ -38,6 +49,19 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
       </nav>
     </div>
   </section>
+
+  {clients.length > 0 && (
+    <section class="section" id="clients" aria-labelledby="clients-h">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Client projects</p>
+          <h2 id="clients-h">Work for real businesses</h2>
+          <p>Each one is shown with the client's written permission.</p>
+        </div>
+        <div class="clients">{clients.map((c) => <CaseStudy study={c} />)}</div>
+      </div>
+    </section>
+  )}
 
   <section class="section cases" aria-label="Example projects">
     <div class="wrap">
@@ -62,7 +86,7 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
               ))}</p>
               {store && <p class="case-note"><Icon name="lockSimple" /><span>Its cart works, but checkout is switched off: nothing can be bought.</span></p>}
               <div class="case-actions">
-                <a class="button" href={`/examples/${d.slug}/`} data-track="example_open">View on desktop and phone</a>
+                <a class="button" href={`/examples/${d.slug}/`} data-track="example_open">View Project</a>
                 <a class="button secondary" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the full {store ? "store" : "site"}</a>
               </div>
             </div>
@@ -123,6 +147,7 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
   .jump-h { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .jump ul { display: grid; gap: 2px; margin: 10px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--hairline); }
   .jump li { border-bottom: 1px solid var(--hairline); }
+  .clients { display: grid; gap: 20px; }
   .jump a { display: flex; gap: 12px; align-items: center; min-height: 52px; padding: 8px 4px; color: var(--ink); text-decoration: none; }
   .jump a:hover strong { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
   .jump a :global(.icon) { flex: none; color: var(--cyan); }
