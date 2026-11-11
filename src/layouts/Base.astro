@@ -3,8 +3,10 @@
 // anonymous page counter. `wide` pages lay out their own sections; other pages get the reading column (.page).
 import Mark from "../components/Mark.astro";
 import Icon from "../components/Icon.astro";
+import MotionControl from "../components/MotionControl.astro";
+import "../styles/motion.css";
 import { inbox } from "../data/site";
-import { groups, plans } from "../data/services";
+import { groups, plans, retired } from "../data/services";
 
 interface Props {
   title: string;
@@ -31,6 +33,7 @@ const nav: [string, string][] = [
   ["Websites", "/websites/"],
   ["E-Commerce", "/ecommerce/"],
   ["Automation", "/automation/"],
+  ["Repairs", "/website-security/"],
   ["Portfolio", "/portfolio/"],
   ["Pricing", "/pricing/"],
   ["About", "/about/"],
@@ -45,6 +48,7 @@ for (const g of groups) {
   for (const old of g.legacy) legacy[old] = `/solutions/#${g.id}`;
 }
 for (const p of plans) legacy[p.id] = `/pricing/#${p.id}`;
+for (const [old, now] of Object.entries(retired)) legacy[old] = `/pricing/#${now}`;
 const isHome = path === "/";
 ---
 <!doctype html>
@@ -120,6 +124,7 @@ const isHome = path === "/";
                 <li><a href="/websites/#redesign">Website redesign</a></li>
                 <li><a href="/ecommerce/">E-commerce stores</a></li>
                 <li><a href="/automation/">Business automation</a></li>
+                <li><a href="/website-security/">Website security &amp; repairs</a></li>
                 <li><a href="/get-a-website/">No website yet?</a></li>
                 <li><a href="/solutions/">All services</a></li>
               </ul>
@@ -146,6 +151,7 @@ const isHome = path === "/";
         </div>
         <div class="legal">
           <p>© 2026 Nuxy Automation, Faribault, Minnesota</p>
+          <MotionControl />
           <p><a href="/policies/">Policies and privacy</a><span aria-hidden="true">·</span>No cookies, no personal tracking<span aria-hidden="true">·</span><a href="https://github.com/Nuxy1">GitHub</a></p>
         </div>
       </div>
@@ -189,6 +195,10 @@ const isHome = path === "/";
         const t = (ev.target as Element).closest?.<HTMLElement>("[data-track], a[href^='mailto:']");
         if (t) send(t.dataset.track || "email_click");
       });
+    </script>
+    <script>
+      // Motion level, section reveals and the footer's Motion choice (src/scripts/motion.ts)
+      import "../scripts/motion";
     </script>
   </body>
 </html>
@@ -341,13 +351,7 @@ const isHome = path === "/";
   .cta-actions { display: flex; flex-wrap: wrap; gap: 12px; }
   @media (max-width: 559px) { .cta-actions, .cta-actions .button { width: 100%; } }
 
-  /* Gentle scroll-in, only where the browser supports it and motion is welcome */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .reveal { animation: reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 28%; }
-    }
-  }
-  @keyframes reveal { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  /* (.reveal, the gentle scroll-in, is in styles/motion.css: it runs once, set off by src/scripts/motion.ts) */
 
   /* Header */
   .site-head {
@@ -361,7 +365,7 @@ const isHome = path === "/";
   .brand-mark { width: 30px; height: 30px; }
   .nav { display: none; margin-left: auto; }
   .nav-list { display: flex; gap: 2px; list-style: none; }
-  .nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 11px; border-radius: var(--r-sm); color: var(--body); font-size: 0.9375rem; font-weight: 500; text-decoration: none; white-space: nowrap; }
+  .nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 9px; border-radius: var(--r-sm); color: var(--body); font-size: 0.9375rem; font-weight: 500; text-decoration: none; white-space: nowrap; }
   .nav-link:hover { color: var(--ink); background: rgba(148, 163, 184, 0.08); }
   .nav-link[aria-current="page"] { color: var(--ink); background: rgba(148, 163, 184, 0.1); }
   .head-cta { display: none; margin-left: auto; }
@@ -382,13 +386,13 @@ const isHome = path === "/";
   .menu-panel .button { width: 100%; }
   @media (min-width: 560px) { .head-cta { display: inline-flex; } .menu { margin-left: 0; } }
   .brand, .head-cta { flex: none; white-space: nowrap; }
-  @media (min-width: 1120px) {
+  @media (min-width: 1160px) {
     .nav { display: block; }
     .head-cta { margin-left: 8px; }
     .menu { display: none; }
   }
-  /* Eight links, the name and the quote button only just fit on a small laptop: tighter links until there is room. */
-  @media (min-width: 1120px) and (max-width: 1279px) { .nav-link { padding: 0 8px; } }
+  /* Nine links, the name and the quote button only just fit on a small laptop: tighter links until there is room. */
+  @media (min-width: 1160px) and (max-width: 1279px) { .nav-link { padding: 0 7px; } }
 
   /* Reading column (docs, policies, case studies) */
   .page { max-width: 800px; padding-top: clamp(40px, 6vw, 72px); padding-bottom: clamp(64px, 8vw, 96px); }

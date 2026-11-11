@@ -1,0 +1,290 @@
+---
+// The homepage hero's "automation core" (owner's motion brief, 2026-11-11; study in business/motion-upgrade/README.md).
+// A sphere of glowing points with a tilted orbit ring, and the five parts of the system around it. Choosing a part
+// brings it forward and shows what it does, with the service that does it and its published price (data/services.ts,
+// looked up by id: an id that isn't in the catalogue is skipped, never typed in).
+//
+// It works without JavaScript: the five parts are radio buttons and CSS shows the chosen part's card. The script only
+// adds the camera move, the optional pointer depth, and pauses the slow ambient motion when the hero is off screen, the
+// tab is hidden, or after a minute without interaction. All motion is transform or opacity (styles/motion.css).
+import Icon from "./Icon.astro";
+import type { IconName } from "./Icon.astro";
+import { serviceById } from "../data/services";
+import type { Service } from "../data/services";
+
+type Part = { id: string; icon: IconName; name: string; title: string; text: string; ids: string[] };
+const voice = Boolean(serviceById["ai-receptionist"]);
+const parts: Part[] = [
+  { id: "leads", icon: "funnel", name: "Leads", title: "Every inquiry, caught the moment it arrives",
+    text: "Website forms, missed calls and messages land in one list with the details you need, and the customer gets a reply while they’re still interested.",
+    ids: ["lead-qualification", "follow-up"] },
+  { id: "receptionist", icon: "phone", name: "AI Receptionist", title: voice ? "Calls and questions answered while you work" : "Questions answered while you work",
+    text: voice
+      ? "An AI receptionist answers in the words you approve, takes the details, offers open times and hands anything unusual to you."
+      : "An AI assistant answers common questions from your website and messages in the words you approve, and hands anything unusual to you.",
+    ids: ["ai-receptionist", "ai-replies"] },
+  { id: "booking", icon: "calendarCheck", name: "Booking", title: "Appointments without the back-and-forth",
+    text: "Customers pick an open time themselves, get a reminder before it, and the visit lands on your calendar.",
+    ids: ["booking"] },
+  { id: "follow-up", icon: "paperPlaneTilt", name: "Follow-Up", title: "A friendly nudge when a quote goes quiet",
+    text: "Quotes and inquiries get a follow-up if the customer goes quiet, and it stops the moment they reply.",
+    ids: ["estimate-follow-up", "quotes"] },
+  { id: "customers", icon: "users", name: "Customer Management", title: "Every customer and job in one place",
+    text: "Contacts, jobs and next steps in one tidy list, connected to the tools you already use, so nothing lives only in your head.",
+    ids: ["crm-system", "data", "integrations"] },
+];
+const serviceFor = (p: Part) => p.ids.map((id) => serviceById[id]).find(Boolean) as (Service & { monthly?: string }) | undefined;
+
+// Five places on a circle around the core, clockwise from the top, as % of the square stage
+const R = 38;
+const place = parts.map((_, i) => {
+  const a = ((-90 + i * 72) * Math.PI) / 180;
+  return { x: +(50 + R * Math.cos(a)).toFixed(1), y: +(50 + R * Math.sin(a)).toFixed(1), deg: -90 + i * 72 };
+});
+
+// The sphere: points spread evenly over a ball (a Fibonacci lattice), tipped forward, seen from the front. Nearer
+// points are larger and brighter; colour runs cyan → blue → indigo across it, as in the reference.
+const N = 200, tilt = 0.38, golden = Math.PI * (3 - Math.sqrt(5));
+const colours = ["#22d3ee", "#3b82f6", "#818cf8"];
+const dots: string[][] = [[], [], []];
+for (let i = 0; i < N; i++) {
+  const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), t = golden * i;
+  const x = Math.cos(t) * r, z0 = Math.sin(t) * r;
+  const y1 = y * Math.cos(tilt) - z0 * Math.sin(tilt), z = y * Math.sin(tilt) + z0 * Math.cos(tilt);
+  const depth = (z + 1) / 2;
+  const c = Math.min(2, Math.floor(((x - y1 + 2) / 4) * 3));
+  dots[c].push(`<circle cx="${(50 + 46 * x).toFixed(1)}" cy="${(50 + 46 * y1).toFixed(1)}" r="${(0.5 + 0.9 * depth).toFixed(2)}" opacity="${(0.18 + 0.8 * depth).toFixed(2)}"/>`);
+}
+// two half-sets that turn slowly in opposite directions, so the points shimmer past each other
+const half = (k: number) => colours.map((c, ci) => `<g fill="${c}">${dots[ci].filter((_, i) => i % 2 === k).join("")}</g>`).join("");
+
+// faint background specks (fixed, not animated)
+const specks = Array.from({ length: 36 }, (_, i) => {
+  const a = i * 2.39996, d = 30 + ((i * 37) % 19);
+  return `<circle cx="${(50 + d * Math.cos(a)).toFixed(1)}" cy="${(50 + d * Math.sin(a) * 0.92).toFixed(1)}" r="${(0.25 + (i % 3) * 0.15).toFixed(2)}"/>`;
+}).join("");
+const wires = place.map((p) => {
+  const a = (p.deg * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+  return `<line x1="${(50 + 23 * c).toFixed(1)}" y1="${(50 + 23 * s).toFixed(1)}" x2="${(50 + 32 * c).toFixed(1)}" y2="${(50 + 32 * s).toFixed(1)}"/>`;
+}).join("");
+---
+<fieldset class="core" data-core>
+  <legend class="core-legend">The system, part by part: choose one</legend>
+
+  <div class="stage">
+    <div class="scene" data-scene>
+      <div class="glow" aria-hidden="true"></div>
+      <svg class="field" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <g class="specks" set:html={specks} />
+        <g class="wires" set:html={wires} />
+      </svg>
+      <div class="ring r1" aria-hidden="true"><div class="spin"><svg viewBox="0 0 100 100" focusable="false"><circle cx="50" cy="50" r="48.5" /></svg></div></div>
+      <div class="ring r2" aria-hidden="true"><div class="spin"><svg viewBox="0 0 100 100" focusable="false"><circle cx="50" cy="50" r="48.5" /></svg></div></div>
+      <div class="pulses" aria-hidden="true">
+        {place.map((p, i) => <span class="wire" style={`--deg:${p.deg}deg;--i:${i}`}><span class="pulse"></span></span>)}
+      </div>
+      <div class="orb" aria-hidden="true">
+        <div class="orb-a"><svg viewBox="0 0 100 100" focusable="false" set:html={half(0)} /></div>
+        <div class="orb-b"><svg viewBox="0 0 100 100" focusable="false" set:html={half(1)} /></div>
+        <div class="nucleus"></div>
+      </div>
+      {parts.map((p, i) => (
+        <label class="node" style={`--x:${place[i].x}%;--y:${place[i].y}%`} data-x={place[i].x} data-y={place[i].y}>
+          <input type="radio" name="core-part" value={p.id} checked={i === 0} aria-controls={`core-${p.id}`} />
+          <span class="node-dot"><Icon name={p.icon} /></span>
+          <span class="node-name">{p.name}</span>
+        </label>
+      ))}
+    </div>
+  </div>
+
+  <div class="panels">
+    {parts.map((p, i) => {
+      const s = serviceFor(p);
+      return (
+        <section class="panel" id={`core-${p.id}`} data-part={p.id} aria-labelledby={`core-${p.id}-h`}>
+          <p class="panel-kicker"><span class="panel-num">{i + 1}/{parts.length}</span>{p.name}</p>
+          <h2 class="panel-h" id={`core-${p.id}-h`}>{p.title}</h2>
+          <p class="panel-text">{p.text}</p>
+          {s && (
+            <a class="panel-svc" href={`/solutions/#${s.id}`} data-track={`core_${p.id}`}>
+              <span class="panel-svc-name">{s.name}</span>
+              <span class="panel-svc-price">{s.price}{s.monthly && <> + {s.monthly}</>}</span>
+              <Icon name="arrowRight" />
+            </a>
+          )}
+        </section>
+      );
+    })}
+  </div>
+</fieldset>
+
+<script>
+  // the motion level comes from <html data-motion> and the "nuxy:motion" event (src/scripts/motion.ts, imported only by
+  // Base.astro so every page loads it as one script with no second request); either may run first
+  const root = document.documentElement;
+  const ambient = (l: string) => l === "standard" || l === "enhanced";
+
+  for (const core of document.querySelectorAll<HTMLElement>("[data-core]")) {
+    const scene = core.querySelector<HTMLElement>("[data-scene]")!;
+    const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
+    let level = "standard", onScreen = true, restAt = 0, explored = false, frame = 0;
+    const REST = 60_000; // the slow loops settle after a minute without interaction
+
+    // ambient motion runs only while the hero is on screen, the tab is visible and the minute hasn't run out
+    const sync = () => {
+      const run = ambient(level) && onScreen && !document.hidden && Date.now() < restAt;
+      core.toggleAttribute("data-off", !run);
+    };
+    const wake = () => { restAt = Date.now() + REST; sync(); };
+    let restTimer = 0;
+    const schedule = () => { clearTimeout(restTimer); restTimer = window.setTimeout(sync, Math.max(0, restAt - Date.now()) + 50); };
+
+    const onLevel = () => { level = root.dataset.motion ?? "reduced"; wake(); schedule(); };
+    document.addEventListener("nuxy:motion", onLevel);
+    onLevel();
+    new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; sync(); }).observe(core);
+    document.addEventListener("visibilitychange", sync);
+
+    // the camera: the chosen part drifts a little toward the middle and the scene leans in (video A's push-in)
+    core.addEventListener("change", (e) => {
+      const node = (e.target as HTMLElement).closest<HTMLElement>(".node");
+      if (!node) return;
+      const x = +node.dataset.x!, y = +node.dataset.y!;
+      scene.style.setProperty("--cam-x", `${((50 - x) * 0.14).toFixed(2)}%`);
+      scene.style.setProperty("--cam-y", `${((50 - y) * 0.14).toFixed(2)}%`);
+      scene.dataset.cam = "";
+      wake(); schedule();
+      if (!explored) { explored = true; (window as unknown as { nuxyTrack?: (e: string) => void }).nuxyTrack?.("core_explore"); }
+    });
+
+    // Enhanced only: the layers follow the pointer a few pixels (one update per frame, only while it moves)
+    scene.addEventListener("pointermove", (e) => {
+      if (level !== "enhanced" || !fine.matches || frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const r = scene.getBoundingClientRect();
+        scene.style.setProperty("--px", (((e.clientX - r.left) / r.width - 0.5) * 2).toFixed(3));
+        scene.style.setProperty("--py", (((e.clientY - r.top) / r.height - 0.5) * 2).toFixed(3));
+      });
+      if (Date.now() > restAt - REST / 2) { wake(); schedule(); }
+    });
+    scene.addEventListener("pointerleave", () => { scene.style.setProperty("--px", "0"); scene.style.setProperty("--py", "0"); });
+  }
+</script>
+
+<style>
+  .core { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 12px; justify-items: center; }
+  .core-legend { float: left; width: 100%; margin-bottom: 12px; color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; }
+
+  .stage { position: relative; width: min(100%, 400px); aspect-ratio: 1; }
+  .scene { position: absolute; inset: 0; --px: 0; --py: 0; }
+  .scene[data-cam] { transform: translate(var(--cam-x, 0), var(--cam-y, 0)) scale(1.04); }
+  :global(html[data-motion]:not([data-motion="reduced"])) .scene { transition: transform var(--dur-4) var(--ease-io); }
+
+  .glow { position: absolute; inset: 14%; border-radius: 50%; background: radial-gradient(closest-side, rgba(59, 130, 246, 0.34), rgba(34, 211, 238, 0.1) 55%, transparent 100%); }
+  .field { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .specks { fill: #7cb3ff; opacity: 0.45; }
+  .wires { stroke: #7cb3ff; stroke-width: 0.45; stroke-linecap: round; stroke-dasharray: 0.01 1.5; opacity: 0.7; }
+
+  .ring { position: absolute; pointer-events: none; }
+  .ring.r1 { inset: 3%; transform: perspective(900px) rotateX(74deg); }
+  .ring.r2 { inset: 13%; transform: perspective(900px) rotate(-22deg) rotateX(70deg); }
+  .spin, .spin svg { width: 100%; height: 100%; display: block; }
+  .ring circle { fill: none; stroke-width: 0.9; stroke-linecap: round; stroke-dasharray: 0.01 2.4; }
+  .r1 circle { stroke: #22d3ee; opacity: 0.85; }
+  .r2 circle { stroke: #818cf8; opacity: 0.6; stroke-dasharray: 0.01 3.2; }
+
+  .orb { position: absolute; inset: 28%; transform: translate(calc(var(--px) * 6px), calc(var(--py) * 6px)); }
+  .orb-a, .orb-b { position: absolute; inset: 0; }
+  .orb svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .nucleus { position: absolute; inset: 38%; border-radius: 50%; background: radial-gradient(closest-side, rgba(248, 250, 252, 0.9), rgba(34, 211, 238, 0.55) 45%, transparent 100%); }
+  .ring.r1 .spin { translate: calc(var(--px) * -4px) calc(var(--py) * -3px); }
+
+  /* travelling signals, Enhanced only: each wire is a line from the middle out to a part */
+  .pulses { position: absolute; inset: 0; }
+  .wire { position: absolute; left: 50%; top: 50%; width: 32%; height: 0; transform-origin: 0 0; transform: rotate(var(--deg)); }
+  .pulse { position: absolute; left: 0; top: -2px; width: 100%; height: 4px; display: none; }
+  .pulse::before { content: ""; position: absolute; left: 0; top: 0; width: 4px; height: 4px; border-radius: 50%; background: #a5f3fc; }
+
+  /* ambient loops: only from the motion script, at the standard and enhanced levels */
+  :global(html[data-ambient]) .r1 .spin { animation: core-spin 90s linear infinite; }
+  :global(html[data-ambient]) .r2 .spin { animation: core-spin 130s linear infinite reverse; }
+  :global(html[data-ambient]) .orb-a { animation: core-spin 160s linear infinite; }
+  :global(html[data-ambient]) .orb-b { animation: core-spin 220s linear infinite reverse; }
+  :global(html[data-ambient]) .glow { animation: core-breathe 7s ease-in-out infinite alternate; }
+  :global(html[data-motion="enhanced"]) .pulse { display: block; animation: core-travel 3.6s var(--ease-io) infinite; animation-delay: calc(var(--i) * -0.72s); }
+  .core[data-off] :is(.spin, .orb-a, .orb-b, .glow, .pulse) { animation-play-state: paused; }
+  @keyframes core-spin { to { transform: rotate(1turn); } }
+  @keyframes core-breathe { from { opacity: 0.7; } to { opacity: 1; } }
+  @keyframes core-travel {
+    0% { transform: translateX(70%); opacity: 0; }
+    25%, 75% { opacity: 1; }
+    100% { transform: translateX(98%); opacity: 0; }
+  }
+
+  /* the five parts */
+  .node {
+    position: absolute; left: var(--x); top: var(--y); z-index: 2; display: grid; justify-items: center; gap: 6px;
+    width: max-content; max-width: 7.5em; transform: translate(-50%, -24px); cursor: pointer; text-align: center;
+  }
+  .node input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
+  .node-dot {
+    position: relative; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%;
+    border: 1px solid var(--hairline-strong); background: rgba(17, 28, 48, 0.92); color: var(--link);
+  }
+  .node-dot::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid rgba(34, 211, 238, 0.55); opacity: 0; transform: scale(0.85); }
+  .node-dot :global(.icon) { width: 22px; height: 22px; }
+  /* a dark backing keeps the name readable over the ring and the points behind it */
+  .node-name { padding: 2px 7px; border-radius: 6px; background: rgba(11, 18, 32, 0.78); color: var(--body); font-size: 0.8125rem; font-weight: 600; line-height: 1.25; }
+  .node:hover .node-dot { border-color: rgba(34, 211, 238, 0.6); color: var(--ink); }
+  .node:has(input:checked) .node-dot { transform: scale(1.1); border-color: var(--cyan); color: var(--ink); background: #12305a; }
+  .node:has(input:checked) .node-dot::after { opacity: 1; transform: none; }
+  .node:has(input:checked) .node-name { color: var(--ink); }
+  .node:has(input:focus-visible) .node-dot { outline: 2px solid var(--focus); outline-offset: 3px; }
+  .stage:has(.node input:checked) .node:not(:has(input:checked)) { opacity: 0.62; }
+  .stage:has(.node input:checked) .node:not(:has(input:checked)):hover { opacity: 1; }
+  :global(html[data-motion]:not([data-motion="reduced"])) :is(.node, .node-dot, .node-dot::after) {
+    transition: transform var(--dur-3) var(--ease-out), opacity var(--dur-2) ease, border-color var(--dur-1) ease, background-color var(--dur-1) ease;
+  }
+
+  /* the chosen part's card: all five share one cell, so the height never changes as the choice does */
+  .panels { display: grid; width: min(100%, 440px); }
+  .panel {
+    grid-area: 1 / 1; display: grid; align-content: start; gap: 8px; padding: 18px 20px;
+    border: 1px solid var(--hairline); border-radius: var(--r-lg); background: rgba(22, 34, 56, 0.86);
+    visibility: hidden; opacity: 0; transform: translateY(6px);
+  }
+  .core:has(input[value="leads"]:checked) #core-leads,
+  .core:has(input[value="receptionist"]:checked) #core-receptionist,
+  .core:has(input[value="booking"]:checked) #core-booking,
+  .core:has(input[value="follow-up"]:checked) #core-follow-up,
+  .core:has(input[value="customers"]:checked) #core-customers { visibility: visible; opacity: 1; transform: none; }
+  :global(html[data-motion]:not([data-motion="reduced"])) .panel {
+    transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2);
+  }
+  :global(html[data-motion]:not([data-motion="reduced"])) .core:has(input:checked) .panel[id] { transition-delay: 0s; }
+  /* (a browser without :has() shows all five cards, one under another) */
+  @supports not selector(:has(*)) { .panel { grid-area: auto; visibility: visible; opacity: 1; transform: none; } .panels { gap: 12px; } }
+
+  .panel-kicker { display: flex; align-items: center; gap: 10px; color: var(--cyan); font-size: 0.8125rem; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; }
+  .panel-num { color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  .panel-h { font-size: 1.1875rem; line-height: 1.3; }
+  .panel-text { font-size: 0.9375rem; color: var(--body); }
+  .panel-svc {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-height: 48px; margin-top: 4px; padding: 10px 14px;
+    border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg-2); color: var(--ink); text-decoration: none;
+  }
+  .panel-svc:hover { border-color: var(--hairline-strong); }
+  .panel-svc-name { font-weight: 600; }
+  .panel-svc-price { color: var(--link); font-weight: 650; }
+  .panel-svc :global(.icon) { margin-left: auto; color: var(--link); }
+
+  @media (max-width: 479px) {
+    /* a phone has no room to spare at the sides: a gentler push, so an outer name never meets the screen edge */
+    .scene[data-cam] { transform: translate(calc(var(--cam-x, 0%) * 0.4), calc(var(--cam-y, 0%) * 0.4)); }
+    .node { max-width: 6.6em; }
+    .node-name { font-size: 0.75rem; }
+    .panel { padding: 18px; }
+  }
+</style>

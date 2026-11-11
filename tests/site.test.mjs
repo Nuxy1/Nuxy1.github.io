@@ -10,7 +10,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { services, plans, primary, groups } from "../src/data/services.ts";
+import { services, plans, primary, groups, health, wants, variants, bundles, bundleMath, money as usd } from "../src/data/services.ts";
 import { demoSites } from "../src/data/demo-sites.ts";
 import { examples } from "../src/data/examples.ts";
 
@@ -44,9 +44,9 @@ const indexable = [...pages.keys()].filter((u) => !expectedNoindex.has(u));
 const legacy = JSON.parse(first(pages.get("/"), /const legacy = (\{[^;]*\});/));
 
 test("the build has every page, and the made-up data matches the pages", () => {
-  assert.equal(pages.size, 33, `pages: ${[...pages.keys()].join(" ")}`);
+  assert.equal(pages.size, 34, `pages: ${[...pages.keys()].join(" ")}`);
   for (const u of ["/", "/websites/", "/get-a-website/", "/automation/", "/solutions/", "/pricing/", "/about/",
-    "/contact/", "/contact/thanks/", "/demos/", "/demo/", "/policies/", "/docs/", "/404.html", "/ecommerce/", "/portfolio/"]) {
+    "/contact/", "/contact/thanks/", "/demos/", "/demo/", "/policies/", "/docs/", "/404.html", "/ecommerce/", "/portfolio/", "/website-security/"]) {
     assert.ok(pages.has(u), `missing ${u}`);
   }
   for (const d of demoSites) assert.ok(pages.has(`/examples/${d.slug}/`) && pages.has(`/example-sites/${d.slug}/`), d.slug);
@@ -90,6 +90,45 @@ test("each page either points search engines at itself or is kept out of search"
   }
 });
 
+// Website security & repairs (brief 5). The page may promise only what Nuxy can stand behind: it names the work that
+// needs the owner's written authorization, claims no certificate, guarantee or "completely secure", shows no price
+// that isn't published, and sends every request through the existing quote form.
+test("the security & repairs page keeps its rules: authorization named, no certification or guarantee claims, published prices only", () => {
+  const html = pages.get("/website-security/");
+  const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+  const text = visible(main);
+  assert.match(text, /Protect Your Website\. Fix Problems\. Keep Your Business Running\./);
+  assert.match(text, /Nuxy helps businesses identify technical problems, improve website reliability, and address verified security concerns through authorized assessments and professional repairs\./);
+  for (const name of ["Free Website Health Consultation", "Authorized Security Assessment", "Website Repairs", "Ongoing Maintenance"]) assert.ok(text.includes(name), name);
+  assert.deepEqual(health.map((o) => o.name), ["Free Website Health Consultation", "Authorized Security Assessment", "Website Repairs", "Ongoing Maintenance"]);
+  // the three buttons, each to a choice the quote form has
+  for (const [label, want] of [["Request a Website Health Check", "health-check"], ["Get a Website Repair Quote", "repair"], ["Ask About Security Assessments", "security"]]) {
+    assert.ok(wants.some((w) => w.id === want), want);
+    assert.match(main, new RegExp(`<a [^>]*href="/contact/\\?want=${want}"[^>]*>${label}</a>`), label);
+  }
+  for (const o of health) assert.ok(wants.some((w) => w.id === o.want), `${o.id} asks through ${o.want}`);
+  // which work needs written authorization, said per offer and in its own section
+  assert.match(text, /Written authorization from the website's owner is required before any testing starts\./);
+  assert.match(text, /Only with your written authorization/);
+  assert.match(text, /If that isn't clear, we don't test\./);
+  for (const o of health) assert.ok(text.includes(o.auth.replace(/’/g, "'")), `${o.id}: authorization line`);
+  // no claims Nuxy can't back
+  for (const banned of [/guarantee/i, /100\s?%/, /hack-?proof/i, /unhackable/i, /fully secure/i, /unlimited/i, /penetration test(?!ing firm)/i, /\bpen ?test/i, /compliant\b/i, /bank-level/i, /military-grade/i]) {
+    assert.doesNotMatch(text, banned);
+  }
+  for (const m of text.matchAll(/certified/gi)) assert.equal(text.slice(m.index - 6, m.index), "not a ", "“certified” only as something we are not");
+  for (const m of text.matchAll(/completely secure/gi)) assert.match(text.slice(m.index - 20, m.index), /No promise of .$/, "“completely secure” only as something we don't promise");
+  // every dollar amount is a published one
+  const published = new Set([services.find((s) => s.id === "site-fixes").price.replace("from ", ""), plans[0].amount]);
+  for (const price of text.match(/\$[\d,]+/g) ?? []) assert.ok(published.has(price), `${price} is not a published price for this page`);
+  // found from the menu, the footer, the home page and the catalogue, without displacing the four primary services
+  const home = pages.get("/");
+  assert.equal(primary.length, 4);
+  assert.equal(all(home.slice(home.indexOf("<main"), home.indexOf("</main>")), /<a [^>]*href="([/]website-security[/])"/g).length, 1);
+  assert.ok(all(pages.get("/solutions/"), /<a [^>]*href="([/]website-security[/])"/g).length >= 3, "menu, footer and the catalogue's own link");
+  for (const [u, page] of pages) if (!demoUrls.includes(u)) assert.ok(page.includes('href="/website-security/"'), `${u} has no link to the page`);
+});
+
 test("the sitemap lists exactly the indexable pages, and robots.txt points at it", () => {
   const xml = readFileSync(join(dist, "sitemap.xml"), "utf8");
   const locs = all(xml, /<loc>([^<]*)<\/loc>/g);
@@ -118,12 +157,19 @@ test("structured data parses, and its prices are the published ones in services.
   collect(ldJson(pages.get("/solutions/")));
   collect(ldJson(pages.get("/pricing/")));
   const digits = (p) => p.replace(/[^\d.]/g, "");
-  for (const s of services) {
+  for (const s of [...services, ...variants]) {
     const o = offers.get(`${origin}/solutions/#${s.id}`);
     assert.ok(o, `no offer for ${s.id}`);
     const got = o.price ?? o.priceSpecification?.minPrice;
     assert.equal(got, digits(s.price), `${s.id}: structured data says ${got}, the site says ${s.price}`);
     if (s.price.startsWith("from")) assert.equal(o.price, undefined, `${s.id}: a "from" price must be a minPrice`);
+    // (a monthly management price is named, never added to the setup price)
+    if (s.monthly) assert.ok(o.description?.includes(s.monthly), `${s.id}: its monthly price is not named`);
+  }
+  for (const b of bundles) {
+    const o = offers.get(`${origin}/pricing/#${b.id}`);
+    assert.ok(o, `no offer for bundle ${b.id}`);
+    assert.equal(o.price, digits(b.price), b.id);
   }
   for (const p of plans) {
     const o = offers.get(`${origin}/pricing/#${p.id}`);
@@ -135,7 +181,8 @@ test("structured data parses, and its prices are the published ones in services.
 test("every Nuxy price shown comes from services.ts, and every service and plan shows its price", () => {
   const money = /\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?/g;
   const known = new Set(
-    [...services.map((s) => s.price), ...plans.map((p) => p.price), ...primary.map((p) => p.price)].flatMap((p) => p.match(money) || []));
+    [...[...services, ...variants].flatMap((s) => [s.price, s.monthly ?? ""]), ...plans.map((p) => p.price), ...primary.map((p) => p.price),
+      ...bundles.flatMap((b) => [b.price, usd(bundleMath(b).separately), usd(bundleMath(b).save)])].flatMap((p) => p.match(money) || []));
   // Not Nuxy prices: the made-up plumber's quote inside the lead demo.
   const demoAmounts = new Set(["$1,450"]);
   // Pages whose amounts belong to made-up businesses or sample program output, not to Nuxy.
@@ -146,9 +193,10 @@ test("every Nuxy price shown comes from services.ts, and every service and plan 
     for (const a of shown) assert.ok(known.has(a) || demoAmounts.has(a), `${u} shows ${a}, which is not a price in services.ts`);
   }
   const solutions = visible(pages.get("/solutions/"));
-  for (const s of services) assert.ok(solutions.includes(s.price), `/solutions/ doesn't show ${s.name} ${s.price}`);
+  for (const s of [...services, ...variants]) assert.ok(solutions.includes(s.price), `/solutions/ doesn't show ${s.name} ${s.price}`);
   const pricing = visible(pages.get("/pricing/"));
   for (const p of plans) assert.ok(pricing.includes(p.amount), `/pricing/ doesn't show ${p.name} ${p.amount}`);
+  for (const b of bundles) assert.ok(pricing.includes(b.name) && pricing.includes(b.price), `/pricing/ doesn't show ${b.name} ${b.price}`);
 });
 
 test("every internal link, image and anchor lands on something that exists", () => {
@@ -259,6 +307,17 @@ test("pictures drawn as SVG are named or hidden, and every docs table sits in it
   assert.deepEqual(problems, []);
 });
 
+test("each icon is drawn once per page and every reused icon points at a drawing on the same page (F7)", () => {
+  const problems = [];
+  for (const [u, html] of pages) {
+    const ids = all(html, /\sid="([^"]+)"/g);
+    const seen = new Set();
+    for (const id of ids) { if (seen.has(id)) problems.push(`${u}: id "${id}" is used twice`); seen.add(id); }
+    for (const ref of all(html, /<use href="#([^"]+)"/g)) if (!seen.has(ref)) problems.push(`${u}: <use> points at missing #${ref}`);
+  }
+  assert.deepEqual(problems, []);
+});
+
 test("booking is shown only once a calendar link is set, and then the privacy policy names the booking service", () => {
   // (site.ts reads import.meta.env, so its calUrl is read from the source text rather than imported)
   const calUrl = readFileSync(join(here, "..", "src", "data", "site.ts"), "utf8").match(/export const calUrl = "([^"]*)"/)?.[1];
@@ -274,5 +333,31 @@ test("booking is shown only once a calendar link is set, and then the privacy po
     assert.ok(contact.includes(`href="${calUrl}"`), "the button goes to calUrl");
     assert.match(contact, /the form or an email gets the same written plan/, "the call is offered as optional");
     assert.match(policies, /<strong>Booking a call:<\/strong> the booking page is run by \S/);
+  }
+});
+
+// The prices the owner approved in the pricing overhaul brief (2026-11-11). A change here is a price change for new
+// customers: it needs the owner's written yes, and existing agreements keep what they agreed either way.
+const approved = {
+  "new-website": "$900", "starter-website": "$499", "site-fixes": "from $150", "google-profile": "$199", "online-shop": "$1,200",
+  "mini-store": "$699", store: "$449", "gift-cards": "$150", ordering: "$349", "follow-up": "$399", "missed-calls": "$199",
+  "ai-receptionist": "from $599 + from $249/month", "ai-receptionist-advanced": "from $999 + $399/month", "lead-qualification": "from $699",
+  reviews: "$149", "ai-replies": "$649", booking: "$349", deposits: "$150", quotes: "$399", "estimate-follow-up": "$449",
+  "re-engagement": "from $599", "email-list": "$249", "cold-outreach": "from $999", invoices: "$299", onboarding: "from $699",
+  reports: "$249", data: "from $200", integrations: "from $750", "crm-system": "from $2,500",
+  "lead-recovery": "$529", "appointment-protection": "$549", "quote-to-customer": "$749",
+  care: "$79/month", "automation-starter": "$149/month", "automation-growth": "$349/month", "automation-partner": "$799/month",
+};
+
+test("the approved prices stay as approved, and every bundle beats the multi-service discount", () => {
+  const now = Object.fromEntries([
+    ...[...services, ...variants].map((s) => [s.id, s.monthly ? `${s.price} + ${s.monthly}` : s.price]),
+    ...bundles.map((b) => [b.id, b.price]), ...plans.map((p) => [p.id, p.price]),
+  ]);
+  assert.deepEqual(now, approved);
+  for (const b of bundles) {
+    const { separately } = bundleMath(b);
+    const off = b.items.length >= 3 ? 0.85 : 0.9;
+    assert.ok(Number(b.price.replace(/\D/g, "")) < separately * off, `${b.id}: ${b.price} is not below ${separately} with the discount`);
   }
 });

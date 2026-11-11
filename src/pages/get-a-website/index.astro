@@ -5,10 +5,11 @@ import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import DemoSites from "../../components/DemoSites.astro";
 import DeviceShot from "../../components/DeviceShot.astro";
-import { serviceById, steps } from "../../data/services";
+import { serviceById, variantById, steps } from "../../data/services";
 import type { IconName } from "../../components/Icon.astro";
 
 const web = serviceById["new-website"];
+const starter = variantById["starter-website"];
 
 const gaps: { icon: IconName; title: string; text: string }[] = [
   { icon: "magnifyingGlass", title: "People look you up before they call", text: "Even when a neighbor recommends you, many people check online first: what you do, where you work and whether you look established." },
@@ -61,6 +62,7 @@ const gets = [
       {gets.map((g) => <li><Icon name="check" />{g}</li>)}
     </ul>
     <p class="offer-costs"><strong>Paid to other companies:</strong> {web.costs} We tell you the exact cost in your written plan, before you sign up for anything.</p>
+    <p class="offer-costs"><strong>Just need one page?</strong> The {starter.name} is {starter.price} one-time. <a href={`/contact/?service=${starter.id}`} data-track="cta_lp_starter">Ask about the {starter.name}</a></p>
     <a class="button" href="/contact/?service=new-website" data-track="cta_lp_quote">Get a Free Website Quote</a>
   </section>
 

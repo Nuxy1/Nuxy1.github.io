@@ -7,12 +7,13 @@ import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import DeviceShot from "../../components/DeviceShot.astro";
 import ServiceCard from "../../components/ServiceCard.astro";
-import { serviceById, plans, bundle } from "../../data/services";
+import { serviceById, variantById, plans, bundle, dollars } from "../../data/services";
 import { demoSiteBySlug } from "../../data/demo-sites";
 import { shopifyPartner } from "../../data/site";
 import type { IconName } from "../../components/Icon.astro";
 
 const shop = serviceById["online-shop"];
+const mini = variantById["mini-store"];
 const extras = ["store", "gift-cards", "ordering"].map((id) => serviceById[id]);
 const care = plans.find((p) => p.id === "care")!;
 const demo = demoSiteBySlug["quillfern-candles"];
@@ -58,10 +59,10 @@ const service = {
   description: "Online stores for small businesses on Shopify or Square Online, set up in the client’s own account: up to 25 products, payments, pickup or shipping, and a handover, at a fixed price.",
   provider: { "@id": `${site}/#business` },
   areaServed: [{ "@type": "AdministrativeArea", name: "Southern Minnesota" }, { "@type": "Country", name: "United States" }],
-  offers: [{ "@type": "Offer", name: shop.name, price: shop.price.replace(/[$,]/g, ""), priceCurrency: "USD", url: `${site}/ecommerce/#included` }],
+  offers: [shop, mini].map((s) => ({ "@type": "Offer", name: s.name, price: String(dollars(s.price)), priceCurrency: "USD", url: `${site}/ecommerce/#included` })),
 };
 ---
-<Base title="E-Commerce Stores for Small Businesses · Shopify & Square Online · Nuxy Automation" description={`An online store on Shopify or Square Online, set up in your own account: up to 25 products, payments, pickup or shipping. ${shop.price} one-time; you own the store.`} wide>
+<Base title="E-Commerce Stores for Small Businesses · Shopify & Square Online · Nuxy Automation" description={`A Shopify or Square Online store in your own account, with payments and pickup or shipping: 5 products ${mini.price}, up to 25 ${shop.price}. You own the store.`} wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(service)} />
 
   <section class="hero-shop">
@@ -75,7 +76,7 @@ const service = {
           <a class="button secondary" href={`/examples/${demo.slug}/`} data-track="example_open">See the Example Store</a>
         </div>
         <ul class="hero-facts" role="list">
-          <li><Icon name="receipt" /><span><strong>{shop.price}</strong> one-time, written price</span></li>
+          <li><Icon name="receipt" /><span><strong>{mini.price}</strong> 5 products · <strong>{shop.price}</strong> up to 25, one-time</span></li>
           <li><Icon name="storefront" /><span>Your account, your store</span></li>
           <li><Icon name="lockSimple" /><span>No passwords shared</span></li>
         </ul>
@@ -100,6 +101,7 @@ const service = {
         <div><dt>What we need from you</dt><dd>{shop.needs}</dd></div>
         <div><dt>What you pay other companies</dt><dd>{shop.costs}</dd></div>
       </dl>
+      <p class="mini-note"><strong>Only a few products?</strong> The {mini.name} is {mini.price}: {mini.text.charAt(0).toLowerCase() + mini.text.slice(1)} <a href={`/contact/?service=${mini.id}`} data-track="cta_shop_mini">Ask about the {mini.name}</a></p>
       <p class="more-line"><a class="button" href="/contact/?service=online-shop" data-track="cta_shop_quote">Ask about an online shop<Icon name="arrowRight" /></a></p>
     </div>
   </section>
@@ -166,7 +168,7 @@ const service = {
       <div class="section-head">
         <p class="eyebrow">Extras for stores</p>
         <h2 id="extras-h">Already selling? Keep orders moving.</h2>
-        <p>Fixed prices, for a new store or one you already run. Order two one-time services together and save {bundle.two}%; three or more, {bundle.three}%.</p>
+        <p>Fixed prices, for a new store or one you already run. Order two one-time services together and save {bundle.two}%; three or more, {bundle.three}% (not on top of a <a href="/pricing/#bundles">preset bundle</a>).</p>
       </div>
       <div class="grid-3">
         {extras.map((s) => <ServiceCard service={s} anchor={false} />)}
@@ -227,6 +229,8 @@ const service = {
   .included li > :global(.icon), .promises li > :global(.icon) { width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
   .included h3, .promises h3 { font-size: 1.0625rem; }
   .included p, .promises p { margin-top: 4px; color: var(--body); font-size: 0.9375rem; }
+  .mini-note { margin-top: 20px; max-width: 72ch; color: var(--body); font-size: 0.9375rem; }
+  .mini-note strong { color: var(--ink); }
   .facts { display: grid; gap: 16px 32px; margin: clamp(32px, 4vw, 44px) 0 0; padding-block: 20px; border-block: 1px solid var(--hairline); }
   @media (min-width: 720px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .facts dt { color: var(--muted); font-size: 0.8125rem; font-weight: 600; }

@@ -5,6 +5,7 @@
 // `shownAbove="#id"`: the service is laid out in full higher up the same page, so the card keeps its place, problem and
 // price but points back up instead of repeating the description (the flagship's card on /automation/).
 import Icon from "./Icon.astro";
+import { priceWords, statusWords, manageWords } from "../data/services";
 import type { Service } from "../data/services";
 
 interface Props { service: Service; compact?: boolean; level?: "h3" | "h4"; anchor?: boolean; shownAbove?: string; want?: string }
@@ -12,11 +13,15 @@ const { service: s, compact = false, level = "h3", anchor = !compact, shownAbove
 const H = level;
 // (`want` overrides the quote form's first choice: the "Full rebuild" card is the New website service, asked as a redesign)
 const ask = `/contact/?service=${s.id}${want ? `&want=${want}` : ""}`;
+// (the words after a price come from its type, so a "from" price never reads as a fixed one)
+const note = `${s.addon ? "add-on, " : ""}${priceWords[s.priceType]}${s.monthly ? `, + ${s.monthly}` : ""}`;
+const variants = s.variants ?? [];
 ---
-<article class="svc" id={anchor ? s.id : undefined} data-fits={s.fits} data-search={compact ? undefined : `${s.name} ${s.fixes} ${s.text} ${s.who}`.toLowerCase()}>
+<article class="svc" id={anchor ? s.id : undefined} data-fits={s.fits} data-search={compact ? undefined : `${s.name} ${s.fixes} ${s.text} ${s.who} ${variants.map((v) => `${v.name} ${v.text}`).join(" ")}`.toLowerCase()}>
   <div class="svc-top">
     <span class="svc-icon"><Icon name={s.icon} /></span>
     <span class="svc-tags">
+      {s.status !== "active" && <span class="chip blue">{statusWords[s.status]}</span>}
       {s.popular && <span class="chip">Popular</span>}
       {s.addon && <span class="chip plain">Add-on</span>}
     </span>
@@ -29,13 +34,19 @@ const ask = `/contact/?service=${s.id}${want ? `&want=${want}` : ""}`;
       <div><dt>Suits</dt><dd>{s.who}</dd></div>
       <div><dt>We need from you</dt><dd>{s.needs}</dd></div>
       <div><dt>Other companies’ costs</dt><dd>{s.costs}</dd></div>
+      <div><dt>After launch</dt><dd>{manageWords(s)}</dd></div>
     </dl>
   )}
+  {variants.length > 0 && (compact
+    ? <p class="svc-also">Also: {variants.map((v) => `${v.name}, ${v.price}`).join("; ")}</p>
+    : <ul class="svc-variants" role="list">{variants.map((v) => (
+        <li id={anchor ? v.id : undefined}><p class="svc-variant-name"><strong>{v.name}</strong> <span>{v.price}{v.monthly && ` + ${v.monthly}`}</span></p><p>{v.text}</p></li>
+      ))}</ul>)}
   <div class="svc-foot">
-    <p class="svc-price"><span class="sr-only">Price: </span>{s.price}{s.addon ? <span class="note"> add-on</span> : <span class="note"> one-time</span>}</p>
+    <p class="svc-price"><span class="sr-only">Price: </span>{s.price} <span class="note">{note}</span></p>
     {shownAbove
       ? <a class="text-link" href={shownAbove} data-track="service_up">See how it works<span class="sr-only">: {s.name}</span><Icon name="arrowUp" /></a>
-      : <a class="text-link" href={ask} data-track="service_ask">Ask about this<span class="sr-only">: {s.name}</span><Icon name="arrowRight" /></a>}
+      : <a class="text-link" href={ask} data-track="service_ask">Request a proposal<span class="sr-only">: {s.name}</span><Icon name="arrowRight" /></a>}
   </div>
 </article>
 
@@ -62,4 +73,9 @@ const ask = `/contact/?service=${s.id}${want ? `&want=${want}` : ""}`;
   .svc-price { color: var(--ink); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
   .svc-price .note { font-size: 0.8125rem; font-weight: 500; }
   .svc-foot .text-link { min-height: 44px; }
+  .svc-also { color: var(--muted); font-size: 0.875rem; }
+  .svc-variants { display: grid; gap: 10px; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--hairline-soft); list-style: none; font-size: 0.875rem; color: var(--body); }
+  .svc-variant-name { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: var(--ink); }
+  .svc-variant-name span { font-weight: 650; font-variant-numeric: tabular-nums; }
+  .svc-variants li > p + p { margin-top: 2px; }
 </style>

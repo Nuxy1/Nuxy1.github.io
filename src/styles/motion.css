@@ -1,0 +1,44 @@
+/* Motion system (owner's motion brief, 2026-11-11; rules in DESIGN.md "Motion").
+   src/scripts/motion.ts sets <html data-motion> to one of four levels, from the visitor's choice in the footer, the
+   device's own settings and a short frame-time check:
+     reduced   nothing moves (the device asks for less motion, or the visitor chose Reduced)
+     light     short state changes and reveals only, no looping ambient motion (data saver, slow network, weak device)
+     standard  the default: reveals, state changes and the hero's slow ambient motion
+     enhanced  standard plus the hero's travelling signals and pointer depth (chosen, or a strong desktop)
+   Without JavaScript the attribute is never set: the page is complete and still, nothing waits on a script.
+   Everything that moves animates transform or opacity only; nothing animates layout, blur or shadows. */
+
+:root {
+  --dur-1: 160ms; /* buttons, links, hovers: the site's existing short feel */
+  --dur-2: 240ms; /* small state changes: a demo step, a panel */
+  --dur-3: 380ms; /* a chosen part coming forward */
+  --dur-4: 520ms; /* section reveals, the hero's camera move */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Section reveals: hidden only once the script runs, and only below the first screen (motion.ts marks what is
+   already on screen as shown before it turns this on), so nothing above the fold ever blinks. Each runs once. */
+html[data-reveal] .reveal { transition: opacity var(--dur-4) var(--ease-out), transform var(--dur-4) var(--ease-out); transition-delay: var(--stagger, 0ms); }
+html[data-reveal] .reveal:not(.in) { opacity: 0; transform: translateY(16px); }
+@media print { .reveal { opacity: 1 !important; transform: none !important; } }
+
+/* Cards lift a little under a mouse (never on touch, where a hover sticks after a tap) */
+@media (hover: hover) and (pointer: fine) {
+  html[data-motion="standard"] :is(.svc, .prim), html[data-motion="enhanced"] :is(.svc, .prim) {
+    transition: transform var(--dur-2) var(--ease-out), border-color var(--dur-1) ease;
+  }
+  html[data-motion="standard"] :is(.svc, .prim):hover, html[data-motion="enhanced"] :is(.svc, .prim):hover {
+    transform: translateY(-3px); border-color: var(--hairline-strong);
+  }
+}
+
+/* /solutions/ filter: the cards glide to their new places (a view transition, started only when motion is on) */
+::view-transition-group(*) { animation-duration: var(--dur-3); animation-timing-function: var(--ease-out); }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+
+/* The visitor chose Reduced: the same rule the site applies when the device asks for reduced motion */
+html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+}

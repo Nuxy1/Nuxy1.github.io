@@ -1,0 +1,226 @@
+---
+// Website security, health checks and repairs (brief 5: the headline, the supporting text, the four section names and
+// the three button labels are the brief's words). Offers come from data/services.ts `health`; the only prices shown are
+// published ones (quick fixes, Website Care) or "quoted in writing". Rules this page must keep, checked by
+// tests/site.test.mjs: it says which work needs written authorization, it never claims certification, a guarantee or
+// "completely secure", and every button goes to the existing quote form (/contact/?want=<id>).
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import { health, plans, primary, serviceById } from "../../data/services";
+import type { IconName } from "../../components/Icon.astro";
+
+const care = plans[0];
+// Same care-plan lines as the homepage card: only the terms that are published and capped (approval 7).
+const carePoints = primary.find((p) => p.id === "management")!.points;
+const fixes = serviceById["site-fixes"];
+const ask = (want: string) => `/contact/?want=${want}`;
+const [check, assess, repair] = health;
+
+const open: string[] = [
+  "Open your public pages the way any customer would",
+  "Note what a visitor can see: a broken page, a form that errors, a browser security warning",
+  "Tell you what we saw, in plain words, with no pressure to buy",
+];
+const gated: string[] = [
+  "Security testing of any kind, including automated scanning tools",
+  "Signing in to your website, host or any account",
+  "Changing anything on your live website",
+  "Looking at anything a normal visitor can’t see",
+];
+const never: string[] = [
+  "Tests meant to slow down or take a website offline",
+  "Destructive testing, or copying customer data to prove a point",
+  "Testing systems you don’t own, like your host or payment provider, without their permission",
+  "Holding back what we found in exchange for payment",
+];
+
+const flow: { title: string; text: string }[] = [
+  { title: "A free look", text: "We review what any visitor can see and send you a short written summary. Nothing is tested and nothing is changed." },
+  { title: "A written scope you approve", text: "If you want a security assessment or a repair, you get a written scope first: exactly which website, what we may do, when, what is off limits and who to call if something looks wrong." },
+  { title: "Careful work inside that scope", text: "We work only on what you approved, at the agreed times, gently enough not to disturb your customers, and we stop and call you if anything unexpected happens." },
+  { title: "A report in plain words", text: "Each finding says what we saw, how sure we are, why it matters to your business and how to fix it. Confirmed problems are kept apart from things that only look possible." },
+  { title: "Repairs you approve, then a retest", text: "You decide what gets fixed, at a fixed price in writing. Afterwards we check each fix and tell you plainly: resolved, partly resolved, not resolved or not verified." },
+];
+
+const limits: { icon: IconName; title: string; text: string }[] = [
+  { icon: "info", title: "No certificates we don’t hold", text: "We are web developers who build, test and repair small-business websites. We are not a certified penetration-testing firm, and we won’t describe our work as one." },
+  { icon: "eye", title: "No promise of “completely secure”", text: "No review can prove a website has no problems. We tell you what we checked, what we found, and what was outside the scope." },
+  { icon: "handshake", title: "A referral when it’s beyond us", text: "If your website needs more than we can responsibly do, such as a formal compliance audit or a break-in that is under way, we say so and point you to a qualified security professional." },
+  { icon: "lockSimple", title: "Your report stays private", text: "Findings go to you and the people you name. We never publish them, and we don’t use your website as an example without your written permission." },
+];
+
+const faqs: [string, string][] = [
+  ["Will the free health check break anything or slow my website down?", "No. We open your public pages in a normal browser, a few at a time, like a customer would. We don’t run scanning tools, try to sign in, or submit your forms with made-up data."],
+  ["Do you need my passwords?", "No. For repairs, you invite us as a user on your website or host, and you can remove that access at any time. We never ask for your own password."],
+  ["Why do you need written authorization for a security assessment?", "Because testing a website’s security without the owner’s permission is not something we do, even with good intentions. The written scope protects you: it says who approved the work, what we may test, and what we must leave alone."],
+  ["What does it cost?", `The health consultation is free. Small fixes start at ${fixes.price.replace("from ", "")}. Larger repairs and security assessments are quoted in writing after the free look, as a fixed price you approve before any work starts.`],
+];
+---
+<Base title="Website Security, Health Checks & Repairs · Nuxy Automation" description="Free website health consultation, repairs at a fixed written price, and security assessments done only with the owner’s written authorization." wide>
+  <div class="wrap ws">
+  <section class="ws-hero">
+    <div class="ws-hero-copy">
+    <p class="eyebrow">Website security &amp; repairs</p>
+    <h1>Protect Your Website. Fix Problems. Keep Your Business Running.</h1>
+    <p class="lead">Nuxy helps businesses identify technical problems, improve website reliability, and address verified security concerns through authorized assessments and professional repairs.</p>
+    <div class="ws-actions">
+      <a class="button" href={ask(check.want)} data-track="cta_ws_check">{check.cta}</a>
+      <a class="button secondary" href={ask(repair.want)} data-track="cta_ws_repair">{repair.cta}</a>
+      <a class="button secondary" href={ask(assess.want)} data-track="cta_ws_security">{assess.cta}</a>
+    </div>
+    </div>
+    <aside class="panel ws-first" aria-labelledby="ws-first-h">
+      <h2 id="ws-first-h">Before anything is tested or changed</h2>
+      <ul role="list">
+        <li><span class="ws-icon"><Icon name="eye" /></span><p><strong>A free look</strong>Only at what any visitor can see. Nothing is tested and nothing is changed.</p></li>
+        <li><span class="ws-icon"><Icon name="lockSimple" /></span><p><strong>Your written yes</strong>Security testing and repairs start only after the website’s owner approves them in writing.</p></li>
+        <li><span class="ws-icon"><Icon name="check" /></span><p><strong>A fixed price first</strong>Every repair and assessment is priced in writing before it starts.</p></li>
+      </ul>
+    </aside>
+  </section>
+
+  <section class="ws-section" id="services" aria-labelledby="offers-h">
+    <h2 id="offers-h">Four ways we can help</h2>
+    <p class="ws-sub">Start with the free look. Everything after it is optional, and priced in writing before it starts.</p>
+    <div class="ws-offers">
+      {health.map((o) => (
+        <article class="panel ws-offer" id={o.id}>
+          <div class="ws-offer-top">
+            <span class="ws-icon"><Icon name={o.icon} /></span>
+            <p class="ws-price">
+              <strong>{o.id === "maintenance" ? care.price : o.price}</strong>
+              <span>{o.priceNote}</span>
+            </p>
+          </div>
+          <h3>{o.name}</h3>
+          <p>{o.text}</p>
+          <ul class="ticks">
+            {(o.id === "maintenance" ? carePoints : o.points).map((p) => <li><Icon name="check" />{p}</li>)}
+          </ul>
+          {o.id === "repairs" && <p class="note">Small fixes start at {fixes.price.replace("from ", "")}: see <a href="/solutions/#site-fixes">Website quick fixes</a>. Larger repairs are quoted after the free look.</p>}
+          {o.id === "maintenance" && <p class="note">This is our published <a href={`/pricing/#${care.id}`}>{care.name}</a>. Fix times and what’s covered are on the pricing page.</p>}
+          <p class="ws-auth"><Icon name={o.id === "health-consultation" ? "info" : "lockSimple"} /><span>{o.auth}</span></p>
+          <a class="button secondary" href={o.id === "maintenance" ? `/contact/?service=${care.id}` : ask(o.want)} data-track={`cta_ws_${o.want}`}>{o.cta}</a>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="ws-section" id="authorization" aria-labelledby="auth-h">
+    <h2 id="auth-h">What needs your written authorization</h2>
+    <p class="ws-sub">A public website is not an invitation to test it. Here is exactly where the line is.</p>
+    <div class="ws-lines">
+      <div class="panel ws-line">
+        <h3><Icon name="eye" />Without authorization, we only</h3>
+        <ul class="ticks">{open.map((t) => <li><Icon name="check" />{t}</li>)}</ul>
+      </div>
+      <div class="panel ws-line">
+        <h3><Icon name="lockSimple" />Only with your written authorization</h3>
+        <ul class="ticks">{gated.map((t) => <li><Icon name="check" />{t}</li>)}</ul>
+      </div>
+      <div class="panel ws-line ws-never">
+        <h3><Icon name="x" />Never, even with authorization</h3>
+        <ul class="ticks">{never.map((t) => <li><Icon name="x" />{t}</li>)}</ul>
+      </div>
+    </div>
+    <p class="note ws-after">Authorization has to come from the website’s owner or someone who can show they act for the owner. If that isn’t clear, we don’t test.</p>
+  </section>
+
+  <section class="ws-section" aria-labelledby="flow-h">
+    <h2 id="flow-h">How it works</h2>
+    <ol class="ws-flow" role="list">
+      {flow.map((s, i) => (
+        <li><span class="ws-num" aria-hidden="true">{i + 1}</span><div><h3>{s.title}</h3><p>{s.text}</p></div></li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="ws-section" aria-labelledby="limits-h">
+    <h2 id="limits-h">What we promise, and what we don’t</h2>
+    <ul class="ws-limits" role="list">
+      {limits.map((l) => (
+        <li><Icon name={l.icon} /><div><h3>{l.title}</h3><p>{l.text}</p></div></li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="ws-section" aria-labelledby="ws-faq-h">
+    <h2 id="ws-faq-h">Common questions</h2>
+    <dl class="ws-faq">
+      {faqs.map(([q, a]) => (<div><dt>{q}</dt><dd>{a}</dd></div>))}
+    </dl>
+  </section>
+
+  <section class="ws-section ws-cta" aria-labelledby="ws-cta-h">
+    <h2 id="ws-cta-h">Start with a free look at your website</h2>
+    <p>Tell us your website’s address and what worries you. Within one business day you’ll hear back from a person, with what we saw and what we’d do first. Nothing is tested, changed or charged until you agree in writing.</p>
+    <div class="ws-actions">
+      <a class="button" href={ask(check.want)} data-track="cta_ws_check">{check.cta}</a>
+      <a class="button secondary" href={ask(repair.want)} data-track="cta_ws_repair">{repair.cta}</a>
+      <a class="button secondary" href={ask(assess.want)} data-track="cta_ws_security">{assess.cta}</a>
+    </div>
+  </section>
+  </div>
+</Base>
+
+<style>
+  .ws > section { max-width: 1040px; }
+  .ws-hero { display: grid; gap: 32px; align-items: center; padding-block: clamp(40px, 6vw, 80px) 8px; }
+  @media (min-width: 1160px) { .ws-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 48px; } }
+  @media (min-width: 720px) and (max-width: 1159px) { .ws-first ul { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } .ws-first li { flex-direction: column; gap: 10px; } }
+  .ws-first { padding: 24px; }
+  .ws-first h2 { font-size: 1.0625rem; line-height: 1.35; }
+  .ws-first ul { display: grid; gap: 18px; margin: 18px 0 0; padding: 0; list-style: none; }
+  .ws-first li { display: flex; align-items: flex-start; gap: 14px; }
+  .ws-first p { margin: 0; color: var(--body); font-size: 0.9375rem; }
+  .ws-first strong { display: block; color: var(--ink, inherit); font-size: 1rem; }
+  .ws-hero h1 { max-width: 22ch; }
+  .ws-hero .lead { margin-top: 20px; max-width: 62ch; }
+  .ws-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  @media (max-width: 639px) { .ws-actions .button { flex: 1 1 100%; } }
+
+  .ws-section { margin-top: clamp(56px, 8vw, 96px); }
+  .ws-section h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
+  .ws-sub { margin: 8px 0 28px; color: var(--body); max-width: 62ch; }
+
+  .ws-offers { display: grid; gap: 20px; }
+  @media (min-width: 800px) { .ws-offers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ws-offer { display: flex; flex-direction: column; gap: 14px; padding: clamp(20px, 3vw, 28px); }
+  .ws-offer-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .ws-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
+  .ws-icon :global(.icon) { width: 24px; height: 24px; }
+  .ws-price { display: grid; justify-items: end; text-align: right; color: var(--muted); font-size: 0.875rem; }
+  .ws-price strong { color: var(--ink); font-size: 1.125rem; letter-spacing: -0.01em; }
+  .ws-offer h3 { font-size: 1.25rem; }
+  .ws-offer > p { color: var(--body); }
+  .ws-offer > p.note { color: var(--muted); }
+  .ws-auth { display: flex; align-items: flex-start; gap: 8px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--hairline-soft); font-size: 0.9375rem; }
+  .ws-auth :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
+  .ws-offer .button { align-self: flex-start; }
+  @media (max-width: 479px) { .ws-offer .button { align-self: stretch; } }
+
+  .ws-lines { display: grid; gap: 20px; }
+  @media (min-width: 900px) { .ws-lines { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .ws-line { padding: clamp(20px, 3vw, 26px); }
+  .ws-line h3 { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; font-size: 1.0625rem; }
+  .ws-line h3 :global(.icon) { flex: none; margin-top: 0.15em; color: var(--cyan); }
+  .ws-line li { color: var(--body); }
+  .ws-never h3 :global(.icon), .ws-never .ticks :global(.icon) { color: var(--muted); }
+  .ws-after { margin-top: 20px; max-width: 70ch; }
+
+  .ws-flow, .ws-limits { display: grid; gap: 22px; margin: 28px 0 0; padding: 0; list-style: none; max-width: 820px; }
+  .ws-flow li, .ws-limits li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .ws-num { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--link); font-weight: 650; }
+  .ws-flow h3, .ws-limits h3 { font-size: 1.0625rem; }
+  .ws-flow p, .ws-limits p { margin-top: 4px; color: var(--body); }
+  .ws-limits { max-width: none; }
+  @media (min-width: 800px) { .ws-limits { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; } }
+  .ws-limits li > :global(.icon) { width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
+
+  .ws-faq { display: grid; gap: 22px; margin-top: 28px; max-width: 820px; }
+  .ws-faq dt { color: var(--ink); font-weight: 600; font-size: 1.0625rem; }
+  .ws-faq dd { margin: 6px 0 0; color: var(--body); }
+
+  .ws-cta { padding-bottom: clamp(56px, 8vw, 96px); }
+  .ws-cta p { margin-top: 12px; color: var(--body); max-width: 62ch; }
+</style>

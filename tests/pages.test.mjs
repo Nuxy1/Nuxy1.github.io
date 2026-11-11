@@ -13,7 +13,7 @@ import { existsSync, readdirSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { serveDist } from "./serve-dist.mjs";
-import { services, plans, groups } from "../src/data/services.ts";
+import { services, plans, groups, variants, bundles, retired } from "../src/data/services.ts";
 import { demoSites } from "../src/data/demo-sites.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -169,17 +169,19 @@ for (const width of [390, 1440]) test(`every page at ${width}px: buttons, toggle
   assert.deepEqual([...new Set(problems)], []);
 });
 
+// the first five elements that animate or transition for longer than 10ms (none, when motion is off)
+const animating = () => [...document.querySelectorAll("*")].filter((el) => {
+  const cs = getComputedStyle(el);
+  const longest = (v) => Math.max(...v.split(",").map((t) => parseFloat(t) * (t.trim().endsWith("ms") ? 1 : 1000)));
+  return (cs.animationName !== "none" && longest(cs.animationDuration) > 10) || longest(cs.transitionDuration) > 10;
+}).slice(0, 5).map((el) => `${el.tagName.toLowerCase()}.${[...el.classList].join(".")}`);
+
 test("with reduced motion asked for, nothing animates", async () => {
   const tab = await open({ width: 1440, reducedMotion: "reduce" });
   try {
     for (const u of ["/", "/websites/", "/automation/", "/demos/"]) {
       await go(tab.page, u);
-      const moving = await tab.page.evaluate(() => [...document.querySelectorAll("*")].filter((el) => {
-        const cs = getComputedStyle(el);
-        const longest = (v) => Math.max(...v.split(",").map((t) => parseFloat(t) * (t.trim().endsWith("ms") ? 1 : 1000)));
-        return (cs.animationName !== "none" && longest(cs.animationDuration) > 10) || longest(cs.transitionDuration) > 10;
-      }).slice(0, 5).map((el) => `${el.tagName.toLowerCase()}.${[...el.classList].join(".")}`));
-      assert.deepEqual(moving, [], u);
+      assert.deepEqual(await tab.page.evaluate(animating), [], u);
     }
   } finally {
     await tab.context.close();
@@ -375,24 +377,30 @@ test("old one-page links land on their new page", async () => {
   }
 });
 
-test("the form knows every service and plan, ?service= names one (only a real one), and every link to it is real", async () => {
+test("the form knows every service, version, bundle and plan, ?service= names one (only a real one), and every link to it is real", async () => {
   const tab = await open({ width: 390 });
   const { page } = tab;
   try {
     await go(page, "/contact/");
     const known = await page.locator("[data-inquiry]").evaluate((el) => JSON.parse(el.dataset.services));
-    assert.deepEqual(Object.keys(known).sort(), [...services.map((s) => s.id), ...plans.map((p) => p.id)].sort());
+    assert.deepEqual(Object.keys(known).sort(), [...services, ...variants, ...bundles, ...plans].map((s) => s.id).concat(Object.keys(retired)).sort());
     const answers = await page.locator("[name=want]").evaluateAll((r) => r.map((x) => x.value));
     for (const [id, s] of Object.entries(known)) assert.ok(answers.includes(s.want), `${id} picks ${s.want}`);
-    for (const item of [plans[0], services[0]]) {
+    for (const item of [plans[0], services[0], variants[0], bundles[0]]) {
       await go(page, `/contact/?service=${item.id}`);
       assert.equal(await page.locator("[name=service]").inputValue(), item.id);
       assert.ok((await page.locator("[data-about]").textContent()).includes(item.name), item.id);
     }
+    // (an old link to a retired plan names the plan that replaced it, and keeps the old id so the owner can tell)
+    for (const [id, now] of Object.entries(retired)) {
+      await go(page, `/contact/?service=${id}`);
+      assert.equal(await page.locator("[name=service]").inputValue(), id);
+      assert.match(await page.locator("[data-about]").textContent(), new RegExp(`${plans.find((p) => p.id === now).name}.*which replaced`));
+    }
     await go(page, "/contact/?service=not-a-service");
     assert.equal(await page.locator("[name=service]").inputValue(), "");
-    // every "Ask about this" or quote link on the site points at an id the form knows and an answer it has
-    for (const u of ["/", "/solutions/", "/pricing/", "/automation/", "/websites/", "/ecommerce/", "/get-a-website/"]) {
+    // every "Request a proposal" or quote link on the site points at an id the form knows and an answer it has
+    for (const u of ["/", "/solutions/", "/pricing/", "/automation/", "/websites/", "/ecommerce/", "/get-a-website/", "/website-security/"]) {
       const res = await go(page, u);
       if (res.status() === 404) continue;
       const links = await page.locator("a[href*='/contact/?']").evaluateAll((a) => a.map((x) => Object.fromEntries(new URL(x.href).searchParams)));
@@ -479,6 +487,118 @@ test("a docs table wider than a phone scrolls in its own named box, which Tab re
     await tab.page.setViewportSize({ width: 1440, height: 900 });
     await tab.page.waitForFunction(() => [...document.querySelectorAll(".table-scroll")].every((e) => e.tabIndex === (e.scrollWidth > e.clientWidth ? 0 : -1)));
     assert.deepEqual(tab.errors, []);
+  } finally {
+    await tab.context.close();
+  }
+});
+
+// ---- The motion upgrade (owner's brief, 2026-11-11): motion setting, hero core, simulated demos, goal picker ----
+
+test("the footer's Motion choice: Reduced stops everything and is remembered; a device asking for reduced motion can only keep still", async () => {
+  const tab = await open({ width: 1440 });
+  const { page } = tab;
+  try {
+    await go(page, "/");
+    assert.notEqual(await page.getAttribute("html", "data-motion"), "reduced");
+    assert.equal(await page.getAttribute("html", "data-ambient"), "", "the hero's slow motion runs at first");
+    await page.locator("[data-motion-pick] label", { hasText: "Reduced" }).click();
+    assert.equal(await page.getAttribute("html", "data-motion"), "reduced");
+    await go(page, "/");
+    assert.equal(await page.getAttribute("html", "data-motion"), "reduced", "the choice is remembered on the next page");
+    assert.equal(await page.getAttribute("html", "data-ambient"), null);
+    await page.waitForTimeout(400);
+    assert.deepEqual(await page.evaluate(animating), []);
+  } finally {
+    await tab.context.close();
+  }
+  const still = await open({ width: 390, reducedMotion: "reduce" });
+  try {
+    await go(still.page, "/");
+    const radios = await still.page.$$eval("[data-motion-pick] input", (els) => els.map((e) => `${e.value}:${e.checked ? "on" : "off"}:${e.disabled ? "locked" : "open"}`));
+    assert.deepEqual(radios, ["reduced:on:open", "standard:off:locked", "enhanced:off:locked"]);
+    assert.ok(await still.page.locator("[data-motion-note]").isVisible(), "the note says why");
+  } finally {
+    await still.context.close();
+  }
+});
+
+test("without JavaScript: the hero's parts, the simulated demos and the goal picker still work, and every demo says it is made up", async () => {
+  const tab = await open({ width: 390, javaScriptEnabled: false });
+  const { page } = tab;
+  const shown = (sel, key) => page.locator(`${sel}:visible`).evaluateAll((els, k) => els.map((e) => e.getAttribute(k)), key);
+  try {
+    await go(page, "/");
+    assert.deepEqual(await shown(".panel[data-part]", "data-part"), ["leads"]);
+    await page.locator(".node", { hasText: "Booking" }).click();
+    assert.deepEqual(await shown(".panel[data-part]", "data-part"), ["booking"]);
+
+    const demos = await page.locator("#autopilot .ap-demo").allTextContents();
+    assert.equal(demos.length, 4);
+    for (const d of demos) assert.match(d.replace(/\s+/g, " "), /Simulated demo.*made up\. No call is placed, no message is sent and nothing is booked\./);
+    assert.deepEqual(await shown("#autopilot .ap-demo", "id"), ["ap-voice"]);
+    assert.equal(await page.locator("#ap-voice [data-controls]").isVisible(), false, "the player needs JavaScript, so it stays hidden");
+    assert.equal(await page.locator("#ap-voice .ap-card.later").count(), 0, "without the player, the whole example shows");
+    await page.locator(".ap-tab", { hasText: "Lead Qualification" }).click();
+    assert.deepEqual(await shown("#autopilot .ap-demo", "id"), ["ap-qualify"]);
+
+    assert.deepEqual(await shown(".as-panel", "id"), ["as-calls"]);
+    await page.locator(".as-goal", { hasText: "Improve my website" }).click();
+    assert.deepEqual(await shown(".as-panel", "id"), ["as-website"]);
+  } finally {
+    await tab.context.close();
+  }
+});
+
+test("simulated demos: Play steps through on its own, Pause holds, the end stops it, and only the start and finish are counted", async () => {
+  const tab = await open({ width: 1440, base: real });
+  const { page } = tab;
+  const caption = async () => (await page.locator("#ap-voice [data-at]:visible").textContent()).trim();
+  try {
+    await page.goto(real + "/");
+    const demo = page.locator("#ap-voice");
+    await demo.scrollIntoViewIfNeeded();
+    assert.match(await caption(), /Press start/);
+    await demo.locator("[data-play]").click();
+    assert.match(await caption(), /^Step 1 of 6/);
+    await page.waitForTimeout(2900);
+    assert.match(await caption(), /^Step 2 of 6/, "it moves on by itself");
+    await demo.locator("[data-play]").click(); // pause
+    await page.waitForTimeout(2900);
+    assert.match(await caption(), /^Step 2 of 6/, "paused, it holds");
+    while (await demo.locator("[data-next]").isEnabled()) await demo.locator("[data-next]").click();
+    assert.match(await caption(), /^Step 6 of 6/);
+    assert.equal((await demo.locator("[data-play-label]").textContent()).trim(), "Watch it again");
+    assert.equal(await demo.locator(".ap-card.later").count(), 0);
+    await page.waitForTimeout(300);
+    const counted = tab.beacons.map((b) => b.e).filter((e) => e.startsWith("demo_"));
+    assert.deepEqual(counted, ["demo_start", "demo_complete"]);
+    assert.deepEqual(tab.outside, []);
+  } finally {
+    await tab.context.close();
+  }
+});
+
+test("the goal picker and the hero show only catalogue services, with their catalogue prices", async () => {
+  const tab = await open({ width: 1440 });
+  const { page } = tab;
+  try {
+    await go(page, "/");
+    const byId = Object.fromEntries(services.map((s) => [s.id, s]));
+    const cards = await page.$$eval(".as-card", (els) => els.map((el) => ({
+      id: el.querySelector("a[href^='/contact/?service=']").getAttribute("href").split("=")[1],
+      name: el.querySelector(".as-name").textContent.trim(),
+      price: el.querySelector(".as-price").textContent,
+    })));
+    assert.ok(cards.length >= 12, `${cards.length} cards`);
+    for (const c of cards) {
+      assert.ok(byId[c.id], `${c.id} is in the catalogue`);
+      assert.equal(c.name, byId[c.id].name);
+      assert.ok(c.price.includes(byId[c.id].price), `${c.id}: ${c.price}`);
+    }
+    for (const a of await page.$$eval(".panel-svc", (els) => els.map((e) => ({ id: e.getAttribute("href").split("#")[1], text: e.textContent })))) {
+      assert.ok(byId[a.id], a.id);
+      assert.ok(a.text.includes(byId[a.id].price), `${a.id}: ${a.text}`);
+    }
   } finally {
     await tab.context.close();
   }

@@ -119,6 +119,9 @@ test("empty submit shows an error on each required field, focuses the first, and
     assert.ok((await page.textContent(`#f-${name}-err`)).length > 5, name);
   }
   assert.equal(await page.isHidden("#f-type-err"), true, "type of business is optional");
+  // (follow-ups need a yes: the box is never ticked for them, and leaving it unticked is fine)
+  assert.equal(await page.isChecked("#f-consent"), false);
+  assert.equal(await page.isHidden("#f-consent-err"), true);
   assert.equal(await page.evaluate(() => [document.activeElement?.getAttribute("name"), document.activeElement?.value]).then((a) => a.join(" ")), `want ${wants[0].id}`);
   assert.equal(sent.inquiry.length, 0);
   // a bad email and a too-short message get their own messages, and fixing clears them as you type
@@ -146,6 +149,8 @@ test("a real request is saved, shows its reference, and the page count carries n
   await page.selectOption("[name=timeline]", "month");
   await page.selectOption("[name=budget]", "500-1000");
   await page.check("[name=contact][value=email]");
+  await page.check("[name=scope][value=both]");
+  await page.check("#f-consent");
   await page.click("[data-submit]");
   await panel(page, "done").waitFor({ state: "visible" });
   const ref = await page.textContent("[data-ref]");
@@ -161,6 +166,8 @@ test("a real request is saved, shows its reference, and the page count carries n
   assert.equal(saved.timeline, "month");
   assert.equal(saved.budget, "500-1000");
   assert.equal(saved.contact, "email");
+  assert.equal(saved.scope, "both");
+  assert.equal(saved.consent, "yes");
   assert.equal(saved.stage, "new", "not treated as spam");
   assert.equal(notified > 0, true);
   // (the anonymous count says "form_submit" and the page, nothing typed)
@@ -187,7 +194,7 @@ test("an unknown ?service= is ignored", async () => {
 });
 
 test("?want= picks an answer, and wins over the service's own", async () => {
-  for (const [query, picked, service] of [["?want=shopify", "shopify", ""], ["?service=site-fixes", "redesign", "site-fixes"], ["?service=site-fixes&want=new-website", "new-website", "site-fixes"], ["?want=everything", null, ""]]) {
+  for (const [query, picked, service] of [["?want=shopify", "shopify", ""], ["?want=health-check", "health-check", ""], ["?want=repair", "repair", ""], ["?want=security", "security", ""], ["?service=site-fixes", "redesign", "site-fixes"], ["?service=site-fixes&want=new-website", "new-website", "site-fixes"], ["?want=everything", null, ""]]) {
     const { page, context, errors } = await open(`/contact/${query}`);
     const checked = await page.locator("[name=want]:checked");
     assert.equal(await checked.count(), picked ? 1 : 0, query);

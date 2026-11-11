@@ -1,6 +1,6 @@
 ---
 // Website development (brief 2) with client ownership and the optional monthly plan (brief 3).
-// Prices are the PUBLISHED ones from data/services.ts and the Care plan from data/services.ts plans. The proposed
+// Prices are the PUBLISHED ones from data/services.ts and Website Care from data/services.ts plans. The proposed
 // website packages and care tiers live only in the private business/site-upgrade/proposals.md until the owner
 // approves them: never add them here.
 // Approval needed before deploy: the handover list (#ownership) and the "If you stop the monthly plan" steps are new
@@ -10,11 +10,12 @@ import Icon from "../../components/Icon.astro";
 import ServiceCard from "../../components/ServiceCard.astro";
 import DemoSites from "../../components/DemoSites.astro";
 import DeviceShot from "../../components/DeviceShot.astro";
-import { serviceById, plans, faqs } from "../../data/services";
+import { serviceById, variantById, plans, faqs, dollars } from "../../data/services";
 import type { IconName } from "../../components/Icon.astro";
 
 const site = "https://nuxyautomation.com";
 const web = serviceById["new-website"];
+const starter = variantById["starter-website"];
 const fixes = serviceById["site-fixes"];
 const care = plans.find((p) => p.id === "care")!;
 // a full rebuild is the published New website, offered to sites past saving (the contact link asks about new-website)
@@ -82,12 +83,13 @@ const service = {
   provider: { "@id": `${site}/#business` },
   areaServed: [{ "@type": "AdministrativeArea", name: "Southern Minnesota" }, { "@type": "Country", name: "United States" }],
   offers: [
-    { "@type": "Offer", name: web.name, price: "900", priceCurrency: "USD", url: `${site}/websites/#new-website` },
-    { "@type": "Offer", name: fixes.name, priceSpecification: { "@type": "PriceSpecification", minPrice: "150", priceCurrency: "USD" }, url: `${site}/websites/#redesign` },
+    { "@type": "Offer", name: web.name, price: String(dollars(web.price)), priceCurrency: "USD", url: `${site}/websites/#new-website` },
+    { "@type": "Offer", name: starter.name, price: String(dollars(starter.price)), priceCurrency: "USD", url: `${site}/websites/#new-website` },
+    { "@type": "Offer", name: fixes.name, priceSpecification: { "@type": "PriceSpecification", minPrice: String(dollars(fixes.price)), priceCurrency: "USD" }, url: `${site}/websites/#redesign` },
   ],
 };
 ---
-<Base title="Website Development for Small Businesses · Nuxy Automation" description={`Fast, phone-friendly websites for small businesses in southern Minnesota and the US: ${web.price} one-time, on your own domain and account. No monthly plan needed.`} wide>
+<Base title="Website Development for Small Businesses · Nuxy Automation" description={`Phone-friendly websites for small businesses in southern Minnesota and the US: one page ${starter.price}, up to 4 pages ${web.price}, on your own domain. No monthly plan needed.`} wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(service)} />
 
   <section class="hero-web">
@@ -101,7 +103,7 @@ const service = {
           <a class="button secondary" href="#examples">See Example Websites</a>
         </div>
         <ul class="hero-facts" role="list">
-          <li><Icon name="receipt" /><span><strong>{web.price}</strong> one-time, written price</span></li>
+          <li><Icon name="receipt" /><span><strong>{starter.price}</strong> one page · <strong>{web.price}</strong> up to 4 pages, one-time</span></li>
           <li><Icon name="globeSimple" /><span>Your domain, your site</span></li>
           <li><Icon name="creditCard" /><span>No monthly plan required</span></li>
         </ul>
@@ -127,6 +129,7 @@ const service = {
           <p class="price-name" id="price-h">{web.name}</p>
           <p class="price"><span>{web.price}</span> one-time</p>
           <p class="price-sub">Half to start, half at handover, by a secure Stripe invoice. Nothing is charged until you agree to the written plan.</p>
+          <p class="price-alt"><strong>Just need one page?</strong> The {starter.name} is {starter.price}: {starter.text.charAt(0).toLowerCase() + starter.text.slice(1)} <a href={`/contact/?service=${starter.id}`} data-track="cta_web_starter">Ask about the {starter.name}</a></p>
           <dl class="facts">
             <div><dt>Suits</dt><dd>{web.who}</dd></div>
             <div><dt>We need from you</dt><dd>{web.needs}</dd></div>
@@ -283,6 +286,8 @@ const service = {
   .price { color: var(--muted); }
   .price span { color: var(--ink); font-size: 2.5rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; margin-right: 4px; }
   .price-sub, .price-foot { color: var(--body); font-size: 0.9375rem; }
+  .price-alt { padding: 12px 14px; border-radius: var(--r-md); background: var(--surface-strong); color: var(--body); font-size: 0.875rem; }
+  .price-alt strong { color: var(--ink); }
   .price-foot { color: var(--muted); font-size: 0.875rem; text-align: center; }
   .facts { display: grid; gap: 12px; margin: 4px 0; padding-block: 16px; border-block: 1px solid var(--hairline); }
   .facts dt { color: var(--muted); font-size: 0.8125rem; font-weight: 600; }

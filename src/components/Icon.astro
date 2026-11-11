@@ -1,6 +1,7 @@
 ---
 // A Phosphor icon (regular weight) inlined, so it takes the text colour and costs no request. Decorative: the
-// words beside it say what it means.
+// words beside it say what it means. Each icon is drawn once per page (its first use carries <g id="i-name">) and
+// every later use points at that drawing with <use>, so the home page ships 46 drawings instead of 166 (F7).
 import arrowRight from "@phosphor-icons/core/assets/regular/arrow-right.svg?raw";
 import calendarCheck from "@phosphor-icons/core/assets/regular/calendar-check.svg?raw";
 import chatCircleText from "@phosphor-icons/core/assets/regular/chat-circle-text.svg?raw";
@@ -84,14 +85,27 @@ import flowArrow from "@phosphor-icons/core/assets/regular/flow-arrow.svg?raw";
 import sun from "@phosphor-icons/core/assets/regular/sun.svg?raw";
 import drop from "@phosphor-icons/core/assets/regular/drop.svg?raw";
 import tree from "@phosphor-icons/core/assets/regular/tree.svg?raw";
+import headset from "@phosphor-icons/core/assets/regular/headset.svg?raw";
+import userPlus from "@phosphor-icons/core/assets/regular/user-plus.svg?raw";
+import addressBook from "@phosphor-icons/core/assets/regular/address-book.svg?raw";
+import megaphone from "@phosphor-icons/core/assets/regular/megaphone.svg?raw";
+import clockCounterClockwise from "@phosphor-icons/core/assets/regular/clock-counter-clockwise.svg?raw";
 
-const icons = { arrowRight, arrowUp, calendarCheck, chatCircleText, check, copy, creditCard, desktop, envelopeSimple, gift, githubLogo, list, magnifyingGlass, mapPin, phoneX, star, wrench, briefcase, broom, chartLineUp, clipboardText, coffee, envelopeOpen, forkKnife, hammer, handshake, lightning, mapTrifold, plugsConnected, receipt, robot, shieldCheck, shoppingBag, sparkle, storefront, squaresFour, caretDown, plus, table, bellSimple, paperPlaneTilt, checkCircle, globeSimple, arrowUpRight, question, clock, sealCheck, x, arrowCounterClockwise, play, user, deviceMobile, funnel, lockSimple, pencilSimple, rocketLaunch, users, listChecks, browser, paintBrush, arrowsClockwise, phone, caretRight, caretLeft, warningCircle, info, kanban, circleNotch, scissors, leaf, house, chatsCircle, bellRinging, tray, userCircle, eye, monitor, gauge, flowArrow, sun, drop, tree };
+const icons = { arrowRight, arrowUp, calendarCheck, chatCircleText, check, copy, creditCard, desktop, envelopeSimple, gift, githubLogo, list, magnifyingGlass, mapPin, phoneX, star, wrench, briefcase, broom, chartLineUp, clipboardText, coffee, envelopeOpen, forkKnife, hammer, handshake, lightning, mapTrifold, plugsConnected, receipt, robot, shieldCheck, shoppingBag, sparkle, storefront, squaresFour, caretDown, plus, table, bellSimple, paperPlaneTilt, checkCircle, globeSimple, arrowUpRight, question, clock, sealCheck, x, arrowCounterClockwise, play, user, deviceMobile, funnel, lockSimple, pencilSimple, rocketLaunch, users, listChecks, browser, paintBrush, arrowsClockwise, phone, caretRight, caretLeft, warningCircle, info, kanban, circleNotch, scissors, leaf, house, chatsCircle, bellRinging, tray, userCircle, eye, monitor, gauge, flowArrow, sun, drop, tree, headset, userPlus, addressBook, megaphone, clockCounterClockwise };
 export type IconName = keyof typeof icons;
 interface Props {
   name: IconName;
   class?: string;
 }
 const { name, class: className = "icon" } = Astro.props;
-const svg = icons[name].replace("<svg ", `<svg class="${className}" aria-hidden="true" focusable="false" `);
+const raw = icons[name];
+const open = raw.match(/^<svg([^>]*)>/)![1].replace(/\s*xmlns="[^"]*"/, "");
+const body = raw.slice(raw.indexOf(">") + 1, raw.lastIndexOf("</svg>"));
+// Astro.locals is fresh for every page, so each page carries its own drawings.
+const locals = Astro.locals as { iconsDrawn?: Set<string> };
+const drawn = (locals.iconsDrawn ??= new Set<string>());
+const inner = drawn.has(name) ? `<use href="#i-${name}"/>` : `<g id="i-${name}">${body}</g>`;
+drawn.add(name);
+const svg = `<svg class="${className}"${open} aria-hidden="true" focusable="false">${inner}</svg>`;
 ---
 <Fragment set:html={svg} />

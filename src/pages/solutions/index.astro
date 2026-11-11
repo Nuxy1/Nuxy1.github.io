@@ -8,17 +8,26 @@
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import ServiceCard from "../../components/ServiceCard.astro";
-import { groups, services, serviceById, kinds, bundle } from "../../data/services";
+import { groups, services, serviceById, kinds, bundle, bundleById, dollars } from "../../data/services";
+import type { Service, Variant } from "../../data/services";
 
 const site = "https://nuxyautomation.com";
 
-// "$1,200" -> 1200 as a string, "from $200" -> a minimum price (schema.org wants plain numbers)
-const offerPrice = (price: string) => {
-  const n = price.replace(/[^0-9.]/g, "");
-  return price.startsWith("from")
-    ? { priceSpecification: { "@type": "PriceSpecification", minPrice: n, priceCurrency: "USD" } }
-    : { price: n, priceCurrency: "USD" };
+// A fixed price is "price"; a starting, setup or custom price is a minimum (schema.org wants plain numbers). A
+// monthly management price is named in the description, never added to the one-time price.
+const offerPrice = (s: Service | Variant) => {
+  const n = String(dollars(s.price));
+  return s.priceType === "fixed"
+    ? { price: n, priceCurrency: "USD" }
+    : { priceSpecification: { "@type": "PriceSpecification", minPrice: n, priceCurrency: "USD" } };
 };
+const offer = (s: Service | Variant, text: string) => ({
+  "@type": "Offer",
+  url: `${site}/solutions/#${s.id}`, // (a smaller or larger version has its own anchor inside its service's card)
+  ...offerPrice(s),
+  ...(s.monthly ? { description: `Setup ${s.price}; optional monthly management ${s.monthly}, plus provider usage` } : {}),
+  itemOffered: { "@type": "Service", name: s.name, description: text, provider: { "@id": `${site}/#business` } },
+});
 
 const catalog = {
   "@context": "https://schema.org",
@@ -30,27 +39,23 @@ const catalog = {
     "@type": "OfferCatalog",
     name: g.title,
     url: `${site}/solutions/#${g.id}`,
-    itemListElement: g.items.map((s) => ({
-      "@type": "Offer",
-      url: `${site}/solutions/#${s.id}`,
-      ...offerPrice(s.price),
-      itemOffered: { "@type": "Service", name: s.name, description: s.text, provider: { "@id": `${site}/#business` } },
-    })),
+    itemListElement: g.items.flatMap((s) => [offer(s, s.text), ...(s.variants ?? []).map((v) => offer({ ...v, parent: s } as Variant, v.text))]),
   })),
 };
 
 const filterKinds = kinds.filter((k) => k.id !== "all");
+const examples = filterKinds.filter((k) => k.example);
 ---
-<Base title="Services & Fixed Prices · Nuxy Automation" description={`All ${services.length} services with fixed one-time prices: lead follow-up, online booking, quotes, reviews, invoices, websites and more, and what each one needs from you.`} wide>
+<Base title="Services & Fixed Prices · Nuxy Automation" description={`All ${services.length} services with prices: websites, online stores, missed-call text-back, booking, estimate follow-up, an AI voice receptionist and CRM systems.`} wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(catalog)} />
 
   <section class="sol-hero">
     <div class="wrap">
       <p class="eyebrow">Services and prices</p>
       <h1>Every service, with its price written down.</h1>
-      <p class="lead">{services.length} one-time services for small businesses. Each shows what it fixes, what you get, what it needs from you and what other companies charge, if anything. Pick what fits, or tell us the problem and we’ll suggest the smallest fix.</p>
+      <p class="lead">{services.length} services for small businesses, each with a one-time price. Each shows what it fixes, what you get, what it needs from you, what other companies charge and whether a monthly plan fits. Pick what fits, or tell us the problem and we’ll suggest the smallest fix.</p>
       <ul class="sol-facts" role="list">
-        <li><Icon name="sealCheck" />Fixed price, agreed before you pay</li>
+        <li><Icon name="sealCheck" />Price agreed in writing before you pay</li>
         <li><Icon name="lockSimple" />Built in your own accounts</li>
         <li><Icon name="listChecks" />2 services: {bundle.two}% off. 3 or more: {bundle.three}% off</li>
       </ul>
@@ -68,7 +73,7 @@ const filterKinds = kinds.filter((k) => k.id !== "all");
           </div>
         </div>
         <fieldset class="finder-kinds">
-          <legend>Your kind of business</legend>
+          <legend>Which automation fits my business?</legend>
           <div class="kinds">
             {kinds.map((k) => (
               <label class="kind">
@@ -84,7 +89,7 @@ const filterKinds = kinds.filter((k) => k.id !== "all");
               <strong>{k.name}</strong> ({k.who}) usually start with{" "}
               {k.start.map((id, i) => (
                 <>{i > 0 && (i === k.start.length - 1 ? " and " : ", ")}<a href={`#${id}`}>{serviceById[id].name}</a></>
-              ))}.
+              ))}{k.bundle && <>, or all of it at once with the <a href={`/pricing/#${k.bundle}`}>{bundleById[k.bundle].name}</a> ({bundleById[k.bundle].price})</>}.
             </p>
           ))}
           <p class="count" role="status" data-count>{services.length} services</p>
@@ -114,15 +119,39 @@ const filterKinds = kinds.filter((k) => k.id !== "all");
     </div>
   </section>
 
-  <section class="section tight band" aria-labelledby="more-h">
+  <section class="section band" id="industries" aria-labelledby="ind-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">By industry</p>
+        <h2 id="ind-h">What gets automated, business by business</h2>
+        <p>Examples of what we’d set up and why it helps. They describe how the services work, not results from a client.</p>
+      </div>
+      <ul class="industries" role="list">
+        {examples.map((k) => (
+          <li>
+            <h3><Icon name={k.icon} />{k.name}</h3>
+            <p>{k.example}</p>
+            <p class="ind-start">Usually starts with: {k.start.map((id) => serviceById[id].name).join(", ")}{k.bundle && ` · ${bundleById[k.bundle].name}, ${bundleById[k.bundle].price}`}</p>
+            <a class="text-link" href={`/solutions/?for=${k.id}`} data-track={`filter_${k.id}`}>Show services for {k.name.toLowerCase()}<Icon name="arrowRight" /></a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section tight" aria-labelledby="more-h">
     <div class="wrap more-grid">
       <div>
         <h2 id="more-h">Two or more? It costs less.</h2>
-        <p>{bundle.text}</p>
+        <p>{bundle.text} {" "}<a class="text-link" href="/pricing/#bundles">See the bundles<Icon name="arrowRight" /></a></p>
       </div>
       <div>
         <h2>Want it looked after?</h2>
         <p>Every service is a one-time price, and monthly plans are optional. They watch your website or automations after the 30-day launch watch and fix what breaks. {" "}<a class="text-link" href="/pricing/">Pricing and plans<Icon name="arrowRight" /></a></p>
+      </div>
+      <div id="website-security">
+        <h2>Website broken, or worried about security?</h2>
+        <p>A free website health consultation, repairs at a fixed written price, and security assessments done only with your written authorization. Larger repairs and assessments are quoted after a free look, so they aren’t in the price list above. {" "}<a class="text-link" href="/website-security/">Website security &amp; repairs<Icon name="arrowRight" /></a></p>
       </div>
     </div>
   </section>
@@ -201,14 +230,29 @@ const filterKinds = kinds.filter((k) => k.id !== "all");
   .link-button { padding: 0; border: 0; background: none; color: var(--link); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
   .link-button:hover { color: var(--ink); }
 
+  .industries { display: grid; gap: 28px 40px; margin: 0; padding: 0; list-style: none; }
+  @media (min-width: 900px) { .industries { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1200px) { .industries { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .industries li { display: grid; gap: 8px; align-content: start; }
+  .industries h3 { display: flex; align-items: center; gap: 10px; font-size: 1.125rem; }
+  .industries h3 :global(.icon) { flex: none; color: var(--cyan); }
+  .industries p { color: var(--body); font-size: 0.9375rem; }
+  .industries .ind-start { color: var(--muted); font-size: 0.875rem; }
+  .industries .text-link { justify-self: start; }
+
   .more-grid { display: grid; gap: 32px 56px; }
   @media (min-width: 900px) { .more-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1200px) { .more-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 40px; } }
   .more-grid h2 { font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem); }
   .more-grid p { margin-top: 10px; max-width: 60ch; color: var(--body); }
   .more-grid .text-link { white-space: nowrap; }
 </style>
 
 <script>
+  // motion is on unless <html data-motion> says reduced (src/scripts/motion.ts sets it; it is only imported by Base.astro,
+  // so every page loads it as one script with no second request)
+  const moving = () => { const m = document.documentElement.dataset.motion; return !!m && m !== "reduced"; };
+
   // Search and kind filter. A card shows when it suits the chosen kind (or every kind) and contains every word typed.
   // The chosen kind goes in the address (?for=trades) so a link can open the list already filtered.
   const finder = document.querySelector<HTMLElement>("[data-finder]");
@@ -266,7 +310,15 @@ const filterKinds = kinds.filter((k) => k.id !== "all");
     apply();
     reveal();
 
-    for (const r of radios) r.addEventListener("change", () => { apply(); track(`filter_${r.value}`); });
+    // Choosing a kind: where the browser can and motion is on, the cards glide to their new places (styles/motion.css)
+    // instead of jumping. Typing in the search box stays instant.
+    const glide = (change: () => void) => {
+      const d = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
+      if (!d.startViewTransition || !moving()) { change(); return; }
+      cards.forEach((c, i) => { c.style.viewTransitionName = `svc-${i}`; });
+      d.startViewTransition(change).finished.finally(() => cards.forEach((c) => { c.style.viewTransitionName = ""; }));
+    };
+    for (const r of radios) r.addEventListener("change", () => { glide(apply); track(`filter_${r.value}`); });
     q.addEventListener("input", () => {
       apply();
       if (!searched && q.value.trim()) { searched = true; track("solutions_search"); }

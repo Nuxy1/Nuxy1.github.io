@@ -31,10 +31,10 @@ open-source code anyone can open, clearly labelled as demonstrations, not testim
 
 ### Four main services (home page)
 
-1. Professional website development (new website $900)
-2. Website redesign and modernization (quick fixes from $150)
-3. AI and business automation (fixed prices from $200)
-4. Booking, leads and customer follow-ups (fixed prices from $250)
+1. Business websites (one page $499, 4-page site $900)
+2. E-commerce stores (5 products $699, 25 products $1,200)
+3. AI and business automation (one-time setups from $149; the AI Voice Receptionist is available after consultation)
+4. Optional website management (Website Care $79/month)
 
 The flagship is **Lead response & follow-up**: an instant reply to every website form, email, Facebook or Instagram
 inquiry, friendly follow-ups that stop when the customer replies, and an alert to the owner.
@@ -44,9 +44,11 @@ inquiry, friendly follow-ups that stop when the customer replies, and an alert t
 - Static Astro site on GitHub Pages (custom domain nuxyautomation.com). Pages work without JavaScript, including the
   inquiry form (it posts and lands on the thanks page). JavaScript adds the service search and filters, the form's
   in-page result, the lead demo and anonymous counts.
-- **Source of truth:** `src/data/services.ts` holds every service (19, in groups), the 3 monthly plans, the bundle
-  discount, the four main services, the FAQ and the service areas. Pages, the pricing table, the inquiry form's list
-  and the structured data read from it; no Nuxy price is typed anywhere else.
+- **Source of truth:** `src/data/services.ts` holds every service (26, in 6 groups), their 3 smaller or
+  larger versions, the 3 preset bundles, the 4 monthly plans and their terms, the retired ids (`retired`, still
+  accepted in links and the form), the bundle discount, the four main services, the FAQ and the service areas.
+  Pages, the pricing table, the inquiry form's list and the structured data read from it; no Nuxy price is typed
+  anywhere else on the site.
 - The inquiry form posts to Nuxy's own inquiry service (`inquiryUrl` in `src/data/site.ts`), which saves the
   message and emails it to the Nuxy inbox. If sending fails, the page says so and shows the email address.
 - Old one-page links (`/#booking`, `/#request`, ...) are redirected to their new pages; see DESIGN.md "Anchors and
@@ -56,8 +58,11 @@ inquiry, friendly follow-ups that stop when the customer replies, and an alert t
 
 ## Capabilities and Constraints
 
-- Prices are the published prices in `src/data/services.ts`. One-time services from $150 to $1,200; monthly plans
-  $100, $500 and $1,000. Order 2 one-time services together for 10% off, 3 or more for 15% off.
+- Prices are the published prices in `src/data/services.ts`. One-time services from $149 to $1,200 (custom systems quoted
+  from $2,500); optional monthly plans $79, $149, $349 and $799. Order 2 one-time services together for 10% off, 3 or
+  more for 15% off; the preset bundles are already discounted. Published prices apply to work agreed from 2026-11-11;
+  earlier agreements keep their terms. `business/offer.md` (what the cold-email drafter quotes) must match it: an
+  agent test fails on any difference.
 - 50% to start, 50% at handover, by invoice. Written plan and price within one business day.
 - Client websites are built in the client's own Squarespace or Wix account so they can edit them alone; the
   demonstration websites are custom-coded to show what's possible.

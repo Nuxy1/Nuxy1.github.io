@@ -1,6 +1,10 @@
 // The four working examples (github.com/Nuxy1/small-business-automations), for the homepage's demo week and the
 // case-study pages. The businesses are made up; the lines are the demo's real output (npm run demo), the speeds are
 // npm run bench on a Ryzen 7 desktop. Nothing here is a client result.
+import { serviceById } from "./services.ts";
+// (service names and prices come from services.ts, so they follow a price change)
+const svc = (id: string) => ({ id, name: serviceById[id].name, price: serviceById[id].price });
+
 export type Line = [time: string, kind: string, text: string];
 export type Example = {
   slug: string; tab: string; title: string; who: string; kind: string;
@@ -11,7 +15,7 @@ export type Example = {
 export const examples: Example[] = [
   {
     slug: "booking-reminders", tab: "Booking reminders", title: "Booking reminders for a dog groomer", who: "Prairie Paws Grooming", kind: "dog groomer",
-    service: { id: "booking", name: "Online booking & reminders", price: "$400" },
+    service: svc("booking"),
     problem: "Clients call to book while the groomer’s hands are full, so calls go unanswered, and the ones who do book sometimes forget and don’t show.",
     built: [
       "A confirmation the moment someone books online, with a link to move or cancel",
@@ -47,7 +51,7 @@ export const examples: Example[] = [
   },
   {
     slug: "lead-follow-up", tab: "Lead follow-up", title: "Lead follow-up for a plumber", who: "Northfield Plumbing Co.", kind: "plumber",
-    service: { id: "follow-up", name: "Lead response & follow-up", price: "$450" },
+    service: svc("follow-up"),
     problem: "A plumber on a job can’t answer email or the website form. Inquiries sit for hours, and the customer books the next plumber on Google.",
     built: [
       "An instant reply to every inquiry: when you’ll call back, and what to do in an emergency",
@@ -78,7 +82,7 @@ export const examples: Example[] = [
   },
   {
     slug: "invoice-reminders", tab: "Invoice reminders", title: "Invoice reminders for a cleaning company", who: "Cannon River Cleaning", kind: "cleaning company",
-    service: { id: "invoices", name: "Invoices & payment reminders", price: "$350" },
+    service: svc("invoices"),
     problem: "Invoices go out, a few go quiet, and chasing them is awkward and easy to forget. Money sits unpaid for weeks.",
     built: [
       "Reads the open-invoices export from QuickBooks, Wave, Square or a spreadsheet",
@@ -109,7 +113,7 @@ export const examples: Example[] = [
   },
   {
     slug: "review-requests", tab: "Review requests", title: "Review requests for a salon", who: "Juniper & Rose Salon", kind: "salon",
-    service: { id: "reviews", name: "Review requests", price: "$250" },
+    service: svc("reviews"),
     problem: "Happy clients mean to leave a review and forget, and asking in person feels awkward.",
     built: [
       "A short thank-you with the Google review link, 2 hours after each visit",

@@ -1,13 +1,14 @@
 ---
 import Base from "../layouts/Base.astro";
 import { calService, calUrl } from "../data/site";
+import { plans, planTerms } from "../data/services";
 
 const contact = "nuxy@nuxyautomation.com";
 ---
-<Base title="Policies · Nuxy Automation" description="Refunds, care plan cancellations, terms of service and privacy for Nuxy Automation.">
+<Base title="Policies · Nuxy Automation" description="Refunds, monthly plan cancellations, terms of service and privacy for Nuxy Automation.">
   <h1>Policies</h1>
   <p class="lead">Plain-language terms for working with Nuxy Automation, a one-person business in Faribault, Minnesota. Questions: <a href={`mailto:${contact}`}>{contact}</a>.</p>
-  <p>Last updated November 9, 2026.</p>
+  <p>Last updated November 11, 2026.</p>
 
   <h2 id="refunds">Refunds</h2>
   <ul>
@@ -18,21 +19,23 @@ const contact = "nuxy@nuxyautomation.com";
     <li>Refunds go back to the card or bank account you paid with, through Stripe, usually within 5-10 business days.</li>
   </ul>
 
-  <h2 id="cancel">Care plan cancellations</h2>
+  <h2 id="cancel">Monthly plan cancellations</h2>
+  <p>Monthly plans are optional: {plans.map((p) => `${p.name} (${p.price})`).join(", ")}. What each one includes is on the <a href="/pricing/#plans">pricing page</a>.</p>
   <ul>
-    <li>The care plan is $100 a month, billed monthly in advance.</li>
-    <li>Cancel any time from the link in your monthly receipt email, or by emailing me. It stops at the end of the month you’ve already paid for, and you’re never charged again.</li>
+    {planTerms.map((t) => <li>{t}</li>)}
+    <li>Plans are billed monthly in advance by Stripe. Cancel from the link in your receipt email or by emailing me, and you’re never charged again.</li>
     <li>Months already paid aren’t refunded part-way.</li>
   </ul>
 
   <h2 id="terms">Terms of service</h2>
   <ul>
     <li><strong>The work:</strong> what you get is the written plan you agreed to by email. Anything outside it is quoted in writing before I do it.</li>
-    <li><strong>Prices:</strong> fixed, in US dollars. Sales tax is added only where the law requires it.</li>
+    <li><strong>Prices:</strong> fixed, in US dollars. Sales tax is added only where the law requires it. The published prices apply to work agreed from November 11, 2026; anything agreed before keeps the price and terms already agreed.</li>
     <li><strong>Payment:</strong> through a secure Stripe payment link or invoice (invoices are due within 7 days). Work starts once the first half is paid.</li>
     <li><strong>Your accounts:</strong> I work as an invited user and never ask for your passwords. You can remove my access at any time.</li>
     <li><strong>Ownership:</strong> once you’ve paid in full, everything I build for you is yours. If the second half goes unpaid, I may pause anything of mine that runs outside your accounts, after written notice; nothing in your accounts is deleted.</li>
     <li><strong>Other companies’ tools:</strong> booking, email and texting services are run by other companies. Their fees, outages and rule changes aren’t mine to control, and I’ll tell you about any cost before you sign up. Every account, key and paid plan is in your name and on your card.</li>
+    <li><strong>Sensitive work:</strong> nothing I build gives medical, legal or financial advice or handles emergencies; anything uncertain or sensitive goes to a person. For medical, dental and similar businesses, no automation handles patient or other regulated information until a compliance assessment, agreed in writing, says it may. Calls are recorded only if you choose that, and callers are told.</li>
     <li><strong>Responsibility:</strong> my total responsibility for any job is limited to what you paid me for it, and I’m not responsible for indirect losses such as lost sales, including from other companies’ outages or data loss.</li>
     <li>These terms follow Minnesota law.</li>
   </ul>
@@ -42,7 +45,7 @@ const contact = "nuxy@nuxyautomation.com";
     <li><strong>What I keep:</strong> what you send me through the contact form or by email (your name, business, contact details and what you’d like help with) and what Stripe needs to send you invoices.</li>
     <li><strong>Payments:</strong> handled by Stripe. I never see or store your full card or bank numbers; Stripe’s <a href="https://stripe.com/privacy">privacy policy</a> covers payment data.</li>
     <li><strong>Your customers’ data:</strong> stays in your own accounts. I use it only to do the work you asked for, and I never sell or share it.</li>
-    <li><strong>The contact form:</strong> your answers go to my own server, which saves them and emails them to my inbox. It doesn’t keep your IP address. I use them only to reply about your project and never add you to a mailing list. Requests are deleted after a year unless you become a client; messages flagged as spam are deleted after 30 days.</li>
+    <li><strong>The contact form:</strong> your answers go to my own server, which saves them and emails them to my inbox. It doesn’t keep your IP address. I use them only to reply about your project and never add you to a mailing list. If you tick “It’s OK to follow up”, I may write once or twice more about that request if you go quiet; if you don’t, I only reply to it. Requests are deleted after a year unless you become a client; messages flagged as spam are deleted after 30 days.</li>
     <li><strong>This website:</strong> no cookies and no advertising or tracking scripts. It counts visits anonymously: which page, which button (for example “started the demo”), the day, and the site you came from. Nothing you type, no IP address and nothing that identifies you. If your browser sends Do Not Track or Global Privacy Control, nothing is counted. The site is hosted by GitHub Pages, which keeps its own server logs.</li>
     {calUrl && <li><strong>Booking a call:</strong> the booking page is run by {calService}. What you enter there (your name, email, the time you pick and any note) is kept by {calService} under its own privacy policy and sent to me so I can call you. It shows only the times I’m free, never what is in my calendar.</li>}
     <li><strong>Email:</strong> if I emailed you about your website and you reply “unsubscribe”, I never email you again.</li>

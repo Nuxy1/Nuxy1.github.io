@@ -1,0 +1,32 @@
+---
+// The footer's Motion choice (src/scripts/motion.ts wires it). Hidden until the script runs: without JavaScript nothing
+// on the site moves anyway. When the device asks for reduced motion, only Reduced can be chosen.
+const options = [
+  ["reduced", "Reduced"],
+  ["standard", "Standard"],
+  ["enhanced", "Enhanced"],
+];
+---
+<fieldset class="motion-pick" data-motion-pick hidden>
+  <legend>Motion</legend>
+  <div class="mp-row">
+    {options.map(([value, label]) => (
+      <label class="mp-opt"><input type="radio" name="motion" value={value} /><span>{label}</span></label>
+    ))}
+  </div>
+  <p class="mp-note" data-motion-note hidden>Your device asks for reduced motion, so the site keeps still.</p>
+</fieldset>
+
+<style>
+  .motion-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; border: 0; margin: 0; padding: 0; min-width: 0; }
+  .motion-pick[hidden] { display: none; }
+  legend { float: left; margin-right: 4px; color: var(--muted); font-size: 0.875rem; }
+  .mp-row { display: inline-flex; padding: 3px; border: 1px solid var(--hairline); border-radius: var(--r-full); background: var(--bg-2); }
+  .mp-opt { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: var(--r-full); color: var(--muted); font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+  .mp-opt input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
+  .mp-opt:hover { color: var(--ink); }
+  .mp-opt:has(input:checked) { background: var(--accent-soft); color: var(--ink); }
+  .mp-opt:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .mp-opt:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+  .mp-note { flex-basis: 100%; color: var(--muted); font-size: 0.8125rem; }
+</style>

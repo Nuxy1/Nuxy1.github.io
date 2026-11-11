@@ -1,0 +1,367 @@
+---
+// "See Your Business Run on Autopilot": four short simulations of what the automations do, chosen by tabs (owner's
+// motion brief, 2026-11-11). Every business, person, number and time here is made up; no call is placed, no message
+// is sent and nothing is booked: it is a page script stepping through cards that are already on the page.
+//
+// Without JavaScript the four demos show one under another (or the chosen one, where :has() works) with every step
+// visible. With it, a demo plays one step every few seconds after the visitor presses its start button, stops at the
+// end, and pauses when it scrolls away or the tab is hidden. Cards still to come keep their place as faint outlines,
+// so nothing below them jumps as they fill in.
+import Icon from "./Icon.astro";
+import type { IconName } from "./Icon.astro";
+import { serviceById } from "../data/services";
+import pauseSvg from "@phosphor-icons/core/assets/regular/pause.svg?raw";
+
+type Card = { step: number; who: "caller" | "auto" | "owner"; label: string; icon: IconName; title?: string; lines?: string[]; quote?: string; slots?: string[]; pick?: number; button?: string };
+type Demo = { id: string; tab: string; icon: IconName; business: string; start: string; steps: string[]; cards: Card[]; svc: string[]; want: string };
+
+const demos: Demo[] = [
+  {
+    id: "voice", tab: "AI Voice Receptionist", icon: "phone", business: "Birchline Heating & Air", start: "Simulate Incoming Call",
+    steps: [
+      "A call comes in after hours",
+      "The AI receptionist answers",
+      "It takes down the problem",
+      "It offers open times",
+      "The visit is booked",
+      "The owner gets a summary",
+    ],
+    cards: [
+      { step: 1, who: "caller", label: "Incoming call", icon: "phone", title: "(507) 555-0142 · Maya R.", lines: ["Tue 7:48 PM · Birchline’s line · the office is closed"] },
+      { step: 2, who: "auto", label: "AI receptionist", icon: "chatsCircle", quote: "Thanks for calling Birchline Heating & Air. The office is closed, but I can help. What’s going on?" },
+      { step: 3, who: "caller", label: "Maya", icon: "user", quote: "Our furnace stopped blowing warm air tonight." },
+      { step: 3, who: "auto", label: "Details taken", icon: "clipboardText", lines: ["Problem: furnace not heating", "Town: Northfield", "Best way to reach: text"] },
+      { step: 4, who: "auto", label: "Open times offered", icon: "calendarCheck", slots: ["Wed 8:00 AM", "Wed 1:30 PM", "Thu 9:00 AM"], pick: 0 },
+      { step: 5, who: "auto", label: "Booked", icon: "checkCircle", title: "Furnace check · Wed 8:00 AM", lines: ["Maya R. · Northfield", "Confirmation text sent to Maya"] },
+      { step: 6, who: "owner", label: "To the owner", icon: "bellRinging", title: "New booking from an after-hours call", lines: ["Maya R. · furnace not heating · Wed 8:00 AM", "Call summary attached. Anything unusual would have come to you instead."] },
+    ],
+    svc: ["ai-receptionist", "ai-replies", "missed-calls"], want: "automation",
+  },
+  {
+    id: "missed", tab: "Missed-Call Recovery", icon: "phoneX", business: "Copperleaf Auto Repair", start: "Simulate a Missed Call",
+    steps: [
+      "A call goes unanswered",
+      "A text goes back within a minute",
+      "The customer replies",
+      "The owner gets the details",
+      "The shop calls back and books it",
+    ],
+    cards: [
+      { step: 1, who: "caller", label: "Missed call", icon: "phoneX", title: "(507) 555-0187 · Jordan P.", lines: ["Thu 2:14 PM · everyone is under a car"] },
+      { step: 2, who: "auto", label: "Automatic text", icon: "chatCircleText", quote: "Hi, this is Copperleaf Auto Repair. Sorry we missed your call! What can we help with? Reply here and we’ll call you back today." },
+      { step: 3, who: "caller", label: "Jordan", icon: "user", quote: "Brakes are grinding on my Civic. Can I bring it in this week?" },
+      { step: 4, who: "owner", label: "To the shop", icon: "bellRinging", title: "Missed call, now a job: Jordan P.", lines: ["Grinding brakes · Honda Civic · wants this week", "Call back or text from the alert"] },
+      { step: 5, who: "owner", label: "Booked by the shop", icon: "checkCircle", title: "Drop-off Fri 8:00 AM", lines: ["Called back at 2:40 PM · added to the job list"] },
+    ],
+    svc: ["missed-calls", "ai-receptionist", "follow-up"], want: "automation",
+  },
+  {
+    id: "estimate", tab: "Estimate Follow-Up", icon: "paperPlaneTilt", business: "Ridgeview Roofing", start: "Send the Estimate",
+    steps: [
+      "The estimate goes out",
+      "No reply: a friendly follow-up",
+      "The customer answers",
+      "Follow-ups stop at once",
+      "The owner schedules the job",
+    ],
+    cards: [
+      { step: 1, who: "owner", label: "Estimate sent", icon: "receipt", title: "Roof repair estimate · Alex K.", lines: ["Mon 10:05 AM · sent from the job card"] },
+      { step: 2, who: "auto", label: "Follow-up 1 of 2", icon: "paperPlaneTilt", quote: "Hi Alex, just checking you got the roof repair estimate. Happy to answer any questions. Reply here anytime.", lines: ["Thu 10:05 AM · no reply in 3 days"] },
+      { step: 3, who: "caller", label: "Alex", icon: "user", quote: "Thanks! Could you do it before the rain next week?" },
+      { step: 4, who: "auto", label: "Follow-ups stopped", icon: "checkCircle", title: "Alex replied, so follow-up 2 is cancelled", lines: ["The reply goes straight to the owner"] },
+      { step: 5, who: "owner", label: "Scheduled", icon: "calendarCheck", title: "Roof repair · Mon 7:30 AM", lines: ["Estimate marked accepted · Alex gets a confirmation"] },
+    ],
+    svc: ["estimate-follow-up", "quotes", "follow-up"], want: "automation",
+  },
+  {
+    id: "qualify", tab: "Lead Qualification", icon: "funnel", business: "Fernwood Landscaping", start: "Submit the Form",
+    steps: [
+      "A new inquiry arrives",
+      "Three quick questions go out",
+      "The answers are checked",
+      "A booking link is sent",
+      "The owner sees a ready lead",
+    ],
+    cards: [
+      { step: 1, who: "caller", label: "Website form", icon: "browser", title: "Sam T. · backyard patio and plantings", lines: ["Sat 4:20 PM · fernwoodlandscaping.example"] },
+      { step: 2, who: "auto", label: "Automatic questions", icon: "listChecks", lines: ["1. Roughly how big is the yard?", "2. When would you like to start?", "3. Do you have a design yet?"] },
+      { step: 3, who: "caller", label: "Sam", icon: "user", quote: "About a quarter acre, this spring, and no design yet." },
+      { step: 3, who: "auto", label: "Checked against your rules", icon: "sealCheck", title: "Good fit", lines: ["In your service area · spring start · wants a design"] },
+      { step: 4, who: "auto", label: "Booking link sent", icon: "calendarCheck", quote: "Thanks, Sam! Here’s a link to choose a time for your site visit:", button: "Choose a visit time" },
+      { step: 5, who: "owner", label: "To the owner", icon: "bellRinging", title: "Ready lead: Sam T., site visit Tue 10:00 AM", lines: ["Quarter acre · spring · needs a design", "All three answers on the lead card"] },
+    ],
+    svc: ["lead-qualification", "follow-up", "booking"], want: "automation",
+  },
+];
+
+// a demo the catalogue doesn't sell yet links to the quote form instead of a service that doesn't exist
+const linkFor = (d: Demo) => {
+  const s = d.svc.map((id) => serviceById[id]).find(Boolean);
+  return s ? { href: `/solutions/#${s.id}`, text: `See ${s.name}`, price: s.price } : { href: `/contact/?want=${d.want}`, text: "Ask about this", price: "" };
+};
+const whoName = { caller: "Customer", auto: "Automatic", owner: "Owner" };
+const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true" focusable="false" `);
+---
+<section class="ap section band" id="autopilot" aria-labelledby="ap-h">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Simulated demos</p>
+      <h2 id="ap-h">See Your Business Run on Autopilot</h2>
+      <p>Four short, made-up examples of what the automations do while you’re busy. Pick one and press start.</p>
+    </div>
+
+    <fieldset class="ap-tabs reveal">
+      <legend class="sr-only">Choose a demo</legend>
+      {demos.map((d, i) => (
+        <label class="ap-tab"><input type="radio" name="ap-demo" value={d.id} checked={i === 0} /><Icon name={d.icon} /><span>{d.tab}</span></label>
+      ))}
+    </fieldset>
+
+    <div class="ap-demos reveal">
+      {demos.map((d) => {
+        const link = linkFor(d), n = d.steps.length;
+        return (
+          <article class="ap-demo" id={`ap-${d.id}`} data-ap={d.id} data-steps={n} aria-labelledby={`ap-${d.id}-h`}>
+            <div class="ap-bar">
+              <span class="chip plain"><Icon name="info" />Simulated demo</span>
+              <p>{d.business} and everyone in it are made up. No call is placed, no message is sent and nothing is booked.</p>
+            </div>
+            <div class="ap-grid">
+              <div class="ap-side">
+                <h3 class="ap-h" id={`ap-${d.id}-h`}>{d.tab}<span>{d.business}</span></h3>
+                <ol class="ap-steps">
+                  {d.steps.map((s, i) => (
+                    <li>
+                      <button type="button" class="ap-step" data-go={i + 1} aria-current={i === 0 ? "step" : "false"} disabled>
+                        <span class="ap-num" aria-hidden="true">{i + 1}</span><span><span class="sr-only">Step {i + 1}: </span>{s}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+                <div class="ap-controls" data-controls hidden>
+                  <button type="button" class="button" data-play aria-pressed="false">
+                    <span class="ap-ico-play"><Icon name="play" /></span><span class="ap-ico-pause" set:html={pauseIcon}></span>
+                    <span data-play-label data-start={d.start}>{d.start}</span>
+                  </button>
+                  <div class="ap-row">
+                    <button type="button" class="button secondary small" data-back><Icon name="caretLeft" />Back</button>
+                    <button type="button" class="button secondary small" data-next>Next<Icon name="caretRight" /></button>
+                    <button type="button" class="button secondary small" data-reset><Icon name="arrowCounterClockwise" />Replay</button>
+                  </div>
+                </div>
+                <a class="ap-link" href={link.href} data-track={`cta_autopilot_${d.id}`}>
+                  <span>{link.text}{link.price && <span class="ap-price"> · {link.price}</span>}</span><Icon name="arrowRight" />
+                </a>
+              </div>
+
+              <div class="ap-stage">
+                <p class="ap-caption" aria-live="polite" data-caption>
+                  <span data-at="0">Press start to play it, or go through it one step at a time.</span>
+                  {d.steps.map((s, i) => <span data-at={i + 1}>Step {i + 1} of {n}: {s}.</span>)}
+                </p>
+                <ol class="ap-feed">
+                  {d.cards.map((c) => (
+                    <li class={`ap-card ${c.who}`} data-from={c.step}>
+                      <p class="ap-card-label"><Icon name={c.icon} /><span>{c.label}</span><span class="ap-who">{whoName[c.who]}</span></p>
+                      {c.title && <p class="ap-card-title">{c.title}</p>}
+                      {c.quote && <p class="ap-quote">“{c.quote}”</p>}
+                      {c.slots && (
+                        <ul class="ap-slots" aria-label="Open times">
+                          {c.slots.map((s, k) => <li class={k === c.pick ? "on" : ""}>{s}{k === c.pick && <span class="sr-only"> (chosen)</span>}</li>)}
+                        </ul>
+                      )}
+                      {c.lines && <ul class="ap-lines">{c.lines.map((l) => <li>{l}</li>)}</ul>}
+                      {c.button && <span class="ap-fake-btn" aria-hidden="true">{c.button}</span>}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<script>
+  // motion is on unless <html data-motion> says reduced (src/scripts/motion.ts sets it; it is only imported by Base.astro,
+  // so every page loads it as one script with no second request)
+  const moving = () => { const m = document.documentElement.dataset.motion; return !!m && m !== "reduced"; };
+
+  const STEP_MS = 2600;
+  const track = (e: string) => (window as unknown as { nuxyTrack?: (e: string) => void }).nuxyTrack?.(e);
+  const section = document.querySelector<HTMLElement>("#autopilot");
+
+  if (section) {
+    const players: { stop: () => void; hold: (on: boolean) => void }[] = [];
+
+    for (const root of section.querySelectorAll<HTMLElement>("[data-ap]")) {
+      const total = +root.dataset.steps!;
+      const cards = [...root.querySelectorAll<HTMLElement>("[data-from]")];
+      const caps = [...root.querySelectorAll<HTMLElement>("[data-at]")];
+      const steps = [...root.querySelectorAll<HTMLButtonElement>("[data-go]")];
+      const play = root.querySelector<HTMLButtonElement>("[data-play]")!;
+      const label = root.querySelector<HTMLElement>("[data-play-label]")!;
+      const back = root.querySelector<HTMLButtonElement>("[data-back]")!;
+      const next = root.querySelector<HTMLButtonElement>("[data-next]")!;
+      const reset = root.querySelector<HTMLButtonElement>("[data-reset]")!;
+      let cur = 0, timer = 0, playing = false, held = false, started = false, done = false;
+
+      const show = (k: number, fresh = true) => {
+        cur = Math.max(0, Math.min(total, k));
+        for (const c of cards) {
+          const f = +c.dataset.from!;
+          c.classList.toggle("later", f > cur);
+          c.classList.toggle("is-new", fresh && f === cur && moving());
+        }
+        caps.forEach((c) => (c.hidden = +c.dataset.at! !== cur));
+        steps.forEach((b) => {
+          const s = +b.dataset.go!;
+          b.setAttribute("aria-current", s === cur ? "step" : "false");
+          b.classList.toggle("done", s < cur);
+        });
+        back.disabled = cur <= 1;
+        next.disabled = cur === total;
+        if (cur === total) {
+          stop();
+          label.textContent = "Watch it again";
+          if (!done) { done = true; track("demo_complete"); }
+        }
+      };
+      const tick = () => { timer = 0; if (playing && !held) { show(cur + 1); if (playing) schedule(); } };
+      const schedule = () => { clearTimeout(timer); timer = window.setTimeout(tick, STEP_MS); };
+      const stop = () => {
+        playing = false; clearTimeout(timer); timer = 0;
+        play.setAttribute("aria-pressed", "false");
+        if (cur > 0 && cur < total) label.textContent = "Play";
+      };
+      const begin = () => { if (!started) { started = true; track("demo_start"); } };
+
+      play.addEventListener("click", () => {
+        if (playing) { stop(); return; }
+        begin();
+        if (cur === total || cur === 0) { done = cur === total ? done : false; show(1); }
+        playing = true;
+        play.setAttribute("aria-pressed", "true");
+        label.textContent = "Pause";
+        schedule();
+      });
+      next.addEventListener("click", () => { begin(); stop(); show(Math.max(1, cur + 1)); });
+      back.addEventListener("click", () => { stop(); show(cur - 1); });
+      reset.addEventListener("click", () => { stop(); done = false; show(0, false); label.textContent = root.querySelector<HTMLElement>("[data-start]")!.dataset.start!; });
+      steps.forEach((b) => { b.disabled = false; b.addEventListener("click", () => { begin(); stop(); show(+b.dataset.go!); }); });
+
+      root.querySelector<HTMLElement>("[data-controls]")!.hidden = false;
+      root.classList.add("ready");
+      show(0, false);
+      back.disabled = true;
+      players.push({ stop, hold: (on) => { held = on; if (!on && playing && !timer) schedule(); } });
+    }
+
+    // switching demos stops the one that was playing
+    section.addEventListener("change", (e) => { if ((e.target as HTMLInputElement).name === "ap-demo") players.forEach((p) => p.stop()); });
+    // off screen or in a hidden tab: hold the clock (a step never advances unseen)
+    let onScreen = true;
+    const sync = () => players.forEach((p) => p.hold(!onScreen || document.hidden));
+    new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; sync(); }, { threshold: 0.15 }).observe(section);
+    document.addEventListener("visibilitychange", sync);
+  }
+</script>
+
+<style>
+
+  .ap-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; padding: 4px; border: 1px solid var(--hairline); border-radius: 14px; background: var(--bg-2); min-width: 0; width: fit-content; max-width: 100%; }
+  .ap-tab { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 10px; color: var(--muted); font-size: 0.9375rem; font-weight: 600; cursor: pointer; }
+  .ap-tab input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
+  .ap-tab :global(.icon) { width: 1.1em; height: 1.1em; }
+  .ap-tab:hover { color: var(--ink); }
+  .ap-tab:has(input:checked) { background: var(--surface-strong); color: var(--ink); box-shadow: inset 0 0 0 1px var(--hairline-strong); }
+  .ap-tab:has(input:checked) :global(.icon) { color: var(--cyan); }
+  .ap-tab:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  /* the four demos share one cell: the box keeps the tallest one's height, so switching never moves the page */
+  .ap-demos { display: grid; }
+  .ap-demo { grid-area: 1 / 1; min-width: 0; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg); overflow: hidden; visibility: hidden; opacity: 0; }
+  #autopilot:has(input[value="voice"]:checked) #ap-voice,
+  #autopilot:has(input[value="missed"]:checked) #ap-missed,
+  #autopilot:has(input[value="estimate"]:checked) #ap-estimate,
+  #autopilot:has(input[value="qualify"]:checked) #ap-qualify { display: block; visibility: visible; opacity: 1; }
+  /* a phone shows only the chosen demo (the four differ in height once stacked); from 900px they share one cell */
+  @media (max-width: 899px) { .ap-demo { display: none; } }
+  @supports not selector(:has(*)) { .ap-demos { gap: 20px; } .ap-demo { grid-area: auto; display: block; visibility: visible; opacity: 1; } .ap-tabs { display: none; } }
+  :global(html[data-motion]:not([data-motion="reduced"])) .ap-demo { transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+  :global(html[data-motion]:not([data-motion="reduced"])) #autopilot .ap-demo[id] { transition-delay: 0s; }
+
+  .ap-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 18px; border-bottom: 1px solid var(--hairline-soft); background: var(--bg-2); font-size: 0.875rem; color: var(--muted); }
+  .ap-bar .chip :global(.icon) { width: 1em; height: 1em; }
+  .ap-grid { display: grid; }
+  .ap-side { display: grid; align-content: start; gap: 14px; padding: 18px; border-bottom: 1px solid var(--hairline-soft); }
+  .ap-h { font-size: 1.125rem; line-height: 1.3; }
+  .ap-h span { display: block; margin-top: 2px; color: var(--muted); font-size: 0.875rem; font-weight: 500; }
+  .ap-steps { display: grid; gap: 2px; list-style: none; }
+  .ap-step {
+    display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 6px 10px; border: 1px solid transparent; border-radius: var(--r-md);
+    background: none; color: var(--body); font-size: 0.9375rem; text-align: left; cursor: pointer;
+  }
+  .ap-step:disabled { cursor: default; }
+  .ap-step:not(:disabled):hover { background: rgba(148, 163, 184, 0.06); color: var(--ink); }
+  .ap-num { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--hairline-strong); font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ap-step.done .ap-num { border-color: transparent; background: var(--accent-soft); color: var(--link); }
+  .ap-step[aria-current="step"] { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.35); color: var(--ink); }
+  .ap-step[aria-current="step"] .ap-num { border-color: var(--button); background: var(--button); color: #fff; }
+  .ap-demo:not(.ready) .ap-step[aria-current="step"] { background: none; border-color: transparent; color: var(--body); }
+  .ap-demo:not(.ready) .ap-step[aria-current="step"] .ap-num { background: none; border-color: var(--hairline-strong); color: inherit; }
+
+  .ap-controls { display: grid; gap: 8px; }
+  .ap-controls > .button { width: 100%; }
+  .ap-ico-pause, [data-play][aria-pressed="true"] .ap-ico-play { display: none; }
+  [data-play][aria-pressed="true"] .ap-ico-pause { display: inline-flex; }
+  .ap-ico-play, .ap-ico-pause { display: inline-flex; }
+  .ap-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .ap-row .button { padding: 0 6px; min-height: 44px; font-size: 0.875rem; }
+  .ap-row .button:disabled { opacity: 0.45; cursor: default; }
+  .ap-row :global(.icon) { width: 1em; height: 1em; }
+  .ap-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; color: var(--link); font-weight: 600; font-size: 0.9375rem; text-decoration: none; }
+  .ap-link:hover { text-decoration: underline; }
+  .ap-price { color: var(--body); font-weight: 500; }
+
+  .ap-stage { padding: 18px; min-width: 0; }
+  .ap-caption { min-height: 3em; margin-bottom: 14px; color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
+  .ap-demo:not(.ready) .ap-caption { display: none; }
+  .ap-feed { display: grid; gap: 10px; list-style: none; }
+  .ap-card { max-width: 34rem; padding: 12px 14px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel); font-size: 0.9375rem; color: var(--body); }
+  .ap-card.caller { justify-self: start; border-color: var(--hairline-strong); }
+  .ap-card.auto { justify-self: end; border-color: rgba(34, 211, 238, 0.35); background: rgba(34, 211, 238, 0.06); }
+  .ap-card.owner { justify-self: end; border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.07); }
+  .ap-card-label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: var(--ink); font-size: 0.8125rem; font-weight: 650; }
+  .ap-card-label :global(.icon) { width: 1.05em; height: 1.05em; color: var(--cyan); }
+  .ap-card.owner .ap-card-label :global(.icon) { color: var(--ok); }
+  .ap-who { margin-left: auto; padding-left: 10px; color: var(--muted); font-weight: 500; }
+  .ap-card-title { color: var(--ink); font-weight: 600; }
+  .ap-quote { color: var(--ink); }
+  .ap-lines { display: grid; gap: 2px; margin-top: 4px; list-style: none; font-size: 0.875rem; color: var(--muted); }
+  .ap-slots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; list-style: none; }
+  .ap-slots li { padding: 5px 10px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); font-size: 0.8125rem; font-weight: 600; color: var(--body); }
+  .ap-slots li.on { border-color: var(--button); background: var(--button); color: #fff; }
+  .ap-fake-btn { display: inline-block; margin-top: 8px; padding: 6px 14px; border-radius: var(--r-full); background: var(--button); color: #fff; font-size: 0.875rem; font-weight: 600; }
+
+  /* a card still to come keeps its place as a faint outline (its words are hidden from everyone, screen readers too) */
+  .ap-card.later { border-style: dashed; border-color: var(--hairline); background: transparent; }
+  .ap-card.later > * { visibility: hidden; }
+  :global(html[data-motion]:not([data-motion="reduced"])) .ap-card.is-new { animation: ap-in var(--dur-3) var(--ease-out) both; }
+  @keyframes ap-in { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: none; } }
+
+  @media (min-width: 900px) {
+    .ap-grid { grid-template-columns: 300px minmax(0, 1fr); }
+    .ap-side { border-bottom: 0; border-right: 1px solid var(--hairline-soft); }
+    .ap-stage { padding: 22px 26px; }
+  }
+  @media (max-width: 479px) {
+    .ap-tabs { width: 100%; }
+    .ap-tab { flex: 1 1 calc(50% - 6px); padding: 0 10px; font-size: 0.875rem; }
+    .ap-side, .ap-stage { padding: 14px; }
+    .ap-card.auto, .ap-card.owner { margin-left: 8%; }
+    .ap-card.caller { margin-right: 8%; }
+  }
+</style>

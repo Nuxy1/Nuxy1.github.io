@@ -192,13 +192,37 @@ All prices, services and plans come from `src/data/services.ts`; components neve
 
 ## Motion
 
-- Short and functional: 160-200ms colour, border and transform changes on hover and open, easing
-  `cubic-bezier(0.16, 1, 0.3, 1)`.
-- The only motion nobody asked for is small and runs once: the home page flow diagram's steps fade in on load, and
-  `.reveal` sections fade up as they scroll into view (only in browsers with scroll-driven animations).
-- The lead demo plays only after the visitor starts it.
-- `prefers-reduced-motion: reduce` turns off smooth scrolling and cuts every animation and transition to an instant
-  change (a global rule at the end of `Base.astro`).
+Motion explains what the business gets; it never decorates for its own sake. Tokens live in
+`src/styles/motion.css`: `--dur-1` 160ms (hovers), `--dur-2` 240ms (a demo step, a panel), `--dur-3` 380ms (a chosen
+part coming forward), `--dur-4` 520ms (section reveals, the hero's camera move); easing `--ease-out`
+`cubic-bezier(0.16, 1, 0.3, 1)`, `--ease-io` for paths that go and return.
+
+- **Four levels** (`src/scripts/motion.ts`), set on `<html data-motion>`: `reduced` (nothing moves), `light` (short
+  state changes only), `standard` (adds the hero's slow ambient loops), `enhanced` (adds the hero's travelling
+  pulses). With no choice made, the device suggests one: save-data, a slow connection, little memory, few cores or a
+  dropped-frame check give `light`; `enhanced` needs a mouse, a 1280px+ screen, 8+ cores and 8+ GB reported.
+- **Only `Base.astro` imports `motion.ts`.** Components read `<html data-motion>` and listen for the `nuxy:motion`
+  event instead. Importing it anywhere else splits it into a shared file that every page fetches in a second step
+  (measured: +150 ms LCP on slow 4G).
+- **The visitor decides.** The footer's Motion choice (Reduced / Standard / Enhanced) is kept in `localStorage`
+  (`nuxy-motion`); if storage is off the site simply forgets it.
+- **Reduced motion always wins.** `prefers-reduced-motion: reduce` forces `reduced`; the footer then locks the other
+  two choices and says why. The global rule at the end of `Base.astro` still cuts any animation to an instant change.
+- **Nothing runs forever.** Ambient loops (`html[data-ambient]`) run only while the hero is on screen, the tab is
+  visible and less than a minute has passed since the last interaction; then they pause. The demos advance only after
+  Play, stop at their last step, and pause when the tab is hidden or the demo leaves the screen.
+- **No network, no cost.** No motion code fetches anything, calls an API or uses a provider. The demos are scripted
+  and say "Simulated demo … No call is placed, no message is sent and nothing is booked."
+- **Works without JavaScript.** The hero's parts, the demo tabs and the goal picker are radio buttons switched by CSS
+  `:has()`; without `:has()` every panel shows in a list. The demo player alone needs JavaScript and stays hidden
+  without it (the whole example then shows).
+- **Section reveals** fade up once as they enter the screen, only for sections that start below the first screen.
+- **The /solutions/ filter** glides the cards to their new places with a view transition, started only when motion is
+  on.
+- **Prices are never typed into motion components.** The hero panels and the goal picker read names and prices from
+  `data/services.ts`, skip any id that isn't in the catalogue, and the goal picker is a fixed list per goal, not AI.
+- Analytics: a demo counts `demo_start` and `demo_complete` at most once each per demo per page view; the goal picker's buttons are
+  `cta_selector` and `service_details`.
 
 ## Analytics hooks
 

@@ -5,15 +5,22 @@
 // Without JavaScript it is an ordinary form: the server shows its own error page or the thank-you page.
 // Rules mirror FIELDS in the inquiry service's src/inquiry.js (private business repo): change both together.
 // fv=2 tells the server this page asks "What do you need?" (the six answers in data/services.ts `wants`); a page loaded
-// before that question existed sends no fv and is accepted without it. A service's "Ask about this" link opens
+// before that question existed sends no fv and is accepted without it. A service's "Request a proposal" link opens
 // /contact/?service=<id> (it is named at the top and picks its answer), and ?want=<id> picks an answer directly.
+// Any service, smaller or larger version, bundle or plan can be named; a retired id names the plan that replaced it
+// and is sent as it came, so the owner sees the link was an old one.
 import Icon from "./Icon.astro";
 import { inquiryUrl, inbox } from "../data/site";
-import { groups, plans, wants, wantOf } from "../data/services";
+import { groups, plans, variants, bundles, retired, wants, wantOf } from "../data/services";
 import { ask } from "../lib/request";
 
-// (every service and plan a link can ask about: its name and price for the note, and which answer it picks)
-const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].map((s) => [s.id, { name: s.name, price: s.price, want: wantOf(s.id) }]));
+// (everything a link can ask about: its name and price for the note, which answer it picks, and for a retired id
+// the name it had)
+const asked: Record<string, { name: string; price: string; want: string; was?: string }> = Object.fromEntries(
+  [...groups.flatMap((g) => g.items), ...variants, ...bundles, ...plans].map((s) => [s.id, { name: s.name, price: s.price, want: wantOf(s.id) }]),
+);
+const oldNames: Record<string, string> = { "automation-care": "Automation care" };
+for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], was: oldNames[id] ?? id };
 ---
 <div class="inq" data-inquiry data-services={JSON.stringify(asked)}>
   <form class="inq-form" method="post" action={inquiryUrl} accept-charset="UTF-8" data-endpoint={inquiryUrl}>
@@ -48,6 +55,21 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
         <p class="err" id="f-business-err" hidden></p>
       </div>
       <div class="field">
+        <label for="f-type">Type of business <span class="opt">(optional)</span></label>
+        <input id="f-type" name="type" type="text" maxlength="80" list="f-type-list" aria-describedby="f-type-help f-type-err" />
+        <datalist id="f-type-list">
+          {["Landscaping & lawn care", "Cleaning", "Plumbing", "HVAC", "Electrical", "Contractor & remodeling", "Barber, salon or spa", "Auto repair", "Restaurant or café", "Retail shop", "Office or professional services"].map((t) => <option value={t} />)}
+        </datalist>
+        <p class="help" id="f-type-help">For example: plumbing, house cleaning, barber shop.</p>
+        <p class="err" id="f-type-err" hidden></p>
+      </div>
+      <div class="field">
+        <label for="f-website">Current website <span class="opt">(optional)</span></label>
+        <input id="f-website" name="website" type="text" inputmode="url" autocomplete="url" maxlength="200" spellcheck="false" placeholder="yourbusiness.com" aria-describedby="f-website-help f-website-err" />
+        <p class="help" id="f-website-help">If you have one.</p>
+        <p class="err" id="f-website-err" hidden></p>
+      </div>
+      <div class="field">
         <label for="f-email">Email</label>
         <input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254" spellcheck="false" aria-describedby="f-email-help f-email-err" />
         <p class="help" id="f-email-help">Where we send your written plan and price.</p>
@@ -77,23 +99,18 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
       <p class="err" id="f-need-err" hidden></p>
     </div>
 
+    <fieldset class="field radios" aria-describedby="f-scope-help f-scope-err">
+      <legend>A one-time build, ongoing management, or both? <span class="opt">(optional)</span></legend>
+      <p class="help" id="f-scope-help">Management is always optional: what we build is yours either way.</p>
+      {Object.entries({ "one-time": "One-time setup", management: "Ongoing management", both: "Both", unsure: "Not sure yet" }).map(([v, l]) => (
+        <label><input type="radio" name="scope" value={v} /> {l}</label>
+      ))}
+      <p class="err" id="f-scope-err" hidden></p>
+    </fieldset>
+
     <details class="inq-more">
       <summary><Icon name="plus" />More details <span class="opt">(optional)</span></summary>
       <div class="inq-grid">
-        <div class="field">
-          <label for="f-website">Current website <span class="opt">(optional)</span></label>
-          <input id="f-website" name="website" type="text" inputmode="url" autocomplete="url" maxlength="200" spellcheck="false" placeholder="yourbusiness.com" aria-describedby="f-website-err" />
-          <p class="err" id="f-website-err" hidden></p>
-        </div>
-        <div class="field">
-          <label for="f-type">Type of business <span class="opt">(optional)</span></label>
-          <input id="f-type" name="type" type="text" maxlength="80" list="f-type-list" aria-describedby="f-type-help f-type-err" />
-          <datalist id="f-type-list">
-            {["Landscaping & lawn care", "Cleaning", "Plumbing", "HVAC", "Electrical", "Contractor & remodeling", "Barber, salon or spa", "Auto repair", "Restaurant or café", "Retail shop", "Office or professional services"].map((t) => <option value={t} />)}
-          </datalist>
-          <p class="help" id="f-type-help">For example: plumbing, house cleaning, barber shop.</p>
-          <p class="err" id="f-type-err" hidden></p>
-        </div>
         <div class="field">
           <label for="f-timeline">Timeline <span class="opt">(optional)</span></label>
           <select id="f-timeline" name="timeline" aria-describedby="f-timeline-err">
@@ -128,7 +145,7 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
       <div class="field">
         <label for="f-tools">Tools you use now <span class="opt">(optional)</span></label>
         <input id="f-tools" name="tools" type="text" maxlength="400" aria-describedby="f-tools-help f-tools-err" />
-        <p class="help" id="f-tools-help">Booking, invoicing, email, website builder… for example: Gmail, Square, Wix.</p>
+        <p class="help" id="f-tools-help">Phone, booking, CRM, invoicing, email, website builder… for example: Gmail, Square, Jobber, Wix.</p>
         <p class="err" id="f-tools-err" hidden></p>
       </div>
     </details>
@@ -140,6 +157,12 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
     </div>
     <input type="hidden" name="t" value="" />
     <input type="hidden" name="fv" value="2" />
+
+    <div class="field check">
+      <label for="f-consent"><input id="f-consent" name="consent" type="checkbox" value="yes" aria-describedby="f-consent-help f-consent-err" /> <span>It’s OK to follow up about this request if I don’t answer right away <span class="opt">(optional)</span></span></label>
+      <p class="help" id="f-consent-help">Without it, we only reply to this request.</p>
+      <p class="err" id="f-consent-err" hidden></p>
+    </div>
 
     <p class="inq-privacy"><Icon name="lockSimple" /><span>We use what you send only to reply about your project. It is never sold, shared or added to a mailing list. <a href="/policies/#privacy">Privacy policy</a></span></p>
 
@@ -177,7 +200,7 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
   .field { display: grid; gap: 6px; align-content: start; min-width: 0; }
   .field > label, .field > legend { color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
   .opt { color: var(--muted); font-weight: 400; }
-  .field input:not([type="radio"]), .field select, .field textarea {
+  .field input:not([type="radio"]):not([type="checkbox"]), .field select, .field textarea {
     width: 100%; min-height: 48px; padding: 11px 14px; border: 1px solid var(--hairline-strong); border-radius: 10px;
     background: #0e1a30; color: var(--ink); font-size: 1rem; line-height: 1.4;
     transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
@@ -196,6 +219,10 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
   fieldset.radios { display: flex; flex-wrap: wrap; column-gap: 24px; row-gap: 0; }
   .radios .err { flex-basis: 100%; }
   .radios label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--body); cursor: pointer; }
+  .check > label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding-top: 10px; color: var(--body); font-weight: 400; cursor: pointer; }
+  .check input { width: 20px; height: 20px; margin: 0.1em 0 0; flex: none; accent-color: var(--blue); }
+  .check .help { padding-left: 30px; }
+  .radios .help { flex-basis: 100%; }
   .radios input, .pick input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--blue); }
   /* "What do you need?": six big choices, two across when there's room */
   .picks > legend { font-size: 1rem; }
@@ -261,15 +288,15 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
     want: { required: true, max: 40, label: "What you need", missing: "Choose what you need." },
     name: { required: true, max: 100, label: "Your name" },
     business: { required: true, max: 120, label: "Business name" },
+    type: { max: 80, label: "Type of business" },
+    website: { max: 200, label: "Website", test: (v) => /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(:\d{2,5})?(\/\S*)?$/i.test(v), problem: "Enter a web address like yourbusiness.com, or leave it empty." },
     email: { required: true, max: 254, label: "Email", test: (v) => /^[^\s@<>"(),;:\\[\]]+@[^\s@<>"'(),;:\\[\]]+\.[a-z]{2,}$/i.test(v), problem: "Enter an email address like name@business.com." },
     phone: { max: 40, label: "Phone", test: (v) => /^[0-9+().\-\s x]+$/i.test(v) && (v.match(/\d/g) ?? []).length >= 7, problem: "Enter a phone number with at least 7 digits, or leave it empty." },
     need: { required: true, min: 10, max: 3000, label: "Project description" },
-    website: { max: 200, label: "Website", test: (v) => /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(:\d{2,5})?(\/\S*)?$/i.test(v), problem: "Enter a web address like yourbusiness.com, or leave it empty." },
-    type: { max: 80, label: "Type of business" },
     tools: { max: 400, label: "Tools you use now" },
   };
   // (the email the customer can send instead when sending fails: their answers as readable lines)
-  const LABELS: [string, string][] = [["want", "What I need"], ["name", "Name"], ["business", "Business name"], ["type", "Type of business"], ["email", "Email"], ["phone", "Phone"], ["website", "Website"], ["timeline", "When"], ["budget", "Budget"], ["contact", "Best way to reach me"], ["tools", "Tools I use now"], ["need", "About my project"]];
+  const LABELS: [string, string][] = [["want", "What I need"], ["name", "Name"], ["business", "Business name"], ["type", "Type of business"], ["website", "Website"], ["email", "Email"], ["phone", "Phone"], ["scope", "One-time or ongoing"], ["timeline", "When"], ["budget", "Budget"], ["contact", "Best way to reach me"], ["tools", "Tools I use now"], ["consent", "OK to follow up"], ["need", "About my project"]];
 
   for (const root of document.querySelectorAll<HTMLElement>("[data-inquiry]")) {
     const form = root.querySelector("form")!;
@@ -290,8 +317,8 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
     const focusOf = (name: string): HTMLElement | null => (name === "want" ? chosen() ?? form.querySelector<HTMLInputElement>('input[name="want"]') : field(name));
     form.noValidate = true; // (our own messages, next to each field)
 
-    // ?service=<id> from a service's "Ask about this" link: named at the top, and its answer picked (only real ids)
-    const services: Record<string, { name: string; price: string; want: string }> = JSON.parse(root.dataset.services ?? "{}");
+    // ?service=<id> from a "Request a proposal" link: named at the top, and its answer picked (only real ids)
+    const services: Record<string, { name: string; price: string; want: string; was?: string }> = JSON.parse(root.dataset.services ?? "{}");
     const params = new URLSearchParams(location.search);
     const id = params.get("service") ?? "";
     const service = /^[a-z0-9-]{1,40}$/.test(id) && Object.prototype.hasOwnProperty.call(services, id) ? services[id] : null;
@@ -299,7 +326,7 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
     const serviceInput = field("service")!;
     if (service) {
       serviceInput.value = id;
-      about.querySelector("[data-about-name]")!.textContent = `${service.name} (${service.price})`;
+      about.querySelector("[data-about-name]")!.textContent = `${service.name} (${service.price})${service.was ? `, which replaced ${service.was}` : ""}`;
       about.hidden = false;
     }
     const want = params.get("want") ?? "";
@@ -375,7 +402,8 @@ const asked = Object.fromEntries([...groups.flatMap((g) => g.items), ...plans].m
     };
     // (what each answer reads as: the chosen option's words for the choices, what was typed for the rest)
     const answerOf = (name: string) => {
-      if (name === "want" || name === "contact") return form.querySelector(`input[name="${name}"]:checked`)?.closest("label")?.textContent?.trim() ?? "";
+      if (name === "consent") return form.querySelector<HTMLInputElement>("#f-consent")?.checked ? "Yes" : "";
+      if (name === "want" || name === "contact" || name === "scope") return form.querySelector(`input[name="${name}"]:checked`)?.closest("label")?.textContent?.trim() ?? "";
       const el = field(name) as unknown as HTMLSelectElement | null;
       if (el?.tagName === "SELECT") return el.value ? el.selectedOptions[0]?.textContent?.trim() ?? "" : "";
       return el?.value ?? "";
