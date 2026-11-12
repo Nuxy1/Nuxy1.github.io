@@ -18,7 +18,7 @@ const filters = [["all", "All"], ...Object.entries(styleNames)] as [string, stri
         <p class="lr-demo-note">Illustrated style examples, not photos of clients.</p>
       </div>
 
-      <div class="lr-gal-bar" data-gal-bar hidden>
+      <div class="lr-gal-bar" data-gal-bar>
         <div class="lr-gal-filters" role="group" aria-label="Filter styles">
           {filters.map(([k, v], i) => <button type="button" class="lr-gal-f" data-filter={k} aria-pressed={i === 0 ? "true" : "false"}>{v}</button>)}
         </div>
@@ -62,6 +62,9 @@ const filters = [["all", "All"], ...Object.entries(styleNames)] as [string, stri
 
 <style>
   .lr-gal-top { padding-top: clamp(40px, 6vw, 80px); }
+  /* the filter bar holds its space from the first paint (no layout shift); it stays invisible, and out of the tab
+     order, until the script wires it up, and without JS */
+  .lr-gal-bar:not(.is-on) { visibility: hidden; }
   .lr-gal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--lr-line); }
   .lr-gal-filters { display: flex; flex-wrap: wrap; gap: 8px; }
   .lr-gal-f { min-height: 44px; padding: 0 18px; border: 1px solid var(--lr-line); border-radius: 999px; background: transparent; color: var(--lr-soft); font: inherit; font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out; }
@@ -114,7 +117,7 @@ const filters = [["all", "All"], ...Object.entries(styleNames)] as [string, stri
       if (key === "all") url.searchParams.delete("style"); else url.searchParams.set("style", key);
       history.replaceState(history.state, "", url);
     };
-    bar.hidden = false;
+    bar.classList.add("is-on");
     bar.addEventListener("click", (e) => {
       const b = (e.target as Element).closest<HTMLButtonElement>("[data-filter]");
       if (b) show(b.dataset.filter!);

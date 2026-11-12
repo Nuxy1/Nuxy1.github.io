@@ -34,8 +34,11 @@ export function stepper(form: HTMLElement, opts: { check?: (i: number) => string
       const t = title(steps[at]);
       if (!t.hasAttribute("tabindex")) t.tabIndex = -1;
       t.focus({ preventScroll: true });
+      // the sticky demo header covers the top of the page; html's scroll-padding-top (DemoSite) is its height plus room,
+      // so a form that starts under the header (step tracker hidden) also scrolls back into view
+      const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
       const top = form.getBoundingClientRect().top;
-      if (top < 0 || top > innerHeight * 0.6) form.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      if (top < pad - 1 || top > innerHeight * 0.6) form.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     }
     opts.onStep?.(at);
   };

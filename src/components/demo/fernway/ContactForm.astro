@@ -6,11 +6,13 @@ import { towns } from "../../../data/demos/fernway";
 interface Props { id: string; variant?: "callback" | "contact" }
 const { id, variant = "callback" } = Astro.props;
 const contact = variant === "contact";
+// the contact page has no section heading above the form, so its title is an h2 there (heading order); same look
+const H = contact ? "h2" : "h3";
 ---
 <div class="fw-form-wrap">
   <form class="fw-form" method="dialog" data-demo-form={`${id}-sent`} data-fw-form aria-labelledby={`${id}-h`}>
     <div class="fw-form-head">
-      <h3 id={`${id}-h`}>{contact ? "Send us a message" : "Rather talk it through?"}</h3>
+      <H class="fw-form-h" id={`${id}-h`}>{contact ? "Send us a message" : "Rather talk it through?"}</H>
       <p class="fw-fine">{contact ? "We answer within one business day." : "Leave a number and a good time; we call back the same day."} Demo form: nothing you type leaves this page.</p>
     </div>
     <div class="fw-fields">
@@ -57,6 +59,7 @@ const contact = variant === "contact";
   .fw-form-wrap { display: grid; }
   .fw-form { display: grid; gap: 20px; padding: clamp(22px, 4vw, 36px); border-radius: 28px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line), 0 18px 40px rgba(19, 32, 26, 0.06); }
   .fw-form-head { display: grid; gap: 6px; }
+  .fw-form-h { font-size: 1.375rem; letter-spacing: -0.015em; line-height: 1.15; }
   .fw-form-actions { display: flex; flex-wrap: wrap; gap: 10px; }
   .fw-sent { gap: 12px; padding: clamp(22px, 4vw, 36px); border: 0; border-radius: 28px; background: var(--fw-lime-2); color: var(--fw-forest); }
   .fw-sent strong { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.5rem; }

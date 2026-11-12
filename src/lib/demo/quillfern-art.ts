@@ -1,5 +1,5 @@
-// Quillfern's candles drawn as SVG at build time (no photos and no outside requests): one jar or tin shape at any
-// size, in each candle's own glass and label colours. Only our own catalogue values go in, so the markup is fixed.
+// Quillfern's candles drawn as SVG at build time (no photos and no outside requests): each scent has its own jar
+// shape (8 and 12 oz) in its own glass and label colours; the 4 oz tin is one shape for all. Only our own catalogue values go in, so the markup is fixed.
 import type { Candle, SizeId } from "./quillfern-cart";
 
 const r = (n: number) => Math.round(n * 10) / 10;
@@ -37,6 +37,28 @@ function mark(id: string | undefined, cx: number, cy: number, sw: number, sh: nu
   return `<path d="${d}" fill="none" stroke="${INK}" stroke-width="${r(stroke)}" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
 
+// Jar shapes in a box from 0 to 1 on both axes ("u,v" pairs, v down from the top of the vessel box). Every jar's mouth
+// is at v 0.12, the wax top at 0.19 and the wick tip at 0.1, so the hero's WebGL flame lines up whatever the shape.
+// body = the glass outline; hi = the highlight stroke; extra = lines on the glass (threads, ribs, a collar);
+// base = a heavy glass base; wax = the wax pool's half width; label = [left, top, width, height] of the label card.
+type Jar = { body: string; hi: string; extra?: string; base?: string; wax: number; label: [number, number, number, number] };
+const JARS: Record<string, Jar> = {
+  // straight tumbler with a heavy glass base
+  "cedar-evening": { body: "M0,0.12 L1,0.12 L1,0.95 Q1,1 0.94,1 L0.06,1 Q0,1 0,0.95 Z", base: "M0,0.89 L1,0.89 L1,0.95 Q1,1 0.94,1 L0.06,1 Q0,1 0,0.95 Z", hi: "M0.1,0.24 L0.1,0.82", wax: 0.44, label: [0.15, 0.4, 0.7, 0.38] },
+  // apothecary jar: narrow neck, round shoulders
+  "amber-hearth": { body: "M0.28,0.12 L0.72,0.12 L0.72,0.2 C0.95,0.22 1,0.3 1,0.4 L1,0.93 Q1,1 0.92,1 L0.08,1 Q0,1 0,0.93 L0,0.4 C0,0.3 0.05,0.22 0.28,0.2 Z", extra: "M0.28,0.145 L0.72,0.145", hi: "M0.1,0.44 L0.1,0.88", wax: 0.2, label: [0.14, 0.46, 0.72, 0.4] },
+  // round bubble jar
+  "rain-garden": { body: "M0.22,0.12 L0.78,0.12 L0.78,0.2 C0.97,0.3 1,0.46 1,0.6 C1,0.86 0.82,1 0.62,1 L0.38,1 C0.18,1 0,0.86 0,0.6 C0,0.46 0.03,0.3 0.22,0.2 Z", hi: "M0.12,0.46 C0.08,0.56 0.09,0.7 0.15,0.8", wax: 0.26, label: [0.2, 0.44, 0.6, 0.36] },
+  // tapered glass, wide at the mouth
+  "vanilla-linen": { body: "M0,0.12 L1,0.12 L0.86,0.96 Q0.85,1 0.8,1 L0.2,1 Q0.15,1 0.14,0.96 Z", hi: "M0.1,0.22 L0.19,0.84", wax: 0.44, label: [0.17, 0.4, 0.66, 0.36] },
+  // mason jar: threaded neck, square shoulders
+  "forest-cabin": { body: "M0.12,0.12 L0.88,0.12 L0.88,0.22 Q1,0.24 1,0.32 L1,0.92 Q1,1 0.9,1 L0.1,1 Q0,1 0,0.92 L0,0.32 Q0,0.24 0.12,0.22 Z", extra: "M0.12,0.15 L0.88,0.17 M0.12,0.185 L0.88,0.205", hi: "M0.09,0.36 L0.09,0.86", wax: 0.36, label: [0.15, 0.42, 0.7, 0.38] },
+  // ribbed jar with a slight barrel
+  "quiet-morning": { body: "M0.04,0.12 L0.96,0.12 C1,0.3 1,0.8 0.94,0.96 Q0.92,1 0.86,1 L0.14,1 Q0.08,1 0.06,0.96 C0,0.8 0,0.3 0.04,0.12 Z", extra: "M0.24,0.15 L0.24,0.98 M0.41,0.15 L0.41,0.995 M0.59,0.15 L0.59,0.995 M0.76,0.15 L0.76,0.98", hi: "M0.12,0.24 C0.09,0.45 0.09,0.7 0.12,0.86", wax: 0.42, label: [0.16, 0.42, 0.68, 0.36] },
+  // the old rounded jar, for anything not in the catalogue
+  plain: { body: "M0.16,0.12 L0.84,0.12 Q1,0.12 1,0.28 L1,0.84 Q1,1 0.84,1 L0.16,1 Q0,1 0,0.84 L0,0.28 Q0,0.12 0.16,0.12 Z", hi: "M0.1,0.29 L0.1,0.83", wax: 0.42, label: [0.15, 0.42, 0.7, 0.38] },
+};
+
 /** one candle with its bottom-left corner at (x, y + h): a jar for 8 and 12 oz, a low tin with its lid behind for 4 oz */
 export function vessel(x: number, y: number, w: number, h: number, c: Pick<Candle, "glass" | "label"> & { id?: string }, { lit = false, size = "8oz", flameClass }: Opts = {}) {
   const cx = x + w / 2;
@@ -57,20 +79,27 @@ export function vessel(x: number, y: number, w: number, h: number, c: Pick<Candl
       lit ? flame(cx, wick, w * 0.62, flameClass) : "",
     ].join("");
   }
-  const rim = y + h * 0.12, wax = y + h * 0.19, wick = y + h * 0.1;
-  const lx = x + w * 0.15, ly = y + h * 0.42, lw = w * 0.7, lh = h * 0.38;
+  const jar = JARS[c.id ?? ""] ?? JARS.plain;
+  const at = (d: string) => d.replace(/(-?[\d.]+),(-?[\d.]+)/g, (_, u, v) => `${r(x + +u * w)} ${r(y + +v * h)}`);
+  const wax = y + h * 0.19, wick = y + h * 0.1, mid = y + h * 0.58;
+  const [lu, lv, lwu, lhu] = jar.label;
+  const lx = x + w * lu, ly = y + h * lv, lw = w * lwu, lh = h * lhu, lcx = lx + lw / 2;
+  const line = (d: string, op: number, sw: number) => `<path d="${at(d)}" fill="none" stroke="#fff" stroke-width="${r(sw)}" stroke-linecap="round" opacity="${op}"/>`;
   return [
     shadow,
-    `<rect x="${r(x)}" y="${r(rim)}" width="${r(w)}" height="${r(h * 0.88)}" rx="${r(w * 0.16)}" fill="${c.glass}"/>`,
-    // the wax seen through the glass, and the top of the wax pool
-    `<rect x="${r(x + w * 0.05)}" y="${r(wax)}" width="${r(w * 0.9)}" height="${r(h * 0.76)}" rx="${r(w * 0.12)}" fill="#fff" opacity=".07"/>`,
-    `<ellipse cx="${r(cx)}" cy="${r(wax)}" rx="${r(w * 0.42)}" ry="${r(h * 0.045)}" fill="#f6eddd"/>`,
-    `<rect x="${r(x + w * 0.07)}" y="${r(y + h * 0.26)}" width="${r(w * 0.06)}" height="${r(h * 0.6)}" rx="${r(w * 0.03)}" fill="#fff" opacity=".26"/>`,
+    `<path d="${at(jar.body)}" fill="${c.glass}"/>`,
+    // the wax seen through the glass (the outline again, a little smaller), a heavy base, lines on the glass
+    `<path d="${at(jar.body)}" fill="#fff" opacity=".07" transform="translate(${r(cx)} ${r(mid)}) scale(.9 .93) translate(${r(-cx)} ${r(-mid)})"/>`,
+    jar.base ? `<path d="${at(jar.base)}" fill="${INK}" opacity=".2"/>` : "",
+    jar.extra ? line(jar.extra, 0.16, Math.max(1, w * 0.014)) : "",
+    // the top of the wax pool, flatter in a narrow neck
+    `<ellipse cx="${r(cx)}" cy="${r(wax)}" rx="${r(w * jar.wax)}" ry="${r(h * (jar.wax < 0.3 ? 0.03 : 0.045))}" fill="#f6eddd"/>`,
+    line(jar.hi, 0.26, w * 0.06),
     // the label: an arch-topped card with the scent's mark and two lines of "type"
     `<path d="M${r(lx)} ${r(ly + lh)}V${r(ly + lw * 0.32)}A${r(lw / 2)} ${r(lw * 0.32)} 0 0 1 ${r(lx + lw)} ${r(ly + lw * 0.32)}V${r(ly + lh)}Z" fill="${c.label}"/>`,
-    mark(c.id, cx, ly + lh * 0.42, lw * 0.15, lh * 0.21, Math.max(1.2, w * 0.016)),
-    `<rect x="${r(cx - lw * 0.26)}" y="${r(ly + lh * 0.74)}" width="${r(lw * 0.52)}" height="${r(lh * 0.06)}" rx="1" fill="${INK}" opacity=".62"/>`,
-    `<rect x="${r(cx - lw * 0.16)}" y="${r(ly + lh * 0.86)}" width="${r(lw * 0.32)}" height="${r(lh * 0.045)}" rx="1" fill="${INK}" opacity=".35"/>`,
+    mark(c.id, lcx, ly + lh * 0.42, lw * 0.15, lh * 0.21, Math.max(1.2, w * 0.016)),
+    `<rect x="${r(lcx - lw * 0.26)}" y="${r(ly + lh * 0.74)}" width="${r(lw * 0.52)}" height="${r(lh * 0.06)}" rx="1" fill="${INK}" opacity=".62"/>`,
+    `<rect x="${r(lcx - lw * 0.16)}" y="${r(ly + lh * 0.86)}" width="${r(lw * 0.32)}" height="${r(lh * 0.045)}" rx="1" fill="${INK}" opacity=".35"/>`,
     `<path d="M${r(cx)} ${r(wax)}V${r(wick)}" stroke="${INK}" stroke-width="${r(Math.max(1.4, w * 0.022))}" stroke-linecap="round"/>`,
     lit ? flame(cx, wick, w, flameClass) : "",
   ].join("");

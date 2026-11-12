@@ -138,7 +138,8 @@ const flow = [
 </Shell>
 
 <style>
-  .qf-co-sec { padding-block: clamp(36px, 6vw, 72px) clamp(56px, 8vw, 104px); }
+  /* same as the cart: the steps or the empty-bag view swap in after load, the footer stays below the fold */
+  .qf-co-sec { min-height: 100svh; padding-block: clamp(36px, 6vw, 72px) clamp(56px, 8vw, 104px); }
   .qf-co-head { margin-bottom: 28px; }
   .qf-co-head h1 { font-size: clamp(2.4rem, 1.6rem + 3vw, 4rem); }
   .qf-co[hidden] { display: none; }

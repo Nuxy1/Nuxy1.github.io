@@ -100,10 +100,13 @@ import { SHIP, PROMO } from "../../../../lib/demo/quillfern-cart";
 </Shell>
 
 <style>
-  .qf-cart-sec { padding-block: clamp(36px, 6vw, 72px) clamp(56px, 8vw, 104px); }
+  /* the cart is drawn from localStorage after load; the section holds a screen's height so the footer stays below the
+     fold while the empty or full view appears (no layout shift) */
+  .qf-cart-sec { display: flex; flex-direction: column; min-height: 100svh; padding-block: clamp(36px, 6vw, 72px) clamp(56px, 8vw, 104px); }
   .qf-cart-head { margin-bottom: 28px; }
   .qf-cart-head h1 { font-size: clamp(2.4rem, 1.6rem + 3vw, 4rem); }
   .qf-cart-empty[hidden], .qf-cart[hidden] { display: none; }
+  .qf-cart { margin-bottom: 40px; }
   .qf-cart-empty svg { width: 120px; height: 120px; }
   .qf-cart-empty h2 { font-size: 1.875rem; }
   .qf-cart { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); gap: clamp(28px, 4vw, 64px); align-items: start; }
@@ -147,7 +150,8 @@ import { SHIP, PROMO } from "../../../../lib/demo/quillfern-cart";
   .qf-promo-said.is-bad { color: var(--qf-ember-2); }
   .qf-sum-go { width: 100%; }
   .qf-sum-back { justify-self: center; }
-  .qf-reset { display: grid; gap: 4px; margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--qf-line); }
+  /* pinned to the foot of the section, so it does not move when the cart view appears */
+  .qf-reset { display: grid; gap: 4px; margin-top: auto; padding-top: 18px; border-top: 1px solid var(--qf-line); }
   .qf-undo { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin: 0 0 12px; padding: 0 16px; border: 1px solid var(--qf-line-2); border-radius: 12px; background: var(--qf-wax); }
   .qf-undo[hidden] { display: none; }
   .qf-link-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; border: 0; background: none; color: var(--qf-ember-2); font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }

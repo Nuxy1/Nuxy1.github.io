@@ -14,7 +14,7 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
           <h1>{address}.</h1>
           <p class="lr-lead">Halfway down Lantern Row, under the brass lantern. Free parking behind the shop off Mill Lane.</p>
         </div>
-        <p class="lr-ct-now" data-open-now hidden><span class="lr-ct-dot" aria-hidden="true"></span><span data-open-text></span></p>
+        <p class="lr-ct-now" data-open-now><span class="lr-ct-dot" aria-hidden="true"></span><span data-open-text></span></p>
         <div class="lr-ct-acts">
           <a class="lr-btn" href={`${base}/booking/`}>Book a chair</a>
           <a class="lr-btn lr-btn-line" href="#call" data-demo-action={callNote}>Call {phone}</a>
@@ -115,7 +115,9 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
   @media (min-width: 960px) { .lr-ct { grid-template-columns: 1fr 1.15fr; } }
   .lr-ct-copy { display: grid; gap: 20px; justify-items: start; }
   .lr-ct-copy .lr-head { margin-bottom: 0; }
-  .lr-ct-now { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; border: 1px solid var(--lr-line); color: var(--lr-cream); font-weight: 600; }
+  /* the line keeps its place before the script fills it (no layout shift); invisible until then and without JS */
+  .lr-ct-now:not(.is-set) { visibility: hidden; }
+  .lr-ct-now { min-height: 42px; display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; border: 1px solid var(--lr-line); color: var(--lr-cream); font-weight: 600; }
   .lr-ct-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--lr-mute); }
   .lr-ct-now.is-open .lr-ct-dot { background: #7cc58c; box-shadow: 0 0 0 4px rgba(124, 197, 140, 0.18); }
   .lr-ct-acts { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -160,6 +162,6 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
       }
     }
     box.querySelector("[data-open-text]")!.textContent = text;
-    box.hidden = false;
+    box.classList.add("is-set");
   }
 </script>
