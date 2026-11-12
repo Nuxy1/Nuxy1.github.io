@@ -1,0 +1,251 @@
+---
+// Quillfern Candle Co., home (a fictional candle maker: data/demo-sites.ts). A lit candle hero (WebGL flame on capable
+// desktops), the six candles, how a batch is made, the promise, sample testimonials, shipping and pickup, and a plain
+// demonstration enquiry form for gifts and events that sends nothing.
+import Shell from "../../../components/demo/quillfern/Shell.astro";
+import CandleHero from "../../../components/demo/quillfern/CandleHero.astro";
+import { base, promise, quotes, studio, faq } from "../../../data/demos/quillfern";
+import { CANDLES, FAMILIES, SIZES, SHIP } from "../../../lib/demo/quillfern-cart";
+import { cardArt } from "../../../lib/demo/quillfern-art";
+
+const steps = [
+  { n: "01", t: "Melt and scent", d: "Coconut-soy wax is melted in small kettles and the fragrance goes in at exactly 82 °C, so it binds instead of burning off." },
+  { n: "02", t: "Pour by hand", d: "Forty-eight jars at a time, each wick centred with a wooden clip so it burns down the middle." },
+  { n: "03", t: "Cure for two weeks", d: "The wax sets slowly on open shelves. Curing is what makes the scent carry when the candle is lit." },
+  { n: "04", t: "Trim, label, pack", d: "Every wick is trimmed to ¼ inch and every jar is checked before it gets its arch label." },
+];
+---
+<Shell dark description="Quillfern Candle Co. is a fictional candle maker: an interactive demonstration store by Nuxy Automation with a live candle flame, a scent finder, a cart and a five-step demo checkout.">
+  <CandleHero />
+
+  <section class="qf-section" aria-labelledby="six-h">
+    <div class="qf-wrap">
+      <div class="qf-head qf-rise">
+        <p class="qf-label">The collection</p>
+        <h2 id="six-h">Six candles, two moods.</h2>
+        <p class="qf-lead">Three warm and woody, three fresh and light, each in a travel tin, a classic jar or a large jar.</p>
+      </div>
+      <ul class="qf-cards" role="list">
+        {CANDLES.map((c, i) => (
+          <li class="qf-rise" style={`--d: ${(i % 3) * 70}ms`}>
+            <a class="qf-card" href={`${base}/candles/${c.id}/`} style={`--glass: ${c.glass}`}>
+              <span class="qf-card-art qf-arch" set:html={cardArt(c, "8oz", true)} />
+              <span class="qf-card-body">
+                <span class="qf-card-top"><span class="qf-label">{FAMILIES[c.family].name}</span><span class="qf-card-mood qf-ui">{c.mood}</span></span>
+                <span class="qf-card-name">{c.name}</span>
+                <span class="qf-card-tag">{c.tagline}</span>
+                <span class="qf-card-price qf-num">From ${SIZES.tin.price} <span aria-hidden="true">→</span></span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="qf-cards-more qf-rise"><a class="qf-link" href={`${base}/shop/#scents`}>Not sure? Find your scent in three taps <span aria-hidden="true">→</span></a></p>
+    </div>
+  </section>
+
+  <section class="qf-section qf-story" id="story" aria-labelledby="story-h">
+    <div class="qf-wrap qf-story-in">
+      <div class="qf-head qf-rise">
+        <p class="qf-label">Our story</p>
+        <h2 id="story-h">One kitchen, then one studio, still one batch at a time.</h2>
+        <p class="qf-lead">Quillfern started with a single cedar candle made for a cold first winter in an old house. Friends asked for more; the markets came next. Now the studio pours six scents, and every jar is still poured by hand.</p>
+        <p class="qf-fine">Sample story: Quillfern and everyone in it are made up for this demonstration.</p>
+      </div>
+      <ol class="qf-steps" role="list">
+        {steps.map((s, i) => (
+          <li class="qf-rise" style={`--d: ${i * 80}ms`}>
+            <span class="qf-step-n qf-num">{s.n}</span>
+            <h3>{s.t}</h3>
+            <p>{s.d}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="qf-section qf-promise" aria-label="What every candle comes with">
+    <div class="qf-wrap">
+      <ul class="qf-promise-list" role="list">
+        {promise.map((p, i) => (
+          <li class="qf-rise" style={`--d: ${i * 70}ms`}>
+            <h3>{p.t}</h3>
+            <p>{p.d}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="qf-section" aria-labelledby="quotes-h">
+    <div class="qf-wrap">
+      <div class="qf-head qf-rise">
+        <p class="qf-label">From the markets</p>
+        <h2 id="quotes-h">What people light them for.</h2>
+      </div>
+      <ul class="qf-quotes" role="list">
+        {quotes.map((q, i) => (
+          <li class="qf-rise" style={`--d: ${i * 70}ms`}>
+            <figure>
+              <blockquote><p>“{q.text}”</p></blockquote>
+              <figcaption class="qf-ui"><span class="qf-sample">{q.who}</span> · {q.what}</figcaption>
+            </figure>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="qf-section qf-get" aria-labelledby="get-h">
+    <div class="qf-wrap qf-get-in">
+      <div class="qf-rise">
+        <p class="qf-label">Shipping or pickup</p>
+        <h2 id="get-h">Shipped in two days, or ready at the studio tomorrow.</h2>
+      </div>
+      <div class="qf-get-cards">
+        <div class="qf-get-card qf-rise">
+          <h3>Shipping</h3>
+          <p>${SHIP.standard} standard, free over ${SHIP.freeOver}. Express (1–2 days) ${SHIP.express}. Every jar travels in a paper-pulp sleeve.</p>
+        </div>
+        <div class="qf-get-card qf-rise" style="--d: 80ms">
+          <h3>Pickup at the studio</h3>
+          <p>{studio.street}, {studio.town} <span class="qf-fine">(a made-up town)</span>. Always free; we text you when it's ready.</p>
+          <dl class="qf-mini-hours qf-ui">{studio.hours.map(([d, h]) => <div><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="qf-section qf-gift" aria-labelledby="gift-h">
+    <div class="qf-wrap qf-gift-in">
+      <div class="qf-head qf-rise">
+        <p class="qf-label">Gifts and events</p>
+        <h2 id="gift-h">Candles for a wedding, a team or a shop shelf?</h2>
+        <p class="qf-lead">Orders of six or more can have their own label and a scent chosen with you. Tell us roughly what you need and the studio replies within a day.</p>
+      </div>
+      <div class="qf-gift-box qf-rise">
+        <form class="qf-gift-form" method="dialog" data-demo-form="gift-sent" aria-labelledby="gift-form-h">
+          <h3 id="gift-form-h">Ask about a larger order</h3>
+          <p class="qf-fine">Demo form: nothing you type leaves this page.</p>
+          <div class="qf-fields two">
+            <label class="qf-field"><span>First name</span><input name="name" required autocomplete="off" maxlength="40" /></label>
+            <label class="qf-field"><span>Occasion</span>
+              <select name="occasion" required>
+                <option value="">Choose one</option>
+                <option>Wedding favours</option>
+                <option>Team or client gifts</option>
+                <option>Shop or café stockist</option>
+                <option>Something else</option>
+              </select>
+            </label>
+            <label class="qf-field"><span>About how many?</span><input name="qty" type="number" inputmode="numeric" min="6" max="500" step="1" required /><small>Six or more</small></label>
+            <label class="qf-field qf-field-wide"><span>Anything else <small>(optional)</small></span><textarea name="notes" rows="3" maxlength="500"></textarea></label>
+          </div>
+          <button class="qf-btn" type="submit">Send enquiry</button>
+        </form>
+        <div class="qf-gift-sent demo-sent" id="gift-sent" hidden tabindex="-1">
+          <strong>Demo only: nothing was sent.</strong>
+          <p>On a real Quillfern site the enquiry would land in the studio inbox with a draft reply and a price for the quantity, ready to check and send.</p>
+          <p>The form has been cleared and nothing was stored.</p>
+          <button class="qf-btn qf-btn-line" type="button" data-demo-again>Ask about another order</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="qf-section qf-faq" aria-labelledby="faq-h">
+    <div class="qf-wrap qf-faq-in">
+      <div class="qf-head qf-rise">
+        <p class="qf-label">Questions</p>
+        <h2 id="faq-h">Before you order.</h2>
+      </div>
+      <div class="qf-faq-list">
+        {faq.map(([q, a]) => (
+          <details class="qf-rise">
+            <summary>{q}</summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .qf-cards { display: grid; gap: clamp(16px, 2vw, 28px); grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+  @media (max-width: 1023px) { .qf-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 559px) { .qf-cards { grid-template-columns: 1fr; } }
+  .qf-card { display: grid; gap: 18px; height: 100%; padding: 14px 14px 22px; border-radius: 6px; background: var(--qf-cream); box-shadow: 0 0 0 1px var(--qf-line); text-decoration: none; color: inherit; transition: box-shadow 240ms var(--qf-ease), transform 240ms var(--qf-ease); }
+  .qf-card:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--qf-line-2), 0 20px 40px rgba(45, 34, 28, 0.12); }
+  .qf-card-art { display: block; aspect-ratio: 5 / 4; background: radial-gradient(120% 90% at 50% 100%, color-mix(in srgb, var(--glass) 26%, var(--qf-wax)), var(--qf-wax)); transition: background-color 300ms ease-out; }
+  .qf-card-art :global(svg) { display: block; width: 100%; height: 100%; }
+  /* the candle lights when the card is hovered or focused */
+  .qf-card :global(.qf-flame) { opacity: 0; transform: scaleY(0.4); transform-box: fill-box; transform-origin: 50% 100%; transition: opacity 260ms ease-out, transform 320ms var(--qf-ease); }
+  .qf-card:is(:hover, :focus-visible) :global(.qf-flame) { opacity: 1; transform: none; }
+  :root[data-tier="3"] .qf-card :global(.qf-flame) { transition: none; }
+  .qf-card-body { display: grid; gap: 6px; padding-inline: 8px; }
+  .qf-card-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .qf-card-top .qf-label { font-size: 0.6875rem; }
+  .qf-card-mood { font-size: 0.8125rem; color: var(--qf-mute); }
+  .qf-card-name { font-size: 1.625rem; font-weight: 540; letter-spacing: -0.02em; line-height: 1.1; color: var(--qf-umber); font-variation-settings: "SOFT" 100, "WONK" 1; }
+  .qf-card-tag { color: var(--qf-soft); font-size: 1rem; }
+  .qf-card-price { margin-top: 6px; font-weight: 650; color: var(--qf-ember); }
+  .qf-card-price span { display: inline-block; transition: transform 200ms var(--qf-ease); }
+  .qf-card:hover .qf-card-price span { transform: translateX(4px); }
+  .qf-cards-more { margin-top: 28px; }
+
+  .qf-story { background: var(--qf-wax); }
+  .qf-story-in { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 5vw, 80px); align-items: start; }
+  @media (max-width: 899px) { .qf-story-in { grid-template-columns: 1fr; } }
+  .qf-steps { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--qf-line-2); }
+  .qf-steps li { display: grid; grid-template-columns: 64px 1fr; gap: 4px 16px; padding: 24px 0; border-bottom: 1px solid var(--qf-line-2); }
+  .qf-step-n { grid-row: span 2; font-size: 0.875rem; font-weight: 700; color: var(--qf-ember); padding-top: 6px; }
+  .qf-steps h3 { font-size: 1.5rem; }
+  .qf-steps p { color: var(--qf-soft); max-width: 52ch; }
+
+  .qf-promise { background: var(--qf-umber); color: #d9ccb8; padding-block: clamp(48px, 7vw, 88px); }
+  .qf-promise-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(24px, 4vw, 56px); margin: 0; padding: 0; list-style: none; }
+  @media (max-width: 767px) { .qf-promise-list { grid-template-columns: 1fr; } }
+  .qf-promise-list li { display: grid; gap: 8px; padding-top: 20px; border-top: 2px solid var(--qf-amber); }
+  .qf-promise h3 { color: var(--qf-wax); }
+
+  .qf-quotes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 2vw, 28px); margin: 0; padding: 0; list-style: none; }
+  @media (max-width: 899px) { .qf-quotes { grid-template-columns: 1fr; } }
+  .qf-quotes figure { display: grid; gap: 16px; height: 100%; margin: 0; padding: 28px; border-radius: 6px; background: var(--qf-cream); box-shadow: 0 0 0 1px var(--qf-line); }
+  .qf-quotes blockquote { margin: 0; font-size: 1.1875rem; line-height: 1.5; color: var(--qf-umber); }
+  .qf-quotes figcaption { align-self: end; font-size: 0.875rem; color: var(--qf-mute); }
+  .qf-sample { display: inline-block; padding: 2px 8px; border-radius: 3px; background: var(--qf-wax); color: var(--qf-soft); font-weight: 650; }
+
+  .qf-get { background: var(--qf-wax); }
+  .qf-get-in { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 5vw, 72px); align-items: start; }
+  .qf-get-in h2 { margin-top: 14px; }
+  @media (max-width: 899px) { .qf-get-in { grid-template-columns: 1fr; } }
+  .qf-get-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 619px) { .qf-get-cards { grid-template-columns: 1fr; } }
+  .qf-get-card { display: grid; gap: 10px; align-content: start; padding: 26px; border-radius: 999px 999px 6px 6px / 90px 90px 6px 6px; padding-top: 44px; background: var(--qf-cream); box-shadow: 0 0 0 1px var(--qf-line); }
+  .qf-get-card p { color: var(--qf-soft); }
+  .qf-mini-hours div { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 6px 0; border-top: 1px solid var(--qf-line); font-size: 0.875rem; }
+  .qf-mini-hours dt { font-weight: 650; }
+
+  .qf-gift-in { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 5vw, 72px); align-items: start; }
+  @media (max-width: 899px) { .qf-gift-in { grid-template-columns: 1fr; } }
+  .qf-gift-box { padding: clamp(22px, 3vw, 36px); border-radius: 6px; background: var(--qf-cream); box-shadow: 0 0 0 1px var(--qf-line); }
+  .qf-gift-form { display: grid; gap: 18px; }
+  .qf-gift-form .qf-btn { justify-self: start; }
+  .qf-gift-sent { display: grid; gap: 12px; }
+  .qf-gift-sent[hidden] { display: none; }
+  .qf-gift-sent strong { font-size: 1.375rem; font-weight: 560; color: var(--qf-umber); }
+  .qf-gift-sent p { color: var(--qf-soft); }
+  .qf-gift-sent .qf-btn { justify-self: start; }
+
+  .qf-faq { padding-top: 0; }
+  .qf-faq-in { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 5vw, 72px); }
+  @media (max-width: 899px) { .qf-faq-in { grid-template-columns: 1fr; } }
+  .qf-faq-list { border-top: 1px solid var(--qf-line-2); }
+  .qf-faq-list details { border-bottom: 1px solid var(--qf-line-2); }
+  .qf-faq-list summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; padding: 14px 0; font-size: 1.1875rem; font-weight: 520; color: var(--qf-umber); cursor: pointer; list-style: none; }
+  .qf-faq-list summary::-webkit-details-marker { display: none; }
+  .qf-faq-list summary::after { content: "+"; flex: none; font-family: var(--qf-ui); font-size: 1.5rem; font-weight: 400; color: var(--qf-ember); transition: transform 200ms var(--qf-ease); }
+  .qf-faq-list details[open] summary::after { transform: rotate(45deg); }
+  .qf-faq-list details p { padding: 0 0 20px; color: var(--qf-soft); max-width: 60ch; }
+</style>

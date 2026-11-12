@@ -1,0 +1,226 @@
+---
+// Mossgate's frame on every page: a linen header with its own navigation (a folding menu on phones that works without
+// JavaScript), the phone dock (See your price / Book) and the footer with hours, area and the fictional-business line.
+// The design system lives here as global styles under body.mg: Figtree throughout (heavy, tight headings; tabular
+// prices), Kalam only for the cleaner's handwritten note; warm linen and paper, deep moss ink, sage and clay; soft
+// 14-22px corners, a faint bathroom-tile grid behind the working panels and floor-plan line drawings in moss.
+import DemoSite from "../../../layouts/DemoSite.astro";
+import { base, nav, phone, callNote, emailNote, email, hours, area } from "../../../data/demos/mossgate";
+
+interface Props { title?: string; description: string; current?: string }
+const { title, description, current } = Astro.props;
+const here = (href: string) => (current && href.endsWith(`/${current}/`) ? "page" : undefined);
+// the dock would only cover the working panel on these two
+const dock = current !== "estimate" && current !== "book";
+---
+<DemoSite slug="mossgate-cleaning" theme="#f6f3ec" title={title} description={description} bodyClass="mg" fonts={["/fonts/figtree-var.woff2"]}>
+  <header class="mg-top">
+    <div class="mg-wrap mg-top-in">
+      <a class="mg-logo" href={`${base}/`} aria-label="Mossgate Home Cleaning, home">
+        <svg viewBox="0 0 40 40" width="36" height="36" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#1f4a3f" /><path d="M10 28V17.5L20 10l10 7.5V28Z" fill="none" stroke="#f6f3ec" stroke-width="2.4" stroke-linejoin="round" /><path d="M20 15.5l1.6 3.6 3.6 1.6-3.6 1.6L20 26l-1.6-3.7-3.6-1.6 3.6-1.6Z" fill="#f0a487" /></svg>
+        <span class="mg-wordmark">Mossgate<small> Home Cleaning</small></span>
+      </a>
+      <nav class="mg-nav" aria-label="Main">
+        {nav.map((n) => <a href={n.href} aria-current={here(n.href)}>{n.label}</a>)}
+      </nav>
+      <a class="mg-btn mg-btn-sm mg-top-book" href={`${base}/book/`} aria-current={here(`${base}/book/`)}>Book a clean</a>
+      <details class="mg-menu">
+        <summary aria-label="Menu"><span></span><span></span></summary>
+        <div class="mg-menu-panel">
+          <a href={`${base}/`}>Home</a>
+          {nav.map((n) => <a href={n.href} aria-current={here(n.href)}>{n.label}</a>)}
+          <a href={`${base}/book/`} aria-current={here(`${base}/book/`)}>Book a clean</a>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <main id="main"><slot /></main>
+
+  <footer class="mg-foot">
+    <div class="mg-wrap">
+      <div class="mg-foot-in">
+        <div class="mg-foot-brand">
+          <p class="mg-foot-name">Mossgate Home Cleaning</p>
+          <p>Same cleaner, same window, every visit.</p>
+          <p class="mg-foot-demo">Mossgate Home Cleaning is a fictional business. This is an interactive demonstration website built by{" "}
+            <a href="/" target="_top">Nuxy Automation</a>: nothing here can be booked or paid for, and nothing you type is sent.</p>
+        </div>
+        <div>
+          <p class="mg-label">Office hours</p>
+          <dl class="mg-hours">{hours.map(([d, h]) => <div><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
+        </div>
+        <div>
+          <p class="mg-label">Get in touch</p>
+          <ul role="list" class="mg-foot-links">
+            <li><a href="#call" data-demo-action={callNote}>{phone}</a></li>
+            <li><a href="#email" data-demo-action={emailNote}>{email}</a></li>
+            <li><a href={`${base}/about/#ask`}>Ask a question</a></li>
+          </ul>
+          <p class="mg-foot-area">Cleaning in {area.join(", ")} <span>(made-up towns)</span></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  {dock && (
+  <nav class="mg-dock" aria-label="Quick actions">
+    <a href={`${base}/estimate/`}>See your price</a>
+    <a class="mg-dock-main" href={`${base}/book/`}>Book a clean</a>
+  </nav>
+  )}
+</DemoSite>
+
+<style is:global>
+  @font-face { font-family: "Figtree"; src: url("/fonts/figtree-var.woff2") format("woff2"); font-weight: 300 900; font-display: swap; }
+  @font-face { font-family: "Kalam"; src: url("/fonts/kalam-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+  body.mg {
+    --mg-linen: #f6f3ec; --mg-paper: #fffdf8; --mg-moss: #1f4a3f; --mg-moss-2: #2f6f5e; --mg-moss-3: #3f8a74;
+    --mg-sage: #cfe0d6; --mg-mint: #e5efe9; --mg-clay: #a94a2c; --mg-clay-2: #f0a487; --mg-clay-soft: #f8e1d6;
+    --mg-ink: #1c2b27; --mg-soft: #4c5e58; --mg-mute: #5c6b64; --mg-line: #ddd6c6; --mg-line-2: #c9c0ad; --mg-tile: rgba(31, 74, 63, 0.07);
+    --mg-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    --dc-bg: var(--mg-paper); --dc-ink: var(--mg-ink); --dc-soft: var(--mg-soft); --dc-line: var(--mg-line); --dc-accent: var(--mg-moss); --dc-panel: var(--mg-mint); --dc-radius: 22px;
+    background: var(--mg-linen); color: var(--mg-ink); font-family: "Figtree", "Inter", system-ui, sans-serif; font-size: 1.0625rem;
+  }
+  :where(.mg) :is(h1, h2, h3) { font-weight: 800; letter-spacing: -0.03em; line-height: 1.04; color: var(--mg-moss); text-wrap: balance; }
+  :where(.mg) h1 { font-size: clamp(2.5rem, 1.6rem + 4vw, 4.75rem); font-weight: 850; }
+  :where(.mg) h2 { font-size: clamp(2rem, 1.4rem + 2.6vw, 3.25rem); }
+  :where(.mg) h3 { font-size: 1.375rem; letter-spacing: -0.02em; }
+  :where(.mg) p { text-wrap: pretty; }
+  :where(.mg) a { color: inherit; }
+  :where(.mg) :focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+  .mg-num { font-variant-numeric: tabular-nums; }
+  .mg-wrap { width: min(1200px, 100% - 40px); margin-inline: auto; }
+  @media (max-width: 479px) { .mg-wrap { width: calc(100% - 32px); } }
+  .mg-section { padding-block: clamp(64px, 9vw, 120px); }
+  .mg-label { font-size: 0.875rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mg-moss-2); }
+  .mg-kicker { display: inline-flex; align-items: center; gap: 10px; font-size: 0.9375rem; font-weight: 750; color: var(--mg-clay); }
+  .mg-kicker::before { content: ""; width: 14px; height: 14px; background: currentColor; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+  .mg-lead { font-size: clamp(1.125rem, 1rem + 0.5vw, 1.3125rem); color: var(--mg-soft); max-width: 54ch; }
+  .mg-head { display: grid; gap: 16px; margin-bottom: clamp(36px, 5vw, 60px); max-width: 760px; }
+  .mg-fine { font-size: 0.9375rem; color: var(--mg-mute); }
+  .mg-demo-note { display: inline-flex; align-items: flex-start; gap: 8px; justify-self: start; padding: 7px 14px; border-radius: 18px; background: var(--mg-clay-soft); color: #7a3320; font-size: 0.875rem; font-weight: 650; }
+  .mg-demo-note::before { content: ""; flex: none; width: 7px; height: 7px; margin-top: 0.5em; margin-top: calc((1lh - 7px) / 2); border-radius: 50%; background: var(--mg-clay); }
+  /* the bathroom-tile grid behind working panels */
+  .mg-tiles { background-image: linear-gradient(var(--mg-tile) 1px, transparent 1px), linear-gradient(90deg, var(--mg-tile) 1px, transparent 1px); background-size: 28px 28px; background-position: -1px -1px; }
+
+  .mg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 26px; border: 0; border-radius: 999px; background: var(--mg-moss); color: var(--mg-linen); font: inherit; font-weight: 750; font-size: 1.0625rem; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background-color 200ms var(--mg-ease), transform 200ms var(--mg-ease), box-shadow 200ms var(--mg-ease); }
+  .mg-btn:hover { background: var(--mg-moss-2); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(31, 74, 63, 0.22); }
+  .mg-btn:active { transform: scale(0.98); }
+  .mg-btn-clay { background: var(--mg-clay); color: #fff; }
+  .mg-btn-clay:hover { background: #b25034; box-shadow: 0 10px 24px rgba(200, 95, 62, 0.28); }
+  .mg-btn-line { background: transparent; color: var(--mg-moss); box-shadow: inset 0 0 0 1.5px var(--mg-line-2); }
+  .mg-btn-line:hover { background: var(--mg-paper); box-shadow: inset 0 0 0 1.5px var(--mg-moss); }
+  .mg-btn-sm { min-height: 44px; padding: 0 18px; font-size: 0.9375rem; }
+  .mg-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 750; color: var(--mg-moss-2); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+  .mg-link span { transition: transform 200ms var(--mg-ease); }
+  .mg-link:hover span { transform: translateX(4px); }
+
+  /* header */
+  .mg-top { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--mg-linen) 96%, transparent); border-bottom: 1px solid var(--mg-line); view-transition-name: mg-top; }
+  .mg-top-in { display: flex; align-items: center; gap: 24px; min-height: 72px; }
+  .mg-logo { display: flex; align-items: center; gap: 11px; margin-right: auto; text-decoration: none; }
+  .mg-wordmark { display: grid; font-weight: 850; font-size: 1.3125rem; line-height: 1; letter-spacing: -0.03em; color: var(--mg-moss); }
+  .mg-wordmark small { font-size: 0.75rem; font-weight: 650; letter-spacing: 0.02em; color: var(--mg-mute); margin-top: 3px; }
+  .mg-nav { display: flex; gap: 4px; }
+  .mg-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 999px; font-weight: 650; font-size: 0.9875rem; text-decoration: none; color: var(--mg-soft); transition: background-color 160ms ease-out, color 160ms ease-out; }
+  .mg-nav a:hover { background: var(--mg-mint); color: var(--mg-moss); }
+  .mg-nav a[aria-current="page"] { background: var(--mg-sage); color: var(--mg-moss); }
+  .mg-top-book[aria-current="page"] { background: var(--mg-moss-2); }
+  .mg-menu { display: none; position: relative; }
+  .mg-menu summary { display: grid; place-content: center; gap: 6px; width: 48px; height: 48px; border-radius: 14px; background: var(--mg-paper); box-shadow: inset 0 0 0 1px var(--mg-line); list-style: none; cursor: pointer; }
+  .mg-menu summary::-webkit-details-marker { display: none; }
+  .mg-menu summary span { display: block; width: 20px; height: 2px; border-radius: 2px; background: var(--mg-moss); transition: transform 200ms var(--mg-ease); }
+  .mg-menu[open] summary span:nth-child(1) { transform: translateY(4px) rotate(45deg); }
+  .mg-menu[open] summary span:nth-child(2) { transform: translateY(-4px) rotate(-45deg); }
+  .mg-menu-panel { position: absolute; right: 0; top: calc(100% + 10px); display: grid; width: min(280px, calc(100vw - 32px)); padding: 8px; border-radius: 18px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line), 0 24px 48px rgba(28, 43, 39, 0.16); }
+  .mg-menu-panel a { display: flex; align-items: center; min-height: 48px; padding: 0 14px; border-radius: 12px; font-weight: 700; text-decoration: none; color: var(--mg-moss); }
+  .mg-menu-panel a:hover, .mg-menu-panel a[aria-current="page"] { background: var(--mg-mint); }
+  @media (max-width: 859px) { .mg-nav { display: none; } .mg-menu { display: block; } .mg-top-in { gap: 12px; } }
+  @media (max-width: 419px) { .mg-top-book { display: none; } }
+
+  /* footer */
+  .mg-foot { background: var(--mg-moss); color: #c7d8cf; padding: 72px 0 128px; }
+  .mg-foot-in { display: grid; gap: 40px; grid-template-columns: 1.3fr 1fr 1fr; }
+  @media (max-width: 767px) { .mg-foot-in { grid-template-columns: 1fr; } }
+  .mg-foot-brand { display: grid; gap: 10px; align-content: start; }
+  .mg-foot-name { font-size: 1.625rem; font-weight: 850; letter-spacing: -0.03em; color: var(--mg-linen); }
+  .mg-foot-demo { margin-top: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); font-size: 0.9375rem; }
+  .mg-foot-demo a, .mg-foot-links a { color: var(--mg-linen); }
+  .mg-foot .mg-label { color: var(--mg-clay-2); margin-bottom: 12px; }
+  .mg-hours div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.12); font-size: 0.9375rem; }
+  .mg-hours dd { color: var(--mg-linen); }
+  .mg-foot-links { display: grid; }
+  .mg-foot-links a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; }
+  .mg-foot-links a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .mg-foot-area { margin-top: 12px; font-size: 0.9375rem; }
+  .mg-foot-area span { color: #9fb8ad; }
+  @media (min-width: 860px) { .mg-foot { padding-bottom: 80px; } }
+
+  /* phone dock */
+  .mg-dock { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 35; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; border-radius: 999px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line), 0 16px 36px rgba(28, 43, 39, 0.22); }
+  .mg-dock a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 999px; font-weight: 750; text-decoration: none; color: var(--mg-moss); }
+  .mg-dock .mg-dock-main { background: var(--mg-moss); color: var(--mg-linen); }
+  @media (min-width: 860px) { .mg-dock { display: none; } }
+  @media (max-width: 859px) { .mg .demo-toast { bottom: 92px; } }
+
+  /* fields */
+  .mg-fields { display: grid; gap: 16px; }
+  @media (min-width: 620px) { .mg-fields { grid-template-columns: 1fr 1fr; } .mg-field-wide { grid-column: 1 / -1; } }
+  .mg-field { display: grid; gap: 8px; font-weight: 700; font-size: 0.9375rem; color: var(--mg-moss); }
+  .mg-field :is(input, select, textarea) { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--mg-line-2); border-radius: 14px; background: var(--mg-paper); color: var(--mg-ink); font: inherit; font-weight: 450; transition: border-color 160ms ease-out, box-shadow 160ms ease-out; }
+  .mg-field textarea { resize: vertical; min-height: 96px; }
+  .mg-field :is(input, select, textarea):focus { outline: none; border-color: var(--mg-moss-2); box-shadow: 0 0 0 4px rgba(47, 111, 94, 0.2); }
+  .mg-field :is(input, select, textarea)[aria-invalid="true"] { border-color: #b8432a; box-shadow: 0 0 0 4px rgba(184, 67, 42, 0.16); }
+  .mg-field small { font-weight: 450; color: var(--mg-mute); }
+  .mg-field input::placeholder, .mg-field textarea::placeholder { color: #8a9590; }
+  .mg-err { color: #a23a22; font-weight: 700; }
+  .mg-err:empty { display: none; }
+  /* choice chips: a hidden radio or checkbox and its box */
+  .mg-pick { position: relative; display: block; cursor: pointer; }
+  .mg-pick input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .mg-pick > span { display: grid; gap: 2px; align-content: center; justify-items: center; text-align: center; min-height: 52px; height: 100%; padding: 10px 12px; border-radius: 14px; background: var(--mg-paper); box-shadow: inset 0 0 0 1.5px var(--mg-line); font-weight: 700; color: var(--mg-ink); transition: box-shadow 160ms ease-out, background-color 160ms ease-out, transform 160ms var(--mg-ease); }
+  .mg-pick > span small { font-weight: 500; font-size: 0.8125rem; color: var(--mg-mute); }
+  .mg-pick:hover > span { box-shadow: inset 0 0 0 1.5px var(--mg-moss-3); }
+  .mg-pick input:checked + span { background: var(--mg-mint); box-shadow: inset 0 0 0 2px var(--mg-moss-2); color: var(--mg-moss); }
+  .mg-pick input:checked + span small { color: var(--mg-moss-2); }
+  .mg-pick input:active + span { transform: scale(0.97); }
+  .mg-pick input:focus-visible + span { outline: 3px solid #2563eb; outline-offset: 3px; }
+  /* unavailable: dashed edge and muted text (a line-through would also strike the note, since grid items inherit it) */
+  .mg-pick input:disabled + span { background: transparent; box-shadow: none; outline: 1.5px dashed var(--mg-line-2); outline-offset: -1.5px; color: #66706a; cursor: not-allowed; }
+  .mg-pick input:disabled { cursor: not-allowed; }
+  .mg-pick.left > span { justify-items: start; text-align: left; padding-inline: 16px; }
+
+  /* the round tick used in lists */
+  .mg-ticks { display: grid; gap: 12px; }
+  .mg-ticks li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; }
+  .mg-ticks li::before { content: ""; width: 24px; height: 24px; margin-top: 1px; border-radius: 50%; background: var(--mg-moss-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 14px no-repeat; }
+
+  /* reveal on scroll (tiers 1-2; tier 3 and no JavaScript show everything) */
+  :root[data-tier="1"] .mg-rise, :root[data-tier="2"] .mg-rise { opacity: 0; transform: translateY(18px); transition: opacity 400ms var(--mg-ease), transform 400ms var(--mg-ease); transition-delay: var(--d, 0ms); }
+  :root[data-tier="1"] .mg-rise.in, :root[data-tier="2"] .mg-rise.in { opacity: 1; transform: none; }
+
+  /* closing band */
+  .mg-band { position: relative; overflow: hidden; display: grid; gap: 18px; justify-items: start; padding: clamp(36px, 6vw, 80px); border-radius: 28px; background: var(--mg-moss); color: #d5e3dc; }
+  .mg-band::after { content: ""; position: absolute; right: -40px; top: -40px; width: 240px; height: 240px; background: var(--mg-clay-2); opacity: 0.16; clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); pointer-events: none; }
+  .mg-band h2 { color: var(--mg-linen); max-width: 16ch; }
+  .mg-band p { max-width: 52ch; }
+  .mg-band .mg-btn { background: var(--mg-linen); color: var(--mg-moss); }
+  .mg-band .mg-btn:hover { background: #fff; }
+  .mg-band .mg-btn-line { background: transparent; color: var(--mg-linen); box-shadow: inset 0 0 0 1.5px rgba(246, 243, 236, 0.4); }
+  .mg-band .mg-btn-line:hover { box-shadow: inset 0 0 0 1.5px var(--mg-linen); }
+  .mg-band-btns { display: flex; flex-wrap: wrap; gap: 12px; }
+</style>
+
+<script>
+  const els = [...document.querySelectorAll<HTMLElement>(".mg-rise")];
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }, { rootMargin: "0px 0px -8% 0px" });
+    for (const el of els) { if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in"); else io.observe(el); }
+  } else els.forEach((el) => el.classList.add("in"));
+  const menu = document.querySelector<HTMLDetailsElement>(".mg-menu");
+  menu?.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) menu.open = false; });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && menu?.open) { menu.open = false; menu.querySelector("summary")?.focus(); } });
+</script>

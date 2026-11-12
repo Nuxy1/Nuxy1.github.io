@@ -19,6 +19,10 @@ import { inquiryUrl, inbox } from "../data/site";
 import { groups, plans, variants, bundles, retired, wants, wantOf } from "../data/services";
 import { ask } from "../lib/request";
 import { rules as creativeRules, creativeWant, quoteParam } from "../data/creative";
+import { formLevels, goals, levelById } from "../data/tiers";
+// ?level=<id> from a website level's button (data/tiers.ts) picks that level, shows the website questions and names it
+// at the top; with no answer to "What do you need?" yet it picks "New website".
+const levelNames = Object.fromEntries([...formLevels.map((l) => [l.id, l.id === "unsure" ? "" : `the ${levelById[l.id as keyof typeof levelById].name} website level (${levelById[l.id as keyof typeof levelById].price.toLowerCase()})`])]);
 
 // (everything a link can ask about: its name and price for the note, which answer it picks, and for a retired id
 // the name it had)
@@ -28,7 +32,7 @@ const asked: Record<string, { name: string; price: string; want: string; was?: s
 const oldNames: Record<string, string> = { "automation-care": "Automation care" };
 for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], was: oldNames[id] ?? id };
 ---
-<div class="inq" data-inquiry data-services={JSON.stringify(asked)} data-creative={JSON.stringify(creativeRules)} data-creative-param={quoteParam} data-creative-want={creativeWant}>
+<div class="inq" data-inquiry data-services={JSON.stringify(asked)} data-creative={JSON.stringify(creativeRules)} data-creative-param={quoteParam} data-creative-want={creativeWant} data-levels={JSON.stringify(levelNames)}>
   <form class="inq-form" method="post" action={inquiryUrl} accept-charset="UTF-8" data-endpoint={inquiryUrl}>
     <p class="inq-legend">Required unless marked optional. Takes about two minutes.</p>
 
@@ -62,7 +66,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       </div>
       <div class="field">
         <label for="f-type">Type of business <span class="opt">(optional)</span></label>
-        <input id="f-type" name="type" type="text" maxlength="80" list="f-type-list" aria-describedby="f-type-help f-type-err" />
+        <input id="f-type" name="type" type="text" maxlength="80" autocomplete="off" list="f-type-list" aria-describedby="f-type-help f-type-err" />
         <datalist id="f-type-list">
           {["Landscaping & lawn care", "Cleaning", "Plumbing", "HVAC", "Electrical", "Contractor & remodeling", "Barber, salon or spa", "Auto repair", "Restaurant or café", "Retail shop", "Office or professional services"].map((t) => <option value={t} />)}
         </datalist>
@@ -114,6 +118,48 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       <p class="err" id="f-scope-err" hidden></p>
     </fieldset>
 
+    <!-- (for a website only: shown, and sent, once "What do you need?" is a website answer or a level link opened the
+    form; while hidden it is disabled, so nothing in it travels) -->
+    <fieldset class="field inq-web" data-web hidden disabled>
+      <legend>About the website <span class="opt">(optional)</span></legend>
+      <p class="help">Not sure which level you need? Choose “I’m not sure yet” and we’ll recommend one. <a href="/web-design/#levels" target="_blank" rel="noopener">Compare the levels<span class="sr-only"> (opens in a new tab)</span></a></p>
+      <!-- (one under the other, full width: side by side, a closed select cut its answer short; every answer fits a
+      320-pixel phone, tests/contact-form.test.mjs measures them) -->
+      <div class="field">
+        <label for="f-level">Website level</label>
+        <select id="f-level" name="level" aria-describedby="f-level-err">
+          <option value="">Choose one</option>
+          {formLevels.map((l) => <option value={l.id}>{l.label}</option>)}
+        </select>
+        <p class="err" id="f-level-err" hidden></p>
+      </div>
+      <div class="field">
+        <label for="f-goal">Main goal</label>
+        <select id="f-goal" name="goal" aria-describedby="f-goal-err">
+          <option value="">Choose one</option>
+          {goals.map((g) => <option value={g.id}>{g.label}</option>)}
+        </select>
+        <p class="err" id="f-goal-err" hidden></p>
+      </div>
+      <div class="field">
+        <label for="f-features">Features you have in mind</label>
+        <textarea id="f-features" name="features" rows="2" maxlength="600" aria-describedby="f-features-help f-features-err"></textarea>
+        <p class="help" id="f-features-help">For example: online booking, a shop, a 3D product view, a members area.</p>
+        <p class="err" id="f-features-err" hidden></p>
+      </div>
+    </fieldset>
+    <!-- (without JavaScript the website questions above stay hidden, so the level, the one answer a level link is
+    about, gets its own plain field here; with JavaScript on, noscript content is never built) -->
+    <noscript>
+      <div class="field">
+        <label for="f-level-ns">Website level <span class="opt">(optional)</span></label>
+        <select id="f-level-ns" name="level">
+          <option value="">Choose one</option>
+          {formLevels.map((l) => <option value={l.id}>{l.label}</option>)}
+        </select>
+      </div>
+    </noscript>
+
     <details class="inq-more">
       <summary><Icon name="plus" />More details <span class="opt">(optional)</span></summary>
       <div class="inq-grid">
@@ -135,8 +181,10 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
             <option value="unsure">Not sure yet</option>
             <option value="lt500">Under $500</option>
             <option value="500-1000">$500–$1,000</option>
-            <option value="1000-2500">$1,000–$2,500</option>
-            <option value="gt2500">Over $2,500</option>
+            <option value="1000-3000">$1,000–$3,000</option>
+            <option value="3000-6000">$3,000–$6,000</option>
+            <option value="6000-12000">$6,000–$12,000</option>
+            <option value="gt12000">Over $12,000</option>
           </select>
           <p class="err" id="f-budget-err" hidden></p>
         </div>
@@ -213,10 +261,14 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
   }
   .field textarea { min-height: 132px; resize: vertical; }
-  .field select { appearance: none; padding-right: 40px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 21px, calc(100% - 15px) 21px; background-size: 5px 5px; background-repeat: no-repeat; }
+  .inq-web { gap: 16px; }
+  .inq-web[hidden] { display: none; }
+  .inq-web .help a { color: var(--cyan); }
+  #f-features { min-height: 84px; }
+  .field select { appearance: none; padding-right: 36px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 21px, calc(100% - 15px) 21px; background-size: 5px 5px; background-repeat: no-repeat; }
   .field input::placeholder { color: #64748b; }
   .field input:hover, .field select:hover, .field textarea:hover { border-color: #46608f; }
-  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35); }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid transparent; /* (shows in forced-colors mode, where the shadow ring is dropped) */ border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35); }
   .field [aria-invalid="true"] { border-color: var(--bad); }
   .field [aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.3); }
   .help { color: var(--muted); font-size: 0.875rem; line-height: 1.45; }
@@ -241,7 +293,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   }
   .pick:hover { border-color: #46608f; }
   .pick:has(input:checked) { border-color: var(--blue); background: rgba(59, 130, 246, 0.14); }
-  .pick:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35); }
+  .pick:has(input:focus-visible) { outline: 2px solid transparent; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35); }
   .pick input:focus-visible { outline: none; }
   .picks[data-invalid] .pick { border-color: var(--bad); }
   .inq-about { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 6px 8px 6px 16px; border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: rgba(59, 130, 246, 0.08); }
@@ -252,7 +304,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   .inq-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--link); font: inherit; font-size: 0.9375rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
   .inq-link:hover { color: var(--ink); }
   .inq-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
-  .tip-box { display: grid; gap: 2px; margin-top: 4px; padding: 10px 8px 4px 14px; border-left: 3px solid var(--cyan); border-radius: 0 8px 8px 0; background: rgba(34, 211, 238, 0.08); }
+  .tip-box { display: grid; gap: 2px; margin-top: 4px; padding: 10px 8px 4px 14px; border: 1px solid rgba(34, 211, 238, 0.35); border-radius: 8px; background: rgba(34, 211, 238, 0.08); }
   .tip-box[hidden] { display: none; }
   .tip-box p { color: var(--body); font-size: 0.9375rem; overflow-wrap: anywhere; }
   .tip-box strong { color: var(--ink); }
@@ -304,9 +356,12 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     phone: { max: 40, label: "Phone", test: (v) => /^[0-9+().\-\s x]+$/i.test(v) && (v.match(/\d/g) ?? []).length >= 7, problem: "Enter a phone number with at least 7 digits, or leave it empty." },
     need: { required: true, min: 10, max: 3000, label: "Project description" },
     tools: { max: 400, label: "Tools you use now" },
+    features: { max: 600, label: "Features you have in mind" },
   };
+  // (the answers to "What do you need?" that are about a website: they show the website questions)
+  const WEB = ["new-website", "redesign", "shopify", "other"];
   // (the email the customer can send instead when sending fails: their answers as readable lines)
-  const LABELS: [string, string][] = [["want", "What I need"], ["name", "Name"], ["business", "Business name"], ["type", "Type of business"], ["website", "Website"], ["email", "Email"], ["phone", "Phone"], ["scope", "One-time or ongoing"], ["timeline", "When"], ["budget", "Budget"], ["contact", "Best way to reach me"], ["tools", "Tools I use now"], ["consent", "OK to follow up"], ["need", "About my project"]];
+  const LABELS: [string, string][] = [["want", "What I need"], ["name", "Name"], ["business", "Business name"], ["type", "Type of business"], ["website", "Website"], ["email", "Email"], ["phone", "Phone"], ["scope", "One-time or ongoing"], ["level", "Website level"], ["goal", "Main goal"], ["features", "Features I have in mind"], ["timeline", "When"], ["budget", "Budget"], ["contact", "Best way to reach me"], ["tools", "Tools I use now"], ["consent", "OK to follow up"], ["need", "About my project"]];
 
   for (const root of document.querySelectorAll<HTMLElement>("[data-inquiry]")) {
     const form = root.querySelector("form")!;
@@ -380,19 +435,50 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     const answers = ids.map((x) => services[x].want);
     const times = (w: string) => answers.filter((x) => x === w).length;
     const common = answers.reduce((best, w) => (times(w) > times(best) ? w : best), answers[0] ?? "");
-    const pick = /^[a-z-]{1,20}$/.test(want) && radio(want) ? want : common;
+    const levelNames: Record<string, string> = JSON.parse(root.dataset.levels ?? "{}");
+    const levelAsked = params.get("level") ?? "";
+    const level = /^[a-z]{1,20}$/.test(levelAsked) && Object.prototype.hasOwnProperty.call(levelNames, levelAsked) ? levelAsked : "";
+    const pick = /^[a-z-]{1,20}$/.test(want) && radio(want) ? want : common || (level ? "new-website" : "");
     if (pick && radio(pick)) radio(pick)!.checked = true;
+    // The website questions: shown (and sent) for a website answer, or after a level link; hidden and disabled otherwise.
+    const web = form.querySelector<HTMLFieldSetElement>("[data-web]")!;
+    // (a level link shows them until the visitor picks an answer of their own; from then on the answer decides)
+    let forced = Boolean(level);
+    const syncWeb = () => {
+      const on = forced || WEB.includes(chosen()?.value ?? "");
+      web.hidden = web.disabled = !on;
+    };
+    let levelShown = false;
+    if (level) {
+      field("level")!.value = level;
+      // (a level is named at the top only when no service already is)
+      if (!service && levelNames[level]) {
+        about.querySelector("[data-about-name]")!.textContent = levelNames[level];
+        levelShown = true;
+        about.hidden = false;
+      }
+    }
+    syncWeb();
+    picks.addEventListener("change", () => { forced = false; syncWeb(); });
     about.querySelector("[data-about-clear]")!.addEventListener("click", () => {
       serviceInput.value = "";
+      // (a named level is taken back out of its question too)
+      if (levelShown) { field("level")!.value = ""; levelShown = false; }
       about.hidden = true;
       // (the address forgets it too, so loading the page again does not bring back what the customer took out)
       const url = new URL(location.href);
-      for (const key of ["service", "services", root.dataset.creativeParam ?? ""]) url.searchParams.delete(key);
+      for (const key of ["service", "services", "level", root.dataset.creativeParam ?? ""]) url.searchParams.delete(key);
       history.replaceState(history.state, "", url);
       if (listed && need.value.trim() === listed.trim()) need.value = "";
       focusOf("want")?.focus();
       status.textContent = "Removed. Choose what you need, or describe it below.";
     });
+
+    // contact_started: once, at the first answer the visitor gives (only the event name and page travel: Base.astro)
+    let started = false;
+    const start = () => { if (!started) { started = true; (window as any).nuxyTrack?.("contact_started"); } };
+    form.addEventListener("input", start);
+    form.addEventListener("change", start);
 
     const show = (name: string, message: string) => {
       const err = form.querySelector<HTMLElement>(`#f-${name}-err`);
@@ -513,6 +599,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
           done.focus();
           done.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
           (window as any).nuxyTrack?.("form_submit");
+          (window as any).nuxyTrack?.("contact_completed");
           form.reset();
           return;
         }

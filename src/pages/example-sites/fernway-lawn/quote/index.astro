@@ -1,0 +1,450 @@
+---
+// Fernway's quote estimator: service, property, frequency, extras, photos and details, then a demonstration
+// estimate. The range comes from lib/demo/fernway-quote.ts (the same function the hero's quick estimate uses) and
+// updates as the visitor answers. Photos are checked and previewed in the browser only; nothing is sent or stored.
+import Shell from "../../../../components/demo/fernway/Shell.astro";
+import ServiceArt from "../../../../components/demo/fernway/ServiceArt.astro";
+import DemoComplete from "../../../../components/demo/DemoComplete.astro";
+import { serviceList, towns } from "../../../../data/demos/fernway";
+import { SIZES, FREQUENCIES, EXTRAS, CUSTOM_MIN, CUSTOM_MAX, estimate, type Frequency, type ExtraId } from "../../../../lib/demo/fernway-quote";
+import { range } from "../../../../lib/demo/money";
+
+const steps = ["Service", "Property", "How often", "Extras", "Photos & details"];
+const freqIds = Object.keys(FREQUENCIES) as Frequency[];
+const extraIds = Object.keys(EXTRAS) as ExtraId[];
+const first = estimate({ service: "mowing", size: "medium", frequency: "weekly", extras: [] });
+const flow = [
+  { title: "A lead lands in the CRM", text: "Your answers, photos and the range become one record, tagged by town and service, so nothing sits in an inbox." },
+  { title: "The owner gets a text", text: "A short summary with the photos and a one-tap reply to send the firm price from the truck." },
+  { title: "You get a confirmation", text: "An automatic text with your range and when to expect the firm price, usually the same day." },
+  { title: "One polite follow-up", text: "If the price isn’t accepted in three days, a single reminder goes out, then it stops." },
+];
+---
+<Shell title="Free estimate" current="quote" description="Fernway's demonstration quote estimator: pick a service, yard size, frequency and extras, add photos, and see an example price range. Fictional business, demo pricing, nothing is sent.">
+  <section class="fw-section fw-q-sec" aria-labelledby="q-h">
+    <div class="fw-wrap">
+      <div class="fw-head fw-q-head">
+        <p class="fw-kicker">Free estimate</p>
+        <h1 id="q-h">A price range in about a minute.</h1>
+        <p class="fw-lead">Five short steps. The range updates as you go, and the crew would confirm a firm price by text.</p>
+        <p class="fw-demo-note">Demonstration estimator: example pricing, and nothing you enter leaves this page.</p>
+      </div>
+
+      <div class="fw-q" data-q-wrap>
+        <form class="fw-q-form" method="dialog" data-fw-quote aria-labelledby="q-h">
+          <ol class="fw-q-prog" data-progress role="list" aria-label="Steps">
+            {steps.map((s, i) => <li><button type="button"><span aria-hidden="true">{i + 1}</span>{s}</button></li>)}
+          </ol>
+          <p class="sr-only" data-step-status aria-live="polite"></p>
+          <p class="fw-q-mini" data-q-mini aria-hidden="true">Estimate so far: <strong data-q-mini-range>{range(first.low, first.high)}</strong> <span data-q-mini-per>{first.per}</span></p>
+
+          <fieldset class="fw-q-step" data-step aria-labelledby="q1-h">
+            <h2 id="q1-h" data-step-title>What do you need?</h2>
+            <div class="fw-q-svc">
+              {serviceList.map((s) => (
+                <label class="fw-q-opt fw-q-svc-opt">
+                  <input type="radio" name="service" value={s.id} required checked={s.id === "mowing"} />
+                  <ServiceArt art={s.art} size={52} />
+                  <span><strong>{s.name}</strong><small>{s.blurb}</small></span>
+                </label>
+              ))}
+            </div>
+            <p class="fw-q-err" id="q-err-1" data-step-error role="alert"></p>
+            <div class="fw-q-nav"><button class="fw-btn" type="button" data-next>Next: property</button></div>
+          </fieldset>
+
+          <fieldset class="fw-q-step" data-step aria-labelledby="q2-h">
+            <h2 id="q2-h" data-step-title>How big is the yard?</h2>
+            <p class="fw-fine">The lawn and beds we’d look after, not the whole lot. A guess is fine.</p>
+            <div class="fw-q-sizes">
+              {(Object.keys(SIZES) as (keyof typeof SIZES)[]).map((k) => (
+                <label class="fw-q-opt fw-q-size">
+                  <input type="radio" name="size" value={k} required checked={k === "medium"} />
+                  <span class="fw-q-size-pic" data-size={k} aria-hidden="true"><i></i></span>
+                  <span><strong>{SIZES[k].label}</strong><small>{SIZES[k].hint}</small></span>
+                </label>
+              ))}
+              <label class="fw-q-opt fw-q-size">
+                <input type="radio" name="size" value="custom" required />
+                <span class="fw-q-size-pic" data-size="custom" aria-hidden="true"><i></i></span>
+                <span><strong>Custom</strong><small>I know the square footage</small></span>
+              </label>
+            </div>
+            <label class="fw-field fw-q-sqft" data-q-sqft hidden>
+              <span>Lawn and beds, in square feet</span>
+              <input name="sqft" type="number" inputmode="numeric" min={CUSTOM_MIN} max={CUSTOM_MAX} step="100" required disabled placeholder="e.g. 15000" data-error={`Enter a lot size from ${CUSTOM_MIN.toLocaleString("en-US")} to ${CUSTOM_MAX.toLocaleString("en-US")} sq ft, in hundreds.`} />
+              <small class="fw-fine">Between {CUSTOM_MIN.toLocaleString("en-US")} and {CUSTOM_MAX.toLocaleString("en-US")} sq ft. Half an acre is about 21,800.</small>
+            </label>
+            <label class="fw-field fw-q-town">
+              <span>Which town?</span>
+              <select name="town" required data-error="Choose your town to see if it is in our area.">
+                <option value="">Choose your town</option>
+                {towns.map((t) => <option value={t.id}>{t.name}</option>)}
+                <option value="outside">Somewhere else</option>
+              </select>
+            </label>
+            <p class="fw-fine fw-q-outside" data-q-outside hidden>That’s outside the 25-mile area. A real Fernway site would offer a waitlist for nearby towns here.</p>
+            <p class="fw-q-err" id="q-err-2" data-step-error role="alert"></p>
+            <div class="fw-q-nav"><button class="fw-btn fw-btn-ghost" type="button" data-back>Back</button><button class="fw-btn" type="button" data-next>Next: how often</button></div>
+          </fieldset>
+
+          <fieldset class="fw-q-step" data-step aria-labelledby="q3-h">
+            <h2 id="q3-h" data-step-title>How often?</h2>
+            <div class="fw-q-freq">
+              {freqIds.map((f) => (
+                <label class="fw-q-opt fw-q-freq-opt" data-freq={f}>
+                  <input type="radio" name="frequency" value={f} required checked={f === "weekly"} />
+                  <span><strong>{FREQUENCIES[f].label}</strong><small data-freq-hint>{FREQUENCIES[f].hint}</small></span>
+                </label>
+              ))}
+            </div>
+            <p class="fw-fine" data-q-freq-note aria-live="polite"></p>
+            <p class="fw-q-err" id="q-err-3" data-step-error role="alert"></p>
+            <div class="fw-q-nav"><button class="fw-btn fw-btn-ghost" type="button" data-back>Back</button><button class="fw-btn" type="button" data-next>Next: extras</button></div>
+          </fieldset>
+
+          <fieldset class="fw-q-step" data-step aria-labelledby="q4-h">
+            <h2 id="q4-h" data-step-title>Anything extra?</h2>
+            <p class="fw-fine">Optional. Each one adds to the range on the right.</p>
+            <div class="fw-q-extras">
+              {extraIds.map((e) => (
+                <label class="fw-q-opt fw-q-extra" data-extra={e}>
+                  <input type="checkbox" name="extras" value={e} />
+                  <span class="fw-q-box" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                  <span><strong>{EXTRAS[e].name}</strong><small data-extra-note>Adds about {range(EXTRAS[e].add[0], EXTRAS[e].add[1])}</small></span>
+                </label>
+              ))}
+            </div>
+            <p class="fw-q-err" id="q-err-4" data-step-error role="alert"></p>
+            <div class="fw-q-nav"><button class="fw-btn fw-btn-ghost" type="button" data-back>Back</button><button class="fw-btn" type="button" data-next>Next: photos</button></div>
+          </fieldset>
+
+          <fieldset class="fw-q-step" data-step aria-labelledby="q5-h">
+            <h2 id="q5-h" data-step-title>Photos and a few details</h2>
+            <div class="fw-q-drop" data-q-drop>
+              <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="2" /><circle cx="12" cy="12.5" r="3.4" fill="none" stroke="currentColor" stroke-width="2" /><path d="M8 6l1.5-2h5L16 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+              <label class="fw-btn fw-btn-ghost fw-btn-sm fw-q-pick">Add yard photos (optional)<input class="sr-only" type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple data-q-photos /></label>
+              <p class="fw-fine">Up to five JPEG, PNG, WebP or HEIC photos, 10 MB each. They’re previewed here and never uploaded.</p>
+            </div>
+            <ul class="fw-q-thumbs" role="list" data-q-thumbs aria-label="Your photos"></ul>
+            <p class="fw-q-err" data-q-photo-err aria-live="polite"></p>
+            <div class="fw-fields fw-q-details">
+              <label class="fw-field"><span>First name</span><input name="name" required autocomplete="given-name" maxlength="40" data-error="Add a first name, or press “Use sample details”." /></label>
+              <label class="fw-field"><span>Gate, pets or anything we should know (optional)</span><input name="notes" maxlength="200" /></label>
+            </div>
+            <p class="fw-fine">A real form would also ask for a phone number to text the firm price. This demo leaves it out so nothing personal is typed.</p>
+            <p class="fw-q-err" id="q-err-5" data-step-error role="alert"></p>
+            <div class="fw-q-nav">
+              <button class="fw-btn fw-btn-ghost" type="button" data-back>Back</button>
+              <button class="fw-btn fw-btn-ghost" type="button" data-q-sample>Use sample details</button>
+              <button class="fw-btn fw-btn-lime" type="submit">See my estimate</button>
+            </div>
+          </fieldset>
+        </form>
+
+        <aside class="fw-q-side" aria-labelledby="q-est-h" data-q-side>
+          <div class="fw-q-est">
+            <p class="fw-q-est-k" id="q-est-h">Your estimate</p>
+            <p class="fw-q-range" aria-live="polite" aria-atomic="true"><strong data-q-range>{range(first.low, first.high)}</strong> <span data-q-per>{first.per}</span></p>
+            <p class="fw-q-extra-line" data-q-total>{first.monthly ? `About ${range(first.monthly.low, first.monthly.high)} a month` : ""}</p>
+            <dl class="fw-q-sum">
+              <div><dt>Service</dt><dd data-q-sum="service">Lawn mowing</dd></div>
+              <div><dt>Yard</dt><dd data-q-sum="size">Medium</dd></div>
+              <div><dt>How often</dt><dd data-q-sum="frequency">Weekly</dd></div>
+              <div><dt>Extras</dt><dd data-q-sum="extras">None</dd></div>
+            </dl>
+            <ul class="fw-q-notes" role="list" data-q-notes></ul>
+            <p class="fw-q-disclaim">This is a demonstration estimate and is not an actual quote.</p>
+          </div>
+          <p class="fw-fine fw-q-why">Example pricing for demonstration purposes. Ranges widen with size because yards vary; a real crew narrows it from your photos.</p>
+        </aside>
+      </div>
+
+      <DemoComplete id="q-done" lead="This is a demonstration estimate and is not an actual quote." flow={flow} restart="Start a new estimate" />
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .fw-q-sec { background: var(--fw-cream); min-height: 70vh; padding-top: clamp(40px, 6vw, 72px); }
+  .fw-q-head { max-width: 720px; }
+  /* wide screens: heading left, the words right, so the estimator starts near the top of the screen */
+  @media (min-width: 1024px) {
+    .fw-q-head { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "k ." "h l" "h n"; column-gap: clamp(40px, 6vw, 96px); align-items: end; margin-bottom: 40px; }
+    .fw-q-head .fw-kicker { grid-area: k; }
+    .fw-q-head h1 { grid-area: h; }
+    .fw-q-head .fw-lead { grid-area: l; }
+    .fw-q-head .fw-demo-note { grid-area: n; justify-self: start; }
+  }
+  .fw-q-head h1 { font-size: clamp(2.25rem, 5vw, 3.5rem); }
+  .fw-q { display: grid; gap: 28px; align-items: start; }
+  @media (min-width: 1024px) { .fw-q { grid-template-columns: minmax(0, 1fr) 340px; gap: 36px; } }
+  .fw-q-form { container: qform / inline-size; display: grid; gap: 22px; padding: clamp(20px, 4vw, 40px); border-radius: 30px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line), 0 24px 50px rgba(19, 32, 26, 0.07); }
+
+  .fw-q-prog { display: none; }
+  .fw-q-form.is-stepped .fw-q-prog { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: -4px -4px 0; padding: 4px; }
+  .fw-q-prog li { flex: 1 0 auto; }
+  .fw-q-prog button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--fw-paper); color: var(--fw-soft); font: inherit; font-size: 0.875rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .fw-q-prog button span { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px var(--fw-line); font-size: 0.75rem; }
+  .fw-q-prog button:disabled { cursor: default; }
+  .fw-q-prog li:not(.done):not([aria-current]) button:disabled { opacity: 0.6; }
+  .fw-q-prog li.done button { color: var(--fw-forest); }
+  .fw-q-prog li.done button span { background: var(--fw-moss); color: #fff; box-shadow: none; }
+  .fw-q-prog li[aria-current] button { background: var(--fw-forest); color: #fff; opacity: 1; }
+  .fw-q-prog li[aria-current] button span { background: var(--fw-lime); color: var(--fw-forest); box-shadow: none; }
+  /* only the open step keeps its label when the form is too narrow for all five (phones, and beside the estimate at 1024) */
+  @container qform (max-width: 759px) { .fw-q-prog button { font-size: 0; gap: 0; justify-content: center; padding: 0; } .fw-q-prog li[aria-current] button { font-size: 0.875rem; gap: 8px; padding: 0 12px; } .fw-q-prog li { flex: 1 1 44px; } .fw-q-prog li[aria-current] { flex: 0 0 auto; } }
+  /* the smallest phones: numbers only, the open step's heading names it */
+  @container qform (max-width: 299px) { .fw-q-prog { gap: 4px; } .fw-q-prog li, .fw-q-prog li[aria-current] { flex: 1 1 0; min-width: 0; } .fw-q-prog li[aria-current] button { font-size: 0; gap: 0; padding: 0; } }
+
+  .fw-q-mini { display: none; }
+  @media (max-width: 1023px) { .fw-q-form.is-stepped .fw-q-mini { display: block; padding: 10px 14px; border-radius: 12px; background: var(--fw-lime-2); color: var(--fw-forest); font-size: 0.9375rem; } }
+
+  .fw-q-step { display: grid; gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; }
+  .fw-q-step + .fw-q-step { padding-top: 28px; border-top: 1px solid var(--fw-line); }
+  .fw-q-form.is-stepped .fw-q-step + .fw-q-step { padding-top: 0; border-top: 0; }
+  .fw-q-step h2 { font-size: clamp(1.5rem, 3vw, 2rem); outline: none; }
+  :global(:root[data-tier="1"]) .fw-q-form.is-stepped .fw-q-step:not([hidden]), :global(:root[data-tier="2"]) .fw-q-form.is-stepped .fw-q-step:not([hidden]) { animation: fw-q-in 300ms var(--fw-ease) both; }
+  @keyframes fw-q-in { from { opacity: 0; transform: translateX(14px); } }
+
+  .fw-q-opt { position: relative; display: flex; gap: 14px; align-items: center; min-height: 64px; padding: 14px 16px; border-radius: 18px; background: var(--fw-paper); box-shadow: 0 0 0 1.5px var(--fw-line) inset; cursor: pointer; transition: box-shadow 160ms ease-out, background-color 160ms ease-out, transform 160ms ease-out; }
+  .fw-q-opt input[type="radio"], .fw-q-opt input[type="checkbox"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+  .fw-q-opt > span { display: grid; gap: 2px; }
+  .fw-q-opt small { color: var(--fw-soft); font-size: 0.875rem; line-height: 1.35; }
+  .fw-q-opt:hover { box-shadow: 0 0 0 1.5px var(--fw-moss) inset; }
+  .fw-q-opt:has(input:checked) { background: var(--fw-lime-2); box-shadow: 0 0 0 2px var(--fw-forest) inset; }
+  .fw-q-opt:has(input:focus-visible) { outline: 3px solid var(--fw-moss); outline-offset: 2px; }
+  .fw-q-opt:has(input:disabled) { cursor: not-allowed; opacity: 0.55; box-shadow: 0 0 0 1px var(--fw-line) inset; background: transparent; }
+  .fw-q-opt:active:not(:has(input:disabled)) { transform: scale(0.99); }
+
+  .fw-q-svc { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+  .fw-q-svc-opt :global(.fw-art) { flex: none; }
+  .fw-q-sizes { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+  .fw-q-size { flex-direction: column; align-items: start; }
+  .fw-q-size-pic { display: grid; place-items: end start; width: 56px; height: 40px; border-radius: 8px; background: #e6e2cf; overflow: hidden; }
+  .fw-q-size-pic i { display: block; background: var(--fw-moss); border-radius: 4px 4px 0 0; }
+  .fw-q-size-pic[data-size="small"] i { width: 30%; height: 45%; }
+  .fw-q-size-pic[data-size="medium"] i { width: 60%; height: 65%; }
+  .fw-q-size-pic[data-size="large"] i { width: 100%; height: 90%; }
+  .fw-q-size-pic[data-size="custom"] i { width: 70%; height: 70%; background: repeating-linear-gradient(135deg, var(--fw-moss) 0 6px, #6aa651 6px 12px); }
+  .fw-q-sqft, .fw-q-town { max-width: 420px; }
+  .fw-q-outside { color: var(--fw-clay); }
+
+  .fw-q-freq, .fw-q-extras { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .fw-q-box { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: #fff; box-shadow: 0 0 0 1.5px #b9c2b5 inset; color: transparent; transition: background-color 160ms, color 160ms; }
+  .fw-q-extra:has(input:checked) .fw-q-box { background: var(--fw-forest); color: var(--fw-lime); box-shadow: none; }
+
+  .fw-q-drop { display: grid; justify-items: center; gap: 10px; padding: 26px 18px; border: 2px dashed #c9cfbf; border-radius: 20px; text-align: center; color: var(--fw-forest); background: var(--fw-paper); transition: border-color 160ms, background-color 160ms; }
+  .fw-q-drop.over { border-color: var(--fw-moss); background: var(--fw-lime-2); }
+  .fw-q-pick { cursor: pointer; }
+  .fw-q-pick:has(input:focus-visible) { outline: 3px solid var(--fw-moss); outline-offset: 2px; }
+  .fw-q-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+  .fw-q-thumbs:empty { display: none; }
+  .fw-q-thumbs li { position: relative; display: grid; gap: 4px; }
+  .fw-q-thumbs img, .fw-q-thumbs .fw-q-nopic { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; background: var(--fw-sand); }
+  .fw-q-nopic { display: grid; place-items: center; padding: 8px; font-size: 0.75rem; text-align: center; color: var(--fw-soft); }
+  .fw-q-thumbs small { font-size: 0.75rem; color: var(--fw-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fw-q-thumbs button { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(19, 32, 26, 0.8); color: #fff; cursor: pointer; }
+  .fw-q-details { margin-top: 4px; }
+  .fw-q-err { color: #a3361b; font-weight: 600; font-size: 0.9375rem; }
+  .fw-q-err:empty { display: none; }
+  .fw-q-nav { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 6px; }
+  .fw-q-nav [data-next], .fw-q-nav [type="submit"] { margin-left: auto; }
+  @media (max-width: 479px) { .fw-q-nav .fw-btn { flex: 1 1 auto; } .fw-q-nav [type="submit"] { flex-basis: 100%; } }
+  .fw-q-form:not(.is-stepped) .fw-q-nav [data-next], .fw-q-form:not(.is-stepped) .fw-q-nav [data-back] { display: none; }
+
+  .fw-q-side { display: grid; gap: 14px; }
+  @media (min-width: 1024px) { .fw-q-side { position: sticky; top: 96px; } }
+  .fw-q-est { display: grid; gap: 14px; padding: 26px; border-radius: 26px; background: var(--fw-forest); color: #e6eee4; }
+  .fw-q-est-k { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fw-lime); }
+  .fw-q-range strong { display: block; font-family: "Bricolage Grotesque", sans-serif; font-size: clamp(2.25rem, 4vw, 2.75rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
+  .fw-q-range strong.bump { animation: fw-bump 360ms var(--fw-ease); }
+  @keyframes fw-bump { 40% { transform: scale(1.04); color: var(--fw-lime); } }
+  .fw-q-range span { color: #bcd0bb; }
+  .fw-q-extra-line { font-weight: 600; color: var(--fw-lime); }
+  .fw-q-extra-line:empty { display: none; }
+  .fw-q-sum { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+  .fw-q-sum div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.9375rem; }
+  .fw-q-sum dt { color: #9fb59e; }
+  .fw-q-sum dd { text-align: right; font-weight: 600; color: #fff; }
+  .fw-q-notes { display: grid; gap: 6px; font-size: 0.875rem; color: #d7e4bf; }
+  .fw-q-notes:empty { display: none; }
+  .fw-q-disclaim { padding: 10px 12px; border-radius: 12px; background: rgba(201, 226, 101, 0.14); color: #eef5d6; font-size: 0.875rem; font-weight: 600; }
+  .fw-q-why { padding-inline: 6px; }
+
+  .fw-q-sec :global(.dc) { --dc-accent: #173826; --dc-on-accent: #fff; --dc-panel: #f1f4e6; --dc-radius: 28px; margin-top: 8px; }
+  .fw-q-sec :global(.dc h2) { font-family: "Bricolage Grotesque", sans-serif; }
+</style>
+
+<script>
+  import { stepper, firstInvalid, flag } from "../../../../lib/demo/stepper";
+  import { estimate, allowed, extraIncluded, SERVICES, SIZES, FREQUENCIES, EXTRAS, type ServiceId, type Size, type Frequency, type ExtraId } from "../../../../lib/demo/fernway-quote";
+  import { checkPhoto, thumbnail, PHOTO_LIMIT } from "../../../../lib/demo/photos";
+  import { range } from "../../../../lib/demo/money";
+  import { showComplete, onRestart } from "../../../../lib/demo/complete";
+
+  const form = document.querySelector<HTMLFormElement>("[data-fw-quote]");
+  if (form) {
+    const $ = <T extends Element = HTMLElement>(s: string) => form.querySelector<T>(s)!;
+    const side = document.querySelector<HTMLElement>("[data-q-side]")!;
+    const done = document.querySelector<HTMLElement>("#q-done")!;
+    const sqftWrap = $("[data-q-sqft]"), sqft = $<HTMLInputElement>("input[name=sqft]");
+    const town = $<HTMLSelectElement>("select[name=town]");
+    const rangeEl = side.querySelector<HTMLElement>("[data-q-range]")!;
+    let photos: { file: File; url: string | null }[] = [];
+    let last = "";
+
+    const val = (name: string) => (form.querySelector<HTMLInputElement>(`input[name=${name}]:checked`)?.value ?? "");
+    const read = () => ({
+      service: (val("service") || "mowing") as ServiceId,
+      size: (val("size") || "medium") as Size,
+      customSqft: Number(sqft.value) || 0,
+      frequency: (val("frequency") || "weekly") as Frequency,
+      extras: [...form.querySelectorAll<HTMLInputElement>("input[name=extras]:checked")].map((x) => x.value as ExtraId),
+    });
+    const sizeText = (q: ReturnType<typeof read>) => (q.size === "custom" ? (q.customSqft ? `${q.customSqft.toLocaleString("en-US")} sq ft` : "Custom") : SIZES[q.size].label);
+
+    // frequencies and extras depend on the service: some are not offered, some are already part of it
+    const sync = () => {
+      const q = read();
+      let moved = "";
+      for (const label of form.querySelectorAll<HTMLElement>("[data-freq]")) {
+        const f = label.dataset.freq as Frequency, input = label.querySelector("input")!, hint = label.querySelector<HTMLElement>("[data-freq-hint]")!;
+        const ok = allowed(q.service, f);
+        input.disabled = !ok;
+        hint.textContent = ok ? FREQUENCIES[f].hint : `Not offered for ${SERVICES[q.service].short.toLowerCase()}`;
+        if (!ok && input.checked) { input.checked = false; moved = FREQUENCIES[f].label; }
+      }
+      if (!val("frequency")) {
+        const firstOk = form.querySelector<HTMLInputElement>(`[data-freq="${SERVICES[q.service].freqs[0]}"] input`)!;
+        firstOk.checked = true;
+      }
+      $("[data-q-freq-note]").textContent = moved ? `${moved} isn’t offered for ${SERVICES[q.service].short.toLowerCase()}, so ${FREQUENCIES[val("frequency") as Frequency].label.toLowerCase()} is picked instead.` : "";
+      for (const label of form.querySelectorAll<HTMLElement>("[data-extra]")) {
+        const e = label.dataset.extra as ExtraId, input = label.querySelector("input")!, note = label.querySelector<HTMLElement>("[data-extra-note]")!;
+        const inc = extraIncluded(q.service, e);
+        input.disabled = inc;
+        if (inc) input.checked = false;
+        note.textContent = inc ? `Already part of ${SERVICES[q.service].name.toLowerCase()}` : `Adds about ${range(EXTRAS[e].add[0], EXTRAS[e].add[1])}`;
+      }
+      const custom = q.size === "custom";
+      sqftWrap.hidden = !custom;
+      sqft.disabled = !custom;
+      $("[data-q-outside]").hidden = town.value !== "outside";
+    };
+
+    const update = () => {
+      sync();
+      const q = read();
+      const est = estimate(q);
+      const text = range(est.low, est.high);
+      rangeEl.textContent = text;
+      side.querySelector("[data-q-per]")!.textContent = est.per;
+      side.querySelector("[data-q-total]")!.textContent = est.season
+        ? `${range(est.season.low, est.season.high)} for the season (${est.season.visits} visit${est.season.visits > 1 ? "s" : ""})`
+        : est.monthly ? `About ${range(est.monthly.low, est.monthly.high)} a month` : "";
+      const sum = (k: string, v: string) => { side.querySelector(`[data-q-sum="${k}"]`)!.textContent = v; };
+      sum("service", SERVICES[q.service].name);
+      sum("size", sizeText(q));
+      sum("frequency", FREQUENCIES[q.frequency].label);
+      sum("extras", q.extras.length ? q.extras.map((e) => EXTRAS[e].name.split(" (")[0]).join(", ") : "None");
+      side.querySelector("[data-q-notes]")!.replaceChildren(...est.notes.map((n) => Object.assign(document.createElement("li"), { textContent: n })));
+      $("[data-q-mini-range]").textContent = text;
+      $("[data-q-mini-per]").textContent = est.per;
+      if (text !== last && last) { rangeEl.classList.remove("bump"); void rangeEl.offsetWidth; rangeEl.classList.add("bump"); }
+      last = text;
+      return { q, est };
+    };
+
+    // links from the services pages and the hero: ?service=mowing&size=medium
+    const params = new URLSearchParams(location.search);
+    const pre = (name: string, v: string | null) => { if (v) { const r = form.querySelector<HTMLInputElement>(`input[name=${name}][value="${CSS.escape(v)}"]`); if (r) r.checked = true; } };
+    pre("service", params.get("service"));
+    pre("size", params.get("size"));
+
+    const steps = stepper(form);
+    form.addEventListener("change", update);
+    form.addEventListener("input", (e) => { if ((e.target as HTMLElement).matches("input[name=sqft]")) update(); });
+    update();
+
+    // photos: checked and shrunk to a thumbnail in the browser, kept in memory only, gone on reload or restart
+    const thumbs = $("[data-q-thumbs]"), photoErr = $("[data-q-photo-err]"), picker = $<HTMLInputElement>("[data-q-photos]");
+    const drawThumbs = () => {
+      thumbs.replaceChildren(...photos.map((p, i) => {
+        const li = document.createElement("li");
+        if (p.url) {
+          const img = document.createElement("img");
+          img.src = p.url; img.alt = `Your photo ${i + 1}: ${p.file.name}`; img.width = 120; img.height = 120;
+          li.append(img);
+        } else {
+          li.append(Object.assign(document.createElement("span"), { className: "fw-q-nopic", textContent: "No preview in this browser; it would still be attached." }));
+        }
+        li.append(Object.assign(document.createElement("small"), { textContent: p.file.name }));
+        const rm = document.createElement("button");
+        rm.type = "button"; rm.setAttribute("aria-label", `Remove ${p.file.name}`);
+        rm.textContent = "✕";
+        rm.addEventListener("click", () => { photos.splice(i, 1); drawThumbs(); photoErr.textContent = `${p.file.name} removed.`; picker.focus(); });
+        li.append(rm);
+        return li;
+      }));
+    };
+    const addFiles = async (files: FileList | File[]) => {
+      const problems: string[] = [];
+      for (const f of [...files]) {
+        const why = checkPhoto(f, photos.length);
+        if (why) { problems.push(why); continue; }
+        photos.push({ file: f, url: await thumbnail(f) });
+      }
+      drawThumbs();
+      const added = photos.length ? `${photos.length} of ${PHOTO_LIMIT} photos added.` : "";
+      photoErr.textContent = [added, ...problems].filter(Boolean).join(" ");
+    };
+    picker.addEventListener("change", async () => { if (picker.files) await addFiles(picker.files); picker.value = ""; });
+    const drop = $("[data-q-drop]");
+    drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer?.files.length) addFiles(e.dataTransfer.files); });
+
+    $("[data-q-sample]").addEventListener("click", () => {
+      const nm = $<HTMLInputElement>("input[name=name]");
+      nm.value = "Sam"; nm.dispatchEvent(new Event("input"));
+      $<HTMLInputElement>("input[name=notes]").value = "Side gate, friendly dog";
+      if (!town.value) { town.value = "alder-bend"; update(); }
+      form.querySelector<HTMLButtonElement>("button[type=submit]")!.focus();
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const bad = firstInvalid(form);
+      if (bad) {
+        const at = [...form.querySelectorAll("[data-step]")].findIndex((s) => s.contains(bad));
+        steps.go(at);
+        flag(bad);
+        return;
+      }
+      const { q, est } = update();
+      const townName = town.options[town.selectedIndex]?.text ?? "";
+      const extra = est.season ? `, ${range(est.season.low, est.season.high)} for the season` : est.monthly ? `, about ${range(est.monthly.low, est.monthly.high)} a month` : "";
+      showComplete(done, [
+        ["Demonstration estimate", `${range(est.low, est.high)} ${est.per}${extra}`],
+        ["Service", SERVICES[q.service].name],
+        ["Yard", `${sizeText(q)} · ${townName}`],
+        ["How often", FREQUENCIES[q.frequency].label],
+        ["Extras", q.extras.length ? q.extras.map((x) => EXTRAS[x].name).join(", ") : "None"],
+        ["Photos", photos.length ? `${photos.length} previewed, none uploaded` : "None"],
+      ], [document.querySelector<HTMLElement>("[data-q-wrap]")!]);
+      // the details are not kept: the form is cleared as soon as the summary is shown
+      photos = []; drawThumbs(); photoErr.textContent = "";
+      $<HTMLInputElement>("input[name=name]").value = "";
+      $<HTMLInputElement>("input[name=notes]").value = "";
+    });
+
+    onRestart(done, () => {
+      form.reset();
+      document.querySelector<HTMLElement>("[data-q-wrap]")!.hidden = false;
+      last = "";
+      update();
+      steps.go(0);
+    });
+  }
+</script>

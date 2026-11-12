@@ -2,7 +2,7 @@
 // E-commerce (brief 4 §7): the published online shop, what it includes, how the store stays the client's (Shopify's
 // own collaborator and client-transfer flows, never a password), the extras for stores, the example store and the
 // questions. Prices come from data/services.ts and are the published ones. The example store is a made-up business
-// whose cart works but whose checkout is switched off.
+// whose cart and demo checkout work but never ask for a card or take an order.
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import DeviceShot from "../../components/DeviceShot.astro";
@@ -45,7 +45,7 @@ const questions: [string, string][] = [
   ["Do you need my password?", "No. On Shopify you send us a 4-digit collaborator request code, then approve our request and the exact parts of the store we can reach. On Square, you invite us with Square’s own team access. You can remove us at any time."],
   ["Can I add products myself later?", "Yes. The store runs in your own account, with Shopify’s or Square’s editor. The handover video shows how to add a product, change a price and handle an order."],
   ["Who handles sales tax?", "You and your accountant decide what to charge. We switch on the platform’s tax settings and enter what you’re advised; we don’t give tax advice."],
-  ["Is the example store a real shop?", `No. ${demo.name} is a made-up business we designed to show a store’s layout and features. You can fill its cart, but checkout is switched off, so nothing can be bought, and every page says it’s a demonstration.`],
+  ["Is the example store a real shop?", `No. ${demo.name} is a made-up business we designed to show a store’s layout and features. You can fill its cart and walk through a demo checkout, but it never asks for a card, so nothing can be bought, and every page says it’s a demonstration.`],
 ];
 
 const site = "https://nuxyautomation.com";
@@ -157,7 +157,7 @@ const service = {
         <h2 id="example-h">See an example store</h2>
         <p>{demo.name} is a made-up business. {demo.summary}</p>
         <ul class="ticks">{demo.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
-        <p class="note"><Icon name="info" />You can fill its cart, but checkout is switched off: nothing can be bought, and every page says it’s a demonstration. Your own store runs on Shopify or Square Online, so the details follow what that platform can do.</p>
+        <p class="note"><Icon name="info" />You can fill its cart and try a demo checkout, but it never asks for a card: nothing can be bought, and every page says it’s a demonstration. Your own store runs on Shopify or Square Online, so the details follow what that platform can do.</p>
         <a class="button secondary" href={`/examples/${demo.slug}/`} data-track="example_open">Open the example store<Icon name="arrowRight" /></a>
       </div>
     </div>

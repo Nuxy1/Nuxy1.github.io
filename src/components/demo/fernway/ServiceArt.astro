@@ -1,0 +1,62 @@
+---
+// Small illustrated badges for Fernway's six services, drawn in the site's palette (forest, leaf, lime, clay, cream).
+interface Props { art: string; size?: number }
+const { art, size = 64 } = Astro.props;
+---
+<svg class="fw-art" viewBox="0 0 64 64" width={size} height={size} aria-hidden="true">
+  <rect width="64" height="64" rx="20" fill="#e3f0a8" />
+  {art === "mow" && (
+    <g>
+      <path d="M6 50h52" stroke="#4f8a45" stroke-width="3" stroke-linecap="round" />
+      <path d="M10 50l3-6m6 6 2-7m24 7 2-6m6 6 3-7" stroke="#2f5d3a" stroke-width="2.2" stroke-linecap="round" />
+      <rect x="18" y="32" width="26" height="12" rx="4" fill="#173826" />
+      <path d="M40 32 50 16" stroke="#173826" stroke-width="3" stroke-linecap="round" />
+      <path d="M46 15h8" stroke="#173826" stroke-width="3" stroke-linecap="round" />
+      <circle cx="22" cy="46" r="5" fill="#a2522a" /><circle cx="40" cy="46" r="5" fill="#a2522a" />
+      <circle cx="22" cy="46" r="1.8" fill="#f5f1e6" /><circle cx="40" cy="46" r="1.8" fill="#f5f1e6" />
+    </g>
+  )}
+  {art === "leaf" && (
+    <g>
+      <path d="M14 46c0-18 12-30 32-32 0 20-12 32-32 32Z" fill="#c9792f" />
+      <path d="M14 46 40 20M24 36h8m-2-8h7" stroke="#7a3a17" stroke-width="2" stroke-linecap="round" />
+      <path d="M30 52c2-10 9-16 20-17-1 11-8 17-20 17Z" fill="#a2522a" />
+      <path d="M8 54h48" stroke="#2f5d3a" stroke-width="3" stroke-linecap="round" />
+    </g>
+  )}
+  {art === "bed" && (
+    <g>
+      <path d="M6 44c10-6 42-6 52 0v8H6Z" fill="#7a4a2c" />
+      <path d="M10 46c6-2 12-3 18-3" stroke="#9a6440" stroke-width="2" stroke-linecap="round" />
+      <path d="M20 42V30m12 12V24m12 18V30" stroke="#2f5d3a" stroke-width="2.4" stroke-linecap="round" />
+      <circle cx="20" cy="27" r="5" fill="#e0a43c" /><circle cx="32" cy="21" r="6" fill="#a2522a" /><circle cx="44" cy="27" r="5" fill="#f2c94c" />
+      <circle cx="32" cy="21" r="2" fill="#f5f1e6" />
+    </g>
+  )}
+  {art === "hedge" && (
+    <g>
+      <rect x="8" y="26" width="48" height="24" rx="10" fill="#2f5d3a" />
+      <path d="M14 34c4-3 8-3 12 0m6 0c4-3 8-3 12 0M18 42c4-3 8-3 12 0m6 0c4-3 8-3 12 0" stroke="#4f8a45" stroke-width="2.2" stroke-linecap="round" fill="none" />
+      <path d="M36 10l10 12M46 10 36 22" stroke="#173826" stroke-width="3" stroke-linecap="round" />
+      <circle cx="35" cy="9" r="3" fill="none" stroke="#a2522a" stroke-width="2.4" /><circle cx="47" cy="9" r="3" fill="none" stroke="#a2522a" stroke-width="2.4" />
+      <path d="M6 54h52" stroke="#4f8a45" stroke-width="3" stroke-linecap="round" />
+    </g>
+  )}
+  {art === "plant" && (
+    <g>
+      <path d="M20 38h24l-3 16H23Z" fill="#a2522a" />
+      <rect x="18" y="35" width="28" height="5" rx="2" fill="#7a3a17" />
+      <path d="M32 35V18" stroke="#2f5d3a" stroke-width="2.6" stroke-linecap="round" />
+      <path d="M32 26c-8 0-12-4-12-12 8 0 12 4 12 12Z" fill="#4f8a45" />
+      <path d="M32 22c0-8 4-12 12-12 0 8-4 12-12 12Z" fill="#2f5d3a" />
+      <path d="M50 20c2 2 2 5 0 7m-4-12c4 3 5 9 2 14" stroke="#6d8fb3" stroke-width="2" stroke-linecap="round" fill="none" />
+    </g>
+  )}
+  {art === "snow" && (
+    <g>
+      <rect x="0" y="0" width="64" height="64" rx="20" fill="#dce7ef" />
+      <path d="M32 12v40M14.7 22l34.6 20M14.7 42l34.6-20" stroke="#3d5f80" stroke-width="2.6" stroke-linecap="round" />
+      <path d="M27 15l5 4 5-4M27 49l5-4 5 4M15 28l6-1-2-6M49 36l-6 1 2 6M15 36l6 1-2 6M49 28l-6-1 2-6" stroke="#3d5f80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    </g>
+  )}
+</svg>

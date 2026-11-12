@@ -1,0 +1,104 @@
+---
+// Fernway's about page: the (fictional) story, how the crew works and what it promises. No photos of people: a
+// made-up business should not borrow real faces, so the page leans on type, numbers and drawn art instead.
+import Shell from "../../../../components/demo/fernway/Shell.astro";
+import ServiceArt from "../../../../components/demo/fernway/ServiceArt.astro";
+import { base } from "../../../../data/demos/fernway";
+
+const facts = [
+  ["2014", "First mower, one pickup"],
+  ["6", "Towns, set crew days"],
+  ["2", "People per crew, the same ones"],
+  ["1 day", "Usual time to a firm price"],
+];
+const values = [
+  { art: "mow", title: "Same crew, same day", text: "You get two names, not a rotating cast. They learn the gate, the dog and the sprinkler heads." },
+  { art: "leaf", title: "Nothing silent", text: "A text the night before, a text if rain moves the day, a photo when the job is done." },
+  { art: "bed", title: "Prices in writing", text: "A range on the site, a firm price by text before we start, and no surprise line items after." },
+  { art: "plant", title: "Plants that last", text: "We pick for your sun, your soil and the deer, and replace anything that fails in its first season." },
+];
+---
+<Shell title="About" current="about" description="The story of Fernway Lawn & Landscape, a fictional two-person-crew lawn company, and how it works. An interactive demonstration website by Nuxy Automation.">
+  <section class="fw-section fw-a-hero" aria-labelledby="a-h">
+    <div class="fw-wrap fw-a-hero-in">
+      <div class="fw-head">
+        <p class="fw-kicker">About Fernway</p>
+        <h1 id="a-h">One pickup, one mower, and a rule: always text first.</h1>
+        <p class="fw-lead">Fernway started with a single street of neighbours who were tired of crews that turned up unannounced, or not at all. Ten seasons later the rule hasn’t changed.</p>
+        <p class="fw-demo-note">Fernway is a fictional business, written for this demonstration.</p>
+      </div>
+      <dl class="fw-a-facts">
+        {facts.map(([n, t], i) => <div class="fw-rise" style={`--d:${i * 70}ms`}><dt>{t}</dt><dd>{n}</dd></div>)}
+      </dl>
+    </div>
+  </section>
+
+  <section class="fw-section" aria-labelledby="v-h">
+    <div class="fw-wrap">
+      <div class="fw-head">
+        <p class="fw-kicker">How we work</p>
+        <h2 id="v-h">Four promises we can keep.</h2>
+      </div>
+      <ul class="fw-a-values" role="list">
+        {values.map((v, i) => (
+          <li class="fw-card fw-rise" style={`--d:${i * 70}ms`}>
+            <ServiceArt art={v.art} size={60} />
+            <h3>{v.title}</h3>
+            <p>{v.text}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="fw-section fw-a-day" aria-labelledby="d-h">
+    <div class="fw-wrap fw-a-day-in">
+      <div class="fw-head">
+        <p class="fw-kicker">A Thursday in Alder Bend</p>
+        <h2 id="d-h">What a visit looks like from your side.</h2>
+      </div>
+      <ol class="fw-a-time" role="list">
+        <li><time>Wed 6:30 pm</time><p>Text: “Fernway tomorrow between 9 and 11. Gate unlatched, please.”</p></li>
+        <li><time>Thu 9:40 am</time><p>Crew arrives, mows, trims the fence line and edges the drive.</p></li>
+        <li><time>Thu 10:25 am</time><p>Clippings blown off, gate latched, a photo of the finished lawn sent.</p></li>
+        <li><time>Thu 10:26 am</time><p>Card on file charged, receipt by email. Nothing for you to do.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="fw-section fw-end">
+    <div class="fw-wrap">
+      <div class="fw-band">
+        <h2>Want a Thursday like that?</h2>
+        <p>Start with a demonstration estimate. It takes about a minute.</p>
+        <a class="fw-btn fw-btn-lime" href={`${base}/quote/`}>Get my estimate</a>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .fw-a-hero { background: var(--fw-cream); }
+  .fw-a-hero-in { display: grid; gap: 40px; align-items: end; }
+  @media (min-width: 1024px) { .fw-a-hero-in { grid-template-columns: 1.3fr 1fr; } }
+  .fw-a-hero h1 { font-size: clamp(2.25rem, 5vw, 3.75rem); }
+  .fw-a-hero .fw-head { margin-bottom: 0; }
+  .fw-a-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fw-a-facts div { display: flex; flex-direction: column-reverse; gap: 4px; padding: 22px; border-radius: 22px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line); }
+  .fw-a-facts dd { font-family: "Bricolage Grotesque", sans-serif; font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--fw-forest); }
+  .fw-a-facts dt { color: var(--fw-soft); font-size: 0.9375rem; }
+  .fw-a-values { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+  .fw-a-values li { padding: 28px; gap: 12px; }
+  .fw-a-values p { color: var(--fw-soft); }
+  .fw-a-day { background: var(--fw-forest); color: #e6eee4; }
+  .fw-a-day .fw-kicker { color: var(--fw-lime); }
+  .fw-a-day h2 { color: #fff; }
+  .fw-a-day-in { display: grid; gap: 32px; }
+  @media (min-width: 960px) { .fw-a-day-in { grid-template-columns: 0.9fr 1.1fr; } }
+  .fw-a-time { display: grid; gap: 0; border-left: 2px solid rgba(201, 226, 101, 0.4); margin-left: 8px; }
+  .fw-a-time li { position: relative; display: grid; gap: 4px; padding: 0 0 26px 26px; }
+  .fw-a-time li::before { content: ""; position: absolute; left: -8px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--fw-lime); box-shadow: 0 0 0 4px var(--fw-forest); }
+  .fw-a-time time { font-weight: 700; color: var(--fw-lime); font-size: 0.9375rem; }
+  .fw-a-time p { color: #dbe6d9; }
+  .fw-end { padding-top: clamp(56px, 8vw, 104px); }
+</style>

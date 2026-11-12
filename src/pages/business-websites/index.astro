@@ -1,0 +1,19 @@
+---
+// The Business level (data/tiers.ts): the live website service at its published prices, explained as a level.
+import LevelPage from "../../components/levels/LevelPage.astro";
+import DemoSites from "../../components/DemoSites.astro";
+import { levelById } from "../../data/tiers";
+const l = levelById.business;
+---
+<LevelPage
+  id="business"
+  title="Business Websites for Local Businesses · Nuxy Automation"
+  description={`Business websites built to convert: phone-first, fast, with a Book, Quote or Call button on every screen. ${l.price}, about 1–2 weeks.`}
+  h1="A website built to bring in calls, bookings and quotes."
+  lead="Clear words, real photos and one obvious next step on every screen. It loads fast on any phone, it’s easy to edit yourself, and it does the one job that matters: turning visitors into customers."
+  addOnIds={["video", "illustration", "automation"]}
+  proofHeading="Two Business demonstration sites"
+  proofText="Made-up local businesses, built at the Business level. Open either one on a computer or a phone, forms included."
+>
+  <DemoSites only={["fernway-lawn", "mossgate-cleaning"]} />
+</LevelPage>

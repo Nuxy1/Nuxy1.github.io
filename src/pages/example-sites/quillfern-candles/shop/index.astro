@@ -1,0 +1,209 @@
+---
+// Quillfern shop: all six candles with a family filter and a scent finder (choose the notes you like and the candles
+// re-order by how well they match), quick add of the 8 oz jar, and stock read from this browser's demo stock.
+// Without JavaScript it is a plain list of six links.
+import Shell from "../../../../components/demo/quillfern/Shell.astro";
+import { base } from "../../../../data/demos/quillfern";
+import { CANDLES, FAMILIES, SIZES, AXES } from "../../../../lib/demo/quillfern-cart";
+import { cardArt } from "../../../../lib/demo/quillfern-art";
+---
+<Shell title="Shop all candles · Quillfern Candle Co. (demo)" current="shop" description="All six Quillfern candles, a fictional candle maker's demonstration store by Nuxy Automation: filter by mood, find a scent by the notes you like, and add to a demo cart.">
+  <section class="qf-shop-head">
+    <div class="qf-wrap">
+      <p class="qf-label">Shop</p>
+      <h1>All six candles</h1>
+      <p class="qf-lead">Every scent comes as a 4 oz travel tin (${SIZES.tin.price}), an 8 oz classic jar (${SIZES["8oz"].price}) or a 12 oz large jar (${SIZES["12oz"].price}).</p>
+    </div>
+  </section>
+
+  <section class="qf-finder" id="scents" aria-labelledby="finder-h">
+    <div class="qf-wrap qf-finder-in">
+      <div class="qf-finder-q">
+        <h2 id="finder-h">Find your scent</h2>
+        <p class="qf-fine">Choose what you like and the candles line up from the closest match.</p>
+      </div>
+      <fieldset class="qf-chips" data-qf-likes>
+        <legend class="sr-only">Notes you like</legend>
+        {AXES.map((a) => (
+          <label class="qf-chip"><input type="checkbox" value={a.id} /><span>{a.name}</span></label>
+        ))}
+      </fieldset>
+      <fieldset class="qf-chips qf-fams" data-qf-family>
+        <legend class="sr-only">Mood</legend>
+        <label class="qf-chip"><input type="radio" name="family" value="" checked /><span>All six</span></label>
+        {Object.entries(FAMILIES).map(([id, f]) => (
+          <label class="qf-chip"><input type="radio" name="family" value={id} /><span>{f.name}</span></label>
+        ))}
+      </fieldset>
+      <p class="qf-finder-status qf-ui" data-qf-status aria-live="polite">Showing all six candles.</p>
+    </div>
+  </section>
+
+  <section class="qf-shop-grid" aria-label="Candles">
+    <div class="qf-wrap">
+      <ul class="qf-shop-list" role="list" data-qf-list>
+        {CANDLES.map((c) => (
+          <li class="qf-shop-item" data-id={c.id} data-family={c.family} data-profile={JSON.stringify(c.profile)}>
+            <article class="qf-sc-card" style={`--glass: ${c.glass}`} aria-labelledby={`n-${c.id}`}>
+              <a class="qf-sc-card-link" href={`${base}/candles/${c.id}/`}>
+                <span class="qf-sc-card-art qf-arch" set:html={cardArt(c, "8oz", true)} />
+                <span class="qf-match qf-ui" data-qf-match hidden></span>
+                <span class="qf-label">{FAMILIES[c.family].name}</span>
+                <span class="qf-sc-card-name" id={`n-${c.id}`}>{c.name}</span>
+                <span class="qf-sc-card-tag">{c.tagline}</span>
+              </a>
+              <div class="qf-sc-card-buy">
+                <span class="qf-num"><b>${SIZES["8oz"].price}</b> <span class="qf-fine">8 oz jar</span></span>
+                <span class="qf-stock" data-qf-stock hidden></span>
+                <button class="qf-btn qf-btn-sm" type="button" data-qf-add={c.id} aria-describedby={`n-${c.id}`}>Add 8 oz</button>
+              </div>
+            </article>
+          </li>
+        ))}
+      </ul>
+      <p class="sr-only" aria-live="polite" data-qf-added></p>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .qf-shop-head { padding: clamp(40px, 6vw, 80px) 0 28px; }
+  .qf-shop-head .qf-wrap { display: grid; gap: 14px; }
+  .qf-finder { position: sticky; top: 73px; z-index: 5; background: var(--qf-paper); border-block: 1px solid var(--qf-line); scroll-margin-top: 73px; }
+  .qf-finder-in { display: grid; grid-template-columns: auto auto 1fr; grid-template-areas: "q likes likes" "q fams status"; gap: 8px 28px; align-items: center; padding-block: 16px; }
+  .qf-finder-q { grid-area: q; max-width: 22rem; }
+  .qf-finder-q h2 { font-size: 1.5rem; }
+  [data-qf-likes] { grid-area: likes; }
+  .qf-fams { grid-area: fams; }
+  .qf-finder-status { grid-area: status; justify-self: end; font-size: 0.875rem; color: var(--qf-mute); }
+  @media (max-width: 1099px) {
+    .qf-finder { position: static; }
+    .qf-finder-in { grid-template-columns: 1fr; grid-template-areas: "q" "likes" "fams" "status"; padding-block: 22px; }
+    .qf-finder-q { max-width: none; }
+    .qf-finder-status { justify-self: start; }
+  }
+  .qf-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+  .qf-chip { position: relative; cursor: pointer; }
+  .qf-chip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .qf-chip span { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 22px; box-shadow: inset 0 0 0 1.5px var(--qf-line-2); background: var(--qf-cream); font-family: var(--qf-ui); font-size: 0.9375rem; font-weight: 600; transition: background-color 160ms ease-out, box-shadow 160ms ease-out, color 160ms ease-out; }
+  .qf-chip:hover span { box-shadow: inset 0 0 0 1.5px var(--qf-umber); }
+  .qf-chip input:checked + span { background: var(--qf-umber); color: var(--qf-wax); box-shadow: none; }
+  [data-qf-likes] .qf-chip input:checked + span::before { content: "✓"; font-size: 0.8125rem; }
+  .qf-chip input:focus-visible + span { outline: 3px solid #2563eb; outline-offset: 2px; }
+  .qf-fams .qf-chip span { border-radius: 4px; }
+
+  .qf-shop-grid { padding: 36px 0 clamp(64px, 9vw, 120px); }
+  .qf-shop-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 2vw, 28px); margin: 0; padding: 0; list-style: none; }
+  @media (max-width: 1023px) { .qf-shop-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 559px) { .qf-shop-list { grid-template-columns: 1fr; } }
+  .qf-shop-item[hidden] { display: none; }
+  .qf-shop-item.is-in { animation: qf-in 320ms var(--qf-ease) both; }
+  @keyframes qf-in { from { opacity: 0; transform: translateY(8px); } }
+  :root[data-tier="3"] .qf-shop-item.is-in { animation: none; }
+  .qf-sc-card { display: grid; grid-template-rows: 1fr auto; height: 100%; border-radius: 6px; background: var(--qf-cream); box-shadow: 0 0 0 1px var(--qf-line); transition: box-shadow 240ms var(--qf-ease); }
+  .qf-sc-card:hover { box-shadow: 0 0 0 1px var(--qf-line-2), 0 18px 36px rgba(45, 34, 28, 0.1); }
+  .qf-sc-card-link { position: relative; display: grid; gap: 6px; align-content: start; padding: 14px 22px 8px; color: inherit; text-decoration: none; border-radius: 6px 6px 0 0; }
+  .qf-sc-card-art { display: block; margin: 0 -8px 12px; aspect-ratio: 5 / 4; background: radial-gradient(120% 90% at 50% 100%, color-mix(in srgb, var(--glass) 26%, var(--qf-wax)), var(--qf-wax)); }
+  .qf-sc-card-art :global(svg) { display: block; width: 100%; height: 100%; }
+  .qf-sc-card :global(.qf-flame) { opacity: 0; transform: scaleY(0.4); transform-box: fill-box; transform-origin: 50% 100%; transition: opacity 260ms ease-out, transform 320ms var(--qf-ease); }
+  .qf-sc-card-link:is(:hover, :focus-visible) :global(.qf-flame) { opacity: 1; transform: none; }
+  .qf-sc-card .qf-label { font-size: 0.6875rem; }
+  .qf-sc-card-name { font-size: 1.625rem; font-weight: 540; letter-spacing: -0.02em; line-height: 1.1; color: var(--qf-umber); font-variation-settings: "SOFT" 100, "WONK" 1; }
+  .qf-sc-card-link:hover .qf-sc-card-name { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+  .qf-sc-card-tag { color: var(--qf-soft); }
+  .qf-match { position: absolute; top: 24px; left: 30px; padding: 4px 10px; border-radius: 3px; background: var(--qf-cream); box-shadow: 0 0 0 1px var(--qf-line-2); font-size: 0.8125rem; font-weight: 700; color: var(--qf-umber); }
+  .qf-match.best { background: var(--qf-amber); box-shadow: none; color: var(--qf-night); }
+  .qf-match[hidden] { display: none; }
+  .qf-sc-card-buy { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 12px 22px 20px; }
+  .qf-sc-card-buy b { font-size: 1.125rem; }
+  .qf-sc-card-buy .qf-btn { margin-left: auto; }
+  .qf-stock[hidden] { display: none; }
+</style>
+
+<script>
+  import { cart, saveCart, stock, onCart } from "../../../../lib/demo/quillfern-store";
+  import { addLine, left, stockNote, candleById, AXES, type Axis } from "../../../../lib/demo/quillfern-cart";
+  import { tier } from "../../../../lib/demo/tier";
+
+  const list = document.querySelector<HTMLElement>("[data-qf-list]")!;
+  const items = [...list.querySelectorAll<HTMLElement>(".qf-shop-item")];
+  const status = document.querySelector<HTMLElement>("[data-qf-status]")!;
+  const likes = document.querySelector<HTMLFieldSetElement>("[data-qf-likes]")!;
+  const fam = document.querySelector<HTMLFieldSetElement>("[data-qf-family]")!;
+  const said = document.querySelector<HTMLElement>("[data-qf-added]")!;
+  const name = (a: string) => AXES.find((x) => x.id === a)?.name.toLowerCase() ?? a;
+
+  function apply() {
+    const chosen = [...likes.querySelectorAll<HTMLInputElement>("input:checked")].map((i) => i.value as Axis);
+    const family = fam.querySelector<HTMLInputElement>("input:checked")?.value ?? "";
+    const scored = items.map((li, i) => {
+      let p: Record<Axis, number>;
+      try { p = JSON.parse(li.dataset.profile ?? "{}"); } catch { p = {} as Record<Axis, number>; }
+      // a match is how strong the chosen notes are, out of the most they could be
+      const score = chosen.length ? chosen.reduce((s, a) => s + (p[a] ?? 0), 0) / (chosen.length * 5) : 0;
+      return { li, i, score, show: !family || li.dataset.family === family };
+    });
+    const order = chosen.length ? [...scored].sort((a, b) => b.score - a.score || a.i - b.i) : scored;
+    const shown = order.filter((s) => s.show);
+    order.forEach((s, rank) => {
+      const was = s.li.hidden;
+      s.li.hidden = !s.show;
+      s.li.style.setProperty("order", String(rank));
+      const badge = s.li.querySelector<HTMLElement>("[data-qf-match]")!;
+      badge.hidden = !chosen.length || !s.show;
+      badge.textContent = s === shown[0] && s.score > 0 ? "Best match" : `${Math.round(s.score * 100)}% match`;
+      badge.classList.toggle("best", s === shown[0] && s.score > 0);
+      if ((was && s.show) || chosen.length) { s.li.classList.remove("is-in"); if (tier() !== 3) { void s.li.offsetWidth; s.li.classList.add("is-in"); } }
+    });
+    // the choice lives in the address (?likes=smoky,sweet&mood=warm), so a link or Back brings the same line-up back
+    const q = new URLSearchParams();
+    if (chosen.length) q.set("likes", chosen.join(","));
+    if (family) q.set("mood", family);
+    const qs = q.toString(), url = location.pathname + (qs ? `?${qs}` : "") + location.hash;
+    if (url !== location.pathname + location.search + location.hash) history.replaceState(history.state, "", url);
+    const what = family ? `${shown.length} ${family === "warm" ? "warm and woody" : "fresh and light"} candles` : "all six candles";
+    status.textContent = chosen.length
+      ? `Showing ${what}, closest to ${chosen.map(name).join(", ")} first${shown[0] ? `: ${candleById(shown[0].li.dataset.id!)?.name} is the best match.` : "."}`
+      : `Showing ${what}.`;
+  }
+  likes.addEventListener("change", apply);
+  fam.addEventListener("change", apply);
+  // read the choice back from the address; only values the page itself offers are accepted
+  const asked = new URLSearchParams(location.search);
+  const want = new Set((asked.get("likes") ?? "").split(","));
+  for (const i of likes.querySelectorAll<HTMLInputElement>("input")) if (want.has(i.value)) i.checked = true;
+  const mood = asked.get("mood");
+  const moodInput = [...fam.querySelectorAll<HTMLInputElement>("input")].find((i) => i.value && i.value === mood);
+  if (moodInput) moodInput.checked = true;
+  if (likes.querySelector("input:checked") || fam.querySelector<HTMLInputElement>("input:checked")?.value) apply();
+
+  // stock and quick add (the 8 oz jar); the button says "Added" for a moment after a click
+  let flash = "", flashTimer = 0;
+  const paint = (c: ReturnType<typeof cart>, s: ReturnType<typeof stock>) => {
+    for (const li of items) {
+      const id = li.dataset.id!;
+      const n = left(s, id, "8oz") - (c.lines.find((l) => l.id === id && l.size === "8oz")?.qty ?? 0);
+      const note = li.querySelector<HTMLElement>("[data-qf-stock]")!;
+      const btn = li.querySelector<HTMLButtonElement>("[data-qf-add]")!;
+      const text = left(s, id, "8oz") <= 0 ? "Sold out" : stockNote(left(s, id, "8oz"));
+      note.hidden = !text;
+      note.textContent = text;
+      note.className = `qf-stock${left(s, id, "8oz") <= 0 ? " out" : text ? " low" : ""}`;
+      btn.disabled = n <= 0;
+      btn.textContent = flash === id ? "Added ✓" : left(s, id, "8oz") <= 0 ? "Sold out" : n <= 0 ? "All in cart" : "Add 8 oz";
+    }
+  };
+  onCart(paint);
+  list.addEventListener("click", (e) => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>("[data-qf-add]");
+    if (!btn) return;
+    const id = btn.dataset.qfAdd!;
+    const { cart: next, added } = addLine(cart(), id, "8oz", 1, stock());
+    if (!added) return;
+    flash = id;
+    clearTimeout(flashTimer);
+    flashTimer = window.setTimeout(() => { flash = ""; paint(cart(), stock()); }, 1400);
+    saveCart(next);
+    said.textContent = `Added one ${candleById(id)?.name} 8 oz jar to the demo cart.`;
+  });
+</script>

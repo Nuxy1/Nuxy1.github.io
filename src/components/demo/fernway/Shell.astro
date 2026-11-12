@@ -1,0 +1,210 @@
+---
+// Fernway's frame on every page: header with its own navigation (a folding menu on phones that works without
+// JavaScript), the phone action bar (call / text / quote), and the footer with hours and the fictional-business line.
+// The design system lives here as global styles under body.fw: Bricolage Grotesque headings, Inter text, pill
+// buttons, a forest / lime / cream palette and sections that run edge to edge.
+import DemoSite from "../../../layouts/DemoSite.astro";
+import { base, nav, phone, callNote, textNote, hours, email } from "../../../data/demos/fernway";
+
+interface Props { title?: string; description: string; current?: string }
+const { title, description, current } = Astro.props;
+const here = (href: string) => (current && href.endsWith(`/${current}/`) ? "page" : undefined);
+---
+<DemoSite slug="fernway-lawn" theme="#173826" title={title} description={description} bodyClass="fw"
+  fonts={["/fonts/bricolage-var.woff2", "/fonts/inter-var-latin.woff2"]}>
+  <header class="fw-top">
+    <div class="fw-wrap fw-top-in">
+      <a class="fw-logo" href={`${base}/`} aria-label="Fernway Lawn & Landscape, home">
+        <svg viewBox="0 0 44 44" width="40" height="40" aria-hidden="true">
+          <rect width="44" height="44" rx="14" fill="#173826" />
+          <path d="M22 34V18" stroke="#c9e265" stroke-width="2.6" stroke-linecap="round" />
+          <path d="M22 24c-6.5 0-10-3.5-10-10 6.5 0 10 3.5 10 10Z" fill="#c9e265" />
+          <path d="M22 20.5c0-6.5 3.5-10 10-10 0 6.5-3.5 10-10 10Z" fill="#8fbf5a" />
+        </svg>
+        <span class="fw-wordmark">Fernway<small> Lawn &amp; Landscape</small></span>
+      </a>
+      <nav class="fw-nav" aria-label="Main">
+        {nav.map((n) => <a href={n.href} aria-current={here(n.href)}>{n.label}</a>)}
+      </nav>
+      <a class="fw-phone" href="#call" data-demo-action={callNote}>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+        {phone}
+      </a>
+      <a class="fw-btn fw-btn-sm" href={`${base}/quote/`} aria-current={here(`${base}/quote/`)}>Get a quote</a>
+      <details class="fw-menu" data-menu>
+        <summary aria-label="Menu"><span></span><span></span><span></span></summary>
+        <div class="fw-menu-panel">
+          <a href={`${base}/`}>Home</a>
+          {nav.map((n) => <a href={n.href} aria-current={here(n.href)}>{n.label}</a>)}
+          <a href={`${base}/quote/`}>Get a quote</a>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <main id="main"><slot /></main>
+
+  <footer class="fw-foot">
+    <div class="fw-wrap fw-foot-in">
+      <div class="fw-foot-brand">
+        <p class="fw-foot-name">Fernway Lawn &amp; Landscape</p>
+        <p>Mowing, cleanups, beds and snow, for homes within 25 miles of our yard.</p>
+        <p class="fw-foot-demo">Fernway is a fictional business. This is an interactive demonstration website built by{" "}
+          <a href="/" target="_top">Nuxy Automation</a>: nothing here can be booked or bought, and nothing you type is sent.</p>
+      </div>
+      <div>
+        <p class="fw-foot-h">Hours</p>
+        <dl class="fw-hours">{hours.map(([d, h]) => <div><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
+      </div>
+      <div>
+        <p class="fw-foot-h">Reach us</p>
+        <ul role="list" class="fw-foot-links">
+          <li><a href="#call" data-demo-action={callNote}>{phone}</a></li>
+          <li><a href="#email" data-demo-action={`Demo: on a real site this writes to ${email}.`}>{email}</a></li>
+          {nav.map((n) => <li><a href={n.href}>{n.label}</a></li>)}
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <nav class="fw-bar" aria-label="Quick actions">
+    <a href="#call" data-demo-action={callNote}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>Call</a>
+    <a href="#text" data-demo-action={textNote}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>Text</a>
+    <a class="fw-bar-main" href={`${base}/quote/`}>Free quote</a>
+  </nav>
+</DemoSite>
+
+<style is:global>
+  @font-face { font-family: "Bricolage Grotesque"; src: url("/fonts/bricolage-var.woff2") format("woff2"); font-weight: 200 800; font-stretch: 75% 100%; font-display: swap; }
+  body.fw {
+    --fw-forest: #173826; --fw-moss: #2f5d3a; --fw-leaf: #4f8a45; --fw-lime: #c9e265; --fw-lime-2: #e3f0a8;
+    --fw-cream: #f5f1e6; --fw-paper: #fbf9f3; --fw-sand: #ebe4d2; --fw-clay: #a2522a; --fw-ink: #13201a; --fw-soft: #4a5a50;
+    --fw-line: rgba(23, 56, 38, 0.14); --fw-radius: 22px; --fw-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    background: var(--fw-paper); color: var(--fw-ink); font-size: 1rem;
+  }
+  :where(.fw) :is(h1, h2, h3, .fw-display) { font-family: "Bricolage Grotesque", "Inter", system-ui, sans-serif; font-weight: 750; letter-spacing: -0.025em; line-height: 1.04; text-wrap: balance; }
+  /* form fields, shared by the contact form and the estimator */
+  :where(.fw) .fw-fields { display: grid; gap: 14px; }
+  @media (min-width: 640px) { :where(.fw) .fw-fields { grid-template-columns: 1fr 1fr; } :where(.fw) .fw-field-wide { grid-column: 1 / -1; } }
+  :where(.fw) .fw-field { display: grid; gap: 6px; font-weight: 600; font-size: 0.9375rem; }
+  :where(.fw) .fw-field input, :where(.fw) .fw-field select, :where(.fw) .fw-field textarea { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid #cfd6cc; border-radius: 14px; background: var(--fw-paper); color: var(--fw-ink); font: inherit; font-weight: 450; transition: border-color 160ms ease-out, box-shadow 160ms ease-out; }
+  :where(.fw) .fw-field textarea { resize: vertical; min-height: 96px; }
+  :where(.fw) .fw-field input:focus, :where(.fw) .fw-field select:focus, :where(.fw) .fw-field textarea:focus { outline: none; border-color: var(--fw-moss); box-shadow: 0 0 0 4px rgba(79, 138, 69, 0.2); }
+  :where(.fw) .fw-field input:user-invalid, :where(.fw) .fw-field select:user-invalid, :where(.fw) .fw-field textarea:user-invalid { border-color: #b3401f; }
+  :where(.fw) .fw-field :is(input, select, textarea)[aria-invalid="true"] { border-color: #b3401f; box-shadow: 0 0 0 3px rgba(179, 64, 31, 0.16); }
+  :where(.fw) .fw-field :is(input, select, textarea)[aria-invalid="true"]:focus { box-shadow: 0 0 0 4px rgba(179, 64, 31, 0.3); }
+  :where(.fw) .fw-field small { font-weight: 450; }
+  :where(.fw) h1 { font-size: clamp(2.5rem, 6.4vw, 5.25rem); }
+  :where(.fw) h2 { font-size: clamp(2rem, 4.2vw, 3.25rem); }
+  :where(.fw) h3 { font-size: 1.375rem; letter-spacing: -0.015em; line-height: 1.15; }
+  :where(.fw) p { text-wrap: pretty; }
+  :where(.fw) a { color: inherit; }
+  :where(.fw) :focus-visible { outline-color: #2d6cdf; }
+  .fw-wrap { width: min(1240px, 100% - 40px); margin-inline: auto; }
+  .fw-section { padding-block: clamp(64px, 9vw, 120px); }
+  .fw-kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fw-moss); }
+  .fw-kicker::before { content: ""; width: 18px; height: 2px; border-radius: 2px; background: currentColor; }
+  .fw-lead { font-size: clamp(1.0625rem, 1.6vw, 1.25rem); color: var(--fw-soft); max-width: 60ch; }
+  .fw-head { display: grid; gap: 14px; margin-bottom: clamp(32px, 5vw, 56px); max-width: 760px; }
+  .fw-demo-note { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--fw-lime-2); color: var(--fw-forest); font-size: 0.8125rem; font-weight: 650; }
+
+  /* buttons: pills, lime on forest or forest on lime, with a small lift */
+  .fw-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 26px; border: 0; border-radius: 999px; background: var(--fw-forest); color: #fff; font-weight: 650; font-size: 1rem; text-decoration: none; white-space: nowrap; transition: transform 200ms var(--fw-ease), background-color 200ms var(--fw-ease), box-shadow 200ms var(--fw-ease); }
+  .fw-btn:hover { background: #0f2a1b; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(23, 56, 38, 0.22); }
+  .fw-btn:active { transform: translateY(0) scale(0.98); }
+  .fw-btn svg { transition: transform 200ms var(--fw-ease); }
+  .fw-btn:hover svg { transform: translateX(3px); }
+  .fw-btn-lime { background: var(--fw-lime); color: var(--fw-forest); }
+  .fw-btn-lime:hover { background: #d6ec7b; }
+  .fw-btn-ghost { background: transparent; color: var(--fw-forest); box-shadow: 0 0 0 1.5px var(--fw-forest) inset; }
+  .fw-btn-ghost:hover { background: rgba(23, 56, 38, 0.06); box-shadow: 0 0 0 1.5px var(--fw-forest) inset; }
+  .fw-btn-sm { min-height: 44px; padding: 0 20px; font-size: 0.9375rem; }
+  .fw-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 650; color: var(--fw-forest); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 calc(100% - 8px) / 0 2px no-repeat; transition: background-size 240ms var(--fw-ease); }
+  .fw-link:hover { background-size: 100% 2px; }
+
+  /* header */
+  .fw-top { position: sticky; top: 0; z-index: 30; background: var(--fw-paper); border-bottom: 1px solid var(--fw-line); view-transition-name: fw-top; }
+  .fw-top-in { display: flex; align-items: center; gap: 24px; min-height: 72px; }
+  .fw-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+  .fw-wordmark { display: grid; font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.375rem; line-height: 1; letter-spacing: -0.03em; color: var(--fw-forest); }
+  .fw-wordmark small { font-family: "Inter", sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; color: var(--fw-soft); margin-top: 3px; }
+  .fw-nav { display: flex; gap: 4px; }
+  .fw-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 999px; font-weight: 550; text-decoration: none; color: var(--fw-ink); transition: background-color 160ms ease-out; }
+  .fw-nav a:hover { background: rgba(23, 56, 38, 0.07); }
+  .fw-nav a[aria-current="page"] { background: var(--fw-lime-2); color: var(--fw-forest); font-weight: 650; }
+  .fw-phone { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 650; text-decoration: none; color: var(--fw-forest); white-space: nowrap; }
+  .fw-menu { display: none; position: relative; }
+  .fw-menu summary { display: grid; place-content: center; gap: 5px; width: 48px; height: 48px; border-radius: 14px; background: var(--fw-forest); list-style: none; cursor: pointer; }
+  .fw-menu summary::-webkit-details-marker { display: none; }
+  .fw-menu summary span { display: block; width: 20px; height: 2px; border-radius: 2px; background: #fff; transition: transform 200ms var(--fw-ease), opacity 200ms; }
+  .fw-menu[open] summary span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .fw-menu[open] summary span:nth-child(2) { opacity: 0; }
+  .fw-menu[open] summary span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  .fw-menu-panel { position: absolute; right: 0; top: calc(100% + 10px); display: grid; width: min(280px, calc(100vw - 40px)); padding: 8px; border-radius: 18px; background: #fff; box-shadow: 0 18px 40px rgba(19, 32, 26, 0.18), 0 0 0 1px var(--fw-line); }
+  .fw-menu-panel a { display: flex; align-items: center; min-height: 48px; padding: 0 14px; border-radius: 12px; font-weight: 600; text-decoration: none; }
+  .fw-menu-panel a:hover, .fw-menu-panel a[aria-current="page"] { background: var(--fw-lime-2); }
+  @media (max-width: 1023px) { .fw-nav, .fw-phone { display: none; } }
+  @media (max-width: 1023px) { .fw-menu { display: block; } }
+  @media (max-width: 479px) { .fw-top .fw-btn-sm { display: none; } .fw-wordmark small { display: none; } }
+
+  /* footer */
+  .fw-foot { background: var(--fw-forest); color: #dfe9de; padding: 64px 0 120px; }
+  .fw-foot-in { display: grid; gap: 40px; grid-template-columns: 1.4fr 1fr 1fr; }
+  @media (max-width: 767px) { .fw-foot-in { grid-template-columns: 1fr; } }
+  .fw-foot-name { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.5rem; color: #fff; margin-bottom: 8px; }
+  .fw-foot-brand { display: grid; gap: 8px; align-content: start; }
+  .fw-foot-demo { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.07); font-size: 0.875rem; color: #c9d6c8; }
+  .fw-foot-demo a { color: var(--fw-lime); }
+  .fw-foot-h { font-weight: 700; color: #fff; margin-bottom: 10px; }
+  .fw-hours { display: grid; gap: 8px; font-size: 0.9375rem; }
+  .fw-hours div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 8px; }
+  .fw-hours dd { color: #fff; }
+  .fw-foot-links { display: grid; }
+  .fw-foot-links a { display: inline-flex; align-items: center; min-height: 40px; text-decoration: none; color: #dfe9de; }
+  .fw-foot-links a:hover { color: var(--fw-lime); }
+  @media (min-width: 900px) { .fw-foot { padding-bottom: 72px; } }
+
+  /* phone action bar */
+  .fw-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 35; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 6px; padding: 6px; border-radius: 999px; background: var(--fw-forest); box-shadow: 0 14px 32px rgba(10, 24, 16, 0.35); }
+  .fw-bar a { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border-radius: 999px; color: #fff; font-weight: 650; text-decoration: none; }
+  .fw-bar .fw-bar-main { background: var(--fw-lime); color: var(--fw-forest); }
+  @media (min-width: 900px) { .fw-bar { display: none; } }
+  @media (max-width: 899px) { .fw .demo-toast { bottom: 92px; } }
+
+  /* shared cards and surfaces */
+  .fw-card { position: relative; display: grid; gap: 12px; align-content: start; padding: 26px; border-radius: var(--fw-radius); background: #fff; box-shadow: 0 0 0 1px var(--fw-line); transition: transform 260ms var(--fw-ease), box-shadow 260ms var(--fw-ease); }
+  .fw-card:hover { transform: translateY(-4px); box-shadow: 0 0 0 1px var(--fw-line), 0 22px 44px rgba(19, 32, 26, 0.1); }
+  .fw-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+  .fw-price { font-weight: 700; color: var(--fw-forest); }
+  .fw-fine { font-size: 0.875rem; color: var(--fw-soft); }
+  .fw-checks { display: grid; gap: 8px; }
+  .fw-checks li { display: grid; grid-template-columns: 20px 1fr; gap: 10px; }
+  .fw-checks li::before { content: ""; width: 20px; height: 20px; margin-top: 2px; border-radius: 50%; background: var(--fw-lime-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m5.5 10.5 3 3 6-7' fill='none' stroke='%23173826' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat; }
+
+  /* the reveal on scroll (tiers 1-2 only; tier 3 and no JavaScript show everything at once) */
+  :root[data-tier="1"] .fw-rise, :root[data-tier="2"] .fw-rise { opacity: 0; transform: translateY(18px); transition: opacity 400ms var(--fw-ease), transform 400ms var(--fw-ease); transition-delay: var(--d, 0ms); }
+  :root[data-tier="1"] .fw-rise.in, :root[data-tier="2"] .fw-rise.in { opacity: 1; transform: none; }
+
+  /* CTA band, used at the end of pages */
+  .fw-band { position: relative; overflow: hidden; border-radius: 32px; background: var(--fw-forest); color: #fff; padding: clamp(36px, 6vw, 72px); display: grid; gap: 18px; justify-items: start; }
+  .fw-band h2 { color: #fff; max-width: 18ch; }
+  .fw-band p { color: #cfdccc; max-width: 54ch; }
+  .fw-band::after { content: ""; position: absolute; right: -80px; bottom: -120px; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(201, 226, 101, 0.35), transparent 65%); pointer-events: none; }
+</style>
+
+<script>
+  // reveal sections as they come into view (only what starts below the first screen; tier 3 skips it in CSS)
+  const els = [...document.querySelectorAll<HTMLElement>(".fw-rise")];
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }, { rootMargin: "0px 0px -8% 0px" });
+    for (const el of els) {
+      if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in"); else io.observe(el);
+    }
+  } else els.forEach((el) => el.classList.add("in"));
+  // the phone menu closes when a link in it is chosen or on Escape
+  const menu = document.querySelector<HTMLDetailsElement>(".fw-menu");
+  menu?.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) menu.open = false; });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && menu?.open) { menu.open = false; menu.querySelector("summary")?.focus(); } });
+</script>

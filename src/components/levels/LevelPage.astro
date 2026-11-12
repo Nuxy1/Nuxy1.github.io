@@ -1,0 +1,230 @@
+---
+// One website level's page (/business-websites/, /signature-websites/, /immersive-websites/): what it is for, the
+// price, what it includes, the meters, where it ends, the timeline and revisions, proof (the page's own slot), the
+// add-ons, a short FAQ, the principle and the other levels. Every word about the level comes from data/tiers.ts.
+// The page counts `tier_viewed` once when it opens (event name and page only, like every count on the site).
+import Base from "../../layouts/Base.astro";
+import Icon from "../Icon.astro";
+import Meter from "./Meter.astro";
+import LevelRail from "./LevelRail.astro";
+import { levelById, meters, boundaries, addOns, levelFaqs, principle, type LevelId } from "../../data/tiers";
+
+interface Props {
+  id: LevelId;
+  title: string;
+  description: string;
+  h1: string;
+  lead: string;
+  /** add-ons worth showing on this page (ids in data/tiers.ts addOns); none shown when left out */
+  addOnIds?: string[];
+  /** the heading over the page's own proof slot */
+  proofHeading?: string;
+  proofText?: string;
+}
+const { id, title, description, h1, lead, addOnIds, proofHeading, proofText } = Astro.props;
+const l = levelById[id];
+const site = "https://nuxyautomation.com";
+const url = `${site}${l.page}`;
+const extras = addOnIds ? addOns.filter((a) => addOnIds.includes(a.id)) : [];
+const faq = levelFaqs.filter((f) => f.on?.includes(id));
+const n = ["business", "signature", "immersive", "flagship"].indexOf(id) + 1;
+
+const ld = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${url}#service`,
+    name: `${l.name} website`,
+    serviceType: "Website design and development",
+    url,
+    description: `${l.tagline} ${l.built}`,
+    provider: { "@id": `${site}/#business` },
+    areaServed: [{ "@type": "AdministrativeArea", name: "Southern Minnesota" }, { "@type": "Country", name: "United States" }],
+    offers: { "@type": "Offer", url, priceSpecification: { "@type": "PriceSpecification", minPrice: String(l.from), priceCurrency: "USD" } },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${site}/` },
+      { "@type": "ListItem", position: 2, name: "Website levels", item: `${site}/web-design/` },
+      { "@type": "ListItem", position: 3, name: l.name, item: url },
+    ],
+  },
+  // (no FAQ block when a page has no questions: an empty FAQPage is invalid structured data)
+  ...(faq.length ? [{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+  }] : []),
+];
+---
+<Base title={title} description={description} wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />
+
+  <section class:list={["lp-hero", `lp-${id}`]}>
+    <div class="wrap lp-hero-grid">
+      <div>
+        <p class="eyebrow"><a href="/web-design/">Website levels</a> · {String(n).padStart(2, "0")} {l.name}</p>
+        <h1>{h1}</h1>
+        <p class="lead">{lead}</p>
+        <div class="lp-actions">
+          <a class="button" href={l.href} data-track="tier_selected">{l.cta}</a>
+          <a class="button secondary" href="/web-design/#compare">Compare all levels</a>
+        </div>
+      </div>
+      <aside class="lp-price panel" aria-label={`${l.name} price and timeline`}>
+        <p class="lp-promise">{l.promise}</p>
+        <p class="lp-amount">{l.price}</p>
+        <p class="lp-note">{l.priceNote}</p>
+        <dl class="lp-facts">
+          <div><dt>Timeline</dt><dd>{l.timeline}</dd></div>
+          <div><dt>Revisions</dt><dd>{l.revisions}</dd></div>
+          <div><dt>Complexity</dt><dd>{l.complexity}</dd></div>
+        </dl>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section tight" aria-labelledby="lp-inc-h">
+    <div class="wrap lp-two">
+      <div>
+        <p class="eyebrow">What it includes</p>
+        <h2 id="lp-inc-h">What a {l.name} website includes</h2>
+        <p><strong>Best for:</strong> {l.for}</p>
+        <ul class="ticks lp-points" role="list">
+          {l.points.map((p) => <li><Icon name="check" />{p}</li>)}
+        </ul>
+        <p class="lp-built">{l.built}</p>
+      </div>
+      <div class="panel lp-meters">
+        <h3>How it compares</h3>
+        <dl>{meters.map((m) => <Meter name={m.name} text={m.text} score={l.scores[m.id]} />)}</dl>
+      </div>
+    </div>
+  </section>
+
+  {(proofHeading || Astro.slots.has("default")) && (
+    <section class="section" aria-labelledby={proofHeading ? "lp-proof-h" : undefined}>
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">What it looks like</p>
+          {proofHeading && <h2 id="lp-proof-h">{proofHeading}</h2>}
+          {proofText && <p>{proofText}</p>}
+        </div>
+        <slot />
+      </div>
+    </section>
+  )}
+
+  <section class="section band" aria-labelledby="lp-bound-h">
+    <div class="wrap lp-two">
+      <div>
+        <p class="eyebrow">Good to know</p>
+        <h2 id="lp-bound-h">Where {l.name} ends</h2>
+        <p>So the quote holds no surprises, these sit outside a {l.name} build. Each of them is available at another level or as an add-on.</p>
+        <ul class="lp-bounds" role="list">
+          {boundaries[id].map((b) => <li><Icon name="arrowRight" />{b}</li>)}
+        </ul>
+      </div>
+      {extras.length > 0 && (
+        <div>
+          <h3 class="lp-add-h">Add to a {l.name} build</h3>
+          <ul class="lp-adds" role="list">
+            {extras.map((a) => <li><span><strong>{a.name}</strong>{a.text}</span><b>{a.price.startsWith("+") ? `from ${a.price}` : a.price}</b></li>)}
+          </ul>
+          <p class="note">Add-on prices are starting points, confirmed in your written quote. <a href="/web-design/#add-ons">All add-ons</a></p>
+        </div>
+      )}
+    </div>
+  </section>
+
+  {faq.length > 0 && (
+    <section class="section" aria-labelledby="lp-faq-h">
+      <div class="wrap faq-wrap">
+        <h2 id="lp-faq-h">Questions about {l.name} websites</h2>
+        <div class="faq">
+          {faq.map((f) => (
+            <details>
+              <summary>{f.q}<Icon name="plus" /></summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section" aria-labelledby="lp-other-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Other levels</p>
+        <h2 id="lp-other-h">Not quite the right fit?</h2>
+        <p class="lp-principle">{principle}</p>
+      </div>
+      <LevelRail except={id} />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>Tell us about your project</h2>
+          <p>Within one business day you’ll get a written plan: the level we’d suggest, what we’d build, the price and the timeline. If a smaller level does the job, we’ll say so.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="button" href={l.href} data-track="tier_selected">{l.cta}</a>
+          <a class="button secondary" href="/web-design/#finder">Find your level</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .lp-hero { padding-block: clamp(40px, 6vw, 88px) clamp(28px, 4vw, 48px); }
+  .lp-hero-grid { display: grid; gap: 32px; align-items: start; }
+  @media (min-width: 1024px) { .lp-hero-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 56px; align-items: end; } }
+  .lp-hero h1 { max-width: 18ch; }
+  .lp-hero .lead { margin-top: 20px; max-width: 56ch; }
+  .lp-hero .eyebrow a { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--hairline-strong); }
+  .lp-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .lp-price { padding: 24px; }
+  .lp-promise { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .lp-amount { margin-top: 6px; color: var(--ink); font-size: clamp(1.75rem, 3vw, 2.25rem); font-weight: 650; letter-spacing: -0.03em; }
+  .lp-note { margin-top: 6px; color: var(--body); font-size: 0.9375rem; }
+  .lp-facts { margin: 16px 0 0; display: grid; }
+  .lp-facts div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 12px; padding-block: 10px; border-top: 1px solid var(--hairline-soft); }
+  .lp-facts dt { color: var(--muted); font-size: 0.875rem; font-weight: 600; }
+  .lp-facts dd { margin: 0; color: var(--ink); font-size: 0.9375rem; }
+  /* the hero's edge steps up with the level, like the cards on /web-design/ */
+  .lp-signature .lp-price { border-color: var(--hairline-strong); background: linear-gradient(var(--link), var(--link)) top / 100% 2px no-repeat, var(--panel); }
+  .lp-immersive .lp-price { border-color: var(--hairline-strong); box-shadow: 10px 10px 0 -1px var(--bg-2), 10px 10px 0 0 var(--hairline); }
+
+  .lp-two { display: grid; gap: 32px; }
+  @media (min-width: 1024px) { .lp-two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: start; } }
+  .lp-two h2 { margin-bottom: 16px; }
+  .lp-points { margin-top: 8px; }
+  .lp-built { margin-top: 18px; color: var(--muted); }
+  .lp-meters { padding: 24px; }
+  .lp-meters h3 { font-size: 1.125rem; margin-bottom: 6px; }
+  .lp-meters dl { margin: 0; }
+  .lp-bounds { list-style: none; display: grid; gap: 10px; margin-top: 16px; }
+  .lp-bounds li { display: flex; gap: 10px; align-items: baseline; color: var(--body); }
+  .lp-bounds :global(svg) { flex: none; color: var(--muted); width: 16px; height: 16px; translate: 0 3px; }
+  .lp-add-h { font-size: 1.125rem; margin-bottom: 12px; }
+  .lp-adds { list-style: none; display: grid; border-top: 1px solid var(--hairline-soft); }
+  .lp-adds li { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-bottom: 1px solid var(--hairline-soft); }
+  .lp-adds span { display: grid; gap: 2px; color: var(--muted); font-size: 0.9375rem; }
+  .lp-adds strong { color: var(--ink); font-weight: 600; }
+  .lp-adds b { flex: none; color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .lp-adds + .note { margin-top: 12px; }
+  .lp-principle { color: var(--ink); font-style: italic; }
+</style>
+
+<script>
+  // one `tier_viewed` per page open (Base defines nuxyTrack in a script that may run after this one)
+  const fire = () => (window as unknown as { nuxyTrack?: (e: string) => void }).nuxyTrack?.("tier_viewed");
+  if (document.readyState === "complete") fire(); else addEventListener("load", fire, { once: true });
+</script>

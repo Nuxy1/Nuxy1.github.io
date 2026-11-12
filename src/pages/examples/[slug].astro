@@ -3,10 +3,13 @@
 // between a computer and a phone, with what it shows and which services it demonstrates. The demo sites are made-up
 // businesses; this page says so above the frame, and the demo itself says so in its banner and footer.
 // Without JavaScript the frame simply fills the column at a fixed height, and the toggle stays hidden.
+// Below the frame sits the case study (website levels brief): the level the concept shows, its objective, design
+// direction, technology, automation, performance and phone notes, and what a real project like it would include.
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import { demoSites, type DemoSite } from "../../data/demo-sites";
 import { serviceById } from "../../data/services";
+import { levelById } from "../../data/tiers";
 
 export function getStaticPaths() {
   return demoSites.map((demo, i) => ({ params: { slug: demo.slug }, props: { demo, i } }));
@@ -21,6 +24,12 @@ const where = (id: string) => (id === "new-website" ? "/websites/#new-website" :
 // The candle shop is a store, not a website: its title, platform note and quote link say so.
 const store = d.project === "E-commerce store";
 const kindTitle = d.kind.replace(/\b\w/g, (c) => c.toUpperCase());
+const level = levelById[d.tier];
+const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 }[level.complexity];
+// a Business example keeps the plain website quote; Signature and Immersive examples start that level's conversation
+const cta = store || d.tier === "business"
+  ? { href: store ? "/contact/?service=online-shop" : "/contact/?service=new-website", text: store ? "Get a Free Store Quote" : "Get a Free Website Quote" }
+  : { href: level.href, text: level.cta };
 ---
 <Base title={store ? `${kindTitle} Example · Nuxy Automation` : `${kindTitle} Website Example · Nuxy Automation`} description={`Demo ${store ? "store" : "website"} for a made-up ${d.summary.replace(/^A /, "").replace(/\.$/, "")}, on a computer and a phone.`} wide>
   <div class="wrap ex">
@@ -32,7 +41,7 @@ const kindTitle = d.kind.replace(/\b\w/g, (c) => c.toUpperCase());
         <p class="lead">{d.summary}</p>
       </div>
     </header>
-    <p class="made-up"><Icon name="info" /><span><strong>{d.name} is a made-up business</strong>, not a client. This example shows the layout, features and finish we aim for. Forms on it send nothing{store ? ", and its checkout is switched off, so nothing can be bought" : ""}.</span></p>
+    <p class="made-up"><Icon name="info" /><span><strong>Concept project created by Nuxy Automation to demonstrate our capabilities.</strong> {d.name} is a made-up business, not a client. This example shows the layout, features and finish we aim for. Forms on it send nothing{store ? ", and its checkout is a demo that never asks for a card, so nothing can be bought" : ""}.</span></p>
 
     <div class="toolbar">
       <div class="toggle" role="group" aria-label="Preview size" data-toggle hidden>
@@ -52,9 +61,33 @@ const kindTitle = d.kind.replace(/\b\w/g, (c) => c.toUpperCase());
     </div>
     <p class="note stage-note">{store ? "The preview is a live page: scroll it, filter the products, add some to the cart." : "The preview is a live page: scroll it, open the menu, try the form."}</p>
 
+    <section class="case" aria-labelledby="case-h">
+      <div class="case-head">
+        <p class="eyebrow">Concept project · <a href={level.page}>{level.name} level</a></p>
+        <h2 id="case-h">The case study</h2>
+        <p class="case-complex"><span class="case-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps }}></i>)}</span>{level.complexity} complexity</p>
+      </div>
+      <dl class="case-facts">
+        <div><dt>Project</dt><dd>{d.project}</dd></div>
+        <div><dt>Industry</dt><dd>{d.kind}</dd></div>
+        <div><dt>Level</dt><dd><a href={level.page}>{level.name}</a> · {level.price}</dd></div>
+        <div><dt>Objective</dt><dd>{d.objective}</dd></div>
+        <div><dt>Design direction</dt><dd>{d.direction}</dd></div>
+        <div><dt>Technology</dt><dd>{d.technology}</dd></div>
+        <div><dt>Automation</dt><dd>{d.automation}</dd></div>
+        <div><dt>Performance</dt><dd>{d.performance}</dd></div>
+        <div><dt>Mobile</dt><dd>{d.mobile}</dd></div>
+      </dl>
+      <div class="case-inc panel">
+        <h3>What a project like this would include</h3>
+        <ul class="ticks">{d.includes.map((x) => <li><Icon name="check" />{x}</li>)}</ul>
+        <p class="note">Your written plan sets the exact pages, features, price and timeline for your own project.</p>
+      </div>
+    </section>
+
     <div class="ex-info">
-      <section aria-labelledby="shows-h">
-        <h2 id="shows-h">What this example shows</h2>
+      <section id="features" aria-labelledby="shows-h">
+        <h2 id="shows-h">Features</h2>
         <ul class="ticks">{d.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
       </section>
       <section aria-labelledby="svc-h">
@@ -66,7 +99,9 @@ const kindTitle = d.kind.replace(/\b\w/g, (c) => c.toUpperCase());
         </ul>
         <p class="note">{store
           ? "Your own store is built in your own Shopify or Square Online account, so the details follow what your store platform can do."
-          : "Your own site is built in your own Squarespace or Wix account, so the details follow what your website builder can do."}</p>
+          : d.tier === "business"
+            ? "A Business website is built in your own Squarespace or Wix account, so the details follow what your website builder can do."
+            : "Every level can add automation; each one is priced on its own and named in your written plan."}</p>
       </section>
     </div>
 
@@ -75,7 +110,7 @@ const kindTitle = d.kind.replace(/\b\w/g, (c) => c.toUpperCase());
         <h2 id="cta-h">Want {store ? "a store" : "a website"} like this?</h2>
         <p>Tell us about your business. Within one business day you’ll get a written plan and a fixed price, with nothing charged until you agree.</p>
       </div>
-      <a class="button" href={store ? "/contact/?service=online-shop" : "/contact/?service=new-website"} data-track="cta_example_quote">{store ? "Get a Free Store Quote" : "Get a Free Website Quote"}</a>
+      <a class="button" href={cta.href} data-track="cta_example_quote">{cta.text}</a>
     </section>
 
     <nav class="ex-more" aria-label="Other examples">
@@ -120,6 +155,23 @@ const kindTitle = d.kind.replace(/\b\w/g, (c) => c.toUpperCase());
   .stage[data-mode="phone"] .screen { border-radius: 34px; }
   .stage-note { margin-top: 12px; text-align: center; }
 
+  .case { margin-top: clamp(48px, 6vw, 72px); display: grid; gap: 24px; }
+  @media (min-width: 1024px) { .case { grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); gap: 24px 56px; } .case-head { grid-column: 1 / -1; } }
+  .case-head .eyebrow a { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--hairline-strong); }
+  .case-head h2 { font-size: 1.75rem; }
+  .case-complex { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; color: var(--body); font-size: 0.9375rem; }
+  .case-steps { display: inline-grid; grid-template-columns: repeat(4, 16px); gap: 3px; }
+  .case-steps i { height: 5px; border-radius: 2px; background: var(--hairline-strong); }
+  .case-steps i.on { background: var(--link); }
+  .case-facts { display: grid; margin: 0; border-top: 1px solid var(--hairline-soft); }
+  .case-facts div { display: grid; gap: 4px; padding-block: 12px; border-bottom: 1px solid var(--hairline-soft); }
+  @media (min-width: 600px) { .case-facts div { grid-template-columns: 10rem minmax(0, 1fr); gap: 16px; } }
+  .case-facts dt { color: var(--muted); font-size: 0.875rem; font-weight: 600; }
+  .case-facts dd { margin: 0; color: var(--ink); }
+  .case-facts a { color: var(--link); }
+  .case-inc { align-self: start; padding: 24px; }
+  .case-inc h3 { font-size: 1.125rem; margin-bottom: 14px; }
+  .case-inc .note { margin-top: 14px; }
   .ex-info { display: grid; gap: 32px; margin-top: clamp(48px, 6vw, 72px); }
   @media (min-width: 880px) { .ex-info { grid-template-columns: 1fr 1fr; gap: 56px; } }
   .ex-info h2 { font-size: 1.375rem; }

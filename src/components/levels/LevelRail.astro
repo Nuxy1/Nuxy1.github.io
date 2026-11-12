@@ -1,0 +1,90 @@
+---
+// "Choose your experience": the four website levels (data/tiers.ts) side by side. The cards themselves step up in
+// intensity, so the difference is visible before it is read: Business is a plain panel, Signature adds a fine rule
+// and a stronger edge, Immersive stands on two layered plates that part a little under a mouse (only when motion is
+// on), and Flagship is drawn as a double outline on the darkest ground. None of them glows or uses glass (DESIGN.md).
+// Each card's button counts `tier_selected` (name and page only, never which level).
+import Icon from "../Icon.astro";
+import { levels, type LevelId } from "../../data/tiers";
+
+interface Props {
+  /** leave a level out (a level page shows the other three) */
+  except?: LevelId;
+  heading?: "h2" | "h3";
+}
+const { except, heading = "h3" } = Astro.props;
+const H = heading;
+const list = levels.filter((l) => l.id !== except);
+const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
+---
+<ol class:list={["lv-rail", `n${list.length}`]} role="list">
+  {list.map((l, i) => (
+    <li class:list={["lv", `lv-${l.id}`]}>
+      <article class="lv-card" aria-labelledby={`lv-${l.id}-h`}>
+        <p class="lv-index"><span>{String(levels.indexOf(l) + 1).padStart(2, "0")}</span>{l.promise}</p>
+        <H class="lv-name" id={`lv-${l.id}-h`}>{l.name}</H>
+        <p class="lv-tag">{l.tagline}</p>
+        <p class="lv-price">{l.price}</p>
+        <p class="lv-note">{l.priceNote}</p>
+        <p class="lv-complex">
+          <span class="lv-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps[l.complexity] }}></i>)}</span>
+          {l.complexity} complexity · {l.timeline.replace(/ after we have your words and photos|, set in the written plan/, "")}
+        </p>
+        <ul class="ticks lv-points" role="list">
+          {l.points.slice(0, 3).map((p) => <li><Icon name="check" />{p}</li>)}
+        </ul>
+        <div class="lv-actions">
+          <a class="button secondary wide" href={l.href} data-track="tier_selected">{l.cta}</a>
+          {l.page && <a class="text-link" href={l.page}>What {l.name} includes<Icon name="arrowRight" /></a>}
+        </div>
+      </article>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .lv-rail { list-style: none; display: grid; gap: 28px 20px; }
+  @media (min-width: 720px) { .lv-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1200px) { .lv-rail.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } .lv-rail.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  .lv { position: relative; isolation: isolate; display: flex; }
+  .lv-card { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 24px 22px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
+  .lv-index { display: flex; gap: 10px; align-items: baseline; color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .lv-index span { color: var(--cyan); font-variant-numeric: tabular-nums; }
+  .lv-name { font-size: 1.625rem; letter-spacing: -0.03em; }
+  .lv-tag { color: var(--body); }
+  .lv-price { margin-top: 6px; color: var(--ink); font-size: 1.375rem; font-weight: 650; letter-spacing: -0.02em; }
+  .lv-note { color: var(--muted); font-size: 0.875rem; }
+  .lv-complex { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-block: 10px; border-block: 1px solid var(--hairline-soft); color: var(--body); font-size: 0.875rem; }
+  .lv-steps { display: inline-grid; grid-template-columns: repeat(4, 14px); gap: 3px; }
+  .lv-steps i { height: 5px; border-radius: 2px; background: var(--hairline-strong); }
+  .lv-steps i.on { background: var(--link); }
+  .lv-points { font-size: 0.9375rem; }
+  .lv-actions { display: grid; gap: 14px; justify-items: start; margin-top: auto; padding-top: 10px; }
+
+  /* Signature: a stronger edge and a fine blue rule along the top */
+  .lv-signature .lv-card { border-color: var(--hairline-strong); background: linear-gradient(var(--link), var(--link)) top / 100% 2px no-repeat, var(--panel); }
+
+  /* Immersive: the card stands on two plates, a little narrower each, like layers of a scene */
+  .lv-immersive .lv-card { border-color: var(--hairline-strong); background: linear-gradient(180deg, var(--surface-strong), var(--panel) 60%); }
+  .lv-immersive::before, .lv-immersive::after { content: ""; position: absolute; z-index: 0; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg-2); pointer-events: none; }
+  .lv-immersive::before { inset: 0 10px; transform: translateY(8px); }
+  .lv-immersive::after { inset: 0 20px; transform: translateY(16px); opacity: 0.6; z-index: -1; }
+  .lv-immersive .lv-steps i.on, .lv-flagship .lv-steps i.on { background: var(--cyan); }
+
+  /* Flagship: the darkest ground, a light outline and a second rule inside it */
+  .lv-flagship .lv-card { border-color: rgba(248, 250, 252, 0.5); background: var(--bg); outline: 1px solid var(--hairline); outline-offset: -7px; }
+
+  /* Under a mouse, with motion on, the Immersive card tilts a few degrees and its plates part: depth you can feel,
+     transform only, and nothing at all on touch screens or with motion reduced */
+  @media (hover: hover) and (pointer: fine) {
+    :global(html[data-motion="standard"]) .lv-rail, :global(html[data-motion="enhanced"]) .lv-rail { perspective: 1200px; }
+    :global(html[data-motion="standard"]) .lv-card, :global(html[data-motion="enhanced"]) .lv-card { transition: transform var(--dur-3, 380ms) var(--ease-out, ease), border-color 160ms ease; }
+    :global(html[data-motion="standard"]) .lv:is(:hover, :focus-within) .lv-card, :global(html[data-motion="enhanced"]) .lv:is(:hover, :focus-within) .lv-card { transform: translateY(-3px); }
+    :global(html[data-motion="standard"]) .lv-immersive::before, :global(html[data-motion="standard"]) .lv-immersive::after,
+    :global(html[data-motion="enhanced"]) .lv-immersive::before, :global(html[data-motion="enhanced"]) .lv-immersive::after { transition: transform var(--dur-3, 380ms) var(--ease-out, ease); }
+    :global(html[data-motion="standard"]) .lv-immersive:is(:hover, :focus-within) .lv-card, :global(html[data-motion="enhanced"]) .lv-immersive:is(:hover, :focus-within) .lv-card { transform: rotateX(4deg) rotateY(-5deg) translateY(-4px); }
+    :global(html[data-motion="standard"]) .lv-immersive:is(:hover, :focus-within)::before, :global(html[data-motion="enhanced"]) .lv-immersive:is(:hover, :focus-within)::before { transform: translateY(14px); }
+    :global(html[data-motion="standard"]) .lv-immersive:is(:hover, :focus-within)::after, :global(html[data-motion="enhanced"]) .lv-immersive:is(:hover, :focus-within)::after { transform: translateY(28px); }
+  }
+</style>

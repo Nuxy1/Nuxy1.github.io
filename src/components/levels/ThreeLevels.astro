@@ -1,0 +1,186 @@
+---
+// One business at three levels, and the motion toggle the brief asks for, in one piece: the front page of Ostrel
+// Coffee (a made-up café, labelled as a Nuxy demonstration) drawn as a Business, a Signature and an Immersive site.
+// The switch is three plain radio buttons and CSS, so it works without JavaScript; the only script starts and stops
+// the Immersive loop when the drawing scrolls in and out of view. Looping motion needs <html data-ambient>
+// (motion.ts: standard or enhanced); with motion reduced every version is still and complete.
+// The café has its own warm palette so it reads as a client's site, not as Nuxy's.
+const modes = [
+  { id: "business", label: "Business", sub: "Standard motion", text: "Clear words, real photos and two buttons. It loads at once and gets people to order or visit. Light fades only." },
+  { id: "signature", label: "Signature", sub: "Premium motion", text: "A designed look made for this café: editorial type, layered pieces that settle into place, a stronger story about the roast." },
+  { id: "immersive", label: "Immersive", sub: "Immersive motion", text: "The bag turns in 3D with notes around it, the beans drift in layers, and the page feels like walking into the roastery." },
+];
+---
+<div class="tl" data-tl>
+  {modes.map((m, i) => <input class="sr-only tl-radio" type="radio" name="tl-mode" id={`tl-${m.id}`} value={m.id} checked={i === 0} aria-describedby="tl-pick-label" />)}
+  <div class="tl-pick">
+    <span class="tl-pick-label" id="tl-pick-label">Show the same café as</span>
+    {modes.map((m) => (
+      <label for={`tl-${m.id}`} data-for={m.id}><strong>{m.label}</strong><span>{m.sub}</span></label>
+    ))}
+  </div>
+
+  <figure class="tl-frame">
+    <div class="tl-bar" aria-hidden="true"><i></i><i></i><i></i><span>ostrel-coffee.example</span></div>
+    <div class="tl-site" aria-hidden="true">
+      <div class="oc-nav"><b class="oc-logo">Ostrel</b><span>Menu</span><span>Beans</span><span>Visit</span></div>
+      <div class="oc-hero">
+        <div class="oc-copy">
+          <p class="oc-kicker">Small-batch roastery and café</p>
+          <p class="oc-h">Coffee roasted on the corner, <em>every Tuesday.</em></p>
+          <p class="oc-p">Order ahead, pick up a bag, or stay for a slow pour-over by the window.</p>
+          <p class="oc-btns"><span class="oc-b1">Order ahead</span><span class="oc-b2">Find us</span></p>
+        </div>
+        <div class="oc-art">
+          <div class="oc-beans"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="oc-bag">
+            <span class="oc-face oc-front"><b>OSTREL</b><small>Tuesday Roast<br />Washed · Medium</small></span>
+            <span class="oc-face oc-side"></span>
+            <span class="oc-face oc-back"></span>
+            <span class="oc-face oc-side2"></span>
+          </div>
+          <span class="oc-note oc-n1">Notes of cherry and cocoa</span>
+          <span class="oc-note oc-n2">Roasted 4 days ago</span>
+        </div>
+      </div>
+      <div class="oc-strip"><span>Open 7–3 daily</span><span>Fenwick Street</span><span>Beans ship Tuesdays</span></div>
+    </div>
+    <figcaption class="tl-cap">
+      {modes.map((m) => <p data-cap={m.id}><strong>{m.label}:</strong> {m.text}</p>)}
+      <p class="tl-label">NUXY DEMONSTRATION · Ostrel Coffee is a made-up café drawn by Nuxy Automation to show the three levels. It is not a client.</p>
+    </figcaption>
+  </figure>
+</div>
+
+<style>
+  .tl { --oc-cream: #f4ede2; --oc-ink: #2a1d14; --oc-roast: #3b2618; --oc-espresso: #1a110b; --oc-clay: #a24f28; --oc-sand: #d9c6a8; --oc-moss: #5d6b4a; }
+
+  /* the switch */
+  .tl-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; margin-bottom: 16px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel); }
+  .tl-pick-label { grid-column: 1 / -1; padding: 6px 10px 2px; color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
+  .tl-pick label { display: grid; gap: 2px; place-content: center; min-height: 56px; padding: 8px; border-radius: 8px; text-align: center; cursor: pointer; transition: background-color 160ms ease; }
+  .tl-pick label strong { color: var(--ink); font-size: 0.9375rem; }
+  .tl-pick label span { color: var(--muted); font-size: 0.75rem; }
+  .tl-pick label:hover { background: var(--surface-strong); }
+  #tl-business:checked ~ .tl-pick [data-for="business"],
+  #tl-signature:checked ~ .tl-pick [data-for="signature"],
+  #tl-immersive:checked ~ .tl-pick [data-for="immersive"] { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--link); }
+  #tl-business:focus-visible ~ .tl-pick [data-for="business"],
+  #tl-signature:focus-visible ~ .tl-pick [data-for="signature"],
+  #tl-immersive:focus-visible ~ .tl-pick [data-for="immersive"] { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  /* the browser frame */
+  .tl-frame { margin: 0; border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; background: var(--bg-2); }
+  .tl-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--hairline-soft); }
+  .tl-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--hairline-strong); }
+  .tl-bar span { margin-left: 10px; color: var(--muted); font-size: 0.75rem; font-family: var(--mono); }
+  .tl-cap { display: grid; gap: 8px; padding: 16px 18px; border-top: 1px solid var(--hairline-soft); }
+  .tl-cap [data-cap] { display: none; color: var(--body); }
+  .tl-cap strong { color: var(--ink); }
+  .tl-label { color: var(--muted); font-size: 0.8125rem; letter-spacing: 0.02em; }
+  #tl-business:checked ~ .tl-frame [data-cap="business"],
+  #tl-signature:checked ~ .tl-frame [data-cap="signature"],
+  #tl-immersive:checked ~ .tl-frame [data-cap="immersive"] { display: block; }
+
+  /* ---- the café site, Business by default ---- */
+  .tl-site { position: relative; overflow: hidden; padding: clamp(14px, 3vw, 28px); background: var(--oc-cream); color: var(--oc-ink); font-size: clamp(0.75rem, 1.6vw, 0.9375rem); line-height: 1.45; transition: background-color 500ms ease, color 500ms ease; }
+  .oc-nav { display: flex; align-items: center; gap: 1.2em; padding-bottom: 1em; margin-bottom: 1.4em; border-bottom: 1px solid rgba(42, 29, 20, 0.15); font-size: 0.9em; }
+  .oc-logo { margin-right: auto; font-size: 1.15em; letter-spacing: 0.02em; }
+  .oc-hero { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 1.4em; align-items: center; min-height: 15em; }
+  .oc-kicker { color: var(--oc-moss); font-weight: 600; font-size: 0.85em; }
+  .oc-h { margin: 0.35em 0 0.5em; font-size: 1.85em; font-weight: 700; line-height: 1.12; letter-spacing: -0.02em; }
+  .oc-h em { font-style: normal; }
+  .oc-p { max-width: 30ch; opacity: 0.85; }
+  .oc-btns { display: flex; flex-wrap: wrap; gap: 0.6em; margin-top: 1em; }
+  .oc-btns span { padding: 0.55em 1.1em; border-radius: 6px; font-weight: 600; font-size: 0.9em; }
+  .oc-b1 { background: var(--oc-roast); color: var(--oc-cream); }
+  .oc-b2 { border: 1px solid var(--oc-roast); }
+  .oc-art { position: relative; display: grid; place-items: center; height: 100%; min-height: 13em; perspective: 900px; }
+  .oc-bag { --bw: 7.2em; --bh: 9.6em; --bd: 3em; position: relative; width: var(--bw); height: var(--bh); transform-style: preserve-3d; transition: transform 700ms var(--ease-out, ease); }
+  .oc-face { position: absolute; display: grid; align-content: center; justify-items: center; gap: 0.4em; border-radius: 4px 4px 6px 6px; backface-visibility: hidden; }
+  .oc-front { inset: 0; background: var(--oc-clay); color: var(--oc-cream); text-align: center; }
+  .oc-front b { font-size: 1.05em; letter-spacing: 0.18em; }
+  .oc-front small { font-size: 0.75em; line-height: 1.35; }
+  .oc-side, .oc-back, .oc-side2 { display: none; }
+  .oc-beans, .oc-note { display: none; }
+  .oc-strip { display: flex; flex-wrap: wrap; gap: 0.4em 1.6em; margin-top: 1.4em; padding-top: 1em; border-top: 1px solid rgba(42, 29, 20, 0.15); font-size: 0.85em; opacity: 0.8; }
+
+  /* ---- Signature: dark roast, editorial type, layered pieces ---- */
+  #tl-signature:checked ~ .tl-frame .tl-site { background: var(--oc-roast); color: var(--oc-cream); }
+  #tl-signature:checked ~ .tl-frame .oc-nav, #tl-signature:checked ~ .tl-frame .oc-strip { border-color: rgba(244, 237, 226, 0.16); }
+  #tl-signature:checked ~ .tl-frame .oc-kicker { color: var(--oc-sand); letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.72em; }
+  #tl-signature:checked ~ .tl-frame .oc-h { font-family: ui-serif, serif; font-weight: 400; font-size: 2.2em; letter-spacing: -0.01em; }
+  #tl-signature:checked ~ .tl-frame .oc-h em { font-style: italic; color: var(--oc-sand); }
+  #tl-signature:checked ~ .tl-frame .oc-b1 { background: var(--oc-clay); color: var(--oc-cream); border-radius: 99px; }
+  #tl-signature:checked ~ .tl-frame .oc-b2 { border-color: rgba(244, 237, 226, 0.5); border-radius: 99px; }
+  #tl-signature:checked ~ .tl-frame .oc-bag { transform: rotate(-6deg); }
+  /* the label sits a layer above the bag, over a hard offset plate */
+  #tl-signature:checked ~ .tl-frame .oc-bag::before { content: ""; position: absolute; inset: 0; border-radius: 4px 4px 6px 6px; background: var(--oc-sand); transform: translate(0.7em, 0.7em); z-index: -1; }
+  #tl-signature:checked ~ .tl-frame .oc-front { background: var(--oc-clay); box-shadow: inset 0 0 0 0.35em var(--oc-roast), inset 0 0 0 0.45em var(--oc-sand); }
+  #tl-signature:checked ~ .tl-frame .oc-n1 { display: block; }
+
+  /* ---- Immersive: espresso dark, the bag in 3D, beans in layers, notes around it ---- */
+  #tl-immersive:checked ~ .tl-frame .tl-site { background: radial-gradient(120% 90% at 75% 40%, #2b1b11, var(--oc-espresso) 70%); color: var(--oc-cream); }
+  #tl-immersive:checked ~ .tl-frame .oc-nav, #tl-immersive:checked ~ .tl-frame .oc-strip { border-color: rgba(244, 237, 226, 0.12); }
+  #tl-immersive:checked ~ .tl-frame .oc-kicker { color: var(--oc-clay); letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.72em; }
+  #tl-immersive:checked ~ .tl-frame .oc-h { font-family: ui-serif, serif; font-weight: 400; font-size: 2.2em; }
+  #tl-immersive:checked ~ .tl-frame .oc-h em { font-style: italic; color: var(--oc-clay); }
+  #tl-immersive:checked ~ .tl-frame .oc-b1 { background: var(--oc-cream); color: var(--oc-espresso); border-radius: 99px; }
+  #tl-immersive:checked ~ .tl-frame .oc-b2 { border-color: rgba(244, 237, 226, 0.4); border-radius: 99px; }
+  #tl-immersive:checked ~ .tl-frame .oc-bag { transform: rotateX(-12deg) rotateY(-32deg); }
+  #tl-immersive:checked ~ .tl-frame .oc-side, #tl-immersive:checked ~ .tl-frame .oc-back, #tl-immersive:checked ~ .tl-frame .oc-side2 { display: block; }
+  .oc-side { top: 0; left: calc(50% - var(--bd) / 2); width: var(--bd); height: 100%; background: #8f4a28; transform: rotateY(90deg) translateZ(calc(var(--bw) / 2)); }
+  .oc-side2 { top: 0; left: calc(50% - var(--bd) / 2); width: var(--bd); height: 100%; background: #8f4a28; transform: rotateY(-90deg) translateZ(calc(var(--bw) / 2)); }
+  .oc-back { inset: 0; background: #a5552f; transform: rotateY(180deg) translateZ(calc(var(--bd) / 2)); }
+  #tl-immersive:checked ~ .tl-frame .oc-front { transform: translateZ(calc(var(--bd) / 2)); }
+  #tl-immersive:checked ~ .tl-frame .oc-beans { display: block; position: absolute; inset: 0; pointer-events: none; transform-style: preserve-3d; }
+  .oc-beans i { position: absolute; width: 0.9em; height: 0.62em; border-radius: 50%; background: radial-gradient(ellipse at 40% 35%, #6b4129, #2e1a0f 70%); box-shadow: inset 0 0 0 0 transparent; }
+  .oc-beans i::after { content: ""; position: absolute; left: 48%; top: 12%; width: 1px; height: 76%; background: rgba(0, 0, 0, 0.45); transform: rotate(8deg); }
+  .oc-beans i:nth-child(1) { top: 12%; left: 8%; transform: translateZ(60px) rotate(20deg); }
+  .oc-beans i:nth-child(2) { top: 70%; left: 14%; transform: translateZ(20px) rotate(-30deg) scale(0.8); }
+  .oc-beans i:nth-child(3) { top: 20%; left: 82%; transform: translateZ(90px) rotate(60deg) scale(1.2); }
+  .oc-beans i:nth-child(4) { top: 80%; left: 76%; transform: translateZ(40px) rotate(-10deg); }
+  .oc-beans i:nth-child(5) { top: 46%; left: 2%; transform: translateZ(-30px) rotate(80deg) scale(0.7); opacity: 0.6; }
+  .oc-beans i:nth-child(6) { top: 4%; left: 56%; transform: translateZ(-40px) rotate(-50deg) scale(0.7); opacity: 0.6; }
+  .oc-note { position: absolute; padding: 0.3em 0.7em; border: 1px solid currentColor; border-radius: 99px; font-size: 0.7em; white-space: nowrap; }
+  .oc-n1 { right: 0; bottom: 6%; }
+  .oc-n2 { left: -2%; top: 8%; }
+  #tl-immersive:checked ~ .tl-frame .oc-note { display: block; border-color: rgba(244, 237, 226, 0.35); }
+
+  /* the Immersive loop: the bag turns slowly and the beans drift, only while the drawing is on screen
+     (the script sets .run) and only when looping motion is allowed */
+  @keyframes oc-turn { from { transform: rotateX(-12deg) rotateY(-32deg); } 50% { transform: rotateX(-8deg) rotateY(28deg); } to { transform: rotateX(-12deg) rotateY(-32deg); } }
+  @keyframes oc-drift { 50% { translate: 0 -0.5em; } }
+  :global(html[data-ambient]) .tl.run #tl-immersive:checked ~ .tl-frame .oc-bag { animation: oc-turn 9s var(--ease-io, ease-in-out) infinite; }
+  :global(html[data-ambient]) .tl.run #tl-immersive:checked ~ .tl-frame .oc-beans i { animation: oc-drift 5s ease-in-out infinite; }
+  :global(html[data-ambient]) .tl.run #tl-immersive:checked ~ .tl-frame .oc-beans i:nth-child(even) { animation-duration: 7s; animation-delay: -2s; }
+
+  /* Signature's settle: when it is chosen the pieces arrive one after another (short, once) */
+  @keyframes oc-in { from { opacity: 0; translate: 0 0.8em; } }
+  :global(html[data-motion]:not([data-motion="reduced"])) #tl-signature:checked ~ .tl-frame :is(.oc-kicker, .oc-h, .oc-p, .oc-btns, .oc-art),
+  :global(html[data-motion]:not([data-motion="reduced"])) #tl-immersive:checked ~ .tl-frame :is(.oc-kicker, .oc-h, .oc-p, .oc-btns, .oc-art) { animation: oc-in 600ms var(--ease-out, ease) both; }
+  :global(html[data-motion]:not([data-motion="reduced"])) #tl-signature:checked ~ .tl-frame .oc-h, :global(html[data-motion]:not([data-motion="reduced"])) #tl-immersive:checked ~ .tl-frame .oc-h { animation-delay: 80ms; }
+  :global(html[data-motion]:not([data-motion="reduced"])) #tl-signature:checked ~ .tl-frame .oc-p, :global(html[data-motion]:not([data-motion="reduced"])) #tl-immersive:checked ~ .tl-frame .oc-p { animation-delay: 160ms; }
+  :global(html[data-motion]:not([data-motion="reduced"])) #tl-signature:checked ~ .tl-frame .oc-btns, :global(html[data-motion]:not([data-motion="reduced"])) #tl-immersive:checked ~ .tl-frame .oc-btns { animation-delay: 240ms; }
+  :global(html[data-motion]:not([data-motion="reduced"])) #tl-signature:checked ~ .tl-frame .oc-art, :global(html[data-motion]:not([data-motion="reduced"])) #tl-immersive:checked ~ .tl-frame .oc-art { animation-delay: 120ms; }
+  /* Business only fades */
+  @keyframes oc-fade { from { opacity: 0; } }
+  :global(html[data-motion]:not([data-motion="reduced"])) #tl-business:checked ~ .tl-frame .oc-hero { animation: oc-fade 300ms ease both; }
+
+  @media (max-width: 520px) {
+    .oc-hero { grid-template-columns: 1fr; min-height: 0; }
+    .oc-art { min-height: 11em; }
+    .tl-pick label span { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tl *, .tl *::before, .tl *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<script>
+  // start the Immersive loop only while the drawing is on screen and the tab is visible
+  for (const root of document.querySelectorAll<HTMLElement>("[data-tl]")) {
+    let seen = false;
+    const set = () => root.classList.toggle("run", seen && !document.hidden);
+    new IntersectionObserver(([e]) => { seen = e.isIntersecting; set(); }).observe(root);
+    document.addEventListener("visibilitychange", set);
+  }
+</script>

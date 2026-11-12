@@ -1,0 +1,69 @@
+---
+// The end of every demo flow (quote, booking, estimate, checkout): "Demo complete." (or the flow's own line), what
+// the visitor chose, what would happen behind the scenes on a real Nuxy build, and the way back to Nuxy. It starts
+// hidden; the flow's script fills [data-complete-summary] with plain text rows and shows it. Styling follows the
+// business through CSS variables (--dc-*), so it looks at home on each site and stays readable.
+interface Props {
+  id: string;
+  heading?: string;
+  /** one line under the heading */
+  lead: string;
+  /** what the automation would do, in order */
+  flow: { title: string; text: string }[];
+  /** the main Nuxy call to action */
+  cta?: { label: string; href: string };
+  restart?: string;
+}
+const { id, heading = "Demo complete.", lead, flow, cta = { label: "See what Nuxy can build", href: "/websites/" }, restart = "Start again" } = Astro.props;
+---
+<section class="dc" id={id} hidden tabindex="-1" aria-labelledby={`${id}-h`} data-demo-complete>
+  <div class="dc-head">
+    <span class="dc-tick" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+    <div>
+      <h2 id={`${id}-h`}>{heading}</h2>
+      <p>{lead}</p>
+    </div>
+  </div>
+  <dl class="dc-summary" data-complete-summary></dl>
+  <div class="dc-flow">
+    <p class="dc-flow-h">On a real Nuxy build, this would happen next</p>
+    <ol role="list">
+      {flow.map((f, i) => <li style={`--i:${i}`}><span class="dc-n" aria-hidden="true">{i + 1}</span><div><strong>{f.title}</strong><p>{f.text}</p></div></li>)}
+    </ol>
+    <p class="dc-note">In this demo none of it runs: nothing was saved, sent, booked or charged.</p>
+  </div>
+  <div class="dc-ctas">
+    <a class="dc-cta" href={cta.href} target="_top">{cta.label}</a>
+    <a class="dc-cta ghost" href="/contact/" target="_top">Talk to Nuxy</a>
+    <button type="button" class="dc-cta ghost" data-restart>{restart}</button>
+  </div>
+</section>
+
+<style>
+  .dc { --dc-bg: #fff; --dc-ink: #12201a; --dc-soft: #4a5a52; --dc-line: rgba(0, 0, 0, 0.1); --dc-accent: #1f6b45; --dc-on-accent: #fff; --dc-panel: rgba(0, 0, 0, 0.035); --dc-radius: 16px;
+    display: grid; gap: 22px; padding: clamp(20px, 4vw, 32px); border-radius: var(--dc-radius); background: var(--dc-bg); color: var(--dc-ink); box-shadow: 0 0 0 1px var(--dc-line) inset; outline: none; }
+  .dc-head { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
+  .dc-tick { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--dc-accent); color: var(--dc-on-accent); }
+  .dc h2 { font-size: clamp(1.5rem, 3vw, 1.875rem); line-height: 1.15; }
+  .dc-head p { margin-top: 4px; color: var(--dc-soft); }
+  .dc-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; border-radius: 12px; overflow: hidden; background: var(--dc-line); }
+  .dc-summary:empty { display: none; }
+  .dc-summary > div { padding: 12px 14px; background: var(--dc-bg); }
+  .dc-summary dt { font-size: 0.8125rem; color: var(--dc-soft); }
+  .dc-summary dd { font-weight: 650; overflow-wrap: anywhere; }
+  .dc-flow { display: grid; gap: 12px; padding: 18px; border-radius: 12px; background: var(--dc-panel); }
+  .dc-flow-h { font-weight: 700; }
+  .dc-flow ol { display: grid; gap: 12px; counter-reset: dc; }
+  .dc-flow li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+  .dc-n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--dc-bg); box-shadow: 0 0 0 1px var(--dc-line) inset; font-size: 0.8125rem; font-weight: 700; }
+  .dc-flow li p { color: var(--dc-soft); font-size: 0.9375rem; }
+  .dc-note { font-size: 0.875rem; color: var(--dc-soft); }
+  .dc-ctas { display: flex; flex-wrap: wrap; gap: 10px; }
+  .dc-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 20px; border: 0; border-radius: var(--dc-btn-radius, 999px); background: var(--dc-accent); color: var(--dc-on-accent); font-weight: 700; text-decoration: none; transition: transform 160ms ease-out, filter 160ms ease-out; }
+  .dc-cta:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  .dc-cta.ghost { background: transparent; color: var(--dc-ink); box-shadow: 0 0 0 1.5px var(--dc-line) inset; }
+  @media (max-width: 479px) { .dc-cta { flex: 1 1 100%; } }
+  /* the steps arrive one after another when the panel opens (not under reduced motion: the global rule zeroes it) */
+  :global(:root[data-tier="1"]) .dc:not([hidden]) li, :global(:root[data-tier="2"]) .dc:not([hidden]) li { animation: dc-in 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(120ms + var(--i) * 90ms); }
+  @keyframes dc-in { from { opacity: 0; transform: translateY(6px); } }
+</style>

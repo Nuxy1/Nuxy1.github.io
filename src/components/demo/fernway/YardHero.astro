@@ -1,0 +1,298 @@
+---
+// Fernway's hero: a 2.5D yard panorama drawn as one layered SVG (hills, tree line, house, shade tree, fence, hedges,
+// striped lawn). On a fine pointer the layers move at different depths, the sun and light follow the pointer and the
+// shadows lean with it; the tree canopy sways. Tier 1 adds a canvas of grass blades that part around the cursor.
+// Tier 3, phones and no-JavaScript visitors get the same picture standing still, with a drawn grass edge.
+// The quick-estimate card prices weekly mowing for three yard sizes with the same rules as the quote page.
+import { estimate, SIZES } from "../../../lib/demo/fernway-quote";
+import { range } from "../../../lib/demo/money";
+import { base } from "../../../data/demos/fernway";
+
+// a small seeded random so the drawn grass and tree line are identical on every build
+let seed = 7;
+const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+
+const treeLine = Array.from({ length: 52 }, (_, i) => ({ x: -90 + i * 35 + rnd() * 14, y: 338 + rnd() * 10, r: 18 + rnd() * 14 }));
+const pickets = Array.from({ length: 18 }, (_, i) => 128 + i * 19);
+const H = 110;
+const grass = [0, 1, 2, 3].map(() => "");
+for (let x = -10; x < 1610; x += 3.4) {
+  const h = 34 + rnd() * 66, w = 2.2 + rnd() * 2.2, b = (rnd() - 0.4) * 14, c = Math.floor(rnd() * 4);
+  const X = x + rnd() * 3;
+  grass[c] += `M${(X - w).toFixed(1)} ${H}Q${(X + b * 0.3).toFixed(1)} ${(H - h * 0.55).toFixed(1)} ${(X + b).toFixed(1)} ${(H - h).toFixed(1)}Q${(X + w + b * 0.3).toFixed(1)} ${(H - h * 0.5).toFixed(1)} ${(X + w).toFixed(1)} ${H}Z`;
+}
+const grassColors = ["#3f7a3b", "#4f8a45", "#5f9a4c", "#6fae55"];
+const stripes = Array.from({ length: 16 }, (_, i) => -1400 + i * 260);
+
+const sizes = (["small", "medium", "large"] as const).map((s) => {
+  const q = estimate({ service: "mowing", size: s, frequency: "weekly", extras: [] });
+  return { id: s, label: SIZES[s].label, price: range(q.low, q.high), hint: SIZES[s].hint };
+});
+const medium = sizes[1];
+---
+<section class="fw-hero" data-yard aria-labelledby="fw-hero-h">
+  <div class="fw-sky" aria-hidden="true">
+    <svg class="fw-cloud fw-cloud-1" viewBox="0 0 220 70" width="220" height="70"><path d="M30 60c-16 0-24-10-20-21 4-10 16-12 24-8 4-14 18-22 34-18 10-12 34-12 44 4 16-6 34 2 36 18 16-2 28 8 26 18-2 6-8 7-14 7Z" fill="#fff" opacity="0.85" /></svg>
+    <svg class="fw-cloud fw-cloud-2" viewBox="0 0 220 70" width="160" height="51"><path d="M30 60c-16 0-24-10-20-21 4-10 16-12 24-8 4-14 18-22 34-18 10-12 34-12 44 4 16-6 34 2 36 18 16-2 28 8 26 18-2 6-8 7-14 7Z" fill="#fff" opacity="0.7" /></svg>
+  </div>
+
+  <div class="fw-wrap fw-hero-copy">
+    <div class="fw-hero-title">
+      <p class="fw-kicker">Lawn care &amp; landscaping · 25-mile service area</p>
+      <h1 id="fw-hero-h">A greener yard, without the weekend chores.</h1>
+    </div>
+    <div class="fw-hero-side">
+      <p class="fw-lead">Mowing, cleanups, beds and snow, by the same two-person crew every visit. A price range in about a minute, a text the night before, and a photo when it’s done.</p>
+      <div class="fw-hero-ctas">
+        <a class="fw-btn fw-btn-lime" href={`${base}/quote/`}>Get my estimate
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+        <a class="fw-btn fw-btn-ghost" href={`${base}/projects/`}>See our work</a>
+      </div>
+      <p class="fw-hero-meta">No account needed · Example pricing for demonstration purposes</p>
+    </div>
+  </div>
+
+  <div class="fw-scene" aria-hidden="true">
+    <svg class="fw-yard" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <clipPath id="fw-lawn-clip"><path d="M-120 372C300 352 700 366 1000 360S1500 350 1720 362V600H-120Z" /></clipPath>
+        <linearGradient id="fw-lawn-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cb55c" /><stop offset="1" stop-color="#5a9645" /></linearGradient>
+        <linearGradient id="fw-wall-g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9ccb0" /><stop offset="1" stop-color="#cbbd9f" /></linearGradient>
+      </defs>
+      <g class="fw-l" style="--d:0.12"><path d="M-120 300C150 240 330 250 520 285S900 228 1120 268 1500 238 1720 280V600H-120Z" fill="#c4dba4" /></g>
+      <g class="fw-l" style="--d:0.22"><path d="M-120 338C200 298 420 318 640 328S1080 292 1300 318 1600 298 1720 328V600H-120Z" fill="#a6c787" /></g>
+      <g class="fw-l" style="--d:0.32">
+        {treeLine.map((t) => <circle cx={t.x.toFixed(1)} cy={t.y.toFixed(1)} r={t.r.toFixed(1)} fill="#467a4b" />)}
+        <rect x="-120" y="340" width="1840" height="40" fill="#467a4b" />
+      </g>
+      <g class="fw-l" style="--d:0.55">
+        <path d="M-120 372C300 352 700 366 1000 360S1500 350 1720 362V600H-120Z" fill="url(#fw-lawn-g)" />
+        <g clip-path="url(#fw-lawn-clip)" fill="#548f41" opacity="0.55">
+          {stripes.map((x) => <path d={`M800 250L${x} 640H${x + 130}Z`} />)}
+        </g>
+        <path d="M624 388h26l70 212H548Z" fill="#e7dfcd" />
+        <path d="M624 388h26l70 212H548Z" fill="none" stroke="#d2c7ae" stroke-width="2" />
+      </g>
+      <g class="fw-l" style="--d:0.55">
+        <ellipse class="fw-shadow" cx="700" cy="390" rx="160" ry="11" fill="#173826" opacity="0.18" />
+        <path d="M680 270 812 283V380L680 386Z" fill="url(#fw-wall-g)" />
+        <path d="M540 272h140v114H540Z" fill="#f3ecdb" />
+        <path d="M528 275 610 200 692 275Z" fill="#f3ecdb" />
+        <path d="M610 200 737 212 820 286 692 275Z" fill="#2c3a33" />
+        <path d="M610 200 737 212" stroke="#45564d" stroke-width="4" stroke-linecap="round" />
+        <path d="M522 279 610 197 698 279" fill="none" stroke="#2c3a33" stroke-width="9" stroke-linejoin="round" stroke-linecap="round" />
+        <rect x="712" y="188" width="22" height="34" fill="#8a4a2a" /><rect x="709" y="184" width="28" height="7" fill="#6d3a20" />
+        <circle cx="610" cy="245" r="10" fill="#ffe3a0" stroke="#2c3a33" stroke-width="3" />
+        <g fill="#ffe3a0" stroke="#2c3a33" stroke-width="3">
+          <rect x="554" y="298" width="30" height="40" rx="2" />
+          <path d="M700 300 732 302V340L700 339Z" /><path d="M756 305 788 307V345L756 344Z" />
+        </g>
+        <path d="M569 298v40M554 318h30M716 301v39M772 306v39" stroke="#2c3a33" stroke-width="2" />
+        <rect x="620" y="320" width="34" height="66" rx="3" fill="#a2522a" />
+        <circle cx="646" cy="355" r="2.5" fill="#f3ecdb" />
+        <rect x="612" y="384" width="50" height="8" rx="2" fill="#cdbf9f" />
+        <path d="M592 300h18v38h-18Z" fill="#2f5d3a" opacity="0.9" />
+      </g>
+      <g class="fw-l" style="--d:0.62">
+        <ellipse class="fw-shadow" cx="1030" cy="404" rx="170" ry="15" fill="#173826" opacity="0.2" />
+        <path d="M990 404c4-50 4-110-2-160h24c-6 50-6 110-2 160Z" fill="#6b4a33" />
+        <path d="M1000 300c-20-14-34-30-40-52M1004 280c22-16 34-34 40-56" stroke="#6b4a33" stroke-width="10" stroke-linecap="round" fill="none" />
+        <g class="fw-canopy">
+          <circle cx="1000" cy="214" r="86" fill="#2f5d3a" />
+          <circle cx="930" cy="248" r="60" fill="#356a40" />
+          <circle cx="1072" cy="244" r="64" fill="#356a40" />
+          <circle cx="998" cy="152" r="62" fill="#3f7845" />
+          <circle cx="950" cy="186" r="46" fill="#4a8a4c" />
+          <circle cx="1046" cy="178" r="44" fill="#4a8a4c" />
+          <circle cx="1000" cy="128" r="34" fill="#5c9c55" />
+          <circle cx="940" cy="170" r="16" fill="#79b765" opacity="0.8" />
+          <circle cx="1030" cy="140" r="14" fill="#79b765" opacity="0.8" />
+          <circle cx="1080" cy="206" r="12" fill="#79b765" opacity="0.7" />
+        </g>
+      </g>
+      <g class="fw-l" style="--d:0.72">
+        <path d="M118 386H476M118 412H476" stroke="#e9e2d0" stroke-width="7" />
+        {pickets.map((x) => <path d={`M${x} 432V378l6-9 6 9V432Z`} fill="#f7f3e8" stroke="#d8cfba" stroke-width="1.5" />)}
+      </g>
+      <g class="fw-l" style="--d:0.85">
+        <ellipse class="fw-shadow" cx="190" cy="468" rx="180" ry="12" fill="#173826" opacity="0.18" />
+        <rect x="20" y="414" width="330" height="56" rx="28" fill="#2f5d3a" />
+        <path d="M50 430c14-8 28-8 42 0m24 0c14-8 28-8 42 0m24 0c14-8 28-8 42 0m24 0c14-8 28-8 42 0" stroke="#4a8a4c" stroke-width="4" fill="none" stroke-linecap="round" />
+        <ellipse cx="1340" cy="478" rx="190" ry="26" fill="#6b3f25" />
+        <ellipse cx="1340" cy="474" rx="178" ry="20" fill="#7d4b2d" />
+        {[[1200, 452, "#e0a43c"], [1240, 446, "#a2522a"], [1290, 444, "#f2c94c"], [1338, 440, "#e0a43c"], [1390, 446, "#a2522a"], [1436, 450, "#f2c94c"], [1478, 458, "#e0a43c"], [1266, 462, "#c9e265"], [1364, 460, "#c9e265"], [1450, 466, "#c9e265"]].map(([x, y, c]) => (
+          <g><path d={`M${x} ${+y + 22}V${+y + 6}`} stroke="#2f5d3a" stroke-width="3" /><circle cx={x} cy={y} r="11" fill={c as string} /><circle cx={x} cy={y} r="3.5" fill="#f5f1e6" /></g>
+        ))}
+      </g>
+    </svg>
+    <div class="fw-light"></div>
+    <svg class="fw-grass" viewBox={`0 0 1600 ${H}`} preserveAspectRatio="xMidYMax slice">
+      {grass.map((d, i) => <path d={d} fill={grassColors[i]} />)}
+    </svg>
+    <canvas class="fw-grass-live"></canvas>
+    <p class="fw-try">Run your cursor through the grass</p>
+  </div>
+
+  <aside class="fw-qe" aria-labelledby="fw-qe-h" data-qe>
+    <p class="fw-qe-tag">Example estimate</p>
+    <h2 id="fw-qe-h" class="fw-qe-h">Weekly mowing</h2>
+    <div class="fw-qe-sizes" role="group" aria-label="Yard size" data-qe-sizes hidden>
+      {sizes.map((s) => <button type="button" aria-pressed={s.id === "medium" ? "true" : "false"} data-size={s.id} data-price={s.price} title={s.hint}>{s.label}</button>)}
+    </div>
+    <p class="fw-qe-price"><span data-qe-price aria-live="polite">{medium.price}</span> <small>per visit</small></p>
+    <p class="fw-qe-fine" data-qe-hint>{medium.hint}. Demonstration estimate, not an actual quote.</p>
+    <a class="fw-link" href={`${base}/quote/?service=mowing&size=medium`} data-qe-link>Build a full estimate
+      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+  </aside>
+</section>
+
+<style>
+  .fw-hero { --px: 0; --py: 0; position: relative; overflow: hidden; isolation: isolate;
+    background: radial-gradient(circle at calc(78% + var(--px) * 5%) calc(16% + var(--py) * 3%), rgba(255, 236, 170, 0.95) 0, rgba(255, 236, 170, 0.35) 9%, transparent 30%), linear-gradient(#e6f0e4 0%, #f3f1e2 52%, #f6f1df 100%); }
+  .fw-sky { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .fw-cloud { position: absolute; height: auto; }
+  .fw-cloud-1 { top: 9%; left: 52%; }
+  .fw-cloud-2 { top: 22%; left: 8%; }
+  .fw-hero-copy { position: relative; z-index: 2; display: grid; gap: 22px 56px; padding-top: clamp(40px, 7vw, 88px); align-items: end; }
+  .fw-hero-title { display: grid; gap: 16px; }
+  .fw-hero h1 { color: var(--fw-forest); max-width: 13ch; }
+  .fw-hero-side { display: grid; gap: 22px; }
+  .fw-hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+  .fw-hero-meta { font-size: 0.875rem; color: var(--fw-soft); }
+  @media (min-width: 1024px) { .fw-hero-copy { grid-template-columns: 7fr 5fr; } .fw-hero-side { padding-bottom: 10px; } }
+
+  .fw-scene { position: relative; height: clamp(280px, 40vw, max(560px, 32vw)); margin-top: clamp(-40px, -2vw, 0px); }
+  /* past 1600px the yard scales with width; drop the overlap so the tree never climbs into the small print */
+  @media (min-width: 1600px) { .fw-scene { margin-top: 0; } }
+  .fw-yard { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .fw-l { transform: translate(calc(var(--px) * var(--d) * -38px), calc(var(--py) * var(--d) * -10px)); }
+  .fw-shadow { transform-box: fill-box; transform-origin: 50% 0; transform: skewX(calc(var(--px) * -24deg)) scaleX(calc(1 + var(--px) * 0.08)); }
+  .fw-canopy { transform-box: fill-box; transform-origin: 50% 100%; }
+  .fw-light { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light; background: linear-gradient(calc(118deg + var(--px) * 14deg), rgba(255, 233, 160, 0.75), rgba(255, 233, 160, 0) 55%); }
+  .fw-grass { position: absolute; left: 0; right: 0; bottom: -2px; width: 100%; height: clamp(64px, 8vw, 110px); }
+  .fw-grass-live { position: absolute; left: 0; right: 0; bottom: -2px; width: 100%; height: clamp(64px, 8vw, 110px); display: none; pointer-events: none; }
+  .fw-hero.has-live-grass .fw-grass-live { display: block; }
+  .fw-hero.has-live-grass .fw-grass { visibility: hidden; }
+  .fw-try { display: none; position: absolute; left: 50%; bottom: clamp(74px, 9vw, 122px); transform: translateX(-50%); padding: 6px 14px; border-radius: 999px; background: rgba(19, 32, 26, 0.72); color: #fff; font-size: 0.8125rem; font-weight: 600; pointer-events: none; transition: opacity 400ms ease-out; }
+  .fw-hero.has-live-grass .fw-try { display: block; }
+  .fw-hero.touched .fw-try { opacity: 0; }
+
+  /* living details, only while the hero is on screen and only on tiers 1-2 */
+  :root[data-tier="1"] .fw-hero.is-live .fw-canopy, :root[data-tier="2"] .fw-hero.is-live .fw-canopy { animation: fw-sway 5.5s ease-in-out infinite alternate; }
+  :root[data-tier="1"] .fw-hero.is-live .fw-cloud, :root[data-tier="2"] .fw-hero.is-live .fw-cloud { animation: fw-drift 40s ease-in-out infinite alternate; }
+  .fw-cloud-2 { animation-duration: 55s !important; }
+  @keyframes fw-sway { from { transform: rotate(-1.1deg); } to { transform: rotate(1.3deg) translateX(3px); } }
+  @keyframes fw-drift { to { translate: 60px 0; } }
+
+  /* the quick estimate */
+  .fw-qe { position: relative; z-index: 3; display: grid; gap: 10px; width: min(340px, 100% - 40px); margin: -36px auto 0; padding: 22px; border-radius: 24px; background: rgba(255, 255, 255, 0.96); box-shadow: 0 24px 50px rgba(19, 32, 26, 0.18), 0 0 0 1px var(--fw-line); }
+  .fw-qe-tag { justify-self: start; padding: 4px 10px; border-radius: 999px; background: var(--fw-lime-2); color: var(--fw-forest); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .fw-qe-h { font-size: 1.25rem !important; }
+  .fw-qe-sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 999px; background: var(--fw-cream); }
+  .fw-qe-sizes[hidden] { display: none; }
+  .fw-qe-sizes button { min-height: 44px; border: 0; border-radius: 999px; background: transparent; color: var(--fw-ink); font: inherit; font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: background-color 180ms ease-out, color 180ms ease-out; }
+  .fw-qe-sizes button[aria-pressed="true"] { background: var(--fw-forest); color: #fff; }
+  .fw-qe-price { font-family: "Bricolage Grotesque", sans-serif; font-weight: 750; font-size: 2.25rem; letter-spacing: -0.03em; line-height: 1; color: var(--fw-forest); font-variant-numeric: tabular-nums; }
+  .fw-qe-price small { font-family: "Inter", sans-serif; font-size: 0.9375rem; font-weight: 550; letter-spacing: 0; color: var(--fw-soft); }
+  .fw-qe-fine { font-size: 0.8125rem; color: var(--fw-soft); }
+  .fw-qe.bump [data-qe-price] { display: inline-block; animation: fw-bump 320ms var(--fw-ease); }
+  @keyframes fw-bump { 40% { transform: translateY(-3px); opacity: 0.6; } }
+  @media (min-width: 1024px) {
+    .fw-qe { position: absolute; right: max(24px, calc((100% - 1240px) / 2)); bottom: clamp(110px, 12vw, 170px); margin: 0; width: 320px; }
+    :root[data-tier="1"] .fw-hero.is-live .fw-qe, :root[data-tier="2"] .fw-hero.is-live .fw-qe { animation: fw-float 6s ease-in-out infinite alternate; }
+  }
+  @media (max-width: 1023px) { .fw-hero { padding-bottom: 40px; background-color: #f6f1df; } .fw-cloud-1 { left: 62%; } }
+  @keyframes fw-float { to { transform: translateY(-8px); } }
+</style>
+
+<script>
+  import { whileTier, tier } from "../../../lib/demo/tier";
+  import { loop, pointer, fit } from "../../../lib/demo/loop";
+
+  const hero = document.querySelector<HTMLElement>("[data-yard]");
+  if (hero) {
+    // the CSS loops (sway, clouds, float) only run while the hero is on screen
+    new IntersectionObserver(([e]) => hero.classList.toggle("is-live", e.isIntersecting)).observe(hero);
+    const fine = matchMedia("(pointer: fine)");
+
+    // depth: layers, sun, light and shadows follow the pointer (tiers 1-2, mouse or pen)
+    whileTier(2, () => {
+      if (!fine.matches) return;
+      const ptr = pointer(hero);
+      let lx = 9, ly = 9;
+      const run = loop(hero, () => {
+        const p = ptr.ease(0.07);
+        if (Math.abs(p.x - lx) < 0.001 && Math.abs(p.y - ly) < 0.001) return;
+        lx = p.x; ly = p.y;
+        hero.style.setProperty("--px", p.x.toFixed(4));
+        hero.style.setProperty("--py", p.y.toFixed(4));
+      }, { fps: 60 });
+      return () => { run.stop(); ptr.stop(); hero.style.setProperty("--px", "0"); hero.style.setProperty("--py", "0"); };
+    });
+
+    // tier 1: live grass that parts around the cursor
+    whileTier(1, () => {
+      const canvas = hero.querySelector<HTMLCanvasElement>(".fw-grass-live");
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx || !fine.matches || tier() !== 1) return;
+      hero.classList.add("has-live-grass");
+      const colors = ["#3f7a3b", "#4f8a45", "#5f9a4c", "#6fae55"];
+      type Blade = { x: number; h: number; w: number; ph: number; c: number; b: number };
+      let blades: Blade[] = [], W = 0, Hc = 0, k = 1;
+      const build = () => {
+        ({ w: W, h: Hc, k } = fit(canvas));
+        blades = [];
+        let s = 11;
+        const r = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+        const scale = Hc / 110;
+        for (let x = -6; x < W + 6; x += 3.2) blades.push({ x: x + r() * 3, h: (34 + r() * 66) * scale, w: (2 + r() * 2) * Math.max(0.8, scale), ph: r() * 6.28, c: Math.floor(r() * 4), b: 0 });
+      };
+      build();
+      const ro = new ResizeObserver(build);
+      ro.observe(canvas);
+      const ptr = pointer(hero);
+      const touched = () => hero.classList.add("touched");
+      hero.addEventListener("pointermove", touched, { once: true });
+      const run = loop(canvas, (t) => {
+        const p = ptr.p;
+        const top = canvas.offsetTop;
+        const near = p.inside && p.py > top - 70;
+        ctx.setTransform(k, 0, 0, k, 0, 0);
+        ctx.clearRect(0, 0, W, Hc);
+        const paths = colors.map(() => new Path2D());
+        for (const bl of blades) {
+          let target = Math.sin(t * 0.0011 + bl.x * 0.011) * 0.16 + Math.sin(t * 0.0026 + bl.ph) * 0.05;
+          if (near) {
+            const dx = bl.x - p.px, ad = Math.abs(dx);
+            if (ad < 120) target += Math.sign(dx || 1) * Math.pow(1 - ad / 120, 1.4) * 1.1;
+          }
+          bl.b += (target - bl.b) * 0.12;
+          const tip = bl.b * bl.h * 0.55, y = Hc + 2, top2 = y - bl.h * (1 - Math.abs(bl.b) * 0.12);
+          const path = paths[bl.c];
+          path.moveTo(bl.x - bl.w, y);
+          path.quadraticCurveTo(bl.x + tip * 0.35, y - bl.h * 0.55, bl.x + tip, top2);
+          path.quadraticCurveTo(bl.x + bl.w + tip * 0.35, y - bl.h * 0.5, bl.x + bl.w, y);
+        }
+        paths.forEach((path, i) => { ctx.fillStyle = colors[i]; ctx.fill(path); });
+      }, { fps: 45 });
+      return () => { run.stop(); ptr.stop(); ro.disconnect(); hero.removeEventListener("pointermove", touched); hero.classList.remove("has-live-grass"); };
+    });
+
+    // the quick estimate: three sizes, prices worked out at build time with the quote page's rules
+    const qe = hero.querySelector<HTMLElement>("[data-qe]")!;
+    const group = qe.querySelector<HTMLElement>("[data-qe-sizes]")!;
+    const out = qe.querySelector<HTMLElement>("[data-qe-price]")!;
+    const hint = qe.querySelector<HTMLElement>("[data-qe-hint]")!;
+    const link = qe.querySelector<HTMLAnchorElement>("[data-qe-link]")!;
+    group.hidden = false;
+    group.addEventListener("click", (e) => {
+      const b = (e.target as Element).closest<HTMLButtonElement>("button[data-size]");
+      if (!b || b.getAttribute("aria-pressed") === "true") return;
+      group.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      out.textContent = b.dataset.price!;
+      hint.textContent = `${b.title}. Demonstration estimate, not an actual quote.`;
+      link.href = link.href.replace(/size=\w+/, `size=${b.dataset.size}`);
+      qe.classList.remove("bump"); void qe.offsetWidth; qe.classList.add("bump");
+    });
+  }
+</script>

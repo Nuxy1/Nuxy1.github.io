@@ -36,6 +36,27 @@ open-source code anyone can open, clearly labelled as demonstrations, not testim
 3. AI and business automation (one-time setups from $149; the AI Voice Receptionist is available after consultation)
 4. Optional website management (Website Care $79/month)
 
+### Website levels
+
+From the owner's website levels brief (2026-11-12): four levels so a visitor can see what each price buys, on
+`/web-design/` and one page per level (`src/data/tiers.ts`; the finder's logic is `src/data/level-finder.ts`).
+
+| Level | Price | Built how | Motion |
+|---|---|---|---|
+| Business | the live $499 one page / $900 4-page site | in the client's own Squarespace or Wix | low to moderate, no WebGL |
+| Signature | from $3,500 | custom-coded on the client's hosting (a store: a custom Shopify theme) | polished motion and light depth (layered images, parallax, a 2.5D accent); real-time 3D only as an add-on |
+| Immersive | starting at $6,000, custom quoted | custom-coded, scroll storytelling | WebGL / Three.js where the idea calls for it |
+| Flagship | custom quote, a written scope (about $12,000 and up) | custom | whatever the scope says, no promises before it |
+
+Business keeps its live prices: the brief suggested $1,500–3,000, and it also says not to overwrite production
+pricing automatically, so the owner decides. Add-ons are "starting at" prices (Premium Motion +$750, Interactive 3D
+Hero +$1,500, Custom 3D Product Model +$750, Advanced Scroll Storytelling +$1,500, Additional Interactive Scene
++$1,000, Custom Animated Illustration +$500, Cinematic Video Integration +$500; Advanced Automation and Product
+Configurator are custom quotes). Every level states its timeline and its rounds of revisions; none is unlimited.
+The finder always suggests a level and never turns anyone away: a small budget with big plans gets the closest
+level plus a way to grow into the one described. The Immersive example is the Halvane Audio concept, a made-up
+speaker brand labelled as a Nuxy demonstration, never client work. `tests/levels.test.mjs` pins the prices.
+
 ### Also: AI Creative & Video Advertising
 
 An additional service, from the owner's Creative Studio brief (2026-11-11): short video ads, motion graphics and

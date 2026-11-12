@@ -1,0 +1,113 @@
+---
+// The 25-mile service area: a drawn map (rings every 10 miles, roads, the river) with the six fictional towns.
+// Choosing a town (a real button list, so it works by keyboard and screen reader) lights its dot and road, and shows
+// the drive time and crew days. Without JavaScript the list shows every town's details at once.
+import { towns } from "../../../data/demos/fernway";
+interface Props { heading?: string; id?: string }
+const { heading = "Where we work", id = "area" } = Astro.props;
+const first = towns[2];
+---
+<div class="fw-map" data-map id={id}>
+  <div class="fw-map-pic">
+    <svg viewBox="-20 -20 440 440" aria-hidden="true">
+      <defs>
+        <radialGradient id={`${id}-glow`}><stop offset="0" stop-color="#c9e265" stop-opacity="0.55" /><stop offset="1" stop-color="#c9e265" stop-opacity="0" /></radialGradient>
+        <pattern id={`${id}-dots`} width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="#173826" opacity="0.12" /></pattern>
+      </defs>
+      <rect x="-20" y="-20" width="440" height="440" rx="28" fill="#eef0dc" />
+      <rect x="-20" y="-20" width="440" height="440" rx="28" fill={`url(#${id}-dots)`} />
+      <path d="M-20 300C60 280 110 330 170 316S260 250 330 262 400 230 420 236" fill="none" stroke="#9ec3d6" stroke-width="10" stroke-linecap="round" />
+      <path d="M-20 300C60 280 110 330 170 316S260 250 330 262 400 230 420 236" fill="none" stroke="#c4dce7" stroke-width="4" stroke-linecap="round" />
+      <circle cx="200" cy="200" r="200" fill="#c9e265" opacity="0.16" />
+      <circle cx="200" cy="200" r="200" fill="none" stroke="#2f5d3a" stroke-width="2" stroke-dasharray="6 6" />
+      <circle cx="200" cy="200" r="160" fill="none" stroke="#2f5d3a" stroke-width="1" opacity="0.35" />
+      <circle cx="200" cy="200" r="80" fill="none" stroke="#2f5d3a" stroke-width="1" opacity="0.35" />
+      <text x="200" y="-6" text-anchor="middle" font-size="12" font-weight="700" fill="#2f5d3a">25 miles</text>
+      <text x="200" y="34" text-anchor="middle" font-size="11" fill="#4a5a50">20 mi</text>
+      <text x="200" y="114" text-anchor="middle" font-size="11" fill="#4a5a50">10 mi</text>
+      <g stroke="#fff" stroke-width="7" stroke-linecap="round" fill="none">
+        {towns.map((t) => <path d={`M200 200Q${(200 + t.x) / 2 + (t.y - 200) * 0.12} ${(200 + t.y) / 2 - (t.x - 200) * 0.12} ${t.x} ${t.y}`} />)}
+      </g>
+      <g stroke="#d9d2bd" stroke-width="2" stroke-linecap="round" fill="none">
+        {towns.map((t) => <path d={`M200 200Q${(200 + t.x) / 2 + (t.y - 200) * 0.12} ${(200 + t.y) / 2 - (t.x - 200) * 0.12} ${t.x} ${t.y}`} />)}
+      </g>
+      <g class="fw-map-routes" stroke="#a2522a" stroke-width="4" stroke-linecap="round" fill="none">
+        {towns.map((t) => <path data-route={t.id} pathLength="1" d={`M200 200Q${(200 + t.x) / 2 + (t.y - 200) * 0.12} ${(200 + t.y) / 2 - (t.x - 200) * 0.12} ${t.x} ${t.y}`} />)}
+      </g>
+      {towns.map((t) => (
+        <g class="fw-map-town" data-dot={t.id}>
+          <circle cx={t.x} cy={t.y} r="22" fill={`url(#${id}-glow)`} class="fw-map-halo" />
+          <circle cx={t.x} cy={t.y} r="7" fill="#fff" stroke="#173826" stroke-width="3" />
+          <text x={t.x} y={t.y + 24} text-anchor="middle" font-size="12.5" font-weight="650" fill="#13201a">{t.name}</text>
+        </g>
+      ))}
+      <g>
+        <circle cx="200" cy="200" r="16" fill="#173826" />
+        <path d="M200 208v-10m0 3c-4 0-6-2-6-6 4 0 6 2 6 6Zm0-2c0-4 2-6 6-6 0 4-2 6-6 6Z" stroke="#c9e265" stroke-width="2" fill="#c9e265" stroke-linejoin="round" />
+        <text x="200" y="232" text-anchor="middle" font-size="12" font-weight="800" fill="#173826">Our yard</text>
+      </g>
+    </svg>
+    <p class="fw-map-note">Demo map. Fernway and these towns are fictional.</p>
+  </div>
+  <div class="fw-map-side">
+    <h3>{heading}</h3>
+    <p class="fw-fine">Every home within 25 miles of our yard. Pick a town to see the drive and the crew’s days.</p>
+    <ul class="fw-map-list" role="list" data-map-list>
+      {towns.map((t) => (
+        <li>
+          <button type="button" data-town={t.id} aria-pressed={t.id === first.id ? "true" : "false"} data-text={`${t.name}: ${t.miles} miles, about ${t.minutes} minutes from our yard. Crew days: ${t.days}.`}>
+            <span>{t.name}</span><small>{t.miles} mi</small>
+          </button>
+          <p class="fw-map-row">{t.miles} miles · about {t.minutes} min · {t.days}</p>
+        </li>
+      ))}
+    </ul>
+    <p class="fw-map-out" aria-live="polite" data-map-out>{`${first.name}: ${first.miles} miles, about ${first.minutes} minutes from our yard. Crew days: ${first.days}.`}</p>
+  </div>
+</div>
+
+<style>
+  .fw-map { display: grid; gap: clamp(24px, 4vw, 56px); align-items: center; }
+  @media (min-width: 900px) { .fw-map { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+  .fw-map-pic { display: grid; gap: 8px; }
+  .fw-map-pic svg { width: 100%; max-width: 540px; height: auto; margin-inline: auto; font-family: "Inter", sans-serif; }
+  .fw-map-note { text-align: center; font-size: 0.8125rem; color: var(--fw-soft); }
+  .fw-map-side { display: grid; gap: 12px; align-content: start; }
+  .fw-map-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin-top: 6px; }
+  .fw-map-list button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 48px; padding: 0 16px; border: 0; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line); font: inherit; font-weight: 600; color: var(--fw-ink); cursor: pointer; transition: background-color 160ms ease-out, box-shadow 160ms ease-out; text-align: left; }
+  .fw-map-list button small { color: var(--fw-soft); font-weight: 500; }
+  .fw-map-list button:hover { box-shadow: 0 0 0 1.5px var(--fw-moss); }
+  .fw-map-list button[aria-pressed="true"] { background: var(--fw-forest); color: #fff; box-shadow: none; }
+  .fw-map-list button[aria-pressed="true"] small { color: var(--fw-lime); }
+  .fw-map-row { font-size: 0.8125rem; color: var(--fw-soft); padding: 4px 4px 0; }
+  .fw-map-out { display: none; padding: 14px 16px; border-radius: 14px; background: var(--fw-lime-2); color: var(--fw-forest); font-weight: 600; }
+  .fw-map.is-live .fw-map-row { display: none; }
+  .fw-map.is-live .fw-map-out { display: block; }
+  .fw-map-routes path { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; transition: stroke-dashoffset 600ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 200ms; }
+  .fw-map-routes path.on { stroke-dashoffset: 0; opacity: 1; }
+  .fw-map-halo { opacity: 0; transition: opacity 240ms; }
+  .fw-map-town.on .fw-map-halo { opacity: 1; }
+  .fw-map-town.on circle:not(.fw-map-halo) { fill: #c9e265; }
+</style>
+
+<script>
+  for (const map of document.querySelectorAll<HTMLElement>("[data-map]")) {
+    const out = map.querySelector<HTMLElement>("[data-map-out]")!;
+    const pick = (id: string, say = true) => {
+      map.querySelectorAll<HTMLButtonElement>("[data-town]").forEach((b) => {
+        const on = b.dataset.town === id;
+        b.setAttribute("aria-pressed", String(on));
+        if (on && say) out.textContent = b.dataset.text!;
+      });
+      map.querySelectorAll("[data-route]").forEach((r) => r.classList.toggle("on", r.getAttribute("data-route") === id));
+      map.querySelectorAll("[data-dot]").forEach((d) => d.classList.toggle("on", d.getAttribute("data-dot") === id));
+    };
+    map.classList.add("is-live");
+    map.querySelector("[data-map-list]")!.addEventListener("click", (e) => {
+      const b = (e.target as Element).closest<HTMLButtonElement>("[data-town]");
+      if (b) pick(b.dataset.town!);
+    });
+    const start = map.querySelector<HTMLButtonElement>('[data-town][aria-pressed="true"]');
+    if (start) pick(start.dataset.town!, false);
+  }
+</script>

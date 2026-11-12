@@ -1,0 +1,189 @@
+---
+// Lantern Row Barbers, home: the chair hero with today's board, the menu, how booking works, the three barbers, a
+// look at the style gallery, sample testimonials and the visit block. A fictional shop (data/demos/lantern.ts).
+import Shell from "../../../components/demo/lantern/Shell.astro";
+import ChairHero from "../../../components/demo/lantern/ChairHero.astro";
+import StyleArt from "../../../components/demo/lantern/StyleArt.astro";
+import { base, services, barbers, gallery, testimonials, hours, address, styleNames } from "../../../data/demos/lantern";
+
+const picks = ["drop-fade", "crop", "full-beard"].map((id) => gallery.find((g) => g.id === id)!);
+const how = [
+  { n: "I", title: "Pick a cut and a chair", text: "Five cuts, three barbers, or “first available” if you just want in." },
+  { n: "II", title: "Take an open time", text: "Only real open times show, so there is no back-and-forth." },
+  { n: "III", title: "Get a reminder", text: "A text the day before with a link to move or cancel. A freed slot goes to the cancellation list." },
+];
+---
+<Shell description="Lantern Row Barbers, a fictional three-chair barber shop: see today's open chairs, the menu and the barbers, and try the demonstration booking.">
+  <ChairHero />
+
+  <section class="lr-section lr-rule" aria-labelledby="menu-h">
+    <div class="lr-wrap lr-home-menu">
+      <div class="lr-head lr-rise">
+        <p class="lr-kicker">The menu</p>
+        <h2 id="menu-h">Five cuts, done properly.</h2>
+        <p class="lr-lead">Every cut starts with a word in the chair and ends with a hot-lather neck shave. Prices are what you pay.</p>
+      </div>
+      <div class="lr-board">
+        {services.map((s, i) => (
+          <div class="lr-item lr-rise" style={`--d:${i * 60}ms`}>
+            <div class="lr-item-line"><h3>{s.name}</h3><span class="lr-dots" aria-hidden="true"></span><span class="lr-price">${s.price}</span></div>
+            <p>{s.note} · {s.mins} min</p>
+          </div>
+        ))}
+        <div class="lr-item lr-home-menu-end lr-rise">
+          <a class="lr-link" href={`${base}/services/`}>Full menu and policies <span aria-hidden="true">→</span></a>
+          <a class="lr-btn lr-btn-sm" href={`${base}/booking/`}>Book a chair</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="lr-section lr-how" aria-labelledby="how-h">
+    <div class="lr-wrap">
+      <div class="lr-head lr-rise">
+        <p class="lr-kicker">Booking</p>
+        <h2 id="how-h">Booked before your coffee cools.</h2>
+      </div>
+      <ol class="lr-how-list" role="list">
+        {how.map((h, i) => (
+          <li class="lr-rise" style={`--d:${i * 90}ms`}>
+            <span class="lr-how-n" aria-hidden="true">{h.n}</span>
+            <h3>{h.title}</h3>
+            <p>{h.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="lr-section lr-rule" aria-labelledby="team-h">
+    <div class="lr-wrap">
+      <div class="lr-head lr-rise">
+        <p class="lr-kicker">The chairs</p>
+        <h2 id="team-h">Three barbers. Pick yours.</h2>
+      </div>
+      <ul class="lr-team" role="list">
+        {barbers.map((b, i) => (
+          <li class="lr-team-card lr-rise" style={`--d:${i * 80}ms; --tone:${b.tone}`}>
+            <span class="lr-team-mono" aria-hidden="true">{b.name[0]}</span>
+            <p class="lr-label">Chair {b.chair} · {b.years} years</p>
+            <h3>{b.name}</h3>
+            <p>{b.known}</p>
+            <a class="lr-link" href={`${base}/booking/?barber=${b.id}`}>Book with {b.name} <span aria-hidden="true">→</span></a>
+          </li>
+        ))}
+      </ul>
+      <p class="lr-rise"><a class="lr-link" href={`${base}/barbers/`}>Meet the barbers <span aria-hidden="true">→</span></a></p>
+    </div>
+  </section>
+
+  <section class="lr-section lr-home-gal" aria-labelledby="gal-h">
+    <div class="lr-wrap">
+      <div class="lr-home-gal-head lr-rise">
+        <div class="lr-head">
+          <p class="lr-kicker">Style book</p>
+          <h2 id="gal-h">Show us, don't tell us.</h2>
+          <p class="lr-lead">Find the look in the gallery and book the cut that makes it.</p>
+        </div>
+        <a class="lr-btn lr-btn-line" href={`${base}/gallery/`}>Open the style book</a>
+      </div>
+      <ul class="lr-home-gal-list" role="list">
+        {picks.map((g, i) => (
+          <li class="lr-rise" style={`--d:${i * 80}ms`}>
+            <a href={`${base}/gallery/?style=${g.style}`}>
+              <StyleArt cut={g.cut} uid={`home-${g.id}`} />
+              <span class="lr-label">{styleNames[g.style]}</span>
+              <strong>{g.name}</strong>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="lr-fine lr-rise">Illustrated style examples, not photos of clients.</p>
+    </div>
+  </section>
+
+  <section class="lr-section lr-rule" aria-labelledby="say-h">
+    <div class="lr-wrap">
+      <div class="lr-head lr-rise">
+        <p class="lr-kicker">In the chair</p>
+        <h2 id="say-h">What regulars say.</h2>
+      </div>
+      <ul class="lr-quotes" role="list">
+        {testimonials.map((t, i) => (
+          <li class="lr-rise" style={`--d:${i * 80}ms`}>
+            <figure>
+              <blockquote><p>“{t.quote}”</p></blockquote>
+              <figcaption><span>{t.who}</span><span class="lr-sample">Sample testimonial</span></figcaption>
+            </figure>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="lr-section lr-visit" aria-labelledby="visit-h">
+    <div class="lr-wrap lr-visit-in">
+      <div class="lr-head lr-rise">
+        <p class="lr-kicker">Visit</p>
+        <h2 id="visit-h">{address}.</h2>
+        <p class="lr-lead">Free parking behind the shop. Walk-ins welcome until 4 pm whenever a chair is free.</p>
+        <a class="lr-link" href={`${base}/contact/`}>Map, hours and directions <span aria-hidden="true">→</span></a>
+      </div>
+      <dl class="lr-hours lr-visit-hours lr-rise">{hours.map((h) => <div><dt>{h.day}</dt><dd class={h.open ? undefined : "off"}>{h.open ?? "Closed"}</dd></div>)}</dl>
+    </div>
+  </section>
+
+  <section class="lr-section" aria-labelledby="band-h">
+    <div class="lr-wrap">
+      <div class="lr-band lr-rise">
+        <p class="lr-kicker">Your chair is open</p>
+        <h2 id="band-h">Book in under a minute.</h2>
+        <p>Choose a cut, a barber and a time. In this demonstration nothing is reserved and nothing is sent.</p>
+        <a class="lr-btn" href={`${base}/booking/`}>Book a chair</a>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .lr-home-menu-end { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 0; }
+
+  .lr-how { background: var(--lr-ink); }
+  .lr-how-list { display: grid; gap: 1px; background: var(--lr-line-soft); border: 1px solid var(--lr-line-soft); }
+  @media (min-width: 860px) { .lr-how-list { grid-template-columns: repeat(3, 1fr); } }
+  .lr-how-list li { display: grid; gap: 12px; align-content: start; padding: clamp(24px, 3vw, 40px); background: var(--lr-ink); }
+  .lr-how-n { font-family: "Bodoni Moda", Georgia, serif; font-size: 3rem; line-height: 1; color: var(--lr-brass); }
+  .lr-how-list p { color: var(--lr-soft); }
+
+  .lr-team { display: grid; gap: 20px; margin-bottom: 24px; }
+  @media (min-width: 760px) { .lr-team { grid-template-columns: repeat(3, 1fr); } }
+  .lr-team-card { position: relative; display: grid; gap: 10px; align-content: start; padding: 28px; background: var(--lr-panel); border: 1px solid var(--lr-line-soft); transition: border-color 220ms ease-out, transform 220ms var(--lr-ease); }
+  .lr-team-card:hover { border-color: var(--tone); transform: translateY(-3px); }
+  .lr-team-mono { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 6px; border: 1px solid var(--tone); border-radius: 50%; color: var(--tone); font-family: "Bodoni Moda", Georgia, serif; font-size: 2rem; font-weight: 500; }
+  .lr-team-card h3 { font-size: 2rem; }
+  .lr-team-card > p:not(.lr-label) { color: var(--lr-soft); }
+
+  .lr-home-gal { background: var(--lr-ink); }
+  .lr-home-gal-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: clamp(32px, 4vw, 56px); }
+  .lr-home-gal-head .lr-head { margin-bottom: 0; }
+  .lr-home-gal-list { display: grid; gap: 20px; margin-bottom: 16px; }
+  @media (min-width: 640px) { .lr-home-gal-list { grid-template-columns: repeat(3, 1fr); } }
+  .lr-home-gal-list a { display: grid; gap: 8px; padding: 20px 20px 22px; background: var(--lr-panel); border: 1px solid var(--lr-line-soft); text-decoration: none; transition: border-color 220ms ease-out; }
+  .lr-home-gal-list a:hover { border-color: var(--lr-brass); }
+  .lr-home-gal-list :global(.lr-style-art) { max-width: 240px; margin: 0 auto 10px; transition: transform 300ms var(--lr-ease); }
+  .lr-home-gal-list a:hover :global(.lr-style-art) { transform: scale(1.03); }
+  .lr-home-gal-list strong { font-family: "Bodoni Moda", Georgia, serif; font-size: 1.375rem; font-weight: 600; }
+
+  .lr-quotes { display: grid; gap: 20px; }
+  @media (min-width: 900px) { .lr-quotes { grid-template-columns: repeat(3, 1fr); } }
+  .lr-quotes figure { display: grid; gap: 18px; height: 100%; align-content: space-between; padding: 28px; border-top: 2px solid var(--lr-brass); background: var(--lr-panel); }
+  .lr-quotes blockquote p { font-family: "Bodoni Moda", Georgia, serif; font-size: 1.375rem; line-height: 1.35; }
+  .lr-quotes figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; color: var(--lr-mute); font-size: 0.875rem; }
+  .lr-sample { padding: 2px 8px; border: 1px solid var(--lr-line); color: var(--lr-soft); }
+
+  .lr-visit { background: var(--lr-ink); }
+  .lr-visit-in { display: grid; gap: 40px; align-items: start; }
+  @media (min-width: 900px) { .lr-visit-in { grid-template-columns: 1.2fr 1fr; } }
+  .lr-visit-hours { padding: 8px 24px; border: 1px solid var(--lr-line); }
+  .lr-visit-hours div:last-child { border-bottom: 0; }
+</style>

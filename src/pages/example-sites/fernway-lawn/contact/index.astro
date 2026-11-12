@@ -1,0 +1,55 @@
+---
+// Fernway's contact page: a demo message form (nothing is sent), hours, the demo phone/email buttons and the map.
+import Shell from "../../../../components/demo/fernway/Shell.astro";
+import ContactForm from "../../../../components/demo/fernway/ContactForm.astro";
+import ServiceMap from "../../../../components/demo/fernway/ServiceMap.astro";
+import { base, hours, phone, email, callNote } from "../../../../data/demos/fernway";
+const emailNote = `Demo: on a real site this opens an email to ${email}.`;
+---
+<Shell title="Contact" current="contact" description="Contact Fernway Lawn & Landscape, a fictional lawn care company in a Nuxy Automation demonstration: a message form, hours and service area. Nothing is sent.">
+  <section class="fw-section fw-c-hero" aria-labelledby="c-h">
+    <div class="fw-wrap fw-c-in">
+      <div class="fw-c-copy">
+        <div class="fw-head">
+          <p class="fw-kicker">Contact</p>
+          <h1 id="c-h">Questions, odd jobs, or just a hello.</h1>
+          <p class="fw-lead">For a price, the <a class="fw-link" href={`${base}/quote/`}>estimate</a> is fastest. For anything else, write to us here.</p>
+        </div>
+        <ul class="fw-c-ways" role="list">
+          <li><a href="#call" data-demo-action={callNote}><span>Call</span><strong>{phone}</strong></a></li>
+          <li><a href="#email" data-demo-action={emailNote}><span>Email</span><strong>{email}</strong></a></li>
+        </ul>
+        <dl class="fw-c-hours">{hours.map(([d, h]) => <div><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
+      </div>
+      <ContactForm id="contact" variant="contact" />
+    </div>
+  </section>
+
+  <section class="fw-section" aria-labelledby="m-h">
+    <div class="fw-wrap">
+      <div class="fw-head">
+        <p class="fw-kicker">Service area</p>
+        <h2 id="m-h">Are you on our map?</h2>
+      </div>
+      <ServiceMap heading="Towns we cover" id="contact-map" />
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .fw-c-hero { background: var(--fw-cream); }
+  .fw-c-in { display: grid; gap: 40px; align-items: start; }
+  @media (min-width: 960px) { .fw-c-in { grid-template-columns: 0.9fr 1.1fr; } }
+  .fw-c-copy { display: grid; gap: 24px; }
+  .fw-c-copy .fw-head { margin-bottom: 0; }
+  .fw-c-hero h1 { font-size: clamp(2.25rem, 5vw, 3.5rem); }
+  .fw-c-ways { display: grid; gap: 10px; }
+  .fw-c-ways a { display: grid; gap: 2px; padding: 16px 20px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line); color: var(--fw-ink); text-decoration: none; transition: box-shadow 160ms; }
+  .fw-c-ways a:hover { box-shadow: 0 0 0 1.5px var(--fw-moss); }
+  .fw-c-ways span { font-size: 0.8125rem; color: var(--fw-soft); font-weight: 600; }
+  .fw-c-ways strong { font-size: 1.125rem; overflow-wrap: anywhere; }
+  .fw-c-hours { display: grid; gap: 8px; max-width: 400px; }
+  .fw-c-hours div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--fw-line); }
+  .fw-c-hours dt { color: var(--fw-soft); }
+  .fw-c-hours dd { font-weight: 600; }
+</style>

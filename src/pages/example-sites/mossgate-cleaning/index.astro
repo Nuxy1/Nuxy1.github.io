@@ -1,0 +1,310 @@
+---
+// Mossgate Home Cleaning, home (a fictional company: data/demo-sites.ts). The hero is a drawn before/after living room
+// with a real range-input handle; typical prices link straight into the estimator; the texts a customer gets are shown
+// as an example phone; the cleaner's note, the quotes and the prices are all labelled as samples.
+import Shell from "../../../components/demo/mossgate/Shell.astro";
+import RoomArt from "../../../components/demo/mossgate/RoomArt.astro";
+import BeforeAfter from "../../../components/demo/BeforeAfter.astro";
+import { base, rooms, quotes } from "../../../data/demos/mossgate";
+import { estimate, normalise, toQuery, CLEANS, type Clean } from "../../../lib/demo/mossgate-estimate";
+import { range } from "../../../lib/demo/money";
+
+const typical = [
+  { label: "1 bed apartment", c: { home: "apartment", bed: 1, bath: 1 } },
+  { label: "2 bed apartment", c: { home: "apartment", bed: 2, bath: 1 } },
+  { label: "3 bed house", c: { home: "house", bed: 3, bath: 2 } },
+  { label: "4 bed house", c: { home: "house", bed: 4, bath: 3 } },
+].map((t) => {
+  const c = normalise({ ...t.c, clean: "standard", freq: "once" });
+  const e = estimate(c);
+  return { label: t.label, price: range(e.low, e.high), href: `${base}/estimate/?${toQuery(c)}` };
+});
+const steps = [
+  { t: "See your price", d: "Answer five questions about your home. The range updates as you choose, with every line of the sum shown." },
+  { t: "Pick an arrival window", d: "Choose a day and a two-hour window. Long cleans only offer mornings, so they finish the same day." },
+  { t: "We text, you get on with your day", d: "A confirmation, a reminder the day before, and a text when your cleaner is on the way and when they leave." },
+];
+const order: Clean[] = ["standard", "deep", "movein"];
+const counts = (clean: Clean) => rooms.reduce((n, r) => n + r.tasks.filter((t) => order.indexOf(t.clean) <= order.indexOf(clean)).length, 0);
+const std = counts("standard");
+const texts = [
+  { at: "Mon 4:12 pm", t: "Mossgate: Your standard clean is booked for Thu, arriving 10 am – 12 pm. Rosa is your cleaner. Reply C to change." },
+  { at: "Wed 5:00 pm", t: "Reminder: Rosa arrives tomorrow between 10 and 12. Leave the key in the lockbox as planned." },
+  { at: "Thu 10:18 am", t: "Rosa is on the way, about 12 minutes out." },
+  { at: "Thu 12:41 pm", t: `All done: ${std} of ${std} checklist items. Photo of the checklist and your invoice: mossgate.example/i/demo` },
+];
+const cleanCounts = (["standard", "deep", "movein"] as Clean[]).map((c) => ({ name: CLEANS[c].name + (c === "movein" ? " / move-out" : ""), n: counts(c), id: c }));
+---
+<Shell description="Mossgate Home Cleaning is a fictional cleaning company: a demonstration website by Nuxy Automation with an instant estimate, a room-by-room checklist and online booking.">
+  <section class="mg-hero">
+    <div class="mg-wrap mg-hero-in">
+      <div class="mg-hero-copy">
+        <p class="mg-kicker">Home cleaning, priced in seconds</p>
+        <h1>Come home to the clean you <span class="mg-nowrap">booked.</span></h1>
+        <p class="mg-lead">See your price before anyone visits, pick a two-hour arrival window, and get a text when your cleaner is on the way. Same cleaner every time.</p>
+        <div class="mg-hero-btns">
+          <a class="mg-btn mg-btn-clay" href={`${base}/estimate/`}>See your price</a>
+          <a class="mg-btn mg-btn-line" href={`${base}/book/`}>Book a clean</a>
+        </div>
+        <p class="mg-demo-note">Fictional company. Prices are for the demonstration only.</p>
+      </div>
+      <div class="mg-hero-art" data-hero>
+        <BeforeAfter label="Living room" tag="Example clean, illustrated" start={50} beforeLabel="Before" afterLabel="After a standard clean">
+          <RoomArt slot="before" state="before" />
+          <RoomArt slot="after" state="after" />
+        </BeforeAfter>
+      </div>
+    </div>
+    <div class="mg-wrap">
+      <div class="mg-typical">
+        <p class="mg-typical-h">Typical standard clean <span>(demonstration prices)</span></p>
+        <ul role="list" class="mg-typical-list">
+          {typical.map((t) => <li><a href={t.href}><span>{t.label}</span><strong class="mg-num">{t.price}</strong><i aria-hidden="true">→</i></a></li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="mg-facts" aria-label="What every clean includes">
+    <ul role="list" class="mg-wrap mg-facts-in">
+      <li><strong>Supplies included</strong><span>Vacuum and fresh cloths for every home</span></li>
+      <li><strong>Same cleaner</strong><span>Every visit on a recurring plan</span></li>
+      <li><strong>Two-hour windows</strong><span>Not “sometime between 8 and 5”</span></li>
+      <li><strong>Pay after</strong><span>Invoice once the clean is done</span></li>
+    </ul>
+  </section>
+
+  <section class="mg-section" aria-labelledby="how-h">
+    <div class="mg-wrap">
+      <div class="mg-head">
+        <p class="mg-kicker">How it works</p>
+        <h2 id="how-h">No quote visit. No phone tag.</h2>
+      </div>
+      <ol role="list" class="mg-how">
+        {steps.map((s, i) => (
+          <li class="mg-rise" style={`--d:${i * 90}ms`}>
+            <span class="mg-how-n mg-num" aria-hidden="true">0{i + 1}</span>
+            <h3>{s.t}</h3>
+            <p>{s.d}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="mg-section mg-texts-sec" aria-labelledby="texts-h">
+    <div class="mg-wrap mg-texts-in">
+      <div class="mg-texts-copy">
+        <p class="mg-kicker">Behind the scenes</p>
+        <h2 id="texts-h">The texts do the chasing.</h2>
+        <p class="mg-lead">Every booking starts the same run of messages, so nobody at the office has to remember. On a real build these go out by themselves; in this demo nothing is sent.</p>
+        <ul role="list" class="mg-ticks">
+          <li>Confirmation the moment you book, with a link to change it</li>
+          <li>A reminder the afternoon before</li>
+          <li>“On the way” when your cleaner sets off</li>
+          <li>The finished checklist and the invoice when they leave</li>
+        </ul>
+      </div>
+      <figure class="mg-phone" data-phone>
+        <div class="mg-phone-top"><span class="mg-phone-av" aria-hidden="true">M</span><span><strong>Mossgate</strong><small>Example texts</small></span></div>
+        <ol role="list" class="mg-phone-list">
+          {texts.map((m, i) => <li style={`--i:${i}`}><time>{m.at}</time><p>{m.t}</p></li>)}
+        </ol>
+        <figcaption>Example messages for a fictional booking. Nothing is sent from this demo.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="mg-section mg-note-sec" aria-labelledby="note-h">
+    <div class="mg-wrap mg-note-in">
+      <div class="mg-note-card mg-rise" aria-describedby="note-cap">
+        <p class="mg-note-hand">Hi Jess, did the oven as you asked, the racks are soaking in the sink, give them an hour. Found two Lego pieces under the sofa, they're on the shelf. See you in two weeks! — Rosa</p>
+        <p class="mg-note-cap" id="note-cap">Sample cleaner’s note, written for this demo</p>
+      </div>
+      <div>
+        <p class="mg-kicker">The same person, every time</p>
+        <h2 id="note-h">Your cleaner knows your home.</h2>
+        <p class="mg-lead">Recurring homes keep one cleaner and one window, so the second visit is faster than the first and you stop writing instructions. If something is off, you reply to the text and it’s put right on the next visit.</p>
+        <a class="mg-link" href={`${base}/about/`}>Meet the team <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="mg-section mg-list-sec mg-tiles" aria-labelledby="list-h">
+    <div class="mg-wrap">
+      <div class="mg-head">
+        <p class="mg-kicker">What we clean</p>
+        <h2 id="list-h">A written checklist for every room.</h2>
+        <p class="mg-lead">The same list your cleaner ticks off on the day. A deeper clean adds to it, it never swaps things out.</p>
+      </div>
+      <div class="mg-list-grid">
+        {cleanCounts.map((c, i) => (
+          <a class="mg-list-card mg-rise" style={`--d:${i * 90}ms`} href={`${base}/checklist/?clean=${c.id}`}>
+            <span class="mg-list-n mg-num">{c.n}</span>
+            <span class="mg-list-t">{c.name} clean</span>
+            <span class="mg-list-s">tasks across {rooms.length} rooms</span>
+          </a>
+        ))}
+      </div>
+      <a class="mg-link" href={`${base}/checklist/`}>See every room <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+
+  <section class="mg-section" aria-labelledby="q-h">
+    <div class="mg-wrap">
+      <div class="mg-head">
+        <p class="mg-kicker">What customers say</p>
+        <h2 id="q-h">Booked on a phone, finished by lunch.</h2>
+        <p class="mg-fine">Sample testimonials written for this demonstration. Mossgate and its customers are fictional.</p>
+      </div>
+      <div class="mg-quotes">
+        {quotes.map((q, i) => (
+          <figure class="mg-quote mg-rise" style={`--d:${i * 90}ms`}>
+            <blockquote><p>{q.text}</p></blockquote>
+            <figcaption><span class="mg-quote-tag">{q.who}</span> {q.where}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="mg-section mg-close">
+    <div class="mg-wrap">
+      <div class="mg-band">
+        <p class="mg-label">Ready when you are</p>
+        <h2>Your price, then your window. That’s it.</h2>
+        <p>It takes under a minute. In this demo nothing is booked, charged or sent.</p>
+        <div class="mg-band-btns">
+          <a class="mg-btn" href={`${base}/estimate/`}>See your price</a>
+          <a class="mg-btn mg-btn-line" href={`${base}/book/`}>Book a clean</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .mg-nowrap { white-space: nowrap; }
+  .mg-hero { padding: clamp(36px, 6vw, 80px) 0 clamp(40px, 6vw, 72px); }
+  .mg-hero-in { display: grid; gap: clamp(28px, 4vw, 56px); align-items: center; }
+  @media (min-width: 960px) { .mg-hero-in { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); } }
+  .mg-hero-copy { display: grid; gap: 22px; justify-items: start; }
+  .mg-hero-btns { display: flex; flex-wrap: wrap; gap: 12px; }
+  @media (max-width: 419px) { .mg-hero-btns .mg-btn { flex: 1 1 100%; } }
+  .mg-hero-art :global(.ba) { --ba-radius: 26px; --ba-ratio: 8 / 5; --ba-handle-ink: #1f4a3f; --ba-label-bg: rgba(28, 43, 39, 0.78); --ba-caption: #5c6b64; }
+  .mg-hero-art :global(.ba-stage) { box-shadow: 0 0 0 1px var(--mg-line), 0 30px 60px -30px rgba(31, 74, 63, 0.45); }
+  .mg-hero-art.is-off :global(.rm-sparks path) { animation-play-state: paused; }
+
+  .mg-typical { display: grid; gap: 12px; margin-top: clamp(28px, 4vw, 44px); padding: 18px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+  @media (min-width: 960px) { .mg-typical { grid-template-columns: 200px 1fr; align-items: center; } }
+  .mg-typical-h { font-weight: 800; color: var(--mg-moss); line-height: 1.25; }
+  .mg-typical-h span { display: block; font-weight: 500; font-size: 0.875rem; color: var(--mg-mute); }
+  .mg-typical-list { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+  .mg-typical-list a { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 10px; align-items: center; min-height: 64px; padding: 10px 16px; border-radius: 14px; background: var(--mg-mint); text-decoration: none; transition: background-color 200ms var(--mg-ease), transform 200ms var(--mg-ease); }
+  .mg-typical-list a span { font-size: 0.9375rem; color: var(--mg-soft); }
+  .mg-typical-list a strong { grid-row: 2; font-size: 1.25rem; font-weight: 800; color: var(--mg-moss); }
+  .mg-typical-list a i { grid-row: 1 / 3; grid-column: 2; font-style: normal; font-weight: 800; color: var(--mg-moss-2); transition: transform 200ms var(--mg-ease); }
+  .mg-typical-list a:hover { background: var(--mg-sage); transform: translateY(-2px); }
+  .mg-typical-list a:hover i { transform: translateX(3px); }
+
+  .mg-facts { border-block: 1px solid var(--mg-line); background: var(--mg-paper); }
+  .mg-facts-in { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+  .mg-facts li { display: grid; gap: 2px; padding: 22px 20px; border-left: 1px solid var(--mg-line); }
+  .mg-facts li:first-child { border-left: 0; }
+  @media (max-width: 959px) { .mg-facts li { border-left: 0; border-top: 1px solid var(--mg-line); } .mg-facts li:first-child { border-top: 0; } }
+  @media (min-width: 480px) and (max-width: 959px) { .mg-facts-in { grid-template-columns: 1fr 1fr; } .mg-facts li:nth-child(2) { border-top: 0; } .mg-facts li:nth-child(even) { border-left: 1px solid var(--mg-line); } }
+  .mg-facts strong { font-weight: 800; color: var(--mg-moss); }
+  .mg-facts span { font-size: 0.9375rem; color: var(--mg-mute); }
+
+  .mg-how { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); counter-reset: how; }
+  .mg-how li { position: relative; display: grid; gap: 12px; align-content: start; padding: 28px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+  .mg-how li:not(:last-child)::after { content: ""; position: absolute; right: 28px; top: 40px; width: 64px; height: 2px; background: repeating-linear-gradient(90deg, var(--mg-line-2) 0 6px, transparent 6px 12px); }
+  .mg-how-n { font-size: 2.75rem; font-weight: 850; letter-spacing: -0.04em; color: var(--mg-clay); line-height: 1; }
+  .mg-how p { color: var(--mg-soft); }
+
+  .mg-texts-sec { background: var(--mg-mint); }
+  .mg-texts-in { display: grid; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  @media (min-width: 900px) { .mg-texts-in { grid-template-columns: 1fr minmax(320px, 400px); } }
+  .mg-texts-copy { display: grid; gap: 20px; }
+  .mg-phone { display: grid; gap: 12px; justify-self: center; width: min(100%, 380px); padding: 14px; border-radius: 40px; background: var(--mg-ink); box-shadow: 0 40px 80px -40px rgba(28, 43, 39, 0.6); }
+  .mg-phone-top { display: flex; align-items: center; gap: 10px; padding: 12px 14px 4px; color: #e7efe9; }
+  .mg-phone-top span:last-child { display: grid; line-height: 1.15; }
+  .mg-phone-top small { color: #9fb8ad; font-size: 0.8125rem; }
+  .mg-phone-av { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--mg-moss-2); font-weight: 800; }
+  .mg-phone-list { display: grid; gap: 10px; padding: 16px 12px 18px; border-radius: 28px; background: var(--mg-linen); }
+  .mg-phone-list li { display: grid; gap: 4px; justify-items: start; }
+  .mg-phone-list time { font-size: 0.75rem; font-weight: 650; color: var(--mg-mute); padding-left: 6px; }
+  .mg-phone-list p { max-width: 92%; padding: 10px 14px; border-radius: 18px 18px 18px 6px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); font-size: 0.9375rem; line-height: 1.4; }
+  .mg-phone-list li:last-child p { background: var(--mg-moss); color: var(--mg-linen); box-shadow: none; }
+  .mg-phone figcaption { padding: 0 14px 8px; font-size: 0.8125rem; color: #9fb8ad; }
+  :root[data-tier="1"] .mg-phone.wait li, :root[data-tier="2"] .mg-phone.wait li { opacity: 0; transform: translateY(10px) scale(0.98); }
+  :root[data-tier="1"] .mg-phone li, :root[data-tier="2"] .mg-phone li { transition: opacity 360ms var(--mg-ease), transform 360ms var(--mg-ease); transition-delay: calc(var(--i) * 380ms); transform-origin: left bottom; }
+
+  .mg-note-in { display: grid; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  @media (min-width: 900px) { .mg-note-in { grid-template-columns: minmax(300px, 440px) 1fr; } }
+  .mg-note-in > div:last-child { display: grid; gap: 18px; justify-items: start; }
+  .mg-note-card { position: relative; display: grid; gap: 18px; padding: 36px 30px 24px; background: #fffbe8; box-shadow: 0 1px 0 #e9dfb8, 0 24px 40px -24px rgba(28, 43, 39, 0.4); transform: rotate(-2deg); background-image: repeating-linear-gradient(transparent 0 33px, #e8dfc2 33px 34px); background-position: 0 22px; }
+  .mg-note-card::before { content: ""; position: absolute; top: -12px; left: 50%; width: 96px; height: 26px; margin-left: -48px; background: rgba(207, 224, 214, 0.85); transform: rotate(3deg); }
+  .mg-note-hand { font-family: "Kalam", "Segoe Print", cursive; font-size: 1.3125rem; line-height: 34px; color: #23465c; }
+  .mg-note-cap { font-size: 0.8125rem; font-weight: 650; color: var(--mg-mute); }
+
+  .mg-list-sec .mg-wrap { display: grid; gap: 28px; justify-items: start; }
+  .mg-list-sec .mg-head { margin-bottom: 0; }
+  .mg-list-grid { display: grid; gap: 16px; width: 100%; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .mg-list-card { display: grid; gap: 4px; padding: 26px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); text-decoration: none; transition: transform 200ms var(--mg-ease), box-shadow 200ms var(--mg-ease); }
+  .mg-list-card:hover { transform: translateY(-3px); box-shadow: 0 0 0 1.5px var(--mg-moss-2), 0 20px 40px -24px rgba(31, 74, 63, 0.45); }
+  .mg-list-n { font-size: 3.5rem; font-weight: 850; letter-spacing: -0.05em; line-height: 1; color: var(--mg-moss); }
+  .mg-list-t { font-weight: 800; font-size: 1.125rem; color: var(--mg-ink); }
+  .mg-list-s { color: var(--mg-mute); font-size: 0.9375rem; }
+
+  .mg-quotes { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .mg-quote { display: grid; gap: 18px; align-content: space-between; padding: 28px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+  .mg-quote blockquote p { font-size: 1.125rem; line-height: 1.5; color: var(--mg-ink); }
+  .mg-quote blockquote p::before { content: "“"; display: block; font-size: 3rem; line-height: 0.8; font-weight: 850; color: var(--mg-clay); }
+  .mg-quote figcaption { font-size: 0.9375rem; color: var(--mg-mute); }
+  .mg-quote-tag { display: inline-block; margin-right: 6px; padding: 3px 10px; border-radius: 999px; background: var(--mg-clay-soft); color: #7a3320; font-size: 0.8125rem; font-weight: 700; }
+  .mg-close { padding-top: 0; }
+</style>
+
+<script>
+  import { tier } from "../../../lib/demo/tier";
+
+  // the hero's sparkles pause when it is scrolled away; the handle nudges once so the slider reads as a slider
+  const hero = document.querySelector<HTMLElement>("[data-hero]");
+  const range = hero?.querySelector<HTMLInputElement>("[data-ba-range]");
+  if (hero && range) {
+    let touched = false, raf = 0;
+    const stopNudge = () => { touched = true; cancelAnimationFrame(raf); };
+    for (const ev of ["pointerdown", "keydown", "focus"]) range.addEventListener(ev, stopNudge, { once: true });
+    const nudge = () => {
+      if (touched || tier() > 2) return;
+      const keys = [[0, 50], [500, 38], [1100, 62], [1600, 50]];
+      const t0 = performance.now();
+      const step = (now: number) => {
+        if (touched) return;
+        const t = now - t0;
+        const i = keys.findIndex(([at]) => at > t);
+        if (i < 0) { range.value = "50"; range.dispatchEvent(new Event("input")); return; }
+        const [a, va] = keys[i - 1], [b, vb] = keys[i];
+        const k = (t - a) / (b - a), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+        range.value = String(va + (vb - va) * e);
+        range.dispatchEvent(new Event("input"));
+        raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+    let nudged = false;
+    new IntersectionObserver(([e]) => {
+      hero.classList.toggle("is-off", !e.isIntersecting);
+      if (e.isIntersecting && !nudged) { nudged = true; setTimeout(nudge, 900); }
+    }, { threshold: 0.4 }).observe(hero);
+  }
+
+  // the example texts arrive one after another when the phone scrolls into view
+  const phone = document.querySelector<HTMLElement>("[data-phone]");
+  if (phone && tier() <= 2 && "IntersectionObserver" in window && phone.getBoundingClientRect().top > innerHeight) {
+    phone.classList.add("wait");
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { phone.classList.remove("wait"); io.disconnect(); } }, { threshold: 0.35 });
+    io.observe(phone);
+  }
+</script>

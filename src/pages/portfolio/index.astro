@@ -6,6 +6,8 @@
 // logos and no results on this page, because there are none to show yet. A real client project (data/case-studies.ts,
 // only with the client's written consent) gets its own section above the examples, and the note at the top then says
 // which is which instead of "every business on this page is made up".
+// Each example carries its website level (data/tiers.ts) as a badge, and with JavaScript a row of buttons filters
+// the examples by level (`portfolio_tier_filter`, name and page only). Without JavaScript every example shows.
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import DeviceShot from "../../components/DeviceShot.astro";
@@ -17,6 +19,7 @@ import { caseStudies } from "../../data/case-studies";
 import { demoSites } from "../../data/demo-sites";
 import { examples } from "../../data/examples";
 import { serviceById } from "../../data/services";
+import { levelById } from "../../data/tiers";
 
 const repo = "https://github.com/Nuxy1/small-business-automations";
 // real client projects: only the ones with the client's recorded yes (CaseStudy renders nothing without it)
@@ -27,9 +30,50 @@ const isStore = (project: string) => project === "E-commerce store";
 const where = (id: string) => (id === "new-website" ? "/websites/#new-website" : id === "online-shop" ? "/ecommerce/" : `/solutions/#${id}`);
 const sites = demoSites.filter((d) => !isStore(d.project)).length;
 const stores = demoSites.length - sites;
+const shown = ["business", "signature", "immersive"] as const;
+const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
+const version = (d: (typeof demoSites)[number]) => isStore(d.project)
+  ? d.tier === "business" ? "Built in your own Shopify or Square Online account" : "A custom-designed theme on your own Shopify store"
+  : d.tier === "business" ? "Built in your own Squarespace or Wix account" : "Custom-coded and published to hosting in your name";
+// Structured data for search: the page as a collection of concept projects. Each one is named a concept by Nuxy
+// Automation for a made-up business, never a client (the brief: fictional work is never presented as paid work).
+const site = "https://nuxyautomation.com";
+const ld = [
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${site}/portfolio/#page`,
+    url: `${site}/portfolio/`,
+    name: "Portfolio: concept websites by Nuxy Automation",
+    publisher: { "@id": `${site}/#business` },
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: demoSites.map((d, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "CreativeWork",
+          name: `${d.name} (concept project)`,
+          url: `${site}/portfolio/#${d.slug}`,
+          description: `Concept project created by Nuxy Automation; ${d.name} is a made-up business, not a client. ${d.summary}`,
+          creator: { "@id": `${site}/#business` },
+        },
+      })),
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${site}/` },
+      { "@type": "ListItem", position: 2, name: "Portfolio", item: `${site}/portfolio/` },
+    ],
+  },
+];
 const count = (n: number, one: string, many: string) => `${["no", "one", "two", "three", "four", "five", "six"][n] ?? n} ${n === 1 ? one : many}`;
 ---
-<Base title="Portfolio: Example Websites & an Online Store · Nuxy Automation" description="Example websites and an online store for made-up businesses: a landscaper, a barber shop, a cleaning company and a candle shop, on a computer and a phone." wide>
+<Base title="Portfolio: Example Websites & an Online Store · Nuxy Automation" description="Concept websites and a store for made-up businesses, by website level: a landscaper, a barber, a cleaner, a candle shop and a speaker brand." wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />
   <section class="pf-hero">
     <div class="wrap pf-grid">
       <div>
@@ -47,7 +91,7 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
         <ul role="list">
           {clients.length > 0 && <li><a href="#clients"><Icon name="sealCheck" /><span><strong>Client projects</strong><span>Real work, shown with permission</span></span></a></li>}
           {demoSites.map((d) => (
-            <li><a href={`#${d.slug}`}><Icon name={d.icon} /><span><strong>{d.name}</strong><span>{d.project}</span></span></a></li>
+            <li data-tier={d.tier}><a href={`#${d.slug}`}><Icon name={d.icon} /><span><strong>{d.name}</strong><span>{d.project}</span></span></a></li>
           ))}
           {hasVideo && <li><a href="#video"><Icon name="filmSlate" /><span><strong>Video concept demonstrations</strong><span>Three short videos for made-up brands</span></span></a></li>}
           <li><a href="#technical"><Icon name="githubLogo" /><span><strong>Automations, with the code</strong><span>{count(examples.length, "open-source example", "open-source examples").replace(/^\w/, (c) => c.toUpperCase())}</span></span></a></li>
@@ -71,26 +115,32 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
 
   <section class="section cases" aria-label="Example projects">
     <div class="wrap">
+      <div class="pf-filter" role="group" aria-label="Show examples by website level" data-pf-filter hidden>
+        <button type="button" data-tier="all" aria-pressed="true">All levels</button>
+        {shown.map((t) => <button type="button" data-tier={t} aria-pressed="false">{levelById[t].name}</button>)}
+        <p class="pf-flag">Flagship work is planned one project at a time: <a href="/contact/?level=flagship" data-track="tier_selected">discuss a custom project</a>.</p>
+      </div>
       {demoSites.map((d, i) => {
         const store = isStore(d.project);
         return (
-          <article class:list={["case", { flip: i % 2 === 1 }]} id={d.slug} aria-labelledby={`${d.slug}-h`}>
+          <article class:list={["case", { flip: i % 2 === 1 }]} id={d.slug} data-tier={d.tier} aria-labelledby={`${d.slug}-h`}>
             <div class="case-shot"><DeviceShot slug={d.slug} lazy={i > 0} /></div>
             <div class="case-copy">
-              <p class="case-kind"><Icon name={d.icon} />{d.kind} · demonstration</p>
+              <p class="case-kind"><Icon name={d.icon} />{d.kind} · concept project<a class="case-tier" href={levelById[d.tier].page}><span class="case-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps[levelById[d.tier].complexity] }}></i>)}</span>{levelById[d.tier].name}</a></p>
               <h2 id={`${d.slug}-h`}>{d.name}</h2>
               <p class="case-sum">{d.summary}</p>
               <dl class="case-facts">
                 <div><dt>Industry</dt><dd>{d.kind}</dd></div>
                 <div><dt>Project</dt><dd>{d.project}</dd></div>
-                <div><dt>Your version</dt><dd>{store ? "Built in your own Shopify or Square Online account" : "Built in your own Squarespace or Wix account"}</dd></div>
+                <div><dt>Level</dt><dd><a href={levelById[d.tier].page}>{levelById[d.tier].name}</a> · {levelById[d.tier].complexity.toLowerCase()} complexity</dd></div>
+                <div><dt>Your version</dt><dd>{version(d)}</dd></div>
               </dl>
               <h3 class="case-h3">Features</h3>
               <ul class="ticks case-ticks">{d.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
               <p class="case-svc">Services it shows: {d.services.map((id, j) => (
                 <>{j > 0 && ", "}<a href={where(id)}>{serviceById[id].name}</a> ({serviceById[id].price})</>
               ))}</p>
-              {store && <p class="case-note"><Icon name="lockSimple" /><span>Its cart works, but checkout is switched off: nothing can be bought.</span></p>}
+              {store && <p class="case-note"><Icon name="lockSimple" /><span>Its cart and checkout work as a demo, but no card is ever asked for: nothing can be bought.</span></p>}
               <div class="case-actions">
                 <a class="button" href={`/examples/${d.slug}/`} data-track="example_open">View Project</a>
                 <a class="button secondary" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the full {store ? "store" : "site"}</a>
@@ -187,6 +237,18 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
   .case-svc { margin-top: 16px; color: var(--muted); font-size: 0.9375rem; }
   .case-note { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; color: var(--body); font-size: 0.9375rem; }
   .case-note :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
+  .case-tier { display: inline-flex; align-items: center; gap: 8px; margin-left: 4px; padding: 2px 10px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); color: var(--ink); font-size: 0.8125rem; text-decoration: none; }
+  .case-tier:hover { border-color: var(--link); }
+  .case-steps { display: inline-grid; grid-template-columns: repeat(4, 10px); gap: 2px; }
+  .case-steps i { height: 4px; border-radius: 2px; background: var(--hairline-strong); }
+  .case-steps i.on { background: var(--link); }
+  .case-facts a { color: var(--link); }
+  .pf-filter:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .pf-filter button { min-height: 44px; padding: 0 16px; border: 1px solid var(--hairline); border-radius: var(--r-full); background: var(--panel); color: var(--body); font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: border-color 150ms var(--ease), background-color 150ms var(--ease); }
+  .pf-filter button:hover { border-color: var(--hairline-strong); color: var(--ink); }
+  .pf-filter button[aria-pressed="true"] { border-color: var(--button); background: var(--button); color: #fff; }
+  .pf-flag { flex-basis: 100%; margin-top: 4px; color: var(--muted); font-size: 0.9375rem; }
+  .pf-flag a { color: var(--link); }
   .case-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
   @media (max-width: 479px) { .case-actions .button { width: 100%; } }
 
@@ -200,3 +262,30 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
   .tech-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
   @media (max-width: 479px) { .tech-links .button { width: 100%; } }
 </style>
+
+<script>
+  // Filter the examples by website level. Hidden examples (and their "On this page" links) are hidden outright, and
+  // the picture side alternates again over the ones still showing.
+  const bar = document.querySelector<HTMLElement>("[data-pf-filter]");
+  if (bar) {
+    const cases = [...document.querySelectorAll<HTMLElement>("article.case[data-tier]")];
+    const links = [...document.querySelectorAll<HTMLElement>(".jump li[data-tier]")];
+    const set = (tier: string) => {
+      bar.querySelectorAll<HTMLButtonElement>("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tier === tier)));
+      let n = 0;
+      for (const c of cases) {
+        const on = tier === "all" || c.dataset.tier === tier;
+        c.hidden = !on;
+        if (on) c.classList.toggle("flip", n++ % 2 === 1);
+      }
+      for (const l of links) l.hidden = !(tier === "all" || l.dataset.tier === tier);
+    };
+    bar.addEventListener("click", (e) => {
+      const b = (e.target as Element).closest<HTMLButtonElement>("button[data-tier]");
+      if (!b || b.getAttribute("aria-pressed") === "true") return;
+      set(b.dataset.tier!);
+      (window as unknown as { nuxyTrack?: (e: string) => void }).nuxyTrack?.("portfolio_tier_filter");
+    });
+    bar.hidden = false;
+  }
+</script>

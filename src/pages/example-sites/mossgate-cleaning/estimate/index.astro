@@ -1,0 +1,277 @@
+---
+// Mossgate estimate (demonstration pricing: lib/demo/mossgate-estimate.ts holds the made-up rules). Home type, rooms,
+// floor area, the clean, extras and how often; the range, every line of the sum, the crew and the time on site update
+// as the visitor chooses. The form is a plain GET form to the booking page, so "Book this clean" carries the choices
+// even without JavaScript; with it, the page also keeps them in its own address so a reload or a shared link reopens
+// the same estimate. Links can pre-fill it (?home=house&bed=3 from the home page's typical prices).
+import Shell from "../../../../components/demo/mossgate/Shell.astro";
+import { base } from "../../../../data/demos/mossgate";
+import { HOMES, CLEANS, EXTRAS, FREQS, BEDS, BATHS, SQFT_MIN, SQFT_MAX, SQFT_STEP, DEFAULT, estimate, hoursLabel, describe } from "../../../../lib/demo/mossgate-estimate";
+import { range, usd } from "../../../../lib/demo/money";
+
+const e0 = estimate(DEFAULT);
+const entries = <T extends string, V>(o: Record<T, V>) => Object.entries(o) as [T, V][];
+const crewLabel = (n: number) => (n === 1 ? "1 cleaner" : `${n} cleaners`);
+---
+<Shell title="Instant cleaning estimate" current="estimate" description="Try Mossgate's demonstration estimator: home type, bedrooms, bathrooms, floor area, the clean, extras and how often, with every line of the price shown. Fictional company, demonstration pricing only.">
+  <section class="mg-section mg-est-sec">
+    <div class="mg-wrap">
+      <div class="mg-head">
+        <p class="mg-kicker">Instant estimate</p>
+        <h1 id="est-h">What will my clean cost?</h1>
+        <p class="mg-lead">Tell us about your home. The price updates as you choose, and every line of the sum is shown.</p>
+        <p class="mg-demo-note">Demonstration pricing only. Mossgate is a fictional company.</p>
+      </div>
+
+      <div class="mg-est">
+        <form class="mg-est-form" id="est" method="get" action={`${base}/book/`} data-est aria-labelledby="est-h">
+          <fieldset class="mg-set">
+            <legend><span class="mg-set-n" aria-hidden="true">1</span>Your home</legend>
+            <div class="mg-picks mg-picks-3">
+              {entries(HOMES).map(([id, h]) => (
+                <label class="mg-pick"><input type="radio" name="home" value={id} checked={id === DEFAULT.home} /><span>{h.name}<small>{h.note}</small></span></label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div class="mg-set-pair">
+            <fieldset class="mg-set">
+              <legend><span class="mg-set-n" aria-hidden="true">2</span>Bedrooms</legend>
+              <div class="mg-picks mg-picks-n">
+                {BEDS.map((n) => <label class="mg-pick"><input type="radio" name="bed" value={n} checked={n === DEFAULT.bed} aria-label={n === 5 ? "5 or more bedrooms" : `${n} bedroom${n > 1 ? "s" : ""}`} /><span class="mg-num">{n === 5 ? "5+" : n}</span></label>)}
+              </div>
+            </fieldset>
+            <fieldset class="mg-set">
+              <legend><span class="mg-set-n" aria-hidden="true">3</span>Bathrooms</legend>
+              <div class="mg-picks mg-picks-n">
+                {BATHS.map((n) => <label class="mg-pick"><input type="radio" name="bath" value={n} checked={n === DEFAULT.bath} aria-label={n === 4 ? "4 or more bathrooms" : `${n} bathroom${n > 1 ? "s" : ""}`} /><span class="mg-num">{n === 4 ? "4+" : n}</span></label>)}
+              </div>
+            </fieldset>
+          </div>
+
+          <fieldset class="mg-set">
+            <legend><span class="mg-set-n" aria-hidden="true">4</span>Floor area</legend>
+            <div class="mg-sqft">
+              <input type="range" name="sqft" min={SQFT_MIN} max={SQFT_MAX} step={SQFT_STEP} value={DEFAULT.sqft} aria-label="Floor area in square feet" aria-describedby="sqft-hint" data-sqft />
+              <output class="mg-sqft-out mg-num" data-sqft-out aria-hidden="true">{DEFAULT.sqft.toLocaleString("en-US")} sq ft</output>
+            </div>
+            <p class="mg-fine" id="sqft-hint" data-sqft-hint>A typical size for {DEFAULT.bed} bedrooms. Move it if you know yours.</p>
+          </fieldset>
+
+          <fieldset class="mg-set">
+            <legend><span class="mg-set-n" aria-hidden="true">5</span>Type of clean</legend>
+            <div class="mg-picks mg-picks-4">
+              {entries(CLEANS).map(([id, c]) => (
+                <label class="mg-pick"><input type="radio" name="clean" value={id} checked={id === DEFAULT.clean} /><span>{c.name}<small>{c.note}</small></span></label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset class="mg-set">
+            <legend><span class="mg-set-n" aria-hidden="true">6</span>Extras <span class="mg-legend-sub">optional</span></legend>
+            <div class="mg-picks mg-picks-x">
+              {entries(EXTRAS).map(([id, x]) => (
+                <label class="mg-pick left mg-extra">
+                  <input type="checkbox" name="extras" value={id} data-extra />
+                  <span><span class="mg-extra-row">{x.name}<b class="mg-num" data-extra-add>+{usd(x.add)}</b></span><small data-extra-note>{x.note}</small></span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset class="mg-set">
+            <legend><span class="mg-set-n" aria-hidden="true">7</span>How often</legend>
+            <div class="mg-picks mg-picks-4">
+              {entries(FREQS).map(([id, f]) => (
+                <label class="mg-pick"><input type="radio" name="freq" value={id} checked={id === DEFAULT.freq} /><span>{f.name}<small>{f.note || "No plan"}</small></span></label>
+              ))}
+            </div>
+            <p class="mg-fine mg-freq-note" data-freq-note hidden>Repeat plans are for standard cleans. Most start with one deep clean, then switch to a plan.</p>
+          </fieldset>
+        </form>
+
+        <aside class="mg-est-out" aria-labelledby="out-h" data-out>
+          <div class="mg-ticket">
+            <p class="mg-label" id="out-h">Your estimate</p>
+            <p class="mg-price mg-num" aria-live="polite" aria-atomic="true"><span data-range>{range(e0.low, e0.high)}</span> <small>per clean</small></p>
+            <p class="mg-desc" data-desc>{describe(DEFAULT)}</p>
+            <dl class="mg-lines" data-lines>
+              {e0.lines.map((l) => <div><dt>{l.label}</dt><dd class="mg-num">{l.amount < 0 ? `−${usd(-l.amount)}` : usd(l.amount)}</dd></div>)}
+            </dl>
+            <div class="mg-crew">
+              <span class="mg-crew-dots" data-crew-dots aria-hidden="true">{Array.from({ length: e0.crew }, () => <i></i>)}</span>
+              <p><strong data-crew>{crewLabel(e0.crew)}</strong>, about <strong data-hours>{hoursLabel(e0.hours)}</strong> on site</p>
+            </div>
+            <p class="mg-morning" data-morning hidden>A clean this size starts in a morning window so it finishes the same day.</p>
+            <button class="mg-btn mg-btn-clay mg-est-go" type="submit" form="est">Book this clean</button>
+            <p class="mg-fine">Demonstration pricing only. A real company would confirm the exact price before the first clean.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <div class="mg-est-bar" data-bar aria-hidden="true" hidden>
+    <span><strong class="mg-num" data-bar-range>{range(e0.low, e0.high)}</strong><small>per clean, demo pricing</small></span>
+    <button class="mg-btn mg-btn-sm mg-btn-clay" type="submit" form="est" tabindex="-1">Book this clean</button>
+  </div>
+</Shell>
+
+<style>
+  .mg-est-sec { padding-top: clamp(40px, 6vw, 80px); }
+  .mg-est { display: grid; gap: 28px; align-items: start; }
+  @media (min-width: 1024px) { .mg-est { grid-template-columns: minmax(0, 1fr) 380px; gap: 40px; } }
+  .mg-est-form { display: grid; gap: 30px; padding: clamp(20px, 4vw, 40px); border-radius: 26px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+  .mg-set { display: grid; gap: 14px; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .mg-set legend { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-weight: 800; font-size: 1.125rem; color: var(--mg-moss); }
+  .mg-set-n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--mg-mint); color: var(--mg-moss-2); font-size: 0.875rem; font-weight: 800; }
+  .mg-legend-sub { font-weight: 500; font-size: 0.875rem; color: var(--mg-mute); }
+  .mg-set-pair { display: grid; gap: 30px; }
+  @media (min-width: 720px) { .mg-set-pair { grid-template-columns: 1.25fr 1fr; } }
+  .mg-picks { display: grid; gap: 8px; }
+  .mg-picks-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+  .mg-picks-4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); }
+  .mg-picks-n { grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); }
+  .mg-picks-n .mg-pick > span { font-size: 1.125rem; }
+  .mg-picks-x { grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+  .mg-extra-row { display: flex; justify-content: space-between; gap: 10px; width: 100%; }
+  .mg-extra-row b { font-weight: 750; color: var(--mg-moss-2); }
+  /* an extra the chosen clean already includes looks ticked on and reads "Included", not like an unavailable choice */
+  .mg-extra input:disabled + span { outline: 0; background: var(--mg-mint); box-shadow: inset 0 0 0 1.5px var(--mg-sage); color: var(--mg-moss); cursor: default; }
+  .mg-extra input:disabled, .mg-extra:has(input:disabled) { cursor: default; }
+  .mg-extra input:disabled + span .mg-extra-row b::before { content: "✓ "; }
+
+  .mg-sqft { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; }
+  .mg-sqft-out { min-width: 7.5em; padding: 10px 14px; border-radius: 12px; background: var(--mg-mint); font-weight: 800; color: var(--mg-moss); text-align: center; }
+  .mg-sqft input { --p: 24%; width: 100%; height: 44px; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
+  .mg-sqft input::-webkit-slider-runnable-track { height: 8px; border-radius: 8px; background: linear-gradient(90deg, var(--mg-moss-2) var(--p), var(--mg-line) var(--p)); }
+  .mg-sqft input::-moz-range-track { height: 8px; border-radius: 8px; background: var(--mg-line); }
+  .mg-sqft input::-moz-range-progress { height: 8px; border-radius: 8px; background: var(--mg-moss-2); }
+  .mg-sqft input::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -10px; border-radius: 50%; background: var(--mg-paper); box-shadow: 0 0 0 3px var(--mg-moss-2), 0 4px 10px rgba(28, 43, 39, 0.25); }
+  .mg-sqft input::-moz-range-thumb { width: 24px; height: 24px; border: 3px solid var(--mg-moss-2); border-radius: 50%; background: var(--mg-paper); }
+  .mg-sqft input:focus-visible { outline: 3px solid #2563eb; outline-offset: 4px; border-radius: 8px; }
+  .mg-freq-note { padding: 10px 14px; border-radius: 12px; background: var(--mg-clay-soft); color: #6d2f1c; }
+
+  .mg-est-out { display: grid; }
+  @media (min-width: 1024px) { .mg-est-out { position: sticky; top: 96px; } }
+  .mg-ticket { display: grid; gap: 16px; padding: 28px; border-radius: 26px; background: var(--mg-moss); color: #d5e3dc; box-shadow: 0 30px 60px -36px rgba(31, 74, 63, 0.7); }
+  .mg-ticket .mg-label { color: var(--mg-clay-2); }
+  .mg-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; color: var(--mg-linen); }
+  .mg-price span { font-size: clamp(2.5rem, 2rem + 2vw, 3.25rem); font-weight: 850; letter-spacing: -0.04em; line-height: 1; }
+  .mg-price small { font-size: 1rem; color: #9fb8ad; }
+  .mg-desc { font-weight: 650; color: var(--mg-linen); }
+  .mg-lines { display: grid; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+  .mg-lines div { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.9375rem; }
+  .mg-lines dd { color: var(--mg-linen); font-weight: 700; white-space: nowrap; }
+  .mg-crew { display: flex; align-items: center; gap: 12px; font-size: 0.9375rem; }
+  .mg-crew strong { color: var(--mg-linen); }
+  .mg-crew-dots { display: flex; }
+  .mg-crew-dots i { width: 30px; height: 30px; margin-left: -8px; border-radius: 50%; border: 2px solid var(--mg-moss); background: var(--mg-clay-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='12' r='5' fill='%231f4a3f'/%3E%3Cpath d='M6 27c1-6 5-9 9-9s8 3 9 9' fill='%231f4a3f'/%3E%3C/svg%3E") center / cover; }
+  .mg-crew-dots i:first-child { margin-left: 0; }
+  .mg-crew-dots i:nth-child(2) { background-color: var(--mg-sage); }
+  .mg-crew-dots i:nth-child(3) { background-color: #e8c46a; }
+  .mg-morning { padding: 10px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.08); font-size: 0.9375rem; color: var(--mg-linen); }
+  .mg-est-go { width: 100%; }
+  .mg-ticket .mg-fine { color: #9fb8ad; }
+  :root[data-tier="1"] .mg-price.pop span, :root[data-tier="2"] .mg-price.pop span { animation: mg-pop 260ms var(--mg-ease); }
+  @keyframes mg-pop { 40% { transform: translateY(-3px); color: #fff; } }
+
+  .mg-est-bar { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 35; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 20px; border-radius: 999px; background: var(--mg-moss); color: var(--mg-linen); box-shadow: 0 16px 36px rgba(28, 43, 39, 0.3); transition: transform 240ms var(--mg-ease), opacity 240ms var(--mg-ease); }
+  .mg-est-bar[hidden] { display: flex; transform: translateY(140%); opacity: 0; pointer-events: none; }
+  .mg-est-bar span { display: grid; line-height: 1.15; }
+  .mg-est-bar strong { font-size: 1.25rem; font-weight: 850; }
+  .mg-est-bar small { font-size: 0.75rem; color: #9fb8ad; }
+  @media (min-width: 1024px) { .mg-est-bar, .mg-est-bar[hidden] { display: none; } }
+  @media (max-width: 1023px) { .mg-est-sec { padding-bottom: 120px; } }
+</style>
+
+<script>
+  import { estimate, normalise, fromQuery, toQuery, describe, hoursLabel, typicalSqft, CLEANS, EXTRAS, DEFAULT, type Choice, type Extra } from "../../../../lib/demo/mossgate-estimate";
+  import { range, usd } from "../../../../lib/demo/money";
+
+  const form = document.querySelector<HTMLFormElement>("[data-est]");
+  if (form) {
+    const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+    const radios = (n: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${n}"]`)];
+    const val = (n: string) => radios(n).find((r) => r.checked)?.value;
+    const sqft = $<HTMLInputElement>("[data-sqft]"), sqftOut = $("[data-sqft-out]"), sqftHint = $("[data-sqft-hint]");
+    const extras = [...form.querySelectorAll<HTMLInputElement>("[data-extra]")];
+    const price = $("[data-range]"), priceBox = price.parentElement!, bar = $("[data-bar]"), barRange = $("[data-bar-range]");
+    let sqftTouched = false;
+    // the extras the visitor ticked; an extra the clean includes shows ticked and disabled (so it is neither priced
+    // nor submitted twice), and their own choice comes back if they switch to a lighter clean
+    const picked = new Set<string>();
+    let freqPick: string = DEFAULT.freq; // likewise the plan, kept while a one-off clean is chosen
+
+    const read = (): Choice => normalise({
+      home: val("home"), bed: val("bed"), bath: val("bath"), sqft: sqft.value, clean: val("clean"), freq: freqPick,
+      extras: [...picked],
+    });
+    const write = (c: Choice) => {
+      for (const [n, v] of [["home", c.home], ["bed", String(c.bed)], ["bath", String(c.bath)], ["clean", c.clean], ["freq", c.freq]] as const) {
+        const r = radios(n).find((x) => x.value === v); if (r) r.checked = true;
+      }
+      sqft.value = String(c.sqft);
+      if (c.freq !== "once" || CLEANS[c.clean].repeat) freqPick = c.freq;
+      picked.clear();
+      for (const x of c.extras) picked.add(x);
+    };
+
+    let lastRange = "";
+    const render = () => {
+      const c = read();
+      const inc = CLEANS[c.clean].includes;
+      for (const x of extras) {
+        const included = inc.includes(x.value as Extra);
+        x.disabled = included;
+        x.checked = included || picked.has(x.value);
+        const box = x.closest("label")!;
+        box.querySelector("[data-extra-add]")!.textContent = included ? "Included" : `+${usd(EXTRAS[x.value as Extra].add)}`;
+        box.querySelector("[data-extra-note]")!.textContent = included ? `Part of a ${CLEANS[c.clean].name.toLowerCase()} clean` : EXTRAS[x.value as Extra].note;
+      }
+      const repeat = CLEANS[c.clean].repeat;
+      for (const r of radios("freq")) { r.disabled = !repeat && r.value !== "once"; r.checked = r.value === c.freq; }
+      $("[data-freq-note]").hidden = repeat;
+
+      const p = (c.sqft - +sqft.min) / (+sqft.max - +sqft.min);
+      sqft.style.setProperty("--p", `${p * 100}%`);
+      sqftOut.textContent = `${c.sqft.toLocaleString("en-US")} sq ft`;
+      sqft.setAttribute("aria-valuetext", sqftOut.textContent);
+      sqftHint.textContent = sqftTouched ? "Your floor area. It adds about $3 per 100 sq ft before the clean type." : `A typical size for ${c.bed === 5 ? "5 or more" : c.bed} bedroom${c.bed > 1 ? "s" : ""}. Move it if you know yours.`;
+
+      const e = estimate(c);
+      const r = range(e.low, e.high);
+      price.textContent = r; barRange.textContent = r;
+      if (lastRange && r !== lastRange) { priceBox.classList.remove("pop"); void priceBox.offsetWidth; priceBox.classList.add("pop"); }
+      lastRange = r;
+      $("[data-desc]").textContent = describe(c);
+      $("[data-lines]").replaceChildren(...e.lines.map((l) => {
+        const row = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd");
+        dt.textContent = l.label; dd.className = "mg-num"; dd.textContent = l.amount < 0 ? `−${usd(-l.amount)}` : usd(l.amount);
+        row.append(dt, dd);
+        return row;
+      }));
+      $("[data-crew]").textContent = e.crew === 1 ? "1 cleaner" : `${e.crew} cleaners`;
+      $("[data-crew-dots]").replaceChildren(...Array.from({ length: e.crew }, () => document.createElement("i")));
+      $("[data-hours]").textContent = hoursLabel(e.hours);
+      $("[data-morning]").hidden = !e.morningOnly;
+      history.replaceState(history.state, "", `${location.pathname}?${toQuery(c)}`);
+    };
+
+    const start = fromQuery(location.search);
+    if (start) { sqftTouched = new URLSearchParams(location.search).has("sqft"); write(start); }
+    form.addEventListener("change", (ev) => {
+      const t = ev.target as HTMLInputElement;
+      if (t.name === "bed" && !sqftTouched) sqft.value = String(typicalSqft(+t.value));
+      if (t.name === "freq") freqPick = t.value;
+      if (t.name === "extras" && !t.disabled) { if (t.checked) picked.add(t.value); else picked.delete(t.value); }
+      render();
+    });
+    sqft.addEventListener("input", () => { sqftTouched = true; render(); });
+    render();
+
+    // the price bar on phones shows while the estimate panel is out of sight
+    const out = $("[data-out]");
+    new IntersectionObserver(([e]) => { bar.hidden = e.isIntersecting; }, { threshold: 0.15 }).observe(out);
+  }
+</script>

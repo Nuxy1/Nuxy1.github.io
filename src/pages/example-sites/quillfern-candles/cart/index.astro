@@ -1,0 +1,285 @@
+---
+// The Quillfern demo cart: lines with quantity and remove, shipping or studio pickup, the demo promo code, totals and
+// the free-shipping bar. Everything is drawn in the browser from the stored demo cart; without JavaScript the page
+// says what the cart would do. Only candle ids, sizes, quantities, pickup/shipping and the demo code are kept.
+import Shell from "../../../../components/demo/quillfern/Shell.astro";
+import { base, studio } from "../../../../data/demos/quillfern";
+import { SHIP, PROMO } from "../../../../lib/demo/quillfern-cart";
+---
+<Shell title="Your cart · Quillfern Candle Co. (demo)" current="cart" description="The cart of Quillfern, a fictional candle maker's demonstration store by Nuxy Automation: change quantities, choose shipping or pickup, and try the demo code. Nothing can be bought.">
+  <section class="qf-wrap qf-cart-sec" aria-labelledby="cart-h">
+    <div class="qf-head qf-cart-head">
+      <p class="qf-label">Cart</p>
+      <h1 id="cart-h">Your cart</h1>
+      <p class="qf-demo-note">Demo cart: it lives in this browser only. Nothing can be bought and no card is asked for.</p>
+    </div>
+
+    <noscript><p class="qf-lead">The demo cart needs JavaScript to show what you have added. <a class="qf-link" href={`${base}/shop/`}>Back to the shop</a></p></noscript>
+
+    <p class="qf-undo qf-ui" data-qf-undo hidden><span data-qf-undo-text></span> <button type="button" class="qf-link-btn" data-qf-undo-btn>Undo</button></p>
+
+    <div class="qf-cart-empty" data-qf-empty hidden>
+      <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false"><path d="M30 46h60v50a10 10 0 0 1-10 10H40a10 10 0 0 1-10-10Z" fill="var(--qf-wax)" stroke="var(--qf-line-2)" stroke-width="2"/><path d="M60 46V34" stroke="var(--qf-umber)" stroke-width="2.5" stroke-linecap="round"/><path d="M60 14c6 8 9 13 9 18a9 9 0 0 1-18 0c0-5 3-10 9-18Z" fill="var(--qf-line-2)"/></svg>
+      <h2>Nothing in the cart yet.</h2>
+      <p>Six scents, three sizes. Start with the one that smells like the room you spend the most time in.</p>
+      <a class="qf-btn qf-btn-flame" href={`${base}/shop/`}>Shop candles</a>
+    </div>
+
+    <div class="qf-cart" data-qf-full hidden>
+      <div class="qf-cart-main">
+        <ul class="qf-lines" role="list" data-qf-lines aria-label="Candles in your cart"></ul>
+        <template data-qf-line>
+          <li class="qf-line">
+            <a class="qf-line-art qf-arch" data-l-link tabindex="-1" aria-hidden="true"><span data-l-art></span></a>
+            <div class="qf-line-info">
+              <h2 class="qf-line-name"><a data-l-link data-l-name></a></h2>
+              <p class="qf-line-meta qf-ui"><span data-l-size></span> · <span class="qf-num" data-l-unit></span> each</p>
+              <p class="qf-stock qf-ui" data-l-stock></p>
+            </div>
+            <div class="qf-line-ctl">
+              <div class="qf-qty" role="group" data-l-group>
+                <button type="button" data-l-step="-1">−</button>
+                <output data-l-qty></output>
+                <button type="button" data-l-step="1">+</button>
+              </div>
+              <button type="button" class="qf-line-rm qf-ui" data-l-rm>Remove</button>
+            </div>
+            <p class="qf-line-amt qf-num" data-l-amt></p>
+          </li>
+        </template>
+        <p class="sr-only" role="status" data-qf-cart-said></p>
+
+        <fieldset class="qf-how">
+          <legend class="qf-ui">How it gets to you</legend>
+          <label class="qf-pick">
+            <input type="radio" name="how" value="ship" />
+            <span><span>Ship it</span><small>Standard ${SHIP.standard}, free over ${SHIP.freeOver}. Express ${SHIP.express} at checkout.</small></span>
+          </label>
+          <label class="qf-pick">
+            <input type="radio" name="how" value="pickup" />
+            <span><span>Pick up at the studio</span><small>Free, usually ready the next business day at {studio.street}.</small></span>
+          </label>
+        </fieldset>
+      </div>
+
+      <aside class="qf-sum" aria-labelledby="sum-h">
+        <h2 id="sum-h" class="qf-sum-h">Order summary</h2>
+        <div class="qf-free" data-qf-free>
+          <p class="qf-ui" data-qf-free-text></p>
+          <div class="qf-free-bar" aria-hidden="true"><i data-qf-free-bar></i></div>
+        </div>
+        <dl class="qf-totals qf-ui">
+          <div><dt>Candles (<span data-t-count></span>)</dt><dd class="qf-num" data-t-sub></dd></div>
+          <div data-t-disc-row hidden><dt>Demo code {PROMO.code}</dt><dd class="qf-num" data-t-disc></dd></div>
+          <div><dt data-t-ship-k>Shipping</dt><dd class="qf-num" data-t-ship></dd></div>
+          <div class="qf-total"><dt>Total</dt><dd class="qf-num" data-t-total></dd></div>
+        </dl>
+
+        <form class="qf-promo" data-qf-promo autocomplete="off" aria-label="Demo code">
+          <label class="qf-field">
+            <span>Demo code</span>
+            <span class="qf-promo-row">
+              <input name="code" maxlength="16" spellcheck="false" autocapitalize="characters" aria-describedby="promo-hint promo-said" />
+              <button class="qf-btn qf-btn-line qf-btn-sm" type="submit">Apply</button>
+            </span>
+          </label>
+          <p class="qf-fine" id="promo-hint">Try <b>{PROMO.code}</b> for {PROMO.off * 100}% off the candles. It only changes the numbers on this page.</p>
+          <p class="qf-promo-said qf-ui" id="promo-said" role="status" data-qf-promo-said></p>
+        </form>
+
+        <a class="qf-btn qf-btn-flame qf-sum-go" href={`${base}/checkout/`}>Go to demo checkout</a>
+        <a class="qf-link qf-sum-back" href={`${base}/shop/`}>Keep shopping</a>
+      </aside>
+    </div>
+
+    <div class="qf-reset">
+      <p class="qf-fine">Demo stock goes down when you finish a demo order, so you can watch “Only 3 left” and “Sold out” appear. <button type="button" class="qf-link-btn" data-qf-reset>Reset demo stock</button></p>
+      <p class="qf-fine qf-ui" role="status" data-qf-reset-said></p>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .qf-cart-sec { padding-block: clamp(36px, 6vw, 72px) clamp(56px, 8vw, 104px); }
+  .qf-cart-head { margin-bottom: 28px; }
+  .qf-cart-head h1 { font-size: clamp(2.4rem, 1.6rem + 3vw, 4rem); }
+  .qf-cart-empty[hidden], .qf-cart[hidden] { display: none; }
+  .qf-cart-empty svg { width: 120px; height: 120px; }
+  .qf-cart-empty h2 { font-size: 1.875rem; }
+  .qf-cart { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); gap: clamp(28px, 4vw, 64px); align-items: start; }
+  @media (max-width: 899px) { .qf-cart { grid-template-columns: 1fr; } }
+  .qf-cart-main { display: grid; gap: 32px; min-width: 0; }
+  .qf-lines { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--qf-line-2); }
+  .qf-line { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto auto; grid-template-areas: "art info ctl amt"; gap: 4px 20px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--qf-line-2); }
+  .qf-line.is-out { animation: qf-out 240ms var(--qf-ease) forwards; }
+  @keyframes qf-out { to { opacity: 0; transform: translateX(-12px); } }
+  :root[data-tier="3"] .qf-line.is-out { animation: none; }
+  @media (max-width: 599px) {
+    .qf-line { grid-template-columns: 84px minmax(0, 1fr) auto; grid-template-areas: "art info amt" "art ctl ctl"; gap: 10px 14px; }
+  }
+  .qf-line-art { grid-area: art; display: block; aspect-ratio: 5 / 4; background: radial-gradient(120% 90% at 50% 100%, color-mix(in srgb, var(--glass) 26%, var(--qf-wax)), var(--qf-wax)); }
+  .qf-line-art :global(svg) { display: block; width: 100%; height: 100%; }
+  .qf-line-info { grid-area: info; display: grid; gap: 2px; min-width: 0; }
+  .qf-line-name { font-size: 1.375rem; letter-spacing: -0.02em; }
+  .qf-line-name a { color: var(--qf-umber); text-decoration: none; }
+  .qf-line-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .qf-line-meta { font-size: 0.9375rem; color: var(--qf-soft); }
+  .qf-line .qf-stock:empty { display: none; }
+  .qf-line-ctl { grid-area: ctl; display: flex; align-items: center; gap: 10px; }
+  .qf-line-rm { min-height: 44px; padding: 0 6px; border: 0; background: none; color: var(--qf-soft); font-size: 0.875rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .qf-line-rm:hover { color: var(--qf-ember); }
+  .qf-line-amt { grid-area: amt; min-width: 4.5em; text-align: right; font-weight: 650; font-size: 1.0625rem; color: var(--qf-umber); }
+  .qf-how { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; padding: 0; border: 0; min-width: 0; }
+  @media (max-width: 599px) { .qf-how { grid-template-columns: 1fr; } }
+  .qf-how legend { float: left; grid-column: 1 / -1; width: 100%; margin-bottom: 8px; padding: 0; font-weight: 650; color: var(--qf-umber); }
+  .qf-cart .qf-sum { position: sticky; top: 96px; gap: 18px; }
+  @media (max-width: 899px) { .qf-cart .qf-sum { position: static; } }
+  .qf-free { display: grid; gap: 8px; }
+  .qf-free[hidden] { display: none; }
+  .qf-free p { font-size: 0.9375rem; font-weight: 600; color: var(--qf-umber); }
+  .qf-free-bar { height: 6px; border-radius: 3px; background: var(--qf-wax); overflow: hidden; }
+  .qf-free-bar i { display: block; height: 100%; width: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--qf-amber), var(--qf-ember)); transform-origin: left; transform: scaleX(var(--k, 0)); transition: transform 320ms var(--qf-ease); }
+  :root[data-tier="3"] .qf-free-bar i { transition: none; }
+  .qf-promo { display: grid; gap: 6px; padding-top: 14px; border-top: 1px solid var(--qf-line); }
+  .qf-promo-row { display: flex; gap: 8px; }
+  .qf-promo-row input { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
+  .qf-promo-said { min-height: 1.4em; font-size: 0.875rem; font-weight: 600; color: var(--qf-fern); }
+  .qf-promo-said.is-bad { color: var(--qf-ember-2); }
+  .qf-sum-go { width: 100%; }
+  .qf-sum-back { justify-self: center; }
+  .qf-reset { display: grid; gap: 4px; margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--qf-line); }
+  .qf-undo { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin: 0 0 12px; padding: 0 16px; border: 1px solid var(--qf-line-2); border-radius: 12px; background: var(--qf-wax); }
+  .qf-undo[hidden] { display: none; }
+  .qf-link-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; border: 0; background: none; color: var(--qf-ember-2); font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+</style>
+
+<script>
+  import { cart, saveCart, stock, onCart, resetStock } from "../../../../lib/demo/quillfern-store";
+  import { addLine, setQty, totals, left, stockNote, promoValid, MAX_QTY, SIZES, SHIP, PROMO, type SizeId, type How } from "../../../../lib/demo/quillfern-cart";
+  import { cardArt } from "../../../../lib/demo/quillfern-art";
+  import { usd2 } from "../../../../lib/demo/money";
+  import { tier } from "../../../../lib/demo/tier";
+  import { base } from "../../../../data/demos/quillfern";
+
+  const $ = <T extends Element = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const empty = $("[data-qf-empty]"), full = $("[data-qf-full]");
+  const list = $("[data-qf-lines]"), tpl = $<HTMLTemplateElement>("[data-qf-line]");
+  const said = $("[data-qf-cart-said]");
+  const promo = $<HTMLFormElement>("[data-qf-promo]"), code = promo.elements.namedItem("code") as HTMLInputElement;
+  const promoSaid = $("[data-qf-promo-said]");
+  const hows = [...document.querySelectorAll<HTMLInputElement>('input[name="how"]')];
+  // the last line removed, so one press of Undo puts it back (removing another line replaces it)
+  const undo = $("[data-qf-undo]"), undoBtn = $<HTMLButtonElement>("[data-qf-undo-btn]");
+  let lastOut: { id: string; size: SizeId; qty: number; name: string } | null = null;
+  const keyOf = (id: string, size: string) => `${id}:${size}`;
+  const set = (sel: string, text: string, root: ParentNode = document) => { const el = root.querySelector<HTMLElement>(sel); if (el) el.textContent = text; };
+
+  function line(l: ReturnType<typeof totals>["lines"][number]) {
+    const li = (tpl.content.firstElementChild as HTMLElement).cloneNode(true) as HTMLElement;
+    li.dataset.key = keyOf(l.id, l.size);
+    li.style.setProperty("--glass", l.candle.glass);
+    for (const a of li.querySelectorAll<HTMLAnchorElement>("[data-l-link]")) a.href = `${base}/candles/${l.id}/`;
+    // cardArt is our own SVG built from the catalogue (no visitor text), the same markup the pages render at build time
+    const art = li.querySelector<HTMLElement>("[data-l-art]")!;
+    const svg = new DOMParser().parseFromString(cardArt(l.candle, l.size, false), "text/html").querySelector("svg");
+    if (svg) art.replaceChildren(document.importNode(svg, true));
+    set("[data-l-name]", l.candle.name, li);
+    set("[data-l-size]", SIZES[l.size].label, li);
+    set("[data-l-unit]", usd2(l.unit), li);
+    li.querySelector("[data-l-group]")!.setAttribute("aria-label", `Quantity of ${l.candle.name}, ${SIZES[l.size].label}`);
+    li.querySelector('[data-l-step="-1"]')!.setAttribute("aria-label", `One fewer ${l.candle.name}`);
+    li.querySelector('[data-l-step="1"]')!.setAttribute("aria-label", `One more ${l.candle.name}`);
+    li.querySelector("[data-l-rm]")!.setAttribute("aria-label", `Remove ${l.candle.name}, ${SIZES[l.size].label}`);
+    return li;
+  }
+
+  function draw() {
+    const c = cart(), s = stock(), t = totals(c);
+    empty.hidden = t.count > 0;
+    full.hidden = t.count === 0;
+    // keep the rows that are still there (so focus stays on the button just pressed), add new ones, drop the rest
+    const want = new Set(t.lines.map((l) => keyOf(l.id, l.size)));
+    for (const li of [...list.children] as HTMLElement[]) if (!want.has(li.dataset.key!) && !li.classList.contains("is-out")) li.remove();
+    t.lines.forEach((l, i) => {
+      let li = list.querySelector<HTMLElement>(`[data-key="${keyOf(l.id, l.size)}"]`);
+      if (!li) li = line(l);
+      if (list.children[i] !== li) list.insertBefore(li, list.children[i] ?? null);
+      const room = Math.min(MAX_QTY, left(s, l.id, l.size));
+      set("[data-l-qty]", String(l.qty), li);
+      set("[data-l-amt]", usd2(l.amount), li);
+      set("[data-l-stock]", l.qty >= room && room < MAX_QTY ? `That’s all we have in this size (${stockNote(room) || `${room} left`})` : stockNote(room), li);
+      li.querySelector<HTMLButtonElement>('[data-l-step="-1"]')!.disabled = l.qty <= 1;
+      li.querySelector<HTMLButtonElement>('[data-l-step="1"]')!.disabled = l.qty >= room;
+    });
+    for (const h of hows) h.checked = h.value === c.how;
+    set("[data-t-count]", `${t.count}`);
+    set("[data-t-sub]", usd2(t.subtotal));
+    $("[data-t-disc-row]").hidden = !t.discount;
+    set("[data-t-disc]", `−${usd2(t.discount)}`);
+    set("[data-t-ship-k]", c.how === "pickup" ? "Studio pickup" : "Standard shipping");
+    set("[data-t-ship]", t.shipping ? usd2(t.shipping) : "Free");
+    set("[data-t-total]", usd2(t.total));
+    const freeBox = $("[data-qf-free]");
+    freeBox.hidden = c.how === "pickup" || t.count === 0;
+    const goods = t.subtotal - t.discount;
+    set("[data-qf-free-text]", t.freeLeft ? `${usd2(t.freeLeft)} more for free shipping` : "Shipping is free on this order");
+    $("[data-qf-free-bar]").style.setProperty("--k", String(Math.min(1, goods / SHIP.freeOver)));
+    if (c.promo && !code.value) code.value = c.promo;
+  }
+
+  onCart(draw);
+
+  list.addEventListener("click", (e) => {
+    const b = (e.target as Element).closest<HTMLButtonElement>("button");
+    const li = b?.closest<HTMLElement>(".qf-line");
+    if (!b || !li || b.disabled) return;
+    const [id, size] = li.dataset.key!.split(":") as [string, SizeId];
+    const now = cart().lines.find((l) => l.id === id && l.size === size)?.qty ?? 0;
+    const name = li.querySelector("[data-l-name]")!.textContent;
+    if (b.matches("[data-l-rm]")) {
+      // move focus somewhere that stays: the next row's remove button, else the shipping choice
+      const next = (li.nextElementSibling ?? li.previousElementSibling)?.querySelector<HTMLElement>("[data-l-rm]") ?? hows[0];
+      const go = () => { saveCart(setQty(cart(), id, size, 0, stock()));
+        lastOut = { id, size, qty: now, name: name ?? "" };
+        set("[data-qf-undo-text]", `Removed ${name}, ${SIZES[size].label}.`);
+        undo.hidden = false;
+        said.textContent = `Removed ${name}, ${SIZES[size].label}. Undo is above the cart.`;
+        (cart().lines.length ? next : empty.querySelector<HTMLElement>("a"))?.focus(); };
+      if (tier() === 3) go(); else { li.classList.add("is-out"); setTimeout(() => { li.remove(); go(); }, 240); }
+      return;
+    }
+    const n = now + Number(b.dataset.lStep);
+    saveCart(setQty(cart(), id, size, n, stock()));
+    said.textContent = `${name}, ${SIZES[size].label}: ${Math.max(1, n)}.`;
+  });
+
+  undoBtn.addEventListener("click", () => {
+    if (!lastOut) return;
+    const { id, size, qty, name } = lastOut;
+    const { cart: back, added } = addLine(cart(), id, size, qty, stock());
+    lastOut = null;
+    undo.hidden = true;
+    if (!added) { said.textContent = `${name} is no longer in stock, so it could not go back in the cart.`; (cart().lines.length ? hows[0] : empty.querySelector<HTMLElement>("a"))?.focus(); return; }
+    saveCart(back);
+    said.textContent = `${name}, ${SIZES[size].label} is back in the cart.`;
+    list.querySelector<HTMLElement>(`[data-key="${keyOf(id, size)}"] [data-l-rm]`)?.focus();
+  });
+
+  for (const h of hows) h.addEventListener("change", () => { if (h.checked) saveCart({ ...cart(), how: h.value as How }); });
+
+  promo.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = code.value.trim();
+    promoSaid.classList.remove("is-bad");
+    if (!v) { saveCart({ ...cart(), promo: null }); promoSaid.textContent = "Code removed."; return; }
+    if (!promoValid(v)) { promoSaid.classList.add("is-bad"); promoSaid.textContent = `That code doesn’t work here. In this demo only ${PROMO.code} does.`; return; }
+    code.value = PROMO.code;
+    saveCart({ ...cart(), promo: PROMO.code });
+    promoSaid.textContent = `${PROMO.code} applied: ${PROMO.off * 100}% off the candles (demo only).`;
+  });
+
+  $("[data-qf-reset]").addEventListener("click", () => {
+    resetStock();
+    $("[data-qf-reset-said]").textContent = "Demo stock is back to where it started.";
+  });
+</script>

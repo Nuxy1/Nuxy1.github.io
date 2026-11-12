@@ -1,0 +1,221 @@
+---
+// Quillfern's hero: Cedar Evening lit on a dark table, with Forest Cabin behind and a Vanilla Linen tin in front,
+// drawn as layered SVG (lib/demo/quillfern-art.ts) so the layers can sit at different depths. Tiers
+// (lib/demo/tier.ts): 1 = a live WebGL flame over the main wick (30 fps, its glow breathing with it, leaning when the
+// pointer moves) and pointer depth on the back and front layers; 2 (phones, tablets) and 3 = the still picture with
+// its drawn flame, which is also what shows with no JavaScript, no WebGL, or after the GPU drops the context.
+import { base } from "../../../data/demos/quillfern";
+import { candleById, SIZES, SHIP } from "../../../lib/demo/quillfern-cart";
+import { vessel } from "../../../lib/demo/quillfern-art";
+
+const cedar = candleById("cedar-evening")!, forest = candleById("forest-cabin")!, linen = candleById("vanilla-linen")!;
+// the main jar: 200 wide at x 200, its wick top at (300, 288); the WebGL canvas covers x 260-340, y 168-298
+const main = vessel(200, 260, 200, 280, cedar, { lit: true, size: "8oz", flameClass: "qf-hero-flame" });
+const back = vessel(64, 318, 136, 222, forest, { size: "12oz" });
+const front = vessel(404, 462, 138, 84, linen, { size: "tin" });
+// a dried fern frond leaning on the wall: a stem and paired leaflets getting shorter toward the tip
+const frond = Array.from({ length: 11 }, (_, i) => {
+  const t = i / 10, y = 470 - t * 330, x = 520 - t * 46, len = 46 * (1 - t * 0.78);
+  return `M${x.toFixed(1)} ${y.toFixed(1)}q${(-len * 0.7).toFixed(1)} ${(-len * 0.28).toFixed(1)} ${(-len).toFixed(1)} ${(-len * 0.62).toFixed(1)}M${x.toFixed(1)} ${y.toFixed(1)}q${(len * 0.66).toFixed(1)} ${(-len * 0.36).toFixed(1)} ${(len * 0.92).toFixed(1)} ${(-len * 0.72).toFixed(1)}`;
+}).join("");
+---
+<section class="qf-hero" data-qf-hero aria-labelledby="qf-hero-h">
+  <div class="qf-wrap qf-hero-in">
+    <div class="qf-hero-copy">
+      <p class="qf-label">Small-batch candles, poured by hand</p>
+      <h1 id="qf-hero-h">Six scents for the hours you spend at&nbsp;home.</h1>
+      <p class="qf-lead">Coconut-soy wax, cotton wicks and two weeks of curing. Find the one that smells like your evenings, then have it shipped or pick it up free at the studio.</p>
+      <div class="qf-hero-ctas">
+        <a class="qf-btn qf-btn-flame" href={`${base}/shop/`}>Shop the six candles</a>
+        <a class="qf-btn qf-btn-ghost" href={`${base}/shop/#scents`}>Find your scent</a>
+      </div>
+      <ul class="qf-hero-facts qf-ui" role="list">
+        <li><b>From ${SIZES.tin.price}</b> travel tins</li>
+        <li><b>Free shipping</b> over ${SHIP.freeOver}</li>
+        <li><b>Pickup</b> always free</li>
+      </ul>
+      <p class="qf-demo-note qf-demo-dark">Demonstration store: nothing can be bought and no card is asked for.</p>
+    </div>
+
+    <div class="qf-stage-crop">
+    <div class="qf-stage" data-qf-stage>
+      <svg viewBox="0 0 600 640" role="img" aria-label="A lit Cedar Evening candle in a dark brown jar, with a Forest Cabin jar behind it and a Vanilla Linen travel tin in front" focusable="false">
+        <defs>
+          <radialGradient id="qf-g-glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffcf7a" stop-opacity="0.55" /><stop offset="0.3" stop-color="#e8a03a" stop-opacity="0.2" /><stop offset="1" stop-color="#e8a03a" stop-opacity="0" /></radialGradient>
+          <linearGradient id="qf-g-table" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a3427" /><stop offset="0.14" stop-color="#36261d" /><stop offset="1" stop-color="#1d1611" /></linearGradient>
+          <linearGradient id="qf-g-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d1611" /><stop offset="1" stop-color="#2a1f18" /></linearGradient>
+        </defs>
+        <rect x="-20" y="-20" width="640" height="580" fill="url(#qf-g-wall)" />
+        <circle class="qf-glow" cx="300" cy="240" r="300" fill="url(#qf-g-glow)" />
+        <g class="qf-l qf-l-back">
+          <path d={frond} fill="none" stroke="#6f8467" stroke-width="2.4" stroke-linecap="round" opacity="0.55" />
+          <path d="M520 470L474 140" stroke="#6f8467" stroke-width="3" stroke-linecap="round" opacity="0.55" />
+          <g set:html={back} />
+        </g>
+        <rect x="-20" y="536" width="640" height="124" fill="url(#qf-g-table)" />
+        <path d="M-20 537H620" stroke="#6b4c37" stroke-width="2" />
+        <!-- warm light pooled on the table under the flame -->
+        <ellipse cx="300" cy="548" rx="230" ry="18" fill="#e8a03a" opacity="0.14" />
+        <g class="qf-l qf-l-main" set:html={main} />
+        <g class="qf-l qf-l-front" set:html={front} />
+      </svg>
+      <canvas class="qf-flame-gl" aria-hidden="true"></canvas>
+    </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .qf-hero { position: relative; overflow: hidden; background: var(--qf-night); color: #e6d9c6; }
+  .qf-hero-in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 64px); align-items: center; padding-block: clamp(40px, 6vw, 88px) 0; }
+  .qf-hero-copy { display: grid; gap: 22px; align-content: center; padding-bottom: clamp(32px, 6vw, 88px); }
+  .qf-hero h1 { color: var(--qf-wax); max-width: 13ch; }
+  .qf-hero .qf-label { color: var(--qf-amber-2); }
+  .qf-hero .qf-lead { color: #cdbfac; }
+  .qf-hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+  .qf-btn-ghost { background: transparent; color: var(--qf-wax); box-shadow: inset 0 0 0 1.5px rgba(245, 236, 221, 0.45); }
+  .qf-btn-ghost:hover { background: rgba(245, 236, 221, 0.08); box-shadow: inset 0 0 0 1.5px var(--qf-wax); }
+  .qf-hero-facts { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 0.9375rem; color: #bfb09c; }
+  .qf-hero-facts b { color: var(--qf-wax); font-weight: 650; }
+  .qf-demo-dark { border-color: rgba(245, 236, 221, 0.28); color: #cdbfac; }
+
+  /* the crop box only works on phones; on wide screens the stage itself is the grid item */
+  .qf-stage-crop { display: contents; }
+  .qf-stage { position: relative; align-self: end; width: 100%; max-width: 620px; justify-self: center; aspect-ratio: 600 / 640; }
+  .qf-stage svg { display: block; width: 100%; height: 100%; }
+  .qf-l { transition: transform 120ms linear; }
+  .qf-l-back { transform: translate(calc(var(--px, 0) * -10px), calc(var(--py, 0) * -6px)); }
+  .qf-l-front { transform: translate(calc(var(--px, 0) * 14px), calc(var(--py, 0) * 6px)); }
+  /* the WebGL flame sits exactly over the drawn one (x 260-340, y 168-298 of 600 x 640) */
+  .qf-flame-gl { position: absolute; left: 43.3333%; top: 26.25%; width: 13.3333%; height: 20.3125%; pointer-events: none; opacity: 0; transition: opacity 300ms ease-out; }
+  .qf-hero.has-gl .qf-flame-gl { opacity: 1; }
+  .qf-hero :global(.qf-hero-flame) { transition: opacity 300ms ease-out; }
+  .qf-hero.has-gl :global(.qf-hero-flame) { opacity: 0; }
+
+  @media (max-width: 899px) {
+    .qf-hero-in { grid-template-columns: 1fr; padding-top: 32px; }
+    /* the lit candle comes first on phones, cropped to y 120-560 of the 600 x 640 scene (wall above and most of the
+       table below cut), so the flame is in the first screen and the headline and main button still fit under it */
+    .qf-hero-in { padding-top: 12px; }
+    .qf-hero-copy { padding-bottom: 44px; }
+    .qf-stage-crop { display: block; order: -1; width: 100%; max-width: 440px; justify-self: center; aspect-ratio: 600 / 440; overflow: hidden; }
+    /* the crop's straight edges read as a pasted box on the night page: fade all four into it (the candles sit inside
+       the middle 80%, so only wall and table blend away) */
+    .qf-stage-crop {
+      --fade-x: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent);
+      --fade-y: linear-gradient(to bottom, transparent, #000 9%, #000 90%, transparent);
+      -webkit-mask-image: var(--fade-x), var(--fade-y); -webkit-mask-composite: source-in;
+      mask-image: var(--fade-x), var(--fade-y); mask-composite: intersect;
+    }
+    .qf-stage { max-width: none; margin-top: -20%; }
+  }
+  @media (max-width: 479px) { .qf-hero-ctas .qf-btn { flex: 1 1 100%; } }
+</style>
+
+<script>
+  import { whileTier, tier, webgl } from "../../../lib/demo/tier";
+  import { loop, pointer, fit } from "../../../lib/demo/loop";
+
+  const VERT = "attribute vec2 a;varying vec2 v;void main(){v=a*.5+.5;gl_Position=vec4(a,0.,1.);}";
+  // A teardrop flame over the wick: x is measured in units of the canvas height, y from the wick upward. The width
+  // profile bulges near the base and narrows to a point; sway grows toward the tip; the core is pale, the edge
+  // orange, the root blue, with a soft halo. Output is premultiplied alpha over the drawn scene.
+  const FRAG = `precision mediump float;
+varying vec2 v;uniform float t,f,lean,asp;
+void main(){
+  vec2 p=vec2((v.x-.5)*asp,v.y-.077);
+  float H=.46*f;
+  float y=p.y/H;
+  float sway=(.045*sin(t*1.7)+.025*sin(t*3.1+1.)+.012*sin(t*7.3+2.)+lean)*y*y;
+  float x=p.x-sway-.006*sin(p.y*34.-t*9.)*y;
+  float prof=y<=-.06||y>=1.?0.:pow(max(sin(3.14159*pow(clamp((y+.06)/1.06,0.,1.),.55)),0.),.8)*(1.-.18*y);
+  float w=.13*prof;
+  float d=w>0.?abs(x)/w:9.;
+  float body=smoothstep(1.,.62,d);
+  float core=smoothstep(.75,.1,d)*smoothstep(.72,.18,y)*smoothstep(-.06,.12,y);
+  vec3 col=mix(vec3(.91,.42,.12),vec3(.98,.66,.25),smoothstep(.95,.25,y));
+  col=mix(col,vec3(1.,.93,.74),core);
+  float root=smoothstep(.22,0.,y)*smoothstep(.5,1.,d)*body;
+  col=mix(col,vec3(.42,.58,.95),root*.6);
+  float a=body*(1.-root*.35)*smoothstep(1.,.82,y);
+  float r=length(vec2(p.x-sway*.4,(p.y-H*.38)*.62));
+  float halo=exp(-r*13.)*.32*f;
+  vec3 c=col*a+vec3(1.,.72,.32)*halo*(1.-a);
+  gl_FragColor=vec4(c,clamp(a+halo*(1.-a),0.,1.));
+}`;
+
+  const hero = document.querySelector<HTMLElement>("[data-qf-hero]");
+  const stage = hero?.querySelector<HTMLElement>("[data-qf-stage]");
+  const canvas = hero?.querySelector<HTMLCanvasElement>(".qf-flame-gl");
+  const glow = hero?.querySelector<SVGElement>(".qf-glow");
+
+  if (hero && stage && canvas) {
+    // once this canvas's context is given up (stopped, or taken back by the GPU), the drawn flame stays for this page
+    let spent = false;
+    whileTier(1, () => {
+      if (spent || tier() !== 1 || !webgl()) return;
+      const gl = canvas.getContext("webgl", { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: "low-power" });
+      if (!gl || gl.isContextLost()) return;
+      const sh = (type: number, src: string) => { const s = gl.createShader(type)!; gl.shaderSource(s, src); gl.compileShader(s); return s; };
+      const prog = gl.createProgram()!;
+      const vs = sh(gl.VERTEX_SHADER, VERT), fs = sh(gl.FRAGMENT_SHADER, FRAG);
+      gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl.getExtension("WEBGL_lose_context")?.loseContext(); return; }
+      gl.useProgram(prog);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, "a");
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const u = (n: string) => gl.getUniformLocation(prog, n);
+      const uT = u("t"), uF = u("f"), uLean = u("lean"), uAsp = u("asp");
+      gl.clearColor(0, 0, 0, 0);
+
+      const size = () => { const { w, h } = fit(canvas); gl.viewport(0, 0, canvas.width, canvas.height); gl.uniform1f(uAsp, w / Math.max(1, h)); };
+      size();
+      const ro = new ResizeObserver(size);
+      ro.observe(canvas);
+
+      // flicker: a smoothed random walk toward a new target every so often, never a strobe
+      let f = 1, target = 1, next = 0, lean = 0, lastX = 0;
+      const ptr = pointer(hero);
+      let stopped = false;
+      const run = loop(canvas, (now, dt) => {
+        if (now > next) { target = 0.9 + Math.random() * 0.16; next = now + 90 + Math.random() * 260; }
+        f += (target - f) * Math.min(1, dt / 120);
+        const p = ptr.ease(0.06);
+        // the flame leans away from the way the pointer moves, then settles
+        lean += ((lastX - p.x) * 1.6 - lean) * Math.min(1, dt / 220);
+        lastX = p.x;
+        stage.style.setProperty("--px", p.x.toFixed(4));
+        stage.style.setProperty("--py", p.y.toFixed(4));
+        gl.uniform1f(uT, now / 1000);
+        gl.uniform1f(uF, f);
+        gl.uniform1f(uLean, Math.max(-0.08, Math.min(0.08, lean)));
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        glow?.style.setProperty("opacity", (0.78 + (f - 1) * 2.2).toFixed(3));
+      }, { fps: 30 });
+      hero.classList.add("has-gl");
+
+      const stop = () => {
+        if (stopped) return;
+        stopped = true; spent = true;
+        run.stop(); ro.disconnect(); ptr.stop();
+        canvas.removeEventListener("webglcontextlost", lost);
+        hero.classList.remove("has-gl");
+        stage.style.setProperty("--px", "0"); stage.style.setProperty("--py", "0");
+        glow?.style.removeProperty("opacity");
+        if (!gl.isContextLost()) {
+          gl.deleteBuffer(buf); gl.deleteProgram(prog); gl.deleteShader(vs); gl.deleteShader(fs);
+          gl.getExtension("WEBGL_lose_context")?.loseContext();
+        }
+      };
+      // the GPU took the context back: keep the drawn flame and don't try again on this page
+      const lost = (e: Event) => { e.preventDefault(); stop(); };
+      canvas.addEventListener("webglcontextlost", lost);
+      return stop;
+    });
+  }
+</script>

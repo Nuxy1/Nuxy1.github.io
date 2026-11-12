@@ -1,0 +1,80 @@
+---
+// Lantern Row's full menu: each cut with its time, price and what it includes, a "Book this" link that opens the
+// booking on that cut, and the shop's policies. Demonstration prices for a fictional shop.
+import Shell from "../../../../components/demo/lantern/Shell.astro";
+import { base, services, policies } from "../../../../data/demos/lantern";
+---
+<Shell title="Services and prices" current="services" description="The Lantern Row Barbers menu: classic cut, skin fade, cut and beard, beard trim and kids cut, with times, prices and shop policies. A fictional shop.">
+  <section class="lr-section lr-svc-top">
+    <div class="lr-wrap">
+      <div class="lr-head">
+        <p class="lr-kicker">Services</p>
+        <h1>The menu.</h1>
+        <p class="lr-lead">Five cuts and no surprises. Every visit includes a consultation, and the price on the board is the price you pay.</p>
+        <p class="lr-demo-note">Demonstration prices for a fictional shop.</p>
+      </div>
+
+      <ul class="lr-svc" role="list">
+        {services.map((s, i) => (
+          <li class="lr-svc-row lr-rise" style={`--d:${i * 50}ms`} id={s.id}>
+            <div class="lr-svc-name">
+              <span class="lr-svc-n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+              <div>
+                <div class="lr-item-line"><h2>{s.name}</h2><span class="lr-dots" aria-hidden="true"></span><span class="lr-price">${s.price}</span></div>
+                <p>{s.note}. About {s.mins} minutes.</p>
+              </div>
+            </div>
+            <ul class="lr-svc-inc" role="list" aria-label={`${s.name} includes`}>
+              {s.includes.map((x) => <li>{x}</li>)}
+            </ul>
+            <a class="lr-btn lr-btn-sm lr-btn-line" href={`${base}/booking/?service=${s.id}`}>Book this<span class="sr-only">: {s.name}</span></a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="lr-section lr-rule lr-pol" aria-labelledby="pol-h">
+    <div class="lr-wrap">
+      <div class="lr-head lr-rise">
+        <p class="lr-kicker">House rules</p>
+        <h2 id="pol-h">Short and fair.</h2>
+      </div>
+      <dl class="lr-pol-list">
+        {policies.map(([k, v], i) => <div class="lr-rise" style={`--d:${i * 60}ms`}><dt>{k}</dt><dd>{v}</dd></div>)}
+      </dl>
+    </div>
+  </section>
+
+  <section class="lr-section" aria-labelledby="band-h">
+    <div class="lr-wrap">
+      <div class="lr-band lr-rise">
+        <p class="lr-kicker">Not sure which?</p>
+        <h2 id="band-h">Book a classic. We'll talk it through in the chair.</h2>
+        <a class="lr-btn" href={`${base}/booking/?service=classic`}>Book a classic cut</a>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .lr-svc-top { padding-top: clamp(40px, 6vw, 80px); }
+  .lr-svc { border-top: 1px solid var(--lr-line); }
+  .lr-svc-row { display: grid; gap: 16px 40px; padding-block: 28px; border-bottom: 1px solid var(--lr-line-soft); align-items: center; scroll-margin-top: 96px; }
+  @media (min-width: 900px) { .lr-svc-row { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; } }
+  .lr-svc-name { display: grid; grid-template-columns: 44px 1fr; gap: 16px; align-items: start; }
+  .lr-svc-n { font-family: "Sofia XC", sans-serif; font-weight: 700; font-size: 1.125rem; letter-spacing: 0.1em; color: var(--lr-brass); padding-top: 8px; }
+  .lr-svc-name h2 { font-size: clamp(1.625rem, 3vw, 2.25rem); }
+  .lr-svc-name p { margin-top: 6px; color: var(--lr-mute); }
+  .lr-svc-inc { display: grid; gap: 6px; color: var(--lr-soft); font-size: 0.9375rem; }
+  .lr-svc-inc li { display: flex; gap: 10px; align-items: baseline; }
+  .lr-svc-inc li::before { content: ""; flex: none; width: 5px; height: 5px; background: var(--lr-brass); transform: rotate(45deg) translateY(-2px); }
+  @media (max-width: 899px) { .lr-svc-inc { padding-left: 60px; } .lr-svc-row > .lr-btn { justify-self: start; margin-left: 60px; } }
+  @media (max-width: 419px) { .lr-svc-inc { padding-left: 0; } .lr-svc-row > .lr-btn { margin-left: 0; } }
+
+  .lr-pol-list { display: grid; gap: 1px; background: var(--lr-line-soft); border: 1px solid var(--lr-line-soft); }
+  @media (min-width: 760px) { .lr-pol-list { grid-template-columns: 1fr 1fr; } }
+  .lr-pol-list div { display: grid; gap: 8px; padding: 28px; background: var(--lr-bg); }
+  .lr-pol-list dt { font-family: "Bodoni Moda", Georgia, serif; font-size: 1.5rem; font-weight: 600; }
+  .lr-pol-list dd { color: var(--lr-soft); }
+</style>

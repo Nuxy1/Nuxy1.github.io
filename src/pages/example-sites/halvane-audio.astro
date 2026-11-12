@@ -1,0 +1,463 @@
+---
+// Halvane Audio: the Immersive-level concept project (website levels brief). A made-up speaker brand launches one
+// product, the Lumen One, with a scroll story that takes the speaker apart: cabinet, woofer, tweeter, crossover,
+// then the finish. Nothing here is real (DemoSite adds the banner, noindex and the demo form behaviour).
+// How the 3D is kept honest about cost:
+// - the page first shows a still drawing of the speaker (inline SVG, no download), and the story, the finishes
+//   (pure CSS) and the reserve form all work with it, with JavaScript off and with reduced motion;
+// - only after the page has loaded, when the visitor has not asked for reduced motion, is not saving data and the
+//   browser has WebGL, is the Three.js scene (lib/halvane/scene.ts) fetched and swapped in;
+// - scrolling never gets taken over: the page scrolls normally and the scene follows it (which step is in the
+//   middle of the screen picks the part; how far through the story you are sets how far apart it is);
+// - the scene pauses off screen and in a hidden tab, has a "Pause motion" button, and is disposed on pagehide or
+//   when reduced motion is switched on.
+import DemoSite from "../../layouts/DemoSite.astro";
+
+const steps = [
+  { id: "cabinet", n: "01", h: "The cabinet", p: "Solid walnut, 19 mm thick, braced inside so the box stays quiet and only the drivers speak. A slot port along the bottom lets it sit close to a wall without booming." },
+  { id: "woofer", n: "02", h: "The woofer", p: "A 6.5-inch paper-composite cone on a cast frame. Paper is light and naturally damped, so voices sound like people in the room, not like speakers." },
+  { id: "tweeter", n: "03", h: "The tweeter", p: "A 1-inch aluminium dome in a shallow waveguide with a brass ring. It spreads the treble evenly across the room, not only to the one chair in the middle." },
+  { id: "crossover", n: "04", h: "The crossover", p: "Hand-soldered on the back plate with air-core coils and film capacitors, tuned by ear over six weeks of listening. Brass binding posts take bare wire or banana plugs." },
+];
+const finishes = [
+  { id: "walnut", name: "Walnut", note: "Oiled solid walnut" },
+  { id: "chalk", name: "Chalk", note: "Matte lacquer over oak" },
+  { id: "graphite", name: "Graphite", note: "Stained ash, satin" },
+];
+const specs = [
+  ["Type", "Two-way bookshelf speaker with a front slot port"],
+  ["Drivers", "6.5-inch paper-composite woofer, 1-inch aluminium dome tweeter"],
+  ["Frequency response", "45\u00a0Hz – 22\u00a0kHz (±3\u00a0dB)"],
+  ["Sensitivity", "87\u00a0dB (2.83\u00a0V at 1\u00a0m)"],
+  ["Impedance", "6\u00a0Ω nominal"],
+  ["Size", "21 × 33 × 26\u00a0cm (W × H × D)"],
+  ["Weight", "7.4\u00a0kg each"],
+  ["Price", "$1,180 a pair (demonstration price)"],
+];
+---
+<DemoSite slug="halvane-audio" theme="#0f0d0b" description="Halvane Audio is a made-up speaker brand: a demonstration website by Nuxy Automation.">
+  <div class="hv">
+    <a class="hv-skip" href="#main">Skip to content</a>
+    <header class="hv-head">
+      <div class="hv-bar">
+        <a class="hv-mark" href="#main">Halvane<span>Audio</span></a>
+        <nav aria-label="Halvane Audio">
+          <a href="#inside">Inside</a>
+          <a href="#finish">Finishes</a>
+          <a href="#specs">Specs</a>
+        </nav>
+        <a class="hv-btn sm" href="#reserve">Reserve</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="hv-story">
+        <div class="hv-stage" data-stage data-part="cabinet">
+          <svg viewBox="0 0 300 400" role="img" aria-labelledby="hv-art-t">
+            <title id="hv-art-t">The Lumen One speaker from the front, in the chosen finish</title>
+            <defs>
+              <pattern id="hv-grain" width="11" height="400" patternUnits="userSpaceOnUse">
+                <path d="M3 0C6 110 1 250 5 400M8.5 0C7 140 10 260 7.5 400" fill="none" stroke="#000" stroke-opacity=".16" />
+              </pattern>
+              <linearGradient id="hv-shade" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0" stop-color="#fff" stop-opacity=".12" />
+                <stop offset=".55" stop-color="#fff" stop-opacity="0" />
+                <stop offset="1" stop-color="#000" stop-opacity=".32" />
+              </linearGradient>
+            </defs>
+            <ellipse cx="150" cy="372" rx="128" ry="9" fill="#000" opacity=".55" />
+            <g class="p-cabinet">
+              <rect class="cab" x="40" y="20" width="220" height="346" rx="14" />
+              <rect class="grain" x="40" y="20" width="220" height="346" rx="14" fill="url(#hv-grain)" />
+              <rect x="40" y="20" width="220" height="346" rx="14" fill="url(#hv-shade)" />
+            </g>
+            <g class="p-crossover">
+              <rect x="77" y="131" width="146" height="199" rx="6" fill="none" stroke="#c8a46a" stroke-dasharray="5 5" />
+              <rect x="94" y="160" width="112" height="118" rx="3" fill="#c8a46a" fill-opacity=".1" stroke="#c8a46a" stroke-opacity=".7" />
+              <circle cx="122" cy="190" r="16" fill="none" stroke="#c8a46a" stroke-width="6" stroke-opacity=".7" />
+              <rect x="150" y="225" width="40" height="14" rx="7" fill="#c8a46a" fill-opacity=".6" />
+            </g>
+            <g class="p-tweeter">
+              <circle cx="150" cy="90" r="35" fill="#c8a46a" />
+              <circle cx="150" cy="90" r="29" fill="#1c1b1a" />
+              <circle cx="150" cy="90" r="14" fill="#dcd8d0" />
+              <circle cx="146" cy="86" r="5" fill="#fff" opacity=".55" />
+              <circle class="hl" cx="150" cy="90" r="43" />
+            </g>
+            <g class="p-woofer">
+              <circle cx="150" cy="237" r="79" fill="#c8a46a" />
+              <circle cx="150" cy="237" r="74" fill="#141312" />
+              <circle cx="150" cy="237" r="64" fill="#24211f" />
+              <circle cx="150" cy="237" r="44" fill="#1f1d1b" />
+              <circle cx="150" cy="237" r="20" fill="#2b2826" />
+              <circle cx="144" cy="231" r="6" fill="#fff" opacity=".1" />
+              <circle class="hl" cx="150" cy="237" r="87" />
+            </g>
+            <rect x="92" y="328" width="116" height="17" rx="8.5" fill="#050404" />
+          </svg>
+          <canvas data-canvas aria-hidden="true" hidden></canvas>
+          <p class="hv-tag" data-tag aria-hidden="true" hidden></p>
+          <div class="hv-tools" data-tools hidden>
+            <button type="button" data-turn="-1" aria-label="Turn the speaker left">&#8249;</button>
+            <button type="button" data-pause>Pause motion</button>
+            <button type="button" data-turn="1" aria-label="Turn the speaker right">&#8250;</button>
+          </div>
+        </div>
+
+        <div class="hv-flow">
+          <section class="hv-hero" aria-labelledby="hv-h1" data-step="cabinet">
+            <p class="hv-eye">Lumen One · two-way bookshelf speaker</p>
+            <h1 id="hv-h1">Built by hand.<br /> Tuned by ear.</h1>
+            <p class="hv-lead">A bookshelf speaker with a solid walnut cabinet, a 6.5-inch paper woofer and an aluminium tweeter in a brass ring. Scroll down and take one apart.</p>
+            <div class="hv-actions">
+              <a class="hv-btn" href="#reserve">Reserve a pair</a>
+              <a class="hv-link" href="#inside">See inside</a>
+            </div>
+          </section>
+
+          <section id="inside" class="hv-steps" aria-labelledby="hv-inside-h">
+            <h2 id="hv-inside-h" class="sr-only">Inside the Lumen One</h2>
+            {steps.map((s) => (
+              <article class="hv-step" data-step={s.id} aria-labelledby={`hv-${s.id}-h`}>
+                <p class="hv-n">{s.n}</p>
+                <h3 id={`hv-${s.id}-h`}>{s.h}</h3>
+                <p>{s.p}</p>
+              </article>
+            ))}
+            <article class="hv-step" id="finish" data-step="finish" aria-labelledby="hv-finish-h">
+              <p class="hv-n">05</p>
+              <h3 id="hv-finish-h">Your finish</h3>
+              <p>Three finishes, the same speaker inside. Each pair is matched by grain or colour batch before it leaves the workshop.</p>
+              <fieldset class="hv-finishes">
+                <legend class="sr-only">Cabinet finish</legend>
+                {finishes.map((f, i) => (
+                  <label class:list={["hv-sw", `sw-${f.id}`]}>
+                    <input type="radio" name="hv-finish" value={f.id} checked={i === 0} data-finish />
+                    <span><strong>{f.name}</strong>{f.note}</span>
+                  </label>
+                ))}
+              </fieldset>
+            </article>
+          </section>
+        </div>
+      </div>
+
+      <section class="hv-specs" id="specs" aria-labelledby="hv-specs-h">
+        <div class="hv-wrap hv-two">
+          <div>
+            <p class="hv-eye">Specifications</p>
+            <h2 id="hv-specs-h">The numbers, plainly</h2>
+            <p class="hv-muted">Measured in our listening room with the grille off. A pair includes cotton dust covers and a printed tuning card signed by the person who voiced it.</p>
+          </div>
+          <dl class="hv-dl">
+            {specs.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+          </dl>
+        </div>
+      </section>
+
+      <section class="hv-reserve" id="reserve" aria-labelledby="hv-res-h">
+        <div class="hv-wrap hv-two">
+          <div>
+            <p class="hv-eye">First run · 200 pairs</p>
+            <h2 id="hv-res-h">Reserve a pair</h2>
+            <p class="hv-muted">No payment now. We email you when your pair is built, and you can still change the finish until then.</p>
+          </div>
+          <div class="hv-card">
+            <form method="dialog" data-demo-form="hv-sent" class="hv-form">
+              <label>Email
+                <input type="email" name="email" required autocomplete="email" spellcheck="false" placeholder="you@example.com" />
+              </label>
+              <label>Finish
+                <select name="finish" data-finish-select>
+                  {finishes.map((f) => <option value={f.id}>{f.name}</option>)}
+                </select>
+              </label>
+              <button class="hv-btn" type="submit">Reserve a pair</button>
+              <p class="hv-small">Demonstration website: this form sends nothing.</p>
+            </form>
+            <div class="demo-sent" id="hv-sent" tabindex="-1" hidden>
+              <strong>Demo only — nothing was sent</strong>
+              <p>On a real launch site you would get a confirmation email now, and Halvane would see your reservation in its order list.</p>
+              <button class="hv-btn ghost" type="button" data-demo-again>Fill it in again</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="hv-foot">
+      <div class="hv-wrap">
+        <p class="hv-mark">Halvane<span>Audio</span></p>
+        <p class="hv-muted"><a href="#rooms" data-demo-action="On a real site this would list listening rooms near you.">Find a listening room</a> · <a href="#warranty" data-demo-action="On a real site this would open the warranty and care guide.">Warranty and care</a></p>
+        <p class="foot-fict">Halvane Audio is a fictional business. This is a demonstration website made by <a href="/websites/" target="_top">Nuxy Automation</a>.</p>
+      </div>
+    </footer>
+  </div>
+</DemoSite>
+
+<style>
+  .hv { --bg: #0f0d0b; --bg-2: #17140f; --ink: #f3ede4; --muted: #a89f92; --brass: #c8a46a; --line: #2a2520; --finish: #8a5c3c; background: var(--bg); color: var(--ink); }
+  :global(body) { background: #0f0d0b; }
+  /* the finish changes without JavaScript too */
+  .hv:has(input[value="chalk"]:checked) { --finish: #e4ddd0; }
+  .hv:has(input[value="graphite"]:checked) { --finish: #34322f; }
+  .hv :focus-visible { outline-color: var(--brass); }
+  .hv a { color: inherit; }
+  .hv :is(h1, h2, h3) { text-wrap: balance; }
+  /* below 900px the stage is stuck to the top of the screen, so an anchor jump (#inside, #finish) stops under it: the
+     steps keep the stage height clear (the page already pads 88px for anchors, hence the subtraction) */
+  @media (max-width: 899px) { .hv-steps, .hv-step { scroll-margin-top: calc(max(46svh, 280px) - 72px); } }
+  .hv-skip { position: absolute; left: 16px; top: -60px; z-index: 20; padding: 10px 14px; border-radius: 8px; background: var(--brass); color: #14110d; font-weight: 600; text-decoration: none; }
+  .hv-skip:focus { top: 56px; }
+  .hv-wrap { max-width: 1200px; margin: 0 auto; padding-inline: clamp(16px, 4vw, 40px); }
+
+  .hv-head { border-bottom: 1px solid var(--line); }
+  .hv-bar { display: flex; align-items: center; gap: 24px; max-width: 1440px; margin: 0 auto; padding: 14px clamp(16px, 4vw, 40px); }
+  .hv-mark { display: inline-flex; align-items: baseline; gap: 8px; font-size: 1rem; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; text-decoration: none; }
+  .hv-mark span { color: var(--brass); font-size: 0.6875rem; letter-spacing: 0.24em; }
+  .hv-head nav { display: none; gap: 28px; margin-left: auto; font-size: 0.9375rem; }
+  .hv-head nav a { color: var(--muted); text-decoration: none; }
+  .hv-head nav a:hover { color: var(--ink); }
+  .hv-head .hv-btn { margin-left: auto; }
+  @media (min-width: 720px) { .hv-head nav { display: flex; } .hv-head .hv-btn { margin-left: 8px; } }
+
+  .hv-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 24px; border: 1px solid var(--brass); border-radius: 999px; background: var(--brass); color: #14110d; font-weight: 600; text-decoration: none; transition: background-color 160ms ease-out, color 160ms ease-out; }
+  .hv-btn:hover { background: #d8b67e; }
+  .hv-btn.sm { min-height: 40px; padding: 8px 18px; font-size: 0.9375rem; }
+  .hv-btn.ghost { background: transparent; color: var(--ink); }
+  .hv-btn.ghost:hover { background: #2a2520; }
+  /* `.hv a { color: inherit }` outranks `.hv-btn`, so link buttons need their dark text restated. */
+  .hv a.hv-btn:not(.ghost) { color: #14110d; }
+  .hv-link { color: var(--ink); font-weight: 500; text-underline-offset: 5px; text-decoration-color: var(--brass); }
+
+  .hv-eye { color: var(--brass); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+  .hv-muted { color: var(--muted); }
+  .hv h1, .hv h2, .hv h3 { font-weight: 300; letter-spacing: -0.035em; line-height: 1.04; }
+  .hv h1 { font-size: clamp(2.75rem, 6.4vw, 5.25rem); margin-top: 18px; }
+  .hv h2 { font-size: clamp(2rem, 4vw, 3rem); margin-top: 12px; }
+  .hv h3 { font-size: clamp(1.75rem, 3vw, 2.5rem); margin-top: 10px; }
+
+  /* the story: a sticky stage with the speaker beside (desktop) or above (phone) the text that scrolls past it */
+  .hv-story { display: grid; }
+  .hv-stage { position: sticky; top: 0; z-index: 2; height: 46svh; min-height: 280px; overflow: clip; background: linear-gradient(var(--bg) 88%, rgba(15, 13, 11, 0)); }
+  @media (min-width: 900px) {
+    .hv-story { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); }
+    .hv-stage { height: 100svh; background: radial-gradient(60% 50% at 50% 55%, #1d1812, var(--bg)); }
+  }
+  .hv-stage svg { position: absolute; inset: 0; margin: auto; height: min(80%, 560px); width: auto; transition: opacity 600ms ease-out; }
+  .hv-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; touch-action: pan-y; cursor: grab; transition: opacity 600ms ease-out; }
+  .hv-stage canvas:active { cursor: grabbing; }
+  .hv-stage.is-3d canvas { opacity: 1; }
+  .hv-stage.is-3d svg { opacity: 0; }
+  .cab { fill: var(--finish); transition: fill 400ms ease-out; }
+  .grain { opacity: 0; transition: opacity 400ms ease-out; }
+  .hv:has(input[value="walnut"]:checked) .grain { opacity: 1; }
+  .hl { fill: none; stroke: var(--brass); stroke-width: 2; stroke-dasharray: 4 6; opacity: 0; transition: opacity 300ms ease-out; }
+  .p-crossover { opacity: 0; transition: opacity 300ms ease-out; }
+  .hv-stage[data-part="woofer"] .p-woofer .hl,
+  .hv-stage[data-part="tweeter"] .p-tweeter .hl,
+  .hv-stage[data-part="crossover"] .p-crossover { opacity: 1; }
+  .hv-stage[data-part="crossover"] .p-woofer, .hv-stage[data-part="crossover"] .p-tweeter { opacity: 0.35; }
+  .p-woofer, .p-tweeter { transition: opacity 300ms ease-out; }
+
+  .hv-tag { position: absolute; left: 0; top: 0; z-index: 1; translate: 0 -50%; padding: 5px 12px 5px 22px; border: 1px solid var(--line); border-radius: 999px; background: rgba(15, 13, 11, 0.82); color: var(--ink); font-size: 0.8125rem; font-weight: 500; white-space: nowrap; pointer-events: none; will-change: transform; }
+  .hv-tag::before { content: ""; position: absolute; left: 8px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: var(--brass); }
+  .hv-tools { position: absolute; left: 50%; bottom: 14px; z-index: 1; display: flex; gap: 8px; translate: -50% 0; }
+  .hv-tools button { white-space: nowrap; min-width: 44px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(15, 13, 11, 0.85); color: var(--ink); font-size: 0.875rem; }
+  .hv-tools button[data-turn] { font-size: 1.375rem; line-height: 1; }
+  .hv-tools button:hover { border-color: var(--brass); }
+
+  .hv-flow { position: relative; padding-inline: clamp(16px, 4vw, 56px); }
+  .hv-hero { padding-block: 24px 64px; }
+  @media (min-width: 900px) { .hv-hero { min-height: calc(100svh - 120px); display: grid; align-content: center; padding-block: 48px; } }
+  .hv-lead { margin-top: 22px; max-width: 34rem; color: var(--muted); font-size: 1.125rem; }
+  .hv-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; margin-top: 32px; }
+  .hv-step { display: grid; align-content: center; gap: 0; min-height: 72svh; max-width: 30rem; padding-block: 48px; border-top: 1px solid var(--line); }
+  .hv-step > p:not(.hv-n) { margin-top: 18px; color: var(--muted); font-size: 1.0625rem; }
+  .hv-n { color: var(--brass); font-size: 0.875rem; font-weight: 600; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; }
+  .hv-finishes { display: grid; gap: 10px; margin-top: 24px; }
+  .hv-sw { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: border-color 160ms ease-out; }
+  .hv-sw:hover { border-color: #4a4136; }
+  .hv-sw:has(input:checked) { border-color: var(--brass); }
+  .hv-sw:has(input:focus-visible) { outline: 3px solid var(--brass); outline-offset: 2px; }
+  .hv-sw input { appearance: none; flex: none; width: 28px; height: 28px; margin: 0; border-radius: 50%; border: 2px solid var(--line); }
+  .hv-sw input:checked { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--brass); }
+  .hv-sw input:focus-visible { outline: none; }
+  .sw-walnut input { background: #8a5c3c; }
+  .sw-chalk input { background: #e4ddd0; }
+  .sw-graphite input { background: #34322f; border-color: #5a554e; }
+  .hv-sw span { display: grid; color: var(--muted); font-size: 0.875rem; line-height: 1.35; }
+  .hv-sw strong { color: var(--ink); font-size: 1rem; font-weight: 600; }
+
+  .hv-specs, .hv-reserve { padding-block: clamp(64px, 9vw, 120px); border-top: 1px solid var(--line); }
+  .hv-reserve { background: var(--bg-2); }
+  .hv-two { display: grid; gap: 32px; }
+  @media (min-width: 900px) { .hv-two { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 72px; align-items: start; } }
+  .hv-two > div > .hv-muted { margin-top: 18px; max-width: 30rem; }
+  .hv-dl { display: grid; margin: 0; border-top: 1px solid var(--line); }
+  .hv-dl div { display: grid; gap: 4px; padding-block: 14px; border-bottom: 1px solid var(--line); }
+  @media (min-width: 600px) { .hv-dl div { grid-template-columns: 12rem minmax(0, 1fr); gap: 20px; } }
+  .hv-dl dt { color: var(--muted); font-size: 0.9375rem; }
+  .hv-dl dd { margin: 0; }
+
+  .hv-card { padding: clamp(20px, 3vw, 32px); border: 1px solid var(--line); border-radius: 16px; background: var(--bg); }
+  .hv-form { display: grid; gap: 18px; }
+  .hv-form label { display: grid; gap: 8px; font-size: 0.9375rem; font-weight: 600; }
+  .hv-form input, .hv-form select { min-height: 48px; padding: 10px 14px; border: 1px solid #4a4136; border-radius: 10px; background: var(--bg-2); color: var(--ink); font-weight: 400; }
+  .hv-form input::placeholder { color: #8a8174; }
+  .hv-form input:focus-visible, .hv-form select:focus-visible { outline: 3px solid var(--brass); outline-offset: 1px; }
+  .hv-small { color: var(--muted); font-size: 0.8125rem; }
+  .hv .demo-sent { border-color: var(--line); }
+  .hv .demo-sent p { color: var(--muted); }
+  .hv .demo-sent .hv-btn { justify-self: start; }
+
+  .hv-foot { padding-block: 40px 48px; border-top: 1px solid var(--line); }
+  .hv-foot .hv-wrap { display: grid; gap: 14px; }
+  .hv-foot a { text-underline-offset: 3px; }
+  .foot-fict { color: var(--muted); font-size: 0.875rem; }
+  .foot-fict a { color: var(--brass); }
+</style>
+
+<script>
+  import type { Speaker, Part, Finish } from "../../lib/halvane/scene";
+
+  const stage = document.querySelector<HTMLElement>("[data-stage]")!;
+  let canvas = stage.querySelector<HTMLCanvasElement>("[data-canvas]")!;
+  const tag = stage.querySelector<HTMLElement>("[data-tag]")!;
+  const tools = stage.querySelector<HTMLElement>("[data-tools]")!;
+  const pauseBtn = tools.querySelector<HTMLButtonElement>("[data-pause]")!;
+  const select = document.querySelector<HTMLSelectElement>("[data-finish-select]")!;
+  const NAMES: Record<Finish, string> = { walnut: "Walnut", chalk: "Chalk", graphite: "Graphite" };
+  const LABEL: Record<Exclude<Part, "cabinet">, string> = { woofer: "6.5-inch paper woofer", tweeter: "1-inch aluminium tweeter", crossover: "Hand-soldered crossover" };
+
+  let speaker: Speaker | null = null;
+  let part: Part = "cabinet";
+  let finish: Finish = "walnut";
+  let paused = false;
+  const label = () => (part === "cabinet" ? `${NAMES[finish]} cabinet` : LABEL[part]);
+
+  // the label follows the part on screen but never leaves the stage (on a phone it would push the page sideways)
+  let tagW = 0;
+  const setTag = () => { tag.textContent = label(); tagW = tag.hidden ? 0 : tag.offsetWidth; };
+  const placeTag = (x: number, y: number) => {
+    if (!tagW && !tag.hidden) tagW = tag.offsetWidth;
+    const max = stage.clientWidth - tagW - 8;
+    tag.style.transform = `translate(${Math.round(Math.max(8, Math.min(x, max)))}px, ${Math.round(y)}px)`;
+  };
+
+  // the step crossing the line a little below the middle of the screen picks the part
+  const setPart = (p: Part) => {
+    part = p;
+    stage.dataset.part = p;
+    setTag();
+    speaker?.setPart(p);
+  };
+  const steps = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      const s = (e.target as HTMLElement).dataset.step!;
+      setPart(s === "finish" ? "cabinet" : (s as Part));
+    }
+  }, { rootMargin: "-55% 0px -35% 0px" });
+  document.querySelectorAll("[data-step]").forEach((el) => steps.observe(el));
+
+  // how far apart the speaker is: opens as the woofer step arrives, closes again for the finish step
+  const first = document.querySelector<HTMLElement>('[data-step="woofer"]')!;
+  const last = document.querySelector<HTMLElement>('[data-step="finish"]')!;
+  const clamp = (n: number) => Math.min(1, Math.max(0, n));
+  const spread = () => {
+    const vh = innerHeight, line = vh * 0.6;
+    const open = clamp((line - first.getBoundingClientRect().top + vh * 0.2) / (vh * 0.45));
+    const close = clamp((line - last.getBoundingClientRect().top + vh * 0.2) / (vh * 0.45));
+    return open * (1 - close);
+  };
+  let ticking = false;
+  addEventListener("scroll", () => {
+    if (!speaker || ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { ticking = false; speaker?.setExplode(spread()); });
+  }, { passive: true });
+
+  // finishes: the drawing follows by CSS alone; this keeps the 3D cabinet, the label and the form in step
+  for (const r of document.querySelectorAll<HTMLInputElement>("[data-finish]")) {
+    r.addEventListener("change", () => {
+      finish = r.value as Finish;
+      select.value = finish;
+      setTag();
+      speaker?.setFinish(finish);
+    });
+  }
+
+  for (const b of tools.querySelectorAll<HTMLButtonElement>("[data-turn]")) {
+    b.addEventListener("click", () => speaker?.turn(Number(b.dataset.turn) * 0.4));
+  }
+  pauseBtn.addEventListener("click", () => {
+    paused = !paused;
+    pauseBtn.textContent = paused ? "Resume motion" : "Pause motion";
+    speaker?.setPaused(paused);
+  });
+
+  // the 3D scene: only after load, never with reduced motion or data saving, only with working WebGL
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  const phone = matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+  const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+  const webgl = () => {
+    try {
+      const gl = (document.createElement("canvas").getContext("webgl2") || document.createElement("canvas").getContext("webgl")) as WebGLRenderingContext | null;
+      gl?.getExtension("WEBGL_lose_context")?.loseContext();
+      return !!gl;
+    } catch { return false; }
+  };
+  let starting = false;
+  // each start gets a number; stop() moves it on, so a scene that finishes building after a stop is thrown away
+  let run = 0;
+  async function start() {
+    if (speaker || starting || reduce.matches || saveData || !webgl()) return;
+    starting = true;
+    const mine = ++run;
+    try {
+      const { mountSpeaker } = await import("../../lib/halvane/scene");
+      if (mine !== run || reduce.matches) return;
+      canvas.hidden = false;
+      // built in short steps (the page stays responsive meanwhile), shaders compiled before the first frame
+      const built = await mountSpeaker(canvas, {
+        phone,
+        onLabel: placeTag,
+        onLost: stop,
+      });
+      if (mine !== run || reduce.matches) { built.dispose(); return; }
+      speaker = built;
+      speaker.setFinish(finish);
+      speaker.setPart(part);
+      speaker.setExplode(spread());
+      speaker.setPaused(paused);
+      setTag();
+      stage.classList.add("is-3d");
+      tools.hidden = false;
+      tag.hidden = false;
+      setTag();
+    } catch {
+      stop();
+    } finally {
+      starting = false;
+    }
+  }
+  function stop() {
+    run++;
+    speaker?.dispose();
+    speaker = null;
+    stage.classList.remove("is-3d");
+    tools.hidden = true;
+    tag.hidden = true;
+    // a disposed canvas keeps its lost context, so a later start gets a fresh one
+    const fresh = canvas.cloneNode() as HTMLCanvasElement;
+    fresh.hidden = true;
+    canvas.replaceWith(fresh);
+    canvas = fresh;
+  }
+  reduce.addEventListener("change", () => (reduce.matches ? stop() : start()));
+  addEventListener("pagehide", stop);
+  addEventListener("pageshow", (e) => { if (e.persisted) start(); });
+  const go = () => ("requestIdleCallback" in window ? requestIdleCallback(() => start(), { timeout: 2000 }) : setTimeout(start, 300));
+  if (document.readyState === "complete") go(); else addEventListener("load", go, { once: true });
+</script>

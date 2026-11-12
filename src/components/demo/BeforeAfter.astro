@@ -1,0 +1,51 @@
+---
+// Before/after comparison: two pictures stacked, the "after" one clipped at the handle. The handle is a real range
+// input laid over the picture, so it works with a mouse, touch, and the arrow keys, and screen readers announce it.
+// Without JavaScript both halves show, split in the middle. Each site styles it through --ba-* variables.
+interface Props { label: string; caption?: string; start?: number; tag?: string; beforeLabel?: string; afterLabel?: string }
+const { label, caption, start = 50, tag, beforeLabel = "Before", afterLabel = "After" } = Astro.props;
+---
+<figure class="ba" style={`--pos:${start}%`} data-ba>
+  <div class="ba-stage">
+    <div class="ba-pic ba-before"><slot name="before" /></div>
+    <div class="ba-pic ba-after" aria-hidden="true"><slot name="after" /></div>
+    <span class="ba-label ba-l1" aria-hidden="true">{beforeLabel}</span>
+    <span class="ba-label ba-l2" aria-hidden="true">{afterLabel}</span>
+    <span class="ba-handle" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="m9 6-5 6 5 6M15 6l5 6-5 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+    <input class="ba-range" type="range" min="0" max="100" value={start} aria-label={`${label}: drag to compare before and after`} data-ba-range />
+    {tag && <span class="ba-tag">{tag}</span>}
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .ba { --ba-radius: 18px; --ba-handle-bg: #fff; --ba-handle-ink: #111; --ba-line: #fff; --ba-label-bg: rgba(10, 14, 12, 0.72); --ba-label-ink: #fff; display: grid; gap: 10px; }
+  .ba-stage { position: relative; overflow: hidden; border-radius: var(--ba-radius); aspect-ratio: var(--ba-ratio, 16 / 10); isolation: isolate; touch-action: pan-y; }
+  .ba-pic { position: absolute; inset: 0; }
+  .ba-pic :global(svg) { width: 100%; height: 100%; }
+  .ba-after { clip-path: inset(0 0 0 var(--pos)); }
+  .ba-stage::after { content: ""; position: absolute; top: 0; bottom: 0; left: var(--pos); width: 2px; margin-left: -1px; background: var(--ba-line); box-shadow: 0 0 12px rgba(0, 0, 0, 0.3); pointer-events: none; z-index: 2; }
+  .ba-handle { position: absolute; top: 50%; left: var(--pos); z-index: 3; display: grid; place-items: center; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: var(--ba-handle-bg); color: var(--ba-handle-ink); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); pointer-events: none; transition: transform 160ms ease-out; }
+  .ba-stage:hover .ba-handle { transform: scale(1.06); }
+  .ba-range { position: absolute; inset: 0; z-index: 4; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; -webkit-appearance: none; appearance: none; background: transparent; }
+  .ba-range::-webkit-slider-thumb { -webkit-appearance: none; width: 48px; height: 100vh; }
+  .ba-range::-moz-range-thumb { width: 48px; height: 100vh; border: 0; }
+  .ba-stage:has(.ba-range:focus-visible) { outline: 3px solid var(--ba-focus, #2563eb); outline-offset: 3px; }
+  .ba-label { position: absolute; top: 12px; z-index: 2; padding: 4px 10px; border-radius: 999px; background: var(--ba-label-bg); color: var(--ba-label-ink); font-size: 0.8125rem; font-weight: 650; pointer-events: none; }
+  .ba-l1 { left: 12px; }
+  .ba-l2 { right: 12px; }
+  .ba-tag { position: absolute; left: 12px; bottom: 12px; z-index: 2; padding: 4px 10px; border-radius: 6px; background: var(--ba-label-bg); color: var(--ba-label-ink); font-size: 0.8125rem; font-weight: 600; pointer-events: none; }
+  figcaption { font-size: 0.9375rem; color: var(--ba-caption, inherit); }
+</style>
+
+<script>
+  for (const fig of document.querySelectorAll<HTMLElement>("[data-ba]")) {
+    const range = fig.querySelector<HTMLInputElement>("[data-ba-range]")!;
+    const set = () => {
+      fig.style.setProperty("--pos", `${range.value}%`);
+      range.setAttribute("aria-valuetext", `${100 - +range.value}% after shown`);
+    };
+    range.addEventListener("input", set);
+    set();
+  }
+</script>

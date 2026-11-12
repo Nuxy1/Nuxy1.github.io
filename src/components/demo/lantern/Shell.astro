@@ -1,0 +1,213 @@
+---
+// Lantern Row's frame on every page: a dark header with its own navigation (a folding menu on phones that works
+// without JavaScript), the phone dock (Book a chair / Call) and the footer with hours, address and the
+// fictional-business line. The design system lives here as global styles under body.lr: Bodoni Moda headings,
+// Sofia Sans Extra Condensed labels and buttons, Inter text; ink, cream, brass and oxblood; square corners, thin brass
+// rules and menu-board leaders.
+import DemoSite from "../../../layouts/DemoSite.astro";
+import { base, nav, phone, callNote, hours, address, email, directionsNote } from "../../../data/demos/lantern";
+
+interface Props { title?: string; description: string; current?: string }
+const { title, description, current } = Astro.props;
+const here = (href: string) => (current && href.endsWith(`/${current}/`) ? "page" : undefined);
+---
+<DemoSite slug="lantern-row-barbers" theme="#14110e" title={title} description={description} bodyClass="lr"
+  fonts={["/fonts/bodoni-moda-var.woff2", "/fonts/sofia-xc-700.woff2", "/fonts/inter-var-latin.woff2"]}>
+  <header class="lr-top">
+    <div class="lr-wrap lr-top-in">
+      <a class="lr-logo" href={`${base}/`} aria-label="Lantern Row Barbers, home">
+        <svg viewBox="0 0 32 40" width="24" height="30" aria-hidden="true"><path d="M10 6h12M12 6V3h8v3M8 10h16l-2 22H10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M16 15c3 4 3 8 0 11-3-3-3-7 0-11Z" fill="#e7c37a" /><path d="M10 36h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+        <span class="lr-wordmark">Lantern Row<small> Barbers</small></span>
+      </a>
+      <nav class="lr-nav" aria-label="Main">
+        {nav.map((n) => <a href={n.href} aria-current={here(n.href)}>{n.label}</a>)}
+      </nav>
+      <a class="lr-btn lr-btn-sm lr-top-book" href={`${base}/booking/`} aria-current={here(`${base}/booking/`)}>Book a chair</a>
+      <details class="lr-menu">
+        <summary aria-label="Menu"><span></span><span></span></summary>
+        <div class="lr-menu-panel">
+          <a href={`${base}/`}>Home</a>
+          {nav.map((n) => <a href={n.href} aria-current={here(n.href)}>{n.label}</a>)}
+          <a href={`${base}/booking/`} aria-current={here(`${base}/booking/`)}>Book a chair</a>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <main id="main"><slot /></main>
+
+  <footer class="lr-foot">
+    <div class="lr-wrap">
+      <div class="lr-foot-in">
+        <div class="lr-foot-brand">
+          <p class="lr-foot-name">Lantern Row Barbers</p>
+          <p>Three chairs, one street, since the lantern went up.</p>
+          <p class="lr-foot-demo">Lantern Row Barbers is a fictional business. This is an interactive demonstration website built by{" "}
+            <a href="/" target="_top">Nuxy Automation</a>: nothing here can be booked or bought, and nothing you type is sent.</p>
+        </div>
+        <div>
+          <p class="lr-label">Hours</p>
+          <dl class="lr-hours">{hours.map((h) => <div><dt>{h.day}</dt><dd class={h.open ? undefined : "off"}>{h.open ?? "Closed"}</dd></div>)}</dl>
+        </div>
+        <div>
+          <p class="lr-label">Find us</p>
+          <ul role="list" class="lr-foot-links">
+            <li><a href="#directions" data-demo-action={directionsNote}>{address}</a></li>
+            <li><a href="#call" data-demo-action={callNote}>{phone}</a></li>
+            <li><a href="#email" data-demo-action={`Demo: on a real site this writes to ${email}.`}>{email}</a></li>
+            <li><a href={`${base}/booking/#waitlist`}>Cancellation list</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  {/* the phone dock: not on the booking page itself, where it would only cover the form */}
+  {current !== "booking" && (
+  <nav class="lr-dock" aria-label="Quick actions">
+    <a href="#call" data-demo-action={callNote}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>Call</a>
+    <a class="lr-dock-main" href={`${base}/booking/`}>Book a chair</a>
+  </nav>
+  )}
+</DemoSite>
+
+<style is:global>
+  @font-face { font-family: "Bodoni Moda"; src: url("/fonts/bodoni-moda-var.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
+  @font-face { font-family: "Sofia XC"; src: url("/fonts/sofia-xc-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+  body.lr {
+    --lr-ink: #0f0d0b; --lr-bg: #14110e; --lr-panel: #1c1814; --lr-panel-2: #241f19; --lr-line: #3a3228; --lr-line-soft: #2a241d;
+    --lr-cream: #f2eadb; --lr-soft: #c3b8a4; --lr-mute: #9a8f7c; --lr-brass: #c9a45c; --lr-brass-2: #e7c37a; --lr-ox: #8e2f28; --lr-red: #a63a30;
+    --lr-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    background: var(--lr-bg); color: var(--lr-cream);
+  }
+  :where(.lr) :is(h1, h2, h3, .lr-display) { font-family: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif; font-weight: 600; line-height: 1.02; letter-spacing: -0.01em; text-wrap: balance; }
+  :where(.lr) h1 { font-size: clamp(2.75rem, 7vw, 6.25rem); font-weight: 500; }
+  :where(.lr) h2 { font-size: clamp(2.125rem, 4.4vw, 3.75rem); font-weight: 500; }
+  :where(.lr) h3 { font-size: 1.5rem; }
+  :where(.lr) p { text-wrap: pretty; }
+  :where(.lr) a { color: inherit; }
+  :where(.lr) :focus-visible { outline: 2px solid #8ab4ff; outline-offset: 3px; }
+  .lr-wrap { width: min(1240px, 100% - 40px); margin-inline: auto; }
+  .lr-section { padding-block: clamp(64px, 9vw, 128px); }
+  .lr-rule { border-top: 1px solid var(--lr-line-soft); }
+  /* labels, kickers, buttons and prices share the condensed face */
+  .lr-label, .lr-kicker { font-family: "Sofia XC", "Arial Narrow", sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; font-size: 0.9375rem; color: var(--lr-brass); }
+  .lr-kicker { display: inline-flex; align-items: center; gap: 12px; }
+  .lr-kicker::before { content: ""; width: 7px; height: 7px; background: currentColor; transform: rotate(45deg); }
+  .lr-lead { font-size: clamp(1.0625rem, 1.5vw, 1.25rem); color: var(--lr-soft); max-width: 56ch; }
+  .lr-head { display: grid; gap: 16px; margin-bottom: clamp(36px, 5vw, 64px); max-width: 780px; }
+  .lr-fine { font-size: 0.875rem; color: var(--lr-mute); }
+  .lr-demo-note { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--lr-line); color: var(--lr-soft); font-size: 0.8125rem; }
+  .lr-demo-note::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--lr-brass); }
+
+  .lr-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 28px; border: 0; border-radius: 2px; background: var(--lr-brass); color: var(--lr-ink); font-family: "Sofia XC", "Arial Narrow", sans-serif; font-weight: 700; font-size: 1.125rem; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background-color 200ms var(--lr-ease), transform 200ms var(--lr-ease), box-shadow 200ms var(--lr-ease); }
+  .lr-btn:hover { background: var(--lr-brass-2); box-shadow: 0 10px 30px rgba(231, 195, 122, 0.18); transform: translateY(-1px); }
+  .lr-btn:active { transform: scale(0.98); }
+  .lr-btn-line { background: transparent; color: var(--lr-cream); box-shadow: inset 0 0 0 1px var(--lr-line); }
+  .lr-btn-line:hover { background: rgba(201, 164, 92, 0.08); box-shadow: inset 0 0 0 1px var(--lr-brass); }
+  .lr-btn-sm { min-height: 44px; padding: 0 18px; font-size: 1rem; }
+  .lr-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-family: "Sofia XC", sans-serif; font-weight: 700; font-size: 1.0625rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lr-brass-2); text-decoration: none; }
+  .lr-link span { transition: transform 200ms var(--lr-ease); }
+  .lr-link:hover span { transform: translateX(4px); }
+
+  /* header */
+  .lr-top { position: sticky; top: 0; z-index: 30; background: var(--lr-ink); border-bottom: 1px solid var(--lr-line-soft); view-transition-name: lr-top; }
+  .lr-top-in { display: flex; align-items: center; gap: 28px; min-height: 72px; }
+  .lr-logo { display: flex; align-items: center; gap: 12px; color: var(--lr-brass); text-decoration: none; margin-right: auto; }
+  .lr-wordmark { display: grid; font-family: "Bodoni Moda", Georgia, serif; font-weight: 600; font-size: 1.375rem; line-height: 1; color: var(--lr-cream); }
+  .lr-wordmark small { font-family: "Sofia XC", sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.42em; text-transform: uppercase; color: var(--lr-brass); margin-top: 4px; }
+  .lr-nav { display: flex; gap: 6px; }
+  .lr-nav a { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; font-family: "Sofia XC", sans-serif; font-weight: 700; font-size: 1.0625rem; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; color: var(--lr-soft); transition: color 160ms ease-out; }
+  .lr-nav a::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 8px; height: 1px; background: var(--lr-brass); transform: scaleX(0); transform-origin: left; transition: transform 240ms var(--lr-ease); }
+  .lr-nav a:hover, .lr-nav a[aria-current="page"] { color: var(--lr-cream); }
+  .lr-nav a:hover::after, .lr-nav a[aria-current="page"]::after { transform: scaleX(1); }
+  .lr-menu { display: none; position: relative; }
+  .lr-menu summary { display: grid; place-content: center; gap: 7px; width: 48px; height: 48px; border: 1px solid var(--lr-line); border-radius: 2px; list-style: none; cursor: pointer; }
+  .lr-menu summary::-webkit-details-marker { display: none; }
+  .lr-menu summary span { display: block; width: 20px; height: 1.5px; background: var(--lr-cream); transition: transform 200ms var(--lr-ease); }
+  .lr-menu[open] summary span:nth-child(1) { transform: translateY(4.25px) rotate(45deg); }
+  .lr-menu[open] summary span:nth-child(2) { transform: translateY(-4.25px) rotate(-45deg); }
+  .lr-menu-panel { position: absolute; right: 0; top: calc(100% + 12px); display: grid; width: min(280px, calc(100vw - 40px)); padding: 8px; background: var(--lr-panel-2); border: 1px solid var(--lr-line); box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5); }
+  .lr-menu-panel a { display: flex; align-items: center; min-height: 48px; padding: 0 14px; font-family: "Sofia XC", sans-serif; font-weight: 700; font-size: 1.125rem; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; }
+  .lr-menu-panel a:hover, .lr-menu-panel a[aria-current="page"] { background: rgba(201, 164, 92, 0.12); color: var(--lr-brass-2); }
+  @media (max-width: 899px) { .lr-nav { display: none; } .lr-menu { display: block; } }
+  @media (max-width: 479px) { .lr-top-book { display: none; } }
+
+  /* footer */
+  .lr-foot { background: var(--lr-ink); border-top: 1px solid var(--lr-line-soft); color: var(--lr-soft); padding: 72px 0 120px; }
+  .lr-foot-in { display: grid; gap: 40px; grid-template-columns: 1.3fr 1fr 1fr; }
+  @media (max-width: 767px) { .lr-foot-in { grid-template-columns: 1fr; } }
+  .lr-foot-brand { display: grid; gap: 10px; align-content: start; }
+  .lr-foot-name { font-family: "Bodoni Moda", Georgia, serif; font-size: 1.75rem; font-weight: 600; color: var(--lr-cream); }
+  .lr-foot-demo { margin-top: 10px; padding: 14px 16px; border: 1px solid var(--lr-line); font-size: 0.875rem; }
+  .lr-foot-demo a { color: var(--lr-brass-2); }
+  .lr-foot .lr-label { margin-bottom: 12px; }
+  .lr-hours { display: grid; gap: 0; font-size: 0.9375rem; }
+  .lr-hours div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--lr-line-soft); }
+  .lr-hours dd { color: var(--lr-cream); }
+  .lr-hours dd.off { color: var(--lr-mute); }
+  .lr-foot-links { display: grid; }
+  .lr-foot-links a { display: inline-flex; align-items: center; min-height: 40px; text-decoration: none; }
+  .lr-foot-links a:hover { color: var(--lr-brass-2); }
+  @media (min-width: 900px) { .lr-foot { padding-bottom: 80px; } }
+
+  /* phone dock */
+  .lr-dock { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 35; display: grid; grid-template-columns: 1fr 2fr; gap: 6px; padding: 6px; background: var(--lr-ink); border: 1px solid var(--lr-line); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55); }
+  .lr-dock a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; font-family: "Sofia XC", sans-serif; font-weight: 700; font-size: 1.125rem; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; color: var(--lr-cream); }
+  .lr-dock .lr-dock-main { background: var(--lr-brass); color: var(--lr-ink); }
+  @media (min-width: 900px) { .lr-dock { display: none; } }
+  @media (max-width: 899px) { .lr .demo-toast { bottom: 92px; } }
+
+  /* menu board: name ........ price */
+  .lr-board { display: grid; gap: 0 64px; }
+  @media (min-width: 860px) { .lr-board { grid-template-columns: 1fr 1fr; } }
+  .lr-item { display: grid; gap: 6px; padding-block: 22px; border-bottom: 1px solid var(--lr-line-soft); }
+  .lr-item-line { display: flex; align-items: baseline; gap: 12px; }
+  .lr-item-line h3 { font-size: clamp(1.375rem, 2vw, 1.75rem); }
+  .lr-dots { flex: 1; min-width: 16px; border-bottom: 1px dotted var(--lr-line); transform: translateY(-6px); }
+  .lr-price { font-family: "Sofia XC", sans-serif; font-weight: 700; font-size: 1.625rem; letter-spacing: 0.04em; color: var(--lr-brass-2); }
+  .lr-item p { color: var(--lr-mute); }
+
+  /* fields, shared by the booking and the cancellation list */
+  .lr-fields { display: grid; gap: 16px; }
+  @media (min-width: 640px) { .lr-fields { grid-template-columns: 1fr 1fr; } .lr-field-wide { grid-column: 1 / -1; } }
+  .lr-field { display: grid; gap: 8px; font-weight: 600; font-size: 0.9375rem; }
+  .lr-field input, .lr-field select { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid var(--lr-line); border-radius: 2px; background: var(--lr-ink); color: var(--lr-cream); font: inherit; font-weight: 450; transition: border-color 160ms ease-out, box-shadow 160ms ease-out; }
+  .lr-field input::placeholder { color: #7d7362; }
+  .lr-field input:focus, .lr-field select:focus { outline: none; border-color: var(--lr-brass); box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.28); }
+  .lr-field :is(input, select)[aria-invalid="true"] { border-color: #e0715f; box-shadow: 0 0 0 3px rgba(224, 113, 95, 0.22); }
+  .lr-field small { font-weight: 450; color: var(--lr-mute); }
+  .lr-err { min-height: 0; color: #f0a090; font-weight: 600; }
+  .lr-err:empty { display: none; }
+  /* choice tiles: a hidden radio or checkbox and its box */
+  .lr-pick { position: relative; display: block; cursor: pointer; }
+  .lr-pick input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .lr-pick > span { display: grid; gap: 4px; align-content: center; min-height: 52px; height: 100%; padding: 12px 14px; border: 1px solid var(--lr-line); background: var(--lr-ink); transition: border-color 160ms ease-out, background-color 160ms ease-out; }
+  .lr-pick:hover > span { border-color: #6b5a3a; }
+  .lr-pick input:checked + span { border-color: var(--lr-brass); background: #2a2116; box-shadow: inset 0 0 0 1px var(--lr-brass); }
+  .lr-pick input:focus-visible + span { outline: 2px solid #8ab4ff; outline-offset: 3px; }
+  .lr-pick input:disabled + span { border-style: dashed; color: #6f6656; cursor: not-allowed; }
+  .lr-pick input:disabled { cursor: not-allowed; }
+
+  /* reveal on scroll (tiers 1-2; tier 3 and no JavaScript show everything) */
+  :root[data-tier="1"] .lr-rise, :root[data-tier="2"] .lr-rise { opacity: 0; transform: translateY(16px); transition: opacity 400ms var(--lr-ease), transform 400ms var(--lr-ease); transition-delay: var(--d, 0ms); }
+  :root[data-tier="1"] .lr-rise.in, :root[data-tier="2"] .lr-rise.in { opacity: 1; transform: none; }
+
+  /* closing band */
+  .lr-band { position: relative; overflow: hidden; display: grid; gap: 20px; justify-items: start; padding: clamp(40px, 7vw, 88px); background: radial-gradient(120% 140% at 85% 0%, rgba(201, 164, 92, 0.2), transparent 55%), var(--lr-panel); border: 1px solid var(--lr-line); }
+  .lr-band h2 { max-width: 16ch; }
+  .lr-band p { color: var(--lr-soft); max-width: 52ch; }
+</style>
+
+<script>
+  const els = [...document.querySelectorAll<HTMLElement>(".lr-rise")];
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }, { rootMargin: "0px 0px -8% 0px" });
+    for (const el of els) { if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in"); else io.observe(el); }
+  } else els.forEach((el) => el.classList.add("in"));
+  const menu = document.querySelector<HTMLDetailsElement>(".lr-menu");
+  menu?.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) menu.open = false; });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && menu?.open) { menu.open = false; menu.querySelector("summary")?.focus(); } });
+</script>

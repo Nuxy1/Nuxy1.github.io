@@ -1,0 +1,217 @@
+---
+// Mossgate "What we clean": every task, room by room, for each type of clean (data/demos/mossgate.ts). The clean
+// picker works through CSS alone (:has), so the list follows the choice even without JavaScript; the script only
+// reads ?clean= from a link, updates the counts and keeps the address in step. The floor plan is a set of links to
+// each room's list, and marks the room in view.
+import Shell from "../../../../components/demo/mossgate/Shell.astro";
+import { base, rooms } from "../../../../data/demos/mossgate";
+import { CLEANS, EXTRAS, type Clean, type Extra } from "../../../../lib/demo/mossgate-estimate";
+import { usd } from "../../../../lib/demo/money";
+
+const LEVEL: Record<Clean, number> = { standard: 0, deep: 1, movein: 2, moveout: 2 };
+const picks = [
+  { id: "standard", name: "Standard", note: "Regular upkeep" },
+  { id: "deep", name: "Deep", note: "Top to bottom" },
+  { id: "movein", name: "Move-in / move-out", note: "Empty home" },
+] as const;
+const tagOf = (c: Clean) => (LEVEL[c] === 1 ? "Deep" : "Move-in/out");
+const count = (lv: number, r = rooms) => r.reduce((t, room) => t + room.tasks.filter((k) => LEVEL[k.clean] <= lv).length, 0);
+const short: Record<string, string> = { kitchen: "Kitchen", bath: "Bathrooms", bed: "Bedrooms", living: "Living", entry: "Entry" };
+const extraRows = (Object.keys(EXTRAS) as Extra[]).map((id) => ({
+  id, name: EXTRAS[id].name,
+  cells: (["standard", "deep", "movein"] as const).map((c) => (CLEANS[c].includes.includes(id) ? "Included" : `+${usd(EXTRAS[id].add)}`)),
+}));
+---
+<Shell title="What we clean, room by room" current="checklist" description="See every task Mossgate's demonstration checklist covers in each room, for a standard, deep or move-in/move-out clean. Fictional company, demonstration content.">
+  <section class="mg-section mg-cl-sec">
+    <div class="mg-wrap mg-cl" data-cl>
+      <div class="mg-head">
+        <p class="mg-kicker">What we clean</p>
+        <h1>Every room, on one checklist.</h1>
+        <p class="mg-lead">Pick a clean to see exactly what it covers. The cleaner works from this same list and sends it to you, ticked, when they leave.</p>
+        <p class="mg-demo-note">Demonstration checklist for a fictional company.</p>
+      </div>
+
+      <div class="mg-cl-bar">
+        <fieldset class="mg-cl-pick">
+          <legend class="mg-label">Show the checklist for</legend>
+          <div class="mg-cl-picks">
+            {picks.map((p, i) => <label class="mg-pick"><input type="radio" name="clean" value={p.id} checked={i === 0} data-cl-clean /><span>{p.name}<small>{p.note}</small></span></label>)}
+          </div>
+        </fieldset>
+        <p class="mg-cl-sum" aria-live="polite" data-cl-sum><strong class="mg-num">{count(0)}</strong> tasks in a standard clean, across {rooms.length} rooms.</p>
+      </div>
+
+      <div class="mg-cl-grid">
+        <nav class="mg-plan-wrap" aria-label="Rooms">
+          <div class="mg-plan">
+            {rooms.map((r) => (
+              <a class={`mg-room mg-room-${r.id}`} href={`#room-${r.id}`} data-room-link={r.id}>
+                <span class="mg-room-name">{short[r.id] ?? r.name}</span>
+                <span class="mg-room-n mg-num"><span data-room-n={r.id}>{count(0, [r])}</span> tasks</span>
+              </a>
+            ))}
+          </div>
+          <p class="mg-fine">Floor plan of an example home. Tap a room to jump to its list.</p>
+        </nav>
+
+        <div class="mg-lists">
+          {rooms.map((r) => (
+            <section class="mg-list" id={`room-${r.id}`} aria-labelledby={`room-${r.id}-h`} data-room={r.id}>
+              <h2 id={`room-${r.id}-h`}>{r.name}</h2>
+              <ul class="mg-tasks" role="list">
+                {r.tasks.map((k) => (
+                  <li data-l={LEVEL[k.clean]}>
+                    <span class="mg-task-t">{k.t}</span>
+                    {LEVEL[k.clean] > 0 && <span class="mg-task-tag">{tagOf(k.clean)}</span>}
+                    <span class="sr-only mg-task-off">, not in this clean</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+
+          <section class="mg-list mg-extras" aria-labelledby="ex-h">
+            <h2 id="ex-h">Extras</h2>
+            <p class="mg-fine">Add these to any clean on the estimate. Some cleans already include them. Demonstration prices.</p>
+            <div class="mg-ex-scroll">
+              <table class="mg-ex">
+                <thead><tr><th scope="col">Extra</th><th scope="col">Standard</th><th scope="col">Deep</th><th scope="col">Move-in/out</th></tr></thead>
+                <tbody>
+                  {extraRows.map((x) => <tr><th scope="row">{x.name}</th>{x.cells.map((c) => <td class:list={["mg-num", { inc: c === "Included" }]}>{c}</td>)}</tr>)}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="mg-band mg-cl-band">
+        <p class="mg-label">Seen enough?</p>
+        <h2>See what it costs for your home.</h2>
+        <p>The estimate shows every line of the price. In this demo nothing is booked, charged or sent.</p>
+        <div class="mg-band-btns">
+          <a class="mg-btn" href={`${base}/estimate/?clean=standard`} data-cl-go>See the price for a standard clean</a>
+          <a class="mg-btn mg-btn-line" href={`${base}/book/`}>Book a clean</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .mg-cl-sec { padding-top: clamp(40px, 6vw, 80px); }
+  .mg-cl-bar { position: sticky; top: 72px; z-index: 5; display: grid; gap: 12px; margin: 0 -12px 32px; padding: 14px 12px; border-radius: 20px; background: rgba(246, 243, 236, 0.96); box-shadow: 0 1px 0 var(--mg-line); }
+  @media (min-width: 860px) { .mg-cl-bar { grid-template-columns: auto 1fr; align-items: end; gap: 24px; } }
+  @media (max-height: 560px) { .mg-cl-bar { position: static; } }
+  .mg-cl-pick { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .mg-cl-pick legend { margin-bottom: 10px; }
+  .mg-cl-picks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  @media (min-width: 860px) { .mg-cl-picks { grid-template-columns: repeat(3, minmax(150px, auto)); } }
+  @media (max-width: 479px) { .mg-cl-picks small { display: none; } .mg-cl-picks .mg-pick > span { font-size: 0.875rem; } }
+  .mg-cl-sum { color: var(--mg-soft); }
+  .mg-cl-sum strong { font-size: 1.25rem; color: var(--mg-moss); }
+
+  .mg-cl-grid { display: grid; gap: 32px; align-items: start; }
+  @media (min-width: 960px) { .mg-cl-grid { grid-template-columns: 400px minmax(0, 1fr); gap: 56px; } .mg-plan-wrap { position: sticky; top: 210px; } }
+  .mg-plan-wrap { display: grid; gap: 10px; }
+  /* the plan: rooms are links laid out like a floor plan; the dark gaps between them read as walls */
+  .mg-plan { display: grid; grid-template-columns: 1fr 1.15fr 1fr; grid-template-rows: 1fr 0.8fr 1fr; grid-template-areas: "kitchen living living" "bath living living" "bed bed entry"; gap: 5px; aspect-ratio: 4 / 3.3; padding: 5px; border-radius: 18px; background: var(--mg-ink); }
+  .mg-room { position: relative; display: grid; align-content: end; gap: 2px; padding: 12px; background: var(--mg-paper); color: var(--mg-ink); text-decoration: none; transition: background-color 200ms ease-out, color 200ms ease-out; }
+  .mg-room::before { content: ""; position: absolute; inset: 10px 10px auto auto; width: 34%; height: 40%; opacity: 0.55; background: var(--mg-tile-art, none) top right / contain no-repeat; }
+  .mg-room-kitchen { grid-area: kitchen; border-radius: 13px 0 0 0; --mg-tile-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 32' fill='none' stroke='%231f4a3f' stroke-width='2'%3E%3Crect x='1' y='1' width='38' height='12' rx='2'/%3E%3Ccircle cx='10' cy='7' r='3'/%3E%3Ccircle cx='20' cy='7' r='3'/%3E%3Cpath d='M28 4h8v6h-8z'/%3E%3C/svg%3E"); }
+  .mg-room-living { grid-area: living; border-radius: 0 13px 0 0; --mg-tile-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 32' fill='none' stroke='%231f4a3f' stroke-width='2'%3E%3Cpath d='M4 14h32v10H4z'/%3E%3Cpath d='M2 12h4v14H2zM34 12h4v14h-4z'/%3E%3Cpath d='M8 14V8h24v6'/%3E%3C/svg%3E"); }
+  .mg-room-bath { grid-area: bath; --mg-tile-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 32' fill='none' stroke='%231f4a3f' stroke-width='2'%3E%3Crect x='2' y='4' width='22' height='24' rx='8'/%3E%3Ccircle cx='32' cy='10' r='5'/%3E%3C/svg%3E"); }
+  .mg-room-bed { grid-area: bed; border-radius: 0 0 0 13px; --mg-tile-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 32' fill='none' stroke='%231f4a3f' stroke-width='2'%3E%3Crect x='6' y='2' width='28' height='28' rx='3'/%3E%3Crect x='10' y='5' width='9' height='6' rx='2'/%3E%3Crect x='21' y='5' width='9' height='6' rx='2'/%3E%3Cpath d='M6 15h28'/%3E%3C/svg%3E"); }
+  .mg-room-entry { grid-area: entry; border-radius: 0 0 13px 0; --mg-tile-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 32' fill='none' stroke='%231f4a3f' stroke-width='2'%3E%3Cpath d='M4 30V6h4v6h4v6h4v6h4v6z'/%3E%3C/svg%3E"); }
+  /* the front door: a gap in the outer wall */
+  .mg-room-entry::after { content: ""; position: absolute; right: 22%; bottom: -5px; width: 30%; height: 5px; background: var(--mg-clay-2); }
+  .mg-room-name { font-weight: 800; font-size: clamp(0.875rem, 0.8rem + 0.4vw, 1.0625rem); }
+  .mg-room-n { font-size: 0.8125rem; font-weight: 600; color: var(--mg-mute); }
+  .mg-room:hover { background: var(--mg-mint); }
+  .mg-room:focus-visible { outline: 3px solid #2563eb; outline-offset: -3px; z-index: 1; }
+  .mg-room[aria-current="true"] { background: var(--mg-moss-2); color: var(--mg-linen); }
+  .mg-room[aria-current="true"] .mg-room-n { color: #cfe0d6; }
+  .mg-room[aria-current="true"]::before { filter: brightness(0) invert(1); opacity: 0.5; }
+  @media (max-width: 479px) { .mg-room { padding: 8px; } .mg-room::before { inset: 7px 7px auto auto; } }
+
+  .mg-lists { display: grid; gap: 22px; }
+  .mg-list { display: grid; gap: 14px; padding: clamp(20px, 3vw, 30px); border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); scroll-margin-top: 220px; }
+  @media (max-width: 859px) { .mg-list { scroll-margin-top: 200px; } }
+  .mg-list:target { box-shadow: 0 0 0 2px var(--mg-moss-3); }
+  .mg-list h2 { font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem); color: var(--mg-moss); }
+  .mg-tasks { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .mg-tasks li { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: start; padding: 8px 0; border-top: 1px dashed var(--mg-line); transition: color 200ms ease-out, opacity 200ms ease-out; }
+  .mg-tasks li:first-child { border-top: 0; }
+  .mg-tasks li::before { content: ""; width: 22px; height: 22px; margin-top: 1px; border-radius: 50%; background: var(--mg-moss-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 13px no-repeat; transition: background-color 200ms ease-out, box-shadow 200ms ease-out; }
+  .mg-task-tag { align-self: center; padding: 3px 9px; border-radius: 999px; background: var(--mg-clay-soft); color: #8a3a20; font-size: 0.75rem; font-weight: 750; white-space: nowrap; }
+  .mg-task-off { display: none; }
+  /* tasks beyond the chosen clean: an empty circle and muted text. CSS reads the radios directly, so this works
+     without JavaScript. A browser without :has() shows every task ticked, each still tagged with its clean */
+  .mg-cl:has(input[value="standard"]:checked) li:not([data-l="0"]),
+  .mg-cl:has(input[value="deep"]:checked) li[data-l="2"] { color: #66706a; }
+  .mg-cl:has(input[value="standard"]:checked) li:not([data-l="0"])::before,
+  .mg-cl:has(input[value="deep"]:checked) li[data-l="2"]::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--mg-line-2); }
+  .mg-cl:has(input[value="standard"]:checked) li:not([data-l="0"]) .mg-task-tag,
+  .mg-cl:has(input[value="deep"]:checked) li[data-l="2"] .mg-task-tag { background: transparent; box-shadow: inset 0 0 0 1px var(--mg-line-2); color: var(--mg-mute); }
+  .mg-cl:has(input[value="standard"]:checked) li:not([data-l="0"]) .mg-task-off,
+  .mg-cl:has(input[value="deep"]:checked) li[data-l="2"] .mg-task-off { display: inline; }
+
+  .mg-ex-scroll { overflow-x: auto; }
+  .mg-ex { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+  .mg-ex th, .mg-ex td { padding: 10px 8px; border-top: 1px solid var(--mg-line); text-align: left; }
+  .mg-ex thead th { border-top: 0; font-size: 0.8125rem; font-weight: 750; color: var(--mg-mute); }
+  .mg-ex tbody th { font-weight: 650; }
+  .mg-ex td { color: var(--mg-soft); white-space: nowrap; }
+  .mg-ex td.inc { color: var(--mg-moss-2); font-weight: 750; }
+  @media (max-width: 479px) { .mg-ex { font-size: 0.8125rem; } .mg-ex th, .mg-ex td { padding: 9px 5px; } }
+  .mg-cl-band { margin-top: clamp(48px, 7vw, 96px); }
+</style>
+
+<script>
+  import { rooms, base } from "../../../../data/demos/mossgate";
+
+  const root = document.querySelector<HTMLElement>("[data-cl]");
+  if (root) {
+    const LV: Record<string, number> = { standard: 0, deep: 1, movein: 2, moveout: 2 };
+    const NAME = ["a standard clean", "a deep clean", "a move-in or move-out clean"];
+    const radios = [...root.querySelectorAll<HTMLInputElement>("[data-cl-clean]")];
+    const sum = root.querySelector<HTMLElement>("[data-cl-sum]")!;
+    const go = root.querySelector<HTMLAnchorElement>("[data-cl-go]")!;
+    const count = (lv: number, list = rooms) => list.reduce((t, r) => t + r.tasks.filter((k) => LV[k.clean] <= lv).length, 0);
+
+    const render = () => {
+      const id = radios.find((r) => r.checked)?.value ?? "standard";
+      const lv = LV[id] ?? 0;
+      for (const r of rooms) {
+        const n = root.querySelector(`[data-room-n="${r.id}"]`);
+        if (n) n.textContent = String(count(lv, [r]));
+      }
+      const strong = document.createElement("strong");
+      strong.className = "mg-num"; strong.textContent = String(count(lv));
+      sum.replaceChildren(strong, ` tasks in ${NAME[lv]}, across ${rooms.length} rooms.`);
+      go.href = `${base}/estimate/?clean=${id}`;
+      go.textContent = `See the price for ${NAME[lv].replace("a move-in or move-out", "a move-in")}`;
+      const u = new URL(location.href);
+      u.searchParams.set("clean", id);
+      history.replaceState(history.state, "", u.pathname + u.search + u.hash);
+    };
+
+    const want = new URLSearchParams(location.search).get("clean");
+    const pick = radios.find((r) => r.value === (want === "moveout" ? "movein" : want));
+    if (pick) pick.checked = true;
+    if (pick) render();
+    root.addEventListener("change", render);
+
+    // the plan marks the room whose list is in view
+    const links = new Map([...root.querySelectorAll<HTMLAnchorElement>("[data-room-link]")].map((a) => [a.dataset.roomLink!, a]));
+    const seen = new Map<string, number>();
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) seen.set((e.target as HTMLElement).dataset.room!, e.isIntersecting ? e.intersectionRatio : 0);
+      let best = "", top = 0;
+      for (const [id, ratio] of seen) if (ratio > top) { top = ratio; best = id; }
+      for (const [id, a] of links) { if (id === best) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); }
+    }, { rootMargin: "-200px 0px -35% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] });
+    root.querySelectorAll<HTMLElement>("[data-room]").forEach((s) => io.observe(s));
+  }
+</script>

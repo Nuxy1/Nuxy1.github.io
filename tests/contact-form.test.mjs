@@ -436,3 +436,84 @@ test("the sitemap lists the contact page but not the thank-you page", async () =
   assert.ok(xml.includes("/contact/</loc>"));
   assert.ok(!xml.includes("/contact/thanks/"));
 });
+
+test("a website level link picks the level and shows the website questions; other answers hide them and send none", async () => {
+  const { page, context, sent, errors } = await open("/contact/?level=signature");
+  assert.equal(await page.inputValue("[name=level]"), "signature");
+  assert.equal(await page.isChecked("[name=want][value=new-website]"), true);
+  assert.equal(await page.isVisible("[data-web]"), true);
+  assert.match(await page.textContent("[data-about]"), /Signature website level \(from \$3,500\)/);
+  // (an answer that isn't about a website hides the questions, and a website answer brings them back)
+  await page.check("[name=want][value=automation]");
+  assert.equal(await page.isHidden("[data-web]"), true);
+  assert.equal(await page.$eval("[data-web]", (f) => f.disabled), true);
+  await page.check("[name=want][value=redesign]");
+  assert.equal(await page.isVisible("[data-web]"), true);
+  assert.equal(await page.inputValue("[name=level]"), "signature", "the answer is kept while hidden");
+  await page.waitForTimeout(2600);
+  const v = await fill(page, { want: "", email: "levels@example.com" });
+  await page.selectOption("[name=goal]", "standout");
+  await page.fill("[name=features]", "Online booking\n3D product view");
+  await page.click("[data-submit]");
+  await panel(page, "done").waitFor({ state: "visible" });
+  const saved = store.find(await page.textContent("[data-ref]"));
+  assert.deepEqual([saved.want, saved.level, saved.goal, saved.features, saved.business], ["redesign", "signature", "standout", "Online booking\n3D product view", v.business]);
+  // (the counts: one contact_started however much is typed, a contact_completed after the reference shows, no answers)
+  await page.waitForTimeout(300);
+  const events = sent.hit.map((b) => new URLSearchParams(b).get("e"));
+  assert.equal(events.filter((e) => e === "contact_started").length, 1, events.join());
+  assert.ok(events.indexOf("contact_completed") > events.indexOf("form_submit"), events.join());
+  for (const body of sent.hit) assert.ok(!/signature|standout|booking|levels@/i.test(body), body);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("the website questions are not sent with an answer that isn't about a website, and an unknown ?level= is ignored", async () => {
+  const { page, context } = await open("/contact/?level=signature");
+  await page.selectOption("[name=goal]", "sell");
+  await page.check("[name=want][value=automation]");
+  await page.waitForTimeout(2600);
+  await fill(page, { want: "", email: "nolevel@example.com" });
+  await page.click("[data-submit]");
+  await panel(page, "done").waitFor({ state: "visible" });
+  const saved = store.find(await page.textContent("[data-ref]"));
+  assert.deepEqual([saved.want, saved.level ?? "", saved.goal ?? ""], ["automation", "", ""]);
+  await context.close();
+  for (const query of ["?level=platinum", "?level=" + encodeURIComponent('"]x'), "?level=__proto__"]) {
+    const { page: p, context: c, errors } = await open("/contact/" + query);
+    assert.equal(await p.inputValue("[name=level]"), "", query);
+    assert.equal(await p.locator("[name=want]:checked").count(), 0, query);
+    assert.equal(await p.isHidden("[data-web]"), true, query);
+    assert.equal(await p.isHidden("[data-about]"), true, query);
+    assert.deepEqual(errors, [], query);
+    await c.close();
+  }
+});
+
+test("'Not this one' takes a named level back out", async () => {
+  const { page, context } = await open("/contact/?level=immersive");
+  await page.click("[data-about-clear]");
+  assert.equal(await page.inputValue("[name=level]"), "");
+  assert.equal(await page.isHidden("[data-about]"), true);
+  assert.equal(new URL(page.url()).searchParams.has("level"), false);
+  await context.close();
+});
+
+test("every website answer fits its closed select, from a 320-pixel phone to a wide desktop", async () => {
+  for (const width of [320, 1024, 1440]) {
+    const { page, context } = await open("/contact/?level=signature", { width });
+    const cut = await page.evaluate(() => {
+      const out = [];
+      const ctx = document.createElement("canvas").getContext("2d");
+      for (const s of document.querySelectorAll("[data-web] select")) {
+        const cs = getComputedStyle(s);
+        ctx.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+        const room = s.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        for (const o of s.options) if (ctx.measureText(o.text).width > room) out.push(s.name + ": " + o.text);
+      }
+      return out;
+    });
+    assert.deepEqual(cut, [], "cut short at " + width + "px");
+    await context.close();
+  }
+});

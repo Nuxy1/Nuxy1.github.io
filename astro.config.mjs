@@ -33,8 +33,37 @@ const fixture = FIXTURE ? {
   }],
 } : {};
 
+// One script file per page: Vite wraps every lazy import() in a small "preload" helper, and once two pages have a lazy
+// import (the quote form's estimate, the Halvane demo's 3D scene) that helper becomes a file of its own that /contact/
+// has to fetch before the form works (tests/cinematic.test.mjs counts the files). When none of a script's lazy imports
+// has anything to preload (the list Vite writes is `[]`), the helper does nothing but call the import, so this swaps
+// it for that call. A script that does preload something keeps Vite's helper, and if Vite's output ever changes shape
+// the swap simply doesn't happen and that test fails.
+const inlineEmptyPreload = () => ({
+  name: "nuxy:inline-empty-preload",
+  apply: "build",
+  generateBundle: {
+    order: "post",
+    handler(_, bundle) {
+      const helper = Object.values(bundle).find((c) => c.type === "chunk" && /(^|\/)preload-helper\.[\w-]+\.js$/.test(c.fileName));
+      if (!helper) return;
+      const name = helper.fileName.split("/").pop().replace(/[.$]/g, "\\$&");
+      const from = new RegExp(`import\\{([\\w$]+) as ([\\w$]+)\\}from"\\./${name}";`);
+      for (const c of Object.values(bundle)) {
+        if (c.type !== "chunk" || c === helper || !c.imports.includes(helper.fileName) || c.code.includes("__vite__mapDeps")) continue;
+        const m = c.code.match(from);
+        if (!m) continue;
+        c.code = c.code.replace(m[0], `const ${m[2]}=(f)=>f();`);
+        c.imports = c.imports.filter((i) => i !== helper.fileName);
+      }
+      if (!Object.values(bundle).some((c) => c.type === "chunk" && c.imports.includes(helper.fileName))) delete bundle[helper.fileName];
+    },
+  },
+});
+
 export default defineConfig({
   ...fixture,
+  vite: { ...(fixture.vite || {}), plugins: [inlineEmptyPreload()] },
   site: "https://nuxyautomation.com",
   markdown: { shikiConfig: { theme: "github-dark-default" } },
   security: {

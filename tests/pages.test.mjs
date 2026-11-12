@@ -270,8 +270,11 @@ test("demo websites: their forms send nothing and say so, and their call/text bu
   const tab = await open({ width: 390 });
   const { page } = tab;
   try {
+    // multi-page demos keep their plain demo form on an inner page (Lantern Row: the cancellation list; Mossgate: the
+    // question form on the about page)
+    const formPage = { "lantern-row-barbers": "booking/", "mossgate-cleaning": "about/" };
     for (const d of demoSites) {
-      await go(page, `/example-sites/${d.slug}/`);
+      await go(page, `/example-sites/${d.slug}/${formPage[d.slug] ?? ""}`);
       const forms = page.locator("form[data-demo-form]");
       assert.ok(await forms.count() >= 1, `${d.slug} has a demo form`);
       for (let i = 0; i < await forms.count(); i++) {
@@ -286,7 +289,7 @@ test("demo websites: their forms send nothing and say so, and their call/text bu
           else if (type === "checkbox" || type === "radio") await field.check({ force: true });
           else if (type === "email") await field.fill("someone@example.com");
           else if (type === "tel") await field.fill("555-0100");
-          else if (type === "number") await field.fill("2");
+          else if (type === "number") await field.fill((await field.getAttribute("min")) ?? "2");
           else if (type === "date") await field.fill("2030-06-14");
           else if (type === "time") await field.fill("10:00");
           else await field.fill("Test answer");
@@ -683,7 +686,7 @@ test("header: Services, Pricing, Demos, Our Work, About and one quote button; th
     await drop.locator("summary").click();
     assert.equal(await isOpen(), true);
     const links = await drop.locator("a").evaluateAll((as) => as.map((a) => ({ name: a.textContent.trim(), href: a.getAttribute("href"), h: a.getBoundingClientRect().height })));
-    assert.deepEqual(links.map((l) => l.name), ["AI & Business Automation", "AI Voice Receptionist", "Business Websites", "E-Commerce", "Website Repairs & Security", "Video & Creative Studio", "All Services"]);
+    assert.deepEqual(links.map((l) => l.name), ["AI & Business Automation", "AI Voice Receptionist", "Business Websites", "Website Levels", "E-Commerce", "Website Repairs & Security", "Video & Creative Studio", "All Services"]);
     for (const l of links) {
       const [path, hash] = l.href.split("#");
       assert.ok(urls.includes(path), `${l.name} -> ${l.href}`);

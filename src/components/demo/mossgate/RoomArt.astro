@@ -1,0 +1,106 @@
+---
+// Mossgate's before/after living room, drawn (no photos, so nothing pretends to be a real client's home). Both states
+// share the room: window, shelf, sofa, lamp, rug, table and plant. "before" adds the clutter (laundry on the sofa,
+// mugs and a pizza box, toys and socks on the floor, dust, a crooked frame, smudged glass, a drooping plant) under a
+// grey haze; "after" adds daylight on the floor, a vase, straightened cushions and the clay sparkle marks, which
+// twinkle at tiers 1-2 (CSS only; tier 3 and reduced motion keep them still). No ids, so two copies can share a page.
+interface Props { state: "before" | "after" }
+const { state } = Astro.props;
+const after = state === "after";
+const wall = after ? "#f1eadc" : "#e1d7c3";
+const floor = after ? "#d9c29c" : "#c6b08b";
+const sparks = [[612, 118, 16], [258, 330, 11], [470, 214, 9], [150, 238, 12], [720, 260, 8]];
+const star = (x: number, y: number, r: number) => `M${x} ${y - r}L${x + r * 0.24} ${y - r * 0.24}L${x + r} ${y}L${x + r * 0.24} ${y + r * 0.24}L${x} ${y + r}L${x - r * 0.24} ${y + r * 0.24}L${x - r} ${y}L${x - r * 0.24} ${y - r * 0.24}Z`;
+---
+<svg class={`rm rm-${state}`} viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" role={after ? undefined : "img"} aria-label={after ? undefined : "Illustration of a living room before and after a Mossgate clean: laundry, mugs and toys cleared, cushions straightened, floor and windows clean"}>
+  <rect width="800" height="500" fill={wall} />
+  <!-- wall tiles of light -->
+  <path d="M0 352h800" stroke="#fffdf8" stroke-width="12" />
+  <rect y="358" width="800" height="142" fill={floor} />
+  <path d="M0 392h800M0 432h800M0 472h800M120 358v34M330 358v34M560 358v34M40 392v40M250 392v40M470 392v40M690 392v40M150 432v40M380 432v40M610 432v40" stroke={after ? "#c9ae84" : "#b29a74"} stroke-width="2.5" />
+
+  <!-- window -->
+  <rect x="478" y="56" width="214" height="196" rx="8" fill={after ? "#e3f0ea" : "#c9d1c6"} />
+  {after && <path d="M520 70l60 60M560 66l76 76M610 72l52 52" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity="0.8" />}
+  {!after && <g fill="#a9b0a1" opacity="0.7"><ellipse cx="530" cy="110" rx="22" ry="14" /><ellipse cx="640" cy="196" rx="28" ry="16" /><ellipse cx="600" cy="90" rx="12" ry="8" /><path d="M500 230c30-6 50 4 80-2" stroke="#a9b0a1" stroke-width="5" fill="none" /></g>}
+  <rect x="478" y="56" width="214" height="196" rx="8" fill="none" stroke="#1f4a3f" stroke-width="10" />
+  <path d="M585 56v196M478 154h214" stroke="#1f4a3f" stroke-width="7" />
+  <rect x="466" y="250" width="238" height="14" rx="4" fill="#fffdf8" />
+  {after && <path d="M478 358L692 358L760 500L420 500Z" fill="#fff" opacity="0.22" />}
+
+  <!-- picture frame -->
+  <g transform={after ? undefined : "rotate(-7 170 118)"}>
+    <rect x="110" y="70" width="120" height="92" rx="4" fill="#fffdf8" stroke="#1f4a3f" stroke-width="6" />
+    <path d="M124 146l30-34 22 22 16-14 24 26Z" fill="#9fc3b2" /><circle cx="198" cy="96" r="9" fill="#f0a487" />
+  </g>
+
+  <!-- shelf and books -->
+  <rect x="292" y="152" width="140" height="9" rx="3" fill="#1f4a3f" />
+  {after ? (
+    <g><rect x="302" y="102" width="14" height="50" rx="2" fill="#c85f3e" /><rect x="318" y="96" width="16" height="56" rx="2" fill="#2f6f5e" /><rect x="336" y="106" width="12" height="46" rx="2" fill="#e8c46a" /><rect x="350" y="100" width="15" height="52" rx="2" fill="#5b7f95" /><path d="M380 152c0-22 8-34 20-36 10 2 18 14 18 36Z" fill="#9fc3b2" /></g>
+  ) : (
+    <g><rect x="302" y="102" width="14" height="50" rx="2" fill="#c85f3e" /><rect x="316" y="104" width="16" height="56" rx="2" fill="#2f6f5e" transform="rotate(24 324 152)" /><rect x="352" y="138" width="46" height="14" rx="2" fill="#5b7f95" /><rect x="360" y="126" width="40" height="12" rx="2" fill="#e8c46a" transform="rotate(-6 380 132)" /></g>
+  )}
+
+  <!-- floor lamp -->
+  <path d="M452 352V150" stroke="#1c2b27" stroke-width="5" /><path d="M424 150h56l-12-46h-32Z" fill={after ? "#f6d9b8" : "#d8c3a4"} /><ellipse cx="452" cy="352" rx="22" ry="5" fill="#1c2b27" />
+  {after && <path d="M424 150l-24 70h104l-24-70Z" fill="#fff4d9" opacity="0.45" />}
+
+  <!-- sofa -->
+  <rect x="78" y="226" width="340" height="96" rx="26" fill="#2f6f5e" />
+  <rect x="62" y="270" width="46" height="96" rx="20" fill="#25594b" /><rect x="390" y="270" width="46" height="96" rx="20" fill="#25594b" />
+  <rect x="100" y="292" width="300" height="56" rx="14" fill="#3f8a74" /><path d="M250 296v48" stroke="#2f6f5e" stroke-width="4" />
+  <path d="M96 366v14M404 366v14" stroke="#1c2b27" stroke-width="7" stroke-linecap="round" />
+  {after ? (
+    <g><rect x="118" y="240" width="76" height="62" rx="16" fill="#f0a487" /><rect x="306" y="240" width="76" height="62" rx="16" fill="#cfe0d6" /><path d="M134 256l44 30M322 286l44-30" stroke="#fff" stroke-width="3" opacity="0.4" /></g>
+  ) : (
+    <g><rect x="122" y="250" width="76" height="62" rx="16" fill="#e6957a" transform="rotate(-28 160 281)" /><rect x="330" y="276" width="76" height="62" rx="16" fill="#bccfc4" transform="rotate(36 368 307)" />
+      <path d="M196 300c10-30 70-40 100-14 18 16 6 34-20 36-28 2-46-6-80-22Z" fill="#8a7bb5" /><path d="M220 296c18-10 40-10 56 2" stroke="#6f6198" stroke-width="5" fill="none" /><path d="M270 268c20-6 40 4 44 18-14 4-30 2-44-18Z" fill="#e8c46a" /></g>
+  )}
+
+  <!-- rug -->
+  {after ? <ellipse cx="300" cy="438" rx="226" ry="40" fill="#cfe0d6" /> : <path d="M80 432c40-30 160-36 240-34 90 2 150 10 200 30-20 22-60 18-80 36-90 18-250 14-330-6 10-10-40-12-30-26Z" fill="#b9c9bf" />}
+  {after && <ellipse cx="300" cy="438" rx="196" ry="30" fill="none" stroke="#fffdf8" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round" />}
+  {!after && <g fill="#9eaa9f"><ellipse cx="220" cy="440" rx="26" ry="8" /><ellipse cx="380" cy="452" rx="18" ry="6" /></g>}
+
+  <!-- coffee table -->
+  <rect x="210" y="384" width="186" height="14" rx="5" fill="#8b6a48" /><path d="M226 398v34M380 398v34" stroke="#6d5136" stroke-width="7" stroke-linecap="round" />
+  {after ? (
+    <g><path d="M290 384c-6-16-4-30 4-38h16c8 8 10 22 4 38Z" fill="#fffdf8" stroke="#1f4a3f" stroke-width="3" /><path d="M302 346c-2-20 4-34 14-40M302 346c-6-16-18-24-30-24" stroke="#2f6f5e" stroke-width="3" fill="none" /><circle cx="317" cy="304" r="7" fill="#c85f3e" /><circle cx="272" cy="321" r="6" fill="#e8c46a" /><rect x="342" y="374" width="34" height="10" rx="2" fill="#5b7f95" /></g>
+  ) : (
+    <g><rect x="226" y="364" width="80" height="20" rx="3" fill="#e3b46c" transform="rotate(-4 266 374)" /><path d="M230 368h72" stroke="#c94f3a" stroke-width="3" transform="rotate(-4 266 374)" />
+      <rect x="318" y="362" width="18" height="22" rx="3" fill="#fffdf8" stroke="#1c2b27" stroke-width="3" /><path d="M336 368c8 0 8 10 0 10" stroke="#1c2b27" stroke-width="3" fill="none" />
+      <rect x="350" y="366" width="18" height="18" rx="3" fill="#c85f3e" stroke="#1c2b27" stroke-width="3" /><ellipse cx="380" cy="383" rx="14" ry="3" fill="#fffdf8" stroke="#1c2b27" stroke-width="2" /></g>
+  )}
+
+  <!-- plant -->
+  <path d="M694 360l-8-58h60l-8 58Z" fill="#c85f3e" /><rect x="682" y="296" width="68" height="12" rx="4" fill="#b25034" />
+  {after ? (
+    <g fill="#3f8a74"><path d="M716 296c-30-20-40-60-30-96 22 22 34 56 30 96Z" /><path d="M716 296c26-24 56-38 72-36-6 26-36 40-72 36Z" fill="#2f6f5e" /><path d="M716 296c6-40 26-76 46-90 6 34-14 70-46 90Z" fill="#5aa088" /><path d="M716 296c-28-6-56-2-70 14 26 12 50 8 70-14Z" fill="#2f6f5e" /></g>
+  ) : (
+    <g><path d="M716 296c-14-14-30-14-44 8 4 26 30 24 44-8Z" fill="#8f9a5b" /><path d="M716 296c20-6 40 6 46 30-24 8-40-8-46-30Z" fill="#a39a58" /><path d="M716 296c-2-20 6-36 18-40 6 14 0 30-18 40Z" fill="#7d8a52" /><path d="M752 352c6 4 14 4 18 0" stroke="#a39a58" stroke-width="5" fill="none" stroke-linecap="round" /></g>
+  )}
+
+  {!after && (
+    <g>
+      <!-- floor clutter: socks, blocks, papers, crumbs and dust -->
+      <path d="M520 420c10-4 22 0 26 10l-6 8c-6-6-14-6-20-2Z" fill="#fffdf8" stroke="#1c2b27" stroke-width="2.5" />
+      <path d="M128 468c14 2 24 10 22 18l-10 2c-2-8-8-10-14-10Z" fill="#c85f3e" />
+      <rect x="560" y="448" width="22" height="22" rx="3" fill="#e8c46a" transform="rotate(14 571 459)" /><rect x="590" y="462" width="20" height="20" rx="3" fill="#5b7f95" transform="rotate(-10 600 472)" /><rect x="574" y="430" width="18" height="18" rx="3" fill="#c85f3e" transform="rotate(30 583 439)" />
+      <path d="M430 470l54-10 8 22-54 10Z" fill="#fffdf8" stroke="#c9c0ad" stroke-width="2" /><path d="M446 474l30-6M448 482l26-5" stroke="#c9c0ad" stroke-width="2" />
+      <path d="M640 380l40 8-6 18-38-10Z" fill="#fffdf8" stroke="#c9c0ad" stroke-width="2" />
+      <g fill="#8f8879">{[[180, 400], [200, 412], [410, 408], [470, 396], [640, 432], [700, 470], [90, 420], [330, 478]].map(([x, y]) => <circle cx={x} cy={y} r="3" />)}</g>
+      <g fill="#a39d8e" opacity="0.8"><circle cx="40" cy="372" r="12" /><circle cx="54" cy="368" r="9" /><circle cx="760" cy="380" r="11" /><circle cx="748" cy="388" r="7" /></g>
+      <rect width="800" height="500" fill="#6f6a58" opacity="0.14" />
+    </g>
+  )}
+
+  {after && <g class="rm-sparks">{sparks.map(([x, y, r], i) => <path d={star(x, y, r)} fill={i % 2 ? "#fffdf8" : "#f0a487"} style={`--i:${i}`} />)}</g>}
+</svg>
+
+<style>
+  .rm { display: block; width: 100%; height: 100%; }
+  .rm-sparks path { transform-box: fill-box; transform-origin: center; }
+  :global(:root[data-tier="1"]) .rm-sparks path, :global(:root[data-tier="2"]) .rm-sparks path { animation: rm-twinkle 3.2s ease-in-out infinite; animation-delay: calc(var(--i) * -0.7s); }
+  @keyframes rm-twinkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.55) rotate(20deg); opacity: 0.55; } }
+</style>

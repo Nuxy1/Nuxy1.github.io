@@ -1,0 +1,47 @@
+---
+// The Immersive level (data/tiers.ts): scroll storytelling and, where the idea calls for it, real-time 3D.
+// Proof is the Halvane Audio concept (a made-up speaker brand) and the scroll-depth piece.
+import LevelPage from "../../components/levels/LevelPage.astro";
+import DepthScroll from "../../components/levels/DepthScroll.astro";
+import Icon from "../../components/Icon.astro";
+import { shotSrcset } from "../../data/demo-sites";
+---
+<LevelPage
+  id="immersive"
+  title="Immersive Websites with 3D and Scroll Stories · Nuxy Automation"
+  description="Immersive websites built to be remembered: scroll storytelling and real-time 3D where the idea calls for it, with a fast version for phones. From $6,000."
+  h1="A website people remember after they close it."
+  lead="For a launch, a product or a place where the first impression is the whole pitch. We plan a story, build the scenes it needs, and make a still, fast version for phones and anyone who turns motion off."
+  addOnIds={["3d-model", "scroll-story", "extra-scene", "video", "configurator", "automation"]}
+  proofHeading="See an Immersive concept"
+  proofText="Halvane Audio is a made-up speaker brand we built to show this level: a real-time 3D speaker you can turn, take apart as you scroll and see in three finishes."
+>
+  <div class="im-proof">
+    <a class="im-card panel" href="/example-sites/halvane-audio/" data-track="immersive_demo_opened">
+      <img src="/images/examples/halvane-audio-desktop.webp" srcset={shotSrcset("halvane-audio", "desktop")} sizes="(min-width: 1200px) 660px, (min-width: 900px) 55vw, calc(100vw - 34px)" alt="" width="800" height="500" loading="lazy" decoding="async" />
+      <span class="im-meta">
+        <span class="im-kind"><Icon name="speakerHifi" />Concept project · Nuxy demonstration</span>
+        <strong>Halvane Audio · Lumen One</strong>
+        <span>Turn the speaker, scroll to take it apart, change its finish. Works on phones, with a still version when motion is off.</span>
+        <span class="text-link">Open the concept<Icon name="arrowRight" /></span>
+      </span>
+    </a>
+  </div>
+  <div class="im-depth">
+    <h3>From flat to immersive, step by step</h3>
+    <DepthScroll />
+  </div>
+</LevelPage>
+
+<style>
+  .im-card { display: grid; overflow: hidden; color: inherit; text-decoration: none; transition: border-color 160ms ease; }
+  .im-card:hover { border-color: var(--hairline-strong); }
+  .im-card:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+  .im-card img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--hairline); }
+  @media (min-width: 900px) { .im-card { grid-template-columns: 1.2fr 0.8fr; } .im-card img { height: 100%; object-fit: cover; border-bottom: 0; border-right: 1px solid var(--hairline); } }
+  .im-meta { display: grid; gap: 10px; align-content: center; padding: clamp(20px, 3vw, 32px); color: var(--body); }
+  .im-meta strong { color: var(--ink); font-size: 1.375rem; letter-spacing: -0.02em; }
+  .im-kind { display: inline-flex; align-items: center; gap: 6px; color: var(--cyan); font-size: 0.8125rem; font-weight: 600; }
+  .im-depth { margin-top: clamp(48px, 7vw, 96px); }
+  .im-depth h3 { font-size: 1.5rem; margin-bottom: 24px; }
+</style>

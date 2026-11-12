@@ -1,0 +1,77 @@
+---
+// Fernway's two short forms: "call me back" (home) and "send a message" (contact). Both are demo forms handled by
+// layouts/DemoSite.astro: the browser checks the required fields, then the answers are cleared and the panel says
+// nothing was sent. "Use sample details" fills invented answers so nobody needs to type their own.
+import { towns } from "../../../data/demos/fernway";
+interface Props { id: string; variant?: "callback" | "contact" }
+const { id, variant = "callback" } = Astro.props;
+const contact = variant === "contact";
+---
+<div class="fw-form-wrap">
+  <form class="fw-form" method="dialog" data-demo-form={`${id}-sent`} data-fw-form aria-labelledby={`${id}-h`}>
+    <div class="fw-form-head">
+      <h3 id={`${id}-h`}>{contact ? "Send us a message" : "Rather talk it through?"}</h3>
+      <p class="fw-fine">{contact ? "We answer within one business day." : "Leave a number and a good time; we call back the same day."} Demo form: nothing you type leaves this page.</p>
+    </div>
+    <div class="fw-fields">
+      <label class="fw-field"><span>Your name</span><input name="name" required autocomplete="name" maxlength="80" /></label>
+      {contact
+        ? <label class="fw-field"><span>Email</span><input name="email" type="email" required autocomplete="email" maxlength="120" /></label>
+        : <label class="fw-field"><span>Phone</span><input name="phone" type="tel" required autocomplete="tel" maxlength="24" inputmode="tel" /></label>}
+      {contact ? (
+        <label class="fw-field"><span>Town</span>
+          <select name="town" required>
+            <option value="">Choose your town</option>
+            {towns.map((t) => <option>{t.name}</option>)}
+            <option>Somewhere else</option>
+          </select>
+        </label>
+      ) : (
+        <label class="fw-field"><span>Best time to call</span>
+          <select name="time" required>
+            <option value="">Choose a time</option>
+            <option>Morning, 8–11</option><option>Midday, 11–2</option><option>Afternoon, 2–5</option><option>Evening, 5–7</option>
+          </select>
+        </label>
+      )}
+      <label class="fw-field fw-field-wide"><span>{contact ? "Message" : "What’s it about? (optional)"}</span>
+        <textarea name="message" rows="3" maxlength="600" required={contact}></textarea>
+      </label>
+    </div>
+    <div class="fw-form-actions">
+      <button class="fw-btn" type="submit">{contact ? "Send message" : "Request a call"}</button>
+      <button class="fw-btn fw-btn-ghost" type="button" data-fw-sample>Use sample details</button>
+    </div>
+  </form>
+  <div class="fw-sent demo-sent" id={`${id}-sent`} hidden tabindex="-1">
+    <strong>Demo only: nothing was sent.</strong>
+    <p>{contact
+      ? "On a real Fernway site your message would land in the shared inbox and the CRM, with an automatic reply telling you when to expect an answer."
+      : "On a real Fernway site this would create a lead in the CRM, text the owner your number and time, and text you a confirmation."}</p>
+    <p>The form has been cleared and nothing was stored.</p>
+    <button class="fw-btn fw-btn-ghost fw-btn-sm" type="button" data-demo-again>Fill it in again</button>
+  </div>
+</div>
+
+<style is:global>
+  .fw-form-wrap { display: grid; }
+  .fw-form { display: grid; gap: 20px; padding: clamp(22px, 4vw, 36px); border-radius: 28px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line), 0 18px 40px rgba(19, 32, 26, 0.06); }
+  .fw-form-head { display: grid; gap: 6px; }
+  .fw-form-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .fw-sent { gap: 12px; padding: clamp(22px, 4vw, 36px); border: 0; border-radius: 28px; background: var(--fw-lime-2); color: var(--fw-forest); }
+  .fw-sent strong { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.5rem; }
+  .fw-sent .fw-btn { justify-self: start; }
+</style>
+
+<script>
+  const samples: Record<string, string> = { name: "Sam Rivera", phone: "(507) 555-0100", email: "sam@example.com", message: "Our back lawn is overgrown after a trip. Could someone look at it this week?" };
+  for (const form of document.querySelectorAll<HTMLFormElement>("[data-fw-form]")) {
+    form.querySelector("[data-fw-sample]")?.addEventListener("click", () => {
+      for (const el of form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea")) {
+        if (el instanceof HTMLSelectElement) el.selectedIndex = 2;
+        else if (samples[el.name]) el.value = samples[el.name];
+      }
+      form.querySelector<HTMLButtonElement>("button[type=submit]")?.focus();
+    });
+  }
+</script>

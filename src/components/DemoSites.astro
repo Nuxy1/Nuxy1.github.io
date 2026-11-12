@@ -1,18 +1,26 @@
 ---
 // The example websites and the example store (data/demo-sites.ts) as cards: the site on a computer with its phone
-// version in front, the kind of project, what was built, and one link to its desktop/phone viewer at /examples/<slug>/. Used on the homepage, /websites/, /ecommerce/ and /demos/. The note under the cards is part of the
+// version in front, the kind of project, what was built, and three links: Live Demo (the demo itself at
+// /example-sites/<slug>/), View Project (its desktop/phone viewer at /examples/<slug>/, also the whole card's hit area)
+// and Features (the viewer's feature list). Used on the homepage, /websites/, /ecommerce/ and /demos/. The note under the cards is part of the
 // component on purpose: the cards never appear without saying they are made-up businesses.
 import Icon from "./Icon.astro";
 import { demoSites, shotSrcset } from "../data/demo-sites";
 
 interface Props {
   level?: "h3" | "h4";
-  /** show only these demos (by slug), in this order; all of them when left out */
+  /** show only these demos (by slug), in this order; when left out, every demo except the Immersive concept (it has
+      its own card on /immersive-websites/, and the homepage, /demos/ and /get-a-website/ stay on the four) */
   only?: string[];
 }
 const { level = "h3", only } = Astro.props;
 const H = level;
-const list = only ? only.map((slug) => demoSites.find((d) => d.slug === slug)!) : demoSites;
+const list = only ? only.map((slug) => demoSites.find((d) => d.slug === slug)!) : demoSites.filter((d) => d.tier !== "immersive");
+const tierName = { business: "Business", signature: "Signature", immersive: "Immersive" } as Record<string, string>;
+// The platform line follows the levels on show: Business sites live in the client's own builder account, Signature
+// and up are custom-coded on hosting in the client's name, and a store stays on the client's own store platform.
+const hasBusiness = list.some((d) => d.tier === "business" && d.project !== "E-commerce store");
+const hasCustom = list.some((d) => d.tier !== "business" && d.project !== "E-commerce store");
 // Three cards sit in a row of three; any other number in rows of two, so no card is left alone on a row.
 const cols = list.length % 3 === 0 ? 3 : 2;
 const hasStore = list.some((d) => d.project === "E-commerce store");
@@ -38,19 +46,23 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
         </div>
       </div>
       <div class="demo-meta">
-        <p class="demo-kind"><Icon name={d.icon} />{d.kind} · demonstration</p>
-        <H class="demo-name"><a href={`/examples/${d.slug}/`} data-track="example_open">{d.name}</a></H>
+        <p class="demo-kind"><Icon name={d.icon} />{d.kind} · demonstration<span class="demo-tier">{tierName[d.tier]}</span></p>
+        <H class="demo-name">{d.name}</H>
         <p class="demo-project">{d.project}</p>
         <p class="demo-sum">{d.summary}</p>
         <ul class="demo-built" aria-label="What was built">
           {d.shows.map((s) => <li><Icon name="check" />{s}</li>)}
         </ul>
-        <span class="text-link" aria-hidden="true">View Project<Icon name="arrowRight" /></span>
+        <p class="demo-acts">
+          <a class="demo-act demo-live" href={`/example-sites/${d.slug}/`} data-track="example_full">Live Demo<span class="sr-only">: {d.name}</span><Icon name="arrowUpRight" /></a>
+          <a class="demo-act demo-view" href={`/examples/${d.slug}/`} data-track="example_open">View Project<span class="sr-only">: {d.name}</span></a>
+          <a class="demo-act demo-feat" href={`/examples/${d.slug}/#features`}>Features<span class="sr-only"> of {d.name}</span></a>
+        </p>
       </div>
     </li>
   ))}
 </ul>
-<p class="note demo-note"><Icon name="info" /><span>These are examples for made-up businesses, built to show the layout, features and finish we aim for. They are not clients.{hasStore && " The candle shop is a design example: you can fill its cart, but checkout is switched off, so nothing can be bought."} Your own site is built in your own account (Squarespace or Wix for a website, Shopify or Square Online for a store), so the details follow what that platform can do.</span></p>
+<p class="note demo-note"><Icon name="info" /><span>These are examples for made-up businesses, built to show the layout, features and finish we aim for. They are not clients.{hasStore && " The candle shop is a design example: you can fill its cart and walk through a demo checkout, but it never asks for a card, so nothing can be bought."}{hasBusiness && " A Business website is built in your own Squarespace or Wix account."}{hasCustom && " Signature and Immersive websites are custom-coded and published to hosting in your name."}{hasStore && " A store is built on your own Shopify or Square Online account."} The details follow what that platform can do.</span></p>
 
 <style>
   .demo-grid { list-style: none; margin: 0; padding: 0; }
@@ -67,28 +79,40 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
   .demo-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--hairline-strong); }
   .demo-desk img { display: block; width: 100%; height: auto; }
   .demo-phone { position: absolute; right: clamp(14px, 4%, 26px); bottom: -12%; width: 21%; aspect-ratio: 390 / 780; border: 3px solid #26324a; border-radius: 14px; background: var(--surface-strong); box-shadow: var(--shadow); overflow: hidden; }
+  /* a blue rule draws across the top of the picture on hover: the card's one accent, in the site's own blue */
+  .demo-shot::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--link); transform: scaleX(0); transform-origin: left; }
   .demo-phone img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
   @media (hover: hover) and (pointer: fine) {
     .demo-desk, .demo-phone { transition: transform 380ms var(--ease); }
     .demo-site:hover .demo-desk { transform: translateY(-4px); }
     .demo-site:hover .demo-phone { transform: translateY(-8px); }
+    .demo-shot::after { transition: transform 320ms var(--ease); }
+    .demo-site:hover .demo-shot::after, .demo-site:focus-within .demo-shot::after { transform: scaleX(1); }
+    .demo-act :global(.icon) { transition: transform 200ms var(--ease); }
+    .demo-live:hover :global(.icon) { transform: translate(2px, -2px); }
   }
   .demo-meta { display: flex; flex-direction: column; gap: 8px; padding: 20px; flex: 1; }
   .demo-kind { display: inline-flex; align-items: center; gap: 6px; color: var(--cyan); font-size: 0.8125rem; font-weight: 600; }
+  .demo-tier { margin-left: auto; padding: 2px 8px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); color: var(--ink); font-size: 0.75rem; letter-spacing: 0.02em; }
   .demo-name { font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
-  /* the whole card is the link's hit area; the heading link stays the one thing a screen reader announces */
-  .demo-name a { color: var(--ink); text-decoration: none; }
-  .demo-name a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-  .demo-name a:focus-visible { outline: none; }
-  .demo-name a:focus-visible::after { outline: 2px solid var(--focus); outline-offset: -2px; }
+  /* three links; the whole card is View Project's hit area, and Live Demo and Features sit above that layer */
+  .demo-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--hairline-soft); }
+  .demo-act { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--link); font-size: 0.9375rem; font-weight: 650; text-decoration: none; }
+  .demo-act:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .demo-act :global(.icon) { width: 1em; height: 1em; }
+  .demo-live { padding: 0 14px; border: 1px solid var(--hairline-strong); border-radius: var(--r-sm, 8px); color: var(--ink); }
+  .demo-live:hover { border-color: var(--link); text-decoration: none; }
+  .demo-live, .demo-feat { position: relative; z-index: 1; }
+  .demo-view::after { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
+  .demo-view:focus-visible { outline: none; }
+  .demo-view:focus-visible::after { outline: 2px solid var(--focus); outline-offset: -2px; }
   .demo-project { margin-top: -4px; color: var(--muted); font-size: 0.875rem; font-weight: 600; }
   .demo-sum { color: var(--body); font-size: 0.9375rem; }
   .demo-built { display: grid; gap: 6px; flex: 1; align-content: start; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--hairline-soft); list-style: none; color: var(--body); font-size: 0.875rem; }
   .demo-built li { display: grid; grid-template-columns: 1em minmax(0, 1fr); gap: 8px; align-items: start; }
   .demo-built :global(.icon) { margin-top: 0.25em; width: 1em; height: 1em; color: var(--cyan); }
-  .demo-site .text-link { margin-top: 6px; color: var(--link); }
   .demo-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 20px; max-width: 80ch; }
   .demo-note :global(.icon) { flex: none; margin-top: 0.2em; width: 1.05em; height: 1.05em; }
-  @media (prefers-reduced-motion: reduce) { .demo-site, .demo-site:hover, .demo-site .demo-desk, .demo-site .demo-phone { transition: none; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .demo-site, .demo-site:hover, .demo-site .demo-desk, .demo-site .demo-phone, .demo-shot::after, .demo-act :global(.icon) { transition: none; } .demo-site, .demo-site:hover, .demo-site .demo-desk, .demo-site .demo-phone { transform: none; } }
   :global(html[data-motion="reduced"]) .demo-site, :global(html[data-motion="reduced"]) .demo-site :is(.demo-desk, .demo-phone) { transform: none; }
 </style>

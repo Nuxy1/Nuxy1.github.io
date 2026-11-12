@@ -1,0 +1,188 @@
+---
+// Mossgate's about page: the (invented) team, the standards a customer can hold them to, where and when they work,
+// the questions people ask before a first clean, and a short question form. The form is a demo form
+// (layouts/DemoSite.astro): the browser checks it, then it is cleared and says nothing was sent.
+import Shell from "../../../../components/demo/mossgate/Shell.astro";
+import { base, team, faq, hours, area, phone, email, callNote, textNote, emailNote } from "../../../../data/demos/mossgate";
+
+const standards = [
+  { title: "The same cleaner each visit", text: "A recurring home keeps one cleaner, so the notes live in their head and not on a form." },
+  { title: "A checklist you can see", text: "Every room has a written list. The cleaner ticks it and texts it with a photo when they leave." },
+  { title: "A two-hour arrival window", text: "You pick the window when you book, and a text comes when the cleaner is on the way." },
+  { title: "Clean cloths in every home", text: "Microfibre cloths are washed after each home, and mop heads are never shared between homes." },
+  { title: "No door codes online", text: "The website never asks for a code. The office calls to set up a key or a lockbox after you book." },
+  { title: "Paid after, not before", text: "The invoice comes after the clean. If a room isn’t right, tell us within a day and we come back for free." },
+];
+---
+<Shell title="About us" current="about" description="Meet Mossgate's invented cleaning team, read the standards they work to, see the hours and area, and try the demonstration question form. Fictional company: nothing is sent.">
+  <section class="mg-section mg-ab-hero">
+    <div class="mg-wrap">
+      <div class="mg-head">
+        <p class="mg-kicker">About Mossgate</p>
+        <h1>Four people, one checklist, the same window every time.</h1>
+        <p class="mg-lead">A small team that cleans homes the same way each visit, and tells you when they arrive and when they leave.</p>
+        <p class="mg-demo-note">Fictional company: the team, the towns and the answers below are invented for the demonstration.</p>
+      </div>
+      <ul class="mg-team" role="list">
+        {team.map((p) => (
+          <li class="mg-person">
+            <span class="mg-person-mark" style={`--tone:${p.tone}`} aria-hidden="true">{p.name[0]}</span>
+            <div>
+              <h2>{p.name}</h2>
+              <p class="mg-person-role">{p.role}</p>
+              <p>{p.note}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="mg-section mg-ab-std" aria-labelledby="std-h">
+    <div class="mg-wrap">
+      <div class="mg-head">
+        <p class="mg-label">What you can hold us to</p>
+        <h2 id="std-h">Six standards, written down.</h2>
+      </div>
+      <ol class="mg-std" role="list">
+        {standards.map((s, i) => (
+          <li><span class="mg-std-n mg-num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span><h3>{s.title}</h3><p>{s.text}</p></li>
+        ))}
+      </ol>
+      <a class="mg-link" href={`${base}/checklist/`}>Read the room checklist <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+
+  <section class="mg-section mg-ab-where" aria-labelledby="where-h">
+    <div class="mg-wrap mg-where">
+      <div>
+        <p class="mg-label">Where and when</p>
+        <h2 id="where-h">Five towns, six days a week.</h2>
+        <ul class="mg-towns" role="list">{area.map((t) => <li>{t}</li>)}</ul>
+        <p class="mg-fine">Made-up towns for the demonstration.</p>
+      </div>
+      <div class="mg-where-card">
+        <p class="mg-label">Office hours</p>
+        <dl class="mg-ab-hours">{hours.map(([d, h]) => <div><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
+        <p class="mg-fine">Cleans run 8 am to 5 pm, Monday to Saturday.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mg-section mg-ab-faq" aria-labelledby="faq-h">
+    <div class="mg-wrap mg-faq-wrap">
+      <div class="mg-head">
+        <p class="mg-label">Before your first clean</p>
+        <h2 id="faq-h">Questions people ask.</h2>
+      </div>
+      <div class="mg-faq">
+        {faq.map(([q, a], i) => (
+          <details open={i === 0}>
+            <summary>{q}</summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="mg-section mg-ab-ask" id="ask" aria-labelledby="ask-h">
+    <div class="mg-wrap mg-ask">
+      <div class="mg-ask-intro">
+        <p class="mg-label">Talk to the office</p>
+        <h2 id="ask-h">Ask Theo anything.</h2>
+        <p>Theo answers texts and questions on weekdays, usually within the hour.</p>
+        <div class="mg-ask-ways">
+          <a class="mg-btn" href="#call" data-demo-action={callNote}>Call {phone}</a>
+          <a class="mg-btn mg-btn-line" href="#text" data-demo-action={textNote}>Text us</a>
+          <a class="mg-btn mg-btn-line" href="#email" data-demo-action={emailNote}>{email}</a>
+        </div>
+      </div>
+      <div class="mg-ask-box">
+        <form class="mg-ask-form" method="dialog" data-demo-form="ask-sent" data-mg-ask aria-labelledby="ask-form-h">
+          <h3 id="ask-form-h">Send a question</h3>
+          <p class="mg-fine">Demo form: nothing you type leaves this page.</p>
+          <div class="mg-fields">
+            <label class="mg-field"><span>First name</span><input name="name" required autocomplete="given-name" maxlength="40" /></label>
+            <label class="mg-field"><span>Your question</span><textarea name="question" rows="4" maxlength="600" required></textarea><small>Please don’t include door or alarm codes.</small></label>
+          </div>
+          <div class="mg-ask-actions">
+            <button class="mg-btn" type="submit">Send question</button>
+            <button class="mg-btn mg-btn-line" type="button" data-mg-ask-sample>Use sample details</button>
+          </div>
+        </form>
+        <div class="mg-ask-sent demo-sent" id="ask-sent" hidden tabindex="-1">
+          <strong>Demo only: nothing was sent.</strong>
+          <p>On a real Mossgate site the question would go to the office inbox, Theo would get a text, and you would get a reply with a link to book.</p>
+          <p>The form has been cleared and nothing was stored.</p>
+          <button class="mg-btn mg-btn-line" type="button" data-demo-again>Ask another question</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .mg-ab-hero { padding-top: clamp(40px, 6vw, 80px); }
+  .mg-team { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); margin: 0; padding: 0; list-style: none; }
+  .mg-person { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; padding: 22px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+  .mg-person-mark { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px 18px 18px 6px; background: var(--tone); color: #fff; font-size: 1.5rem; font-weight: 850; }
+  .mg-person h2 { font-size: 1.375rem; color: var(--mg-moss); }
+  .mg-person-role { margin-bottom: 6px; font-size: 0.9375rem; font-weight: 700; color: var(--mg-moss-2); }
+  .mg-person p:last-child { color: var(--mg-soft); }
+
+  .mg-ab-std { background: var(--mg-paper); }
+  .mg-std { display: grid; gap: 0 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); margin: 0 0 32px; padding: 0; list-style: none; }
+  .mg-std li { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; padding: 22px 0; border-top: 1px solid var(--mg-line); }
+  .mg-std-n { grid-row: span 2; font-size: 0.9375rem; font-weight: 800; color: var(--mg-clay); }
+  .mg-std h3 { font-size: 1.1875rem; color: var(--mg-moss); }
+  .mg-std p { color: var(--mg-soft); }
+
+  .mg-where { display: grid; gap: 32px; align-items: start; }
+  @media (min-width: 860px) { .mg-where { grid-template-columns: 1.3fr 1fr; gap: 56px; } }
+  .mg-where h2 { margin: 12px 0 24px; }
+  .mg-towns { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+  .mg-towns li { padding: 10px 16px; border-radius: 999px; background: var(--mg-mint); color: var(--mg-moss); font-weight: 700; }
+  .mg-where-card { display: grid; gap: 14px; padding: 26px; border-radius: 24px; background: var(--mg-moss); color: #d5e3dc; }
+  .mg-where-card .mg-label { color: var(--mg-clay-2); }
+  .mg-where-card .mg-fine { color: #9fb8ad; }
+  .mg-ab-hours { display: grid; }
+  .mg-ab-hours div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+  .mg-ab-hours dd { font-weight: 700; color: var(--mg-linen); }
+
+  .mg-ab-faq { background: var(--mg-paper); }
+  .mg-faq-wrap { display: grid; gap: 0 56px; }
+  @media (min-width: 1024px) { .mg-faq-wrap { grid-template-columns: 1fr 1.6fr; } .mg-faq-wrap .mg-head { position: sticky; top: 96px; align-self: start; } }
+  .mg-faq { border-top: 1px solid var(--mg-line); }
+  .mg-faq details { border-bottom: 1px solid var(--mg-line); }
+  .mg-faq summary { position: relative; display: block; padding: 20px 44px 20px 0; font-size: 1.125rem; font-weight: 750; color: var(--mg-moss); cursor: pointer; list-style: none; }
+  .mg-faq summary::-webkit-details-marker { display: none; }
+  .mg-faq summary::after { content: ""; position: absolute; right: 6px; top: 50%; width: 12px; height: 12px; border-right: 2px solid var(--mg-moss-2); border-bottom: 2px solid var(--mg-moss-2); transform: translateY(-70%) rotate(45deg); transition: transform 220ms var(--mg-ease); }
+  .mg-faq details[open] summary::after { transform: translateY(-30%) rotate(-135deg); }
+  .mg-faq summary:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; border-radius: 6px; }
+  .mg-faq details p { padding: 0 0 22px; max-width: 62ch; color: var(--mg-soft); }
+
+  .mg-ask { display: grid; gap: 32px; align-items: start; }
+  @media (min-width: 960px) { .mg-ask { grid-template-columns: 1fr 1.1fr; gap: 56px; } }
+  .mg-ask-intro { display: grid; gap: 14px; justify-items: start; }
+  .mg-ask-intro p:not(.mg-label) { color: var(--mg-soft); max-width: 44ch; }
+  .mg-ask-ways { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .mg-ask-box { display: grid; }
+  .mg-ask-form, .mg-ask-sent { display: grid; gap: 18px; padding: clamp(22px, 4vw, 36px); border-radius: 26px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+  .mg-ask-form[hidden], .mg-ask-sent[hidden] { display: none; }
+  .mg-ask-form h3 { font-size: 1.5rem; color: var(--mg-moss); }
+  .mg-ask-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .mg-ask-sent { border: 0; background: var(--mg-mint); color: var(--mg-moss); }
+  .mg-ask-sent strong { font-size: 1.375rem; }
+  .mg-ask-sent .mg-btn { justify-self: start; }
+  @media (max-width: 479px) { .mg-ask-ways .mg-btn, .mg-ask-actions .mg-btn { flex: 1 1 100%; } }
+</style>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>("[data-mg-ask]");
+  form?.querySelector("[data-mg-ask-sample]")?.addEventListener("click", () => {
+    (form.elements.namedItem("name") as HTMLInputElement).value = "Sam";
+    (form.elements.namedItem("question") as HTMLTextAreaElement).value = "Can you clean on a Saturday morning before guests arrive at noon?";
+    form.querySelector<HTMLButtonElement>("button[type=submit]")?.focus();
+  });
+</script>

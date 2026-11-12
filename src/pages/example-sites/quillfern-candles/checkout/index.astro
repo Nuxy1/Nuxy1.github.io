@@ -1,0 +1,375 @@
+---
+// The Quillfern demo checkout: Contact → Shipping → Delivery → Payment preview → Review, then "Demo order completed."
+// No card field exists anywhere on the page; the payment step explains what Stripe would do on a real build. Nothing
+// typed is stored or sent: the fields are cleared as soon as the order summary shows, and only the demo stock in this
+// browser goes down. Without JavaScript every step shows, but the order can't be placed (the page says so).
+import Shell from "../../../../components/demo/quillfern/Shell.astro";
+import DemoComplete from "../../../../components/demo/DemoComplete.astro";
+import { base, studio } from "../../../../data/demos/quillfern";
+import { SHIP } from "../../../../lib/demo/quillfern-cart";
+
+const steps = ["Contact", "Shipping", "Delivery", "Payment", "Review"];
+const flow = [
+  { title: "Stripe takes the payment", text: "A real store sends the visitor to Stripe Checkout (or shows Stripe’s own card field), so the card number never touches the site." },
+  { title: "Stock goes down", text: "When Stripe confirms the payment, the stock count for each candle and size drops, and a size that hits zero shows Sold out everywhere." },
+  { title: "Receipt email", text: "The customer gets an order email with the candles, the total and the order number." },
+  { title: "Packing list or pickup text", text: "The studio gets a packing list; a pickup order gets a text when it’s ready on the shelf." },
+  { title: "Shipping label and tracking", text: "A label is bought at the right weight, and the tracking link goes to the customer automatically." },
+  { title: "Low-stock alert", text: "When a candle runs low, the maker gets a note to pour the next batch." },
+];
+---
+<Shell title="Demo checkout · Quillfern Candle Co. (demo)" current="checkout" description="The five-step demonstration checkout of Quillfern, a fictional candle maker: contact, shipping, delivery, a payment preview and review. No card is asked for, nothing is bought or sent.">
+  <section class="qf-wrap qf-co-sec" aria-labelledby="co-h">
+    <div class="qf-head qf-co-head">
+      <p class="qf-label">Checkout</p>
+      <h1 id="co-h">Demo checkout</h1>
+      <p class="qf-demo-note">Demonstration checkout: there is no card field, nothing is bought, and nothing you type is sent or kept.</p>
+    </div>
+
+    <div class="qf-cart-empty" data-co-empty hidden>
+      <h2>Your cart is empty.</h2>
+      <p>Add a candle first, then come back to try the checkout.</p>
+      <a class="qf-btn qf-btn-flame" href={`${base}/shop/`}>Shop candles</a>
+    </div>
+
+    <div class="qf-co" data-co-wrap>
+      <form class="qf-co-form" method="dialog" autocomplete="off" data-qf-checkout aria-labelledby="co-h">
+        <ol class="qf-co-prog" data-progress role="list" aria-label="Checkout steps">
+          {steps.map((s, i) => <li><button type="button"><span aria-hidden="true">{i + 1}</span>{s}</button></li>)}
+        </ol>
+        <p class="sr-only" data-step-status aria-live="polite"></p>
+        <noscript><p class="qf-err">The demo checkout needs JavaScript to place an order. Every step is shown below so you can read it.</p></noscript>
+
+        <fieldset class="qf-co-step" data-step aria-labelledby="c1-h">
+          <h2 id="c1-h" data-step-title>Contact</h2>
+          <p class="qf-co-sub">Where the receipt would go. In this demo nothing is sent.</p>
+          <div class="qf-fields two">
+            <label class="qf-field"><span>First name</span><input name="name" required maxlength="40" autocomplete="off" data-error="Add a first name, or press “Fill sample details”." /></label>
+            <label class="qf-field"><span>Email</span><input name="email" type="email" required maxlength="80" autocomplete="off" spellcheck="false" placeholder="you@example.com" data-error="Add an email like you@example.com, or press “Fill sample details”." /></label>
+          </div>
+          <p class="qf-err" id="c-err-1" data-step-error role="alert"></p>
+          <div class="qf-co-nav">
+            <button class="qf-btn qf-btn-line" type="button" data-co-sample>Fill sample details</button>
+            <button class="qf-btn qf-btn-flame" type="button" data-next>Continue to shipping</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="qf-co-step" data-step aria-labelledby="c2-h">
+          <h2 id="c2-h" data-step-title>Shipping</h2>
+          <div class="qf-co-how">
+            <label class="qf-pick"><input type="radio" name="how" value="ship" checked /><span><span>Ship it</span><small>Standard or express, next step</small></span></label>
+            <label class="qf-pick"><input type="radio" name="how" value="pickup" /><span><span>Pick up at the studio</span><small>Always free</small></span></label>
+          </div>
+          <div class="qf-fields" data-co-addr>
+            <label class="qf-field qf-field-wide"><span>Street address</span><input name="street" required maxlength="80" autocomplete="off" data-error="Add a street address, or choose pickup." /></label>
+            <div class="qf-fields qf-co-city">
+              <label class="qf-field"><span>Town or city</span><input name="city" required maxlength="40" autocomplete="off" data-error="Add a town or city." /></label>
+              <label class="qf-field"><span>State</span><input name="state" required maxlength="2" minlength="2" pattern="[A-Za-z]{2}" autocomplete="off" autocapitalize="characters" data-error="Use the two-letter state, like MN." /></label>
+              <label class="qf-field"><span>ZIP code</span><input name="zip" required inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="off" data-error="Use a five-digit ZIP code." /></label>
+            </div>
+          </div>
+          <div class="qf-co-pickup" data-co-pickup hidden>
+            <p class="qf-co-pickup-h">Quillfern studio</p>
+            <p>{studio.street}, {studio.town} (a made-up town)</p>
+            <p class="qf-fine">{studio.hours}. Usually ready the next business day; we text when it’s on the shelf.</p>
+          </div>
+          <p class="qf-err" id="c-err-2" data-step-error role="alert"></p>
+          <div class="qf-co-nav"><button class="qf-btn qf-btn-line" type="button" data-back>Back</button><button class="qf-btn qf-btn-flame" type="button" data-next>Continue</button></div>
+        </fieldset>
+
+        <fieldset class="qf-co-step" data-step aria-labelledby="c3-h">
+          <h2 id="c3-h" data-step-title>Delivery</h2>
+          <div class="qf-co-speeds" data-co-speeds>
+            <label class="qf-pick"><input type="radio" name="speed" value="standard" checked required /><span><span class="qf-co-speed-top"><span>Standard</span><span class="qf-num" data-co-std></span></span><small>Arrives in 3–5 business days. Free over ${SHIP.freeOver}.</small></span></label>
+            <label class="qf-pick"><input type="radio" name="speed" value="express" required /><span><span class="qf-co-speed-top"><span>Express</span><span class="qf-num">${SHIP.express}.00</span></span><small>Arrives in 1–2 business days.</small></span></label>
+          </div>
+          <p class="qf-co-pickup-note" data-co-pickup-note hidden>Pickup has no delivery choice: the order waits on the studio shelf for 14 days. Continue to the payment step.</p>
+          <p class="qf-err" id="c-err-3" data-step-error role="alert"></p>
+          <div class="qf-co-nav"><button class="qf-btn qf-btn-line" type="button" data-back>Back</button><button class="qf-btn qf-btn-flame" type="button" data-next>Continue to payment</button></div>
+        </fieldset>
+
+        <fieldset class="qf-co-step" data-step aria-labelledby="c4-h">
+          <h2 id="c4-h" data-step-title>Payment preview</h2>
+          <div class="qf-co-pay">
+            <svg class="qf-co-card" viewBox="0 0 320 196" aria-hidden="true" focusable="false">
+              <rect x="1" y="1" width="318" height="194" rx="14" fill="var(--qf-wax)" stroke="var(--qf-line-2)" stroke-width="2" stroke-dasharray="7 6" />
+              <rect x="28" y="40" width="44" height="32" rx="6" fill="var(--qf-line-2)" />
+              <text x="28" y="124" class="qf-co-card-t">NO CARD IN THIS DEMO</text>
+              <text x="28" y="158" class="qf-co-card-s">Stripe would take the payment here</text>
+            </svg>
+            <div class="qf-co-pay-copy">
+              <p>This page never asks for a card number. On a real Quillfern store, this step hands over to <b>Stripe</b>: its secure payment page (or its own card field) takes the card, Apple Pay or Google Pay, and the store only ever hears “paid” or “not paid”.</p>
+              <p class="qf-fine">Nothing is charged, no payment is created, and no card details exist anywhere in this demo.</p>
+            </div>
+          </div>
+          <p class="qf-err" id="c-err-4" data-step-error role="alert"></p>
+          <div class="qf-co-nav"><button class="qf-btn qf-btn-line" type="button" data-back>Back</button><button class="qf-btn qf-btn-flame" type="button" data-next>Continue with demo checkout</button></div>
+        </fieldset>
+
+        <fieldset class="qf-co-step" data-step aria-labelledby="c5-h">
+          <h2 id="c5-h" data-step-title>Review</h2>
+          <dl class="qf-co-review" data-co-review></dl>
+          <p class="qf-fine">Demonstration prices. Placing this order charges nothing and sends nothing; only the demo stock in this browser goes down.</p>
+          <p class="qf-err" id="c-err-5" data-step-error role="alert"></p>
+          <div class="qf-co-nav"><button class="qf-btn qf-btn-line" type="button" data-back>Back</button><button class="qf-btn qf-btn-flame" type="submit" data-co-place>Place demo order</button></div>
+        </fieldset>
+      </form>
+
+      <aside class="qf-sum qf-co-sum" aria-labelledby="co-sum-h">
+        <div class="qf-co-sum-head">
+          <h2 id="co-sum-h" class="qf-sum-h">Your order</h2>
+          <button type="button" class="qf-co-toggle qf-ui" aria-expanded="false" aria-controls="co-sum-body" data-co-toggle><span data-co-toggle-k>Show details</span><span class="qf-num" data-co-toggle-total></span></button>
+        </div>
+        <div class="qf-co-sum-body" id="co-sum-body">
+        <ul class="qf-co-lines qf-ui" role="list" data-co-lines></ul>
+        <dl class="qf-totals qf-ui">
+          <div><dt>Candles</dt><dd class="qf-num" data-t-sub></dd></div>
+          <div data-t-disc-row hidden><dt>Demo code</dt><dd class="qf-num" data-t-disc></dd></div>
+          <div><dt data-t-ship-k>Shipping</dt><dd class="qf-num" data-t-ship></dd></div>
+          <div class="qf-total"><dt>Total</dt><dd class="qf-num" data-t-total></dd></div>
+        </dl>
+        <a class="qf-link" href={`${base}/cart/`}>Edit cart</a>
+        </div>
+      </aside>
+    </div>
+
+    <DemoComplete id="co-done" heading="Demo order completed." lead="Nothing was charged, saved or sent. Your name, email and address were cleared from the page; only the demo stock in this browser went down." flow={flow} cta={{ label: "Build a store like this", href: "/ecommerce/" }} restart="Back to the shop" />
+  </section>
+</Shell>
+
+<style>
+  .qf-co-sec { padding-block: clamp(36px, 6vw, 72px) clamp(56px, 8vw, 104px); }
+  .qf-co-head { margin-bottom: 28px; }
+  .qf-co-head h1 { font-size: clamp(2.4rem, 1.6rem + 3vw, 4rem); }
+  .qf-co[hidden] { display: none; }
+  .qf-co { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); gap: clamp(28px, 4vw, 64px); align-items: start; }
+  @media (max-width: 899px) { .qf-co { grid-template-columns: 1fr; } .qf-co-sum { order: -1; } }
+  .qf-co-form { display: grid; gap: 24px; min-width: 0; container: coform / inline-size; }
+
+  .qf-co-prog { display: none; }
+  .qf-co-form.is-stepped .qf-co-prog { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .qf-co-prog li { flex: 1 0 auto; }
+  .qf-co-prog button { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 4px; background: var(--qf-wax); color: var(--qf-soft); font-family: var(--qf-ui); font-size: 0.875rem; font-weight: 650; white-space: nowrap; cursor: pointer; transition: background-color 200ms ease-out, color 200ms ease-out; }
+  .qf-co-prog button span { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--qf-cream); font-size: 0.8125rem; }
+  .qf-co-prog button:disabled { cursor: default; }
+  .qf-co-prog li:not(.done):not([aria-current]) button:disabled { color: var(--qf-mute); }
+  .qf-co-prog li.done button { background: var(--qf-fern-soft); color: var(--qf-fern); }
+  .qf-co-prog li[aria-current] button { background: var(--qf-umber); color: var(--qf-paper); }
+  .qf-co-prog li[aria-current] button span { background: var(--qf-amber); color: var(--qf-umber); }
+  @container coform (max-width: 639px) { .qf-co-prog button { font-size: 0; gap: 0; padding: 0; } .qf-co-prog li[aria-current] button { font-size: 0.875rem; gap: 8px; padding: 0 14px 0 10px; } .qf-co-prog li { flex: 1 1 36px; } .qf-co-prog li[aria-current] { flex: 0 0 auto; } }
+
+  .qf-co-step { display: grid; gap: 18px; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .qf-co-step + .qf-co-step { padding-top: 28px; border-top: 1px solid var(--qf-line); }
+  .qf-co-form.is-stepped .qf-co-step + .qf-co-step { padding-top: 0; border-top: 0; }
+  .qf-co-step h2 { font-size: clamp(1.625rem, 1.3rem + 1.4vw, 2.25rem); color: var(--qf-umber); outline: none; }
+  :root[data-tier="1"] .qf-co-form.is-stepped .qf-co-step:not([hidden]), :root[data-tier="2"] .qf-co-form.is-stepped .qf-co-step:not([hidden]) { animation: qf-co-in 280ms var(--qf-ease) both; }
+  @keyframes qf-co-in { from { opacity: 0; transform: translateY(8px); } }
+  .qf-co-sub { color: var(--qf-soft); }
+  .qf-co-city { grid-template-columns: minmax(0, 1.6fr) minmax(64px, 0.5fr) minmax(0, 0.9fr); }
+  @media (max-width: 479px) { .qf-co-city { grid-template-columns: 1fr 1fr; } .qf-co-city > :first-child { grid-column: 1 / -1; } }
+  .qf-co-city input[name="state"] { text-transform: uppercase; }
+  [data-co-addr][hidden], .qf-co-pickup[hidden], .qf-co-speeds[hidden], .qf-co-pickup-note[hidden] { display: none; }
+  .qf-co-how, .qf-co-speeds { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 479px) { .qf-co-how, .qf-co-speeds { grid-template-columns: 1fr; } }
+  .qf-co-speed-top { display: flex; justify-content: space-between; gap: 8px; }
+  .qf-co-pickup { display: grid; gap: 4px; padding: 18px 20px; border-radius: 6px; background: var(--qf-wax); }
+  .qf-co-pickup-h { font-weight: 650; color: var(--qf-umber); }
+  .qf-co-pickup-note { padding: 14px 18px; border-radius: 6px; background: var(--qf-wax); color: var(--qf-umber); font-weight: 600; }
+  .qf-co-pay { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 24px; align-items: center; }
+  @container coform (max-width: 559px) { .qf-co-pay { grid-template-columns: 1fr; } .qf-co-card { max-width: 300px; } }
+  .qf-co-card { width: 100%; height: auto; }
+  .qf-co-card-t { font-family: var(--qf-ui); font-size: 17px; font-weight: 750; letter-spacing: 0.08em; fill: var(--qf-umber); }
+  .qf-co-card-s { font-family: var(--qf-ui); font-size: 14px; fill: var(--qf-soft); }
+  .qf-co-pay-copy { display: grid; gap: 10px; }
+  .qf-co-pay-copy p:first-child { color: var(--qf-ink); }
+  .qf-co-review { display: grid; margin: 0; border-top: 1px solid var(--qf-line-2); }
+  .qf-co-review :global(div) { display: grid; grid-template-columns: minmax(96px, 0.35fr) 1fr auto; gap: 4px 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--qf-line-2); }
+  .qf-co-review :global(dt) { font-family: var(--qf-ui); font-size: 0.875rem; font-weight: 650; color: var(--qf-soft); }
+  /* narrow: label and "Change" share a row, the answer gets the full width under them */
+  @media (max-width: 599px) {
+    .qf-co-review :global(div) { grid-template-columns: 1fr auto; grid-template-areas: "k btn" "v v"; }
+    .qf-co-review :global(dt) { grid-area: k; }
+    .qf-co-review :global(dd) { grid-area: v; }
+    .qf-co-review :global(div > :last-child) { grid-area: btn; }
+  }
+  .qf-co-review :global(dd) { margin: 0; color: var(--qf-ink); overflow-wrap: anywhere; }
+  .qf-co-review :global(button) { min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--qf-ember-2); font-family: var(--qf-ui); font-size: 0.875rem; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .qf-co-nav { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+  .qf-co-nav [data-back] { margin-right: auto; }
+
+  .qf-co-sum { position: sticky; top: 96px; }
+  .qf-co-sum-body { display: grid; gap: inherit; }
+  .qf-co-toggle { display: none; }
+  /* phones and tablets: the summary folds to one line above the form, so the first field is on the first screen */
+  @media (max-width: 899px) {
+    .qf-co-sum { position: static; }
+    .qf-co-sum-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .qf-co-toggle { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 2px; border: 0; background: none; color: var(--qf-ember-2); font-size: 0.9375rem; font-weight: 650; cursor: pointer; }
+    .qf-co-toggle [data-co-toggle-k] { text-decoration: underline; text-underline-offset: 3px; }
+    .qf-co-toggle .qf-num { color: var(--qf-umber); font-size: 1.0625rem; }
+    .qf-co-sum:not(.is-open) .qf-co-sum-body { display: none; }
+  }
+  .qf-co-lines { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 0.9375rem; }
+  .qf-co-lines :global(li) { display: flex; justify-content: space-between; gap: 12px; color: var(--qf-soft); }
+  .qf-co-lines :global(b) { font-weight: 650; color: var(--qf-umber); }
+  .qf-co-sum .qf-totals { padding-top: 10px; border-top: 1px solid var(--qf-line); }
+  #co-done { margin-top: 8px; }
+</style>
+
+<script>
+  import { cart, saveCart, stock, saveStock, clearCart, onCart } from "../../../../lib/demo/quillfern-store";
+  import { totals, afterOrder, orderId, SIZES, SHIP, type How, type Speed } from "../../../../lib/demo/quillfern-cart";
+  import { stepper, firstInvalid, flag } from "../../../../lib/demo/stepper";
+  import { showComplete, onRestart } from "../../../../lib/demo/complete";
+  import { usd2 } from "../../../../lib/demo/money";
+  import { base, studio } from "../../../../data/demos/quillfern";
+
+  const $ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector<T>(s)!;
+  const form = $<HTMLFormElement>("[data-qf-checkout]");
+  const wrap = $("[data-co-wrap]"), emptyBox = $("[data-co-empty]"), done = $("#co-done");
+  const field = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+  const radios = (n: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${n}"]`)];
+  const pick = (n: string) => radios(n).find((r) => r.checked)?.value;
+  const addr = ["street", "city", "state", "zip"].map(field);
+  let ordered = false;
+
+  const how = (): How => (pick("how") === "pickup" ? "pickup" : "ship");
+  const speed = (): Speed => (how() === "ship" && pick("speed") === "express" ? "express" : "standard");
+
+  function shipLabel() {
+    if (how() === "pickup") return "Studio pickup";
+    return speed() === "express" ? "Express shipping" : "Standard shipping";
+  }
+
+  function sync() {
+    const c = cart();
+    const t = totals({ ...c, how: how() }, speed());
+    if (!ordered) {
+      emptyBox.hidden = t.count > 0;
+      wrap.hidden = t.count === 0;
+    }
+    // shipping or pickup: the address fields switch off (and out of the step's checks) for pickup
+    const pickup = how() === "pickup";
+    $("[data-co-addr]").hidden = pickup;
+    for (const a of addr) a.disabled = pickup;
+    $("[data-co-pickup]").hidden = !pickup;
+    $("[data-co-speeds]").hidden = pickup;
+    for (const r of radios("speed")) r.disabled = pickup;
+    $("[data-co-pickup-note]").hidden = !pickup;
+    const goods = t.subtotal - t.discount;
+    $("[data-co-std]").textContent = goods >= SHIP.freeOver ? "Free" : usd2(SHIP.standard);
+
+    $("[data-co-lines]").replaceChildren(...t.lines.map((l) => {
+      const li = document.createElement("li");
+      const b = document.createElement("b"), amt = document.createElement("span");
+      b.textContent = `${l.qty} × ${l.candle.name}`;
+      const sz = document.createElement("span");
+      sz.textContent = `, ${SIZES[l.size].label}`;
+      const left = document.createElement("span");
+      left.append(b, sz);
+      amt.className = "qf-num";
+      amt.textContent = usd2(l.amount);
+      li.append(left, amt);
+      return li;
+    }));
+    $("[data-t-sub]").textContent = usd2(t.subtotal);
+    $("[data-t-disc-row]").hidden = !t.discount;
+    $("[data-t-disc]").textContent = `−${usd2(t.discount)}`;
+    $("[data-t-ship-k]").textContent = shipLabel();
+    $("[data-t-ship]").textContent = t.shipping ? usd2(t.shipping) : "Free";
+    $("[data-t-total]").textContent = usd2(t.total);
+    $("[data-co-toggle-total]").textContent = usd2(t.total);
+    review(t);
+  }
+
+  const toggle = $<HTMLButtonElement>("[data-co-toggle]");
+  toggle.addEventListener("click", () => {
+    const open = toggle.getAttribute("aria-expanded") !== "true";
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.closest(".qf-co-sum")!.classList.toggle("is-open", open);
+    $("[data-co-toggle-k]").textContent = open ? "Hide details" : "Show details";
+  });
+
+  function review(t: ReturnType<typeof totals>) {
+    const rows: [string, string, number][] = [
+      ["Contact", [field("name").value.trim(), field("email").value.trim()].filter(Boolean).join(", ") || "Not filled in yet", 0],
+      ["Delivery", how() === "pickup" ? `Pickup at ${studio.street}, ${studio.town}` : `${shipLabel()} to ${[field("street").value.trim(), field("city").value.trim(), field("state").value.trim().toUpperCase(), field("zip").value.trim()].filter(Boolean).join(", ") || "an address not filled in yet"}`, 1],
+      ["Payment", "Preview only: no card, nothing charged", 3],
+      ["Candles", t.lines.map((l) => `${l.qty} × ${l.candle.name} (${SIZES[l.size].label})`).join("; "), -1],
+      ["Total", `${usd2(t.total)}${t.discount ? ` after ${usd2(t.discount)} demo discount` : ""}`, -1],
+    ];
+    $("[data-co-review]").replaceChildren(...rows.map(([k, v, step]) => {
+      const div = document.createElement("div");
+      const dt = document.createElement("dt"), dd = document.createElement("dd");
+      dt.textContent = k; dd.textContent = v;
+      div.append(dt, dd);
+      if (step >= 0) {
+        const b = document.createElement("button");
+        b.type = "button"; b.dataset.edit = String(step);
+        b.textContent = "Change"; b.setAttribute("aria-label", `Change ${k.toLowerCase()}`);
+        div.append(b);
+      } else div.append(document.createElement("span"));
+      return div;
+    }));
+  }
+
+  // start from the cart's own choice (ship or pickup), and keep the cart in step when it changes here
+  for (const r of radios("how")) r.checked = r.value === cart().how;
+  form.addEventListener("change", (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.name === "how") saveCart({ ...cart(), how: how() });
+    sync();
+  });
+  form.addEventListener("input", sync);
+
+  const steps = stepper(form, { onStep: () => sync() });
+  onCart(() => { if (!ordered) sync(); });
+
+  $("[data-co-review]").addEventListener("click", (e) => {
+    const b = (e.target as Element).closest<HTMLButtonElement>("[data-edit]");
+    if (b) steps.go(Number(b.dataset.edit));
+  });
+
+  $("[data-co-sample]").addEventListener("click", () => {
+    field("name").value = "Sam";
+    field("email").value = "sam@example.com";
+    field("street").value = "22 Sample Street";
+    field("city").value = "Wickham Falls";
+    field("state").value = "MN";
+    field("zip").value = "55901";
+    for (const f of [field("name"), field("email"), ...addr]) f.dispatchEvent(new Event("input", { bubbles: true }));
+    $<HTMLButtonElement>("[data-co-sample] ~ [data-next]").focus();
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const bad = firstInvalid(form);
+    if (bad) {
+      steps.go([...form.querySelectorAll("[data-step]")].findIndex((s) => s.contains(bad)));
+      flag(bad);
+      return;
+    }
+    const c = { ...cart(), how: how() };
+    const t = totals(c, speed());
+    if (!t.count) { sync(); return; }
+    const id = orderId();
+    const where = how() === "pickup" ? `Pickup at the studio, ${studio.street}` : `${shipLabel()} to ${field("city").value.trim()}, ${field("state").value.trim().toUpperCase()}`;
+    ordered = true;
+    showComplete(done, [
+      ["Order", `${id} (demonstration order number)`],
+      ["Candles", t.lines.map((l) => `${l.qty} × ${l.candle.name} (${SIZES[l.size].label})`).join("; ")],
+      ["Total", `${usd2(t.total)}, not charged`],
+      ["Delivery", where],
+      ["Receipt email", "Would go to the address you gave. Nothing was sent."],
+      ["Stock", "The demo stock in this browser went down; reset it from the cart."],
+    ], [wrap]);
+    // the visitor's details go as soon as the summary shows; only the demo stock changes
+    saveStock(afterOrder(stock(), c));
+    clearCart();
+    for (const n of ["name", "email", ...addr.map((a) => a.name)]) field(n).value = "";
+  });
+
+  onRestart(done, () => { location.href = `${base}/shop/`; });
+
+  sync();
+</script>

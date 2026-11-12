@@ -1,0 +1,125 @@
+---
+// Lantern Row style book: nine drawn style examples (not photos of clients) with a filter by kind (fades, textured,
+// beard, classic). ?style=fades opens on that filter. Each card books the cut that makes the look with the barber
+// known for it. Without JavaScript every style shows and the filter stays hidden.
+import Shell from "../../../../components/demo/lantern/Shell.astro";
+import StyleArt from "../../../../components/demo/lantern/StyleArt.astro";
+import { base, gallery, styleNames, barberById, serviceById } from "../../../../data/demos/lantern";
+
+const filters = [["all", "All"], ...Object.entries(styleNames)] as [string, string][];
+---
+<Shell title="Style book" current="gallery" description="The Lantern Row style book: fades, textured cuts, beards and classic styles, drawn as illustrated examples, each with the cut and barber to book. A fictional shop.">
+  <section class="lr-section lr-gal-top">
+    <div class="lr-wrap">
+      <div class="lr-head">
+        <p class="lr-kicker">Style book</p>
+        <h1>Find the look. Book the cut.</h1>
+        <p class="lr-lead">Show this page in the chair, or book the cut that makes it with the barber who does it best.</p>
+        <p class="lr-demo-note">Illustrated style examples, not photos of clients.</p>
+      </div>
+
+      <div class="lr-gal-bar" data-gal-bar hidden>
+        <div class="lr-gal-filters" role="group" aria-label="Filter styles">
+          {filters.map(([k, v], i) => <button type="button" class="lr-gal-f" data-filter={k} aria-pressed={i === 0 ? "true" : "false"}>{v}</button>)}
+        </div>
+        <p class="lr-gal-count" data-gal-count aria-live="polite">{gallery.length} styles</p>
+      </div>
+
+      <ul class="lr-gal" role="list" data-gal>
+        {gallery.map((g, i) => {
+          const b = barberById[g.by], s = serviceById[g.service];
+          return (
+            <li class="lr-gal-item" data-style={g.style} style={`--i:${i}`}>
+              <article aria-labelledby={`g-${g.id}`}>
+                <div class="lr-gal-art"><StyleArt cut={g.cut} uid={`gal-${g.id}`} /></div>
+                <div class="lr-gal-copy">
+                  <p class="lr-label">{styleNames[g.style]}</p>
+                  <h2 id={`g-${g.id}`}>{g.name}</h2>
+                  <p>{g.note}</p>
+                  <p class="lr-gal-meta">{s.name}, ${s.price} · {b.name}</p>
+                  <a class="lr-link" href={`${base}/booking/?service=${g.service}&barber=${g.by}`}>Book this look<span class="sr-only">: {g.name} with {b.name}</span> <span aria-hidden="true">→</span></a>
+                </div>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="lr-gal-empty" data-gal-empty hidden>No styles in this group yet.</p>
+    </div>
+  </section>
+
+  <section class="lr-section lr-rule" aria-labelledby="band-h">
+    <div class="lr-wrap">
+      <div class="lr-band lr-rise">
+        <p class="lr-kicker">Bring a picture</p>
+        <h2 id="band-h">Not here? Show us yours.</h2>
+        <p>Every cut starts with a consultation, so bring a photo of the look you want.</p>
+        <a class="lr-btn" href={`${base}/booking/`}>Book a chair</a>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .lr-gal-top { padding-top: clamp(40px, 6vw, 80px); }
+  .lr-gal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--lr-line); }
+  .lr-gal-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+  .lr-gal-f { min-height: 44px; padding: 0 18px; border: 1px solid var(--lr-line); border-radius: 999px; background: transparent; color: var(--lr-soft); font: inherit; font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out; }
+  .lr-gal-f:hover { border-color: var(--lr-brass); color: var(--lr-cream); }
+  .lr-gal-f[aria-pressed="true"] { background: var(--lr-brass); border-color: var(--lr-brass); color: var(--lr-bg); }
+  .lr-gal-f:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 3px; }
+  .lr-gal-count { color: var(--lr-mute); font-size: 0.9375rem; }
+
+  .lr-gal { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+  .lr-gal-item[hidden] { display: none; }
+  .lr-gal-item article { display: grid; height: 100%; background: var(--lr-panel); border: 1px solid var(--lr-line-soft); transition: border-color 220ms ease-out; }
+  .lr-gal-item article:hover { border-color: #6b5a3a; }
+  .lr-gal-art { display: grid; place-items: center; padding: 28px 28px 8px; background: radial-gradient(circle at 50% 40%, #241d15, transparent 70%); }
+  .lr-gal-art :global(.lr-style-art) { max-width: 220px; transition: transform 320ms var(--lr-ease); }
+  .lr-gal-item article:hover :global(.lr-style-art) { transform: scale(1.03) rotate(-0.6deg); }
+  .lr-gal-copy { display: grid; gap: 8px; align-content: start; padding: 20px 24px 26px; }
+  .lr-gal-copy h2 { font-size: 1.75rem; }
+  .lr-gal-copy > p:not(.lr-label) { color: var(--lr-soft); }
+  .lr-gal-copy .lr-gal-meta { color: var(--lr-mute); font-size: 0.875rem; }
+  .lr-gal-copy .lr-link { margin-top: 6px; justify-self: start; }
+  .lr-gal-empty { padding: 32px 0; color: var(--lr-mute); }
+  :global(:root[data-tier="1"]) .lr-gal.is-filtered .lr-gal-item:not([hidden]), :global(:root[data-tier="2"]) .lr-gal.is-filtered .lr-gal-item:not([hidden]) { animation: lr-gal-in 300ms var(--lr-ease) both; animation-delay: calc(var(--n, 0) * 40ms); }
+  @keyframes lr-gal-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
+</style>
+
+<script>
+  const list = document.querySelector<HTMLElement>("[data-gal]");
+  const bar = document.querySelector<HTMLElement>("[data-gal-bar]");
+  if (list && bar) {
+    const items = [...list.querySelectorAll<HTMLElement>("[data-style]")];
+    const buttons = [...bar.querySelectorAll<HTMLButtonElement>("[data-filter]")];
+    const count = bar.querySelector<HTMLElement>("[data-gal-count]")!;
+    const empty = document.querySelector<HTMLElement>("[data-gal-empty]")!;
+    const keys = buttons.map((b) => b.dataset.filter!);
+    const show = (key: string, animate = true) => {
+      if (!keys.includes(key)) key = "all";
+      buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filter === key)));
+      let n = 0;
+      for (const it of items) {
+        const on = key === "all" || it.dataset.style === key;
+        it.hidden = !on;
+        if (on) it.style.setProperty("--n", String(n++));
+      }
+      list.classList.remove("is-filtered");
+      if (animate) { void list.offsetWidth; list.classList.add("is-filtered"); }
+      const label = buttons.find((b) => b.dataset.filter === key)!.textContent;
+      count.textContent = key === "all" ? `${n} styles` : `${n} ${n === 1 ? "style" : "styles"} in ${label}`;
+      empty.hidden = n > 0;
+      const url = new URL(location.href);
+      if (key === "all") url.searchParams.delete("style"); else url.searchParams.set("style", key);
+      history.replaceState(history.state, "", url);
+    };
+    bar.hidden = false;
+    bar.addEventListener("click", (e) => {
+      const b = (e.target as Element).closest<HTMLButtonElement>("[data-filter]");
+      if (b) show(b.dataset.filter!);
+    });
+    const start = new URLSearchParams(location.search).get("style");
+    if (start) show(start, false);
+  }
+</script>

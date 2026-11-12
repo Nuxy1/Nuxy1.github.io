@@ -1,0 +1,153 @@
+---
+// Fernway's services: the six services with what each includes, when it runs and an example starting price, the
+// year at a glance, and common questions. Prices come from lib/demo/fernway-quote.ts and are demo prices.
+import Shell from "../../../../components/demo/fernway/Shell.astro";
+import ServiceArt from "../../../../components/demo/fernway/ServiceArt.astro";
+import { base, serviceList, faqs } from "../../../../data/demos/fernway";
+import { usd } from "../../../../lib/demo/money";
+import { FREQUENCIES } from "../../../../lib/demo/fernway-quote";
+
+const unit = { visit: "a visit", job: "a job", season: "a season" } as const;
+const months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+// months each service runs (0 = January), matching the season line on each card
+const runs: Record<string, number[]> = {
+  mowing: [3, 4, 5, 6, 7, 8, 9],
+  cleanup: [3, 9],
+  mulch: [4, 5],
+  hedge: [5, 8],
+  planting: [4, 5, 6, 7, 8],
+  snow: [10, 11, 0, 1, 2],
+};
+---
+<Shell title="Services" current="services" description="Fernway's six lawn and landscape services with what each includes, when it runs and example prices. A fictional business in a Nuxy Automation demonstration.">
+  <section class="fw-section fw-s-hero" aria-labelledby="s-h">
+    <div class="fw-wrap">
+      <div class="fw-head">
+        <p class="fw-kicker">Services</p>
+        <h1 id="s-h">Six jobs, done properly, on a schedule you can count on.</h1>
+        <p class="fw-lead">Book one, or put the year on a plan and stop thinking about it.</p>
+      </div>
+      <nav class="fw-s-jump" aria-label="Jump to a service">
+        {serviceList.map((s) => <a href={`#${s.id}`}><ServiceArt art={s.art} size={28} />{s.short}</a>)}
+      </nav>
+    </div>
+  </section>
+
+  <section class="fw-section fw-s-list" aria-label="All services">
+    <div class="fw-wrap">
+      <div class="fw-s-grid">
+        {serviceList.map((s, i) => (
+          <article class="fw-card fw-s-card fw-rise" id={s.id} style={`--d:${(i % 2) * 80}ms`} aria-labelledby={`${s.id}-h`}>
+            <div class="fw-s-top">
+              <ServiceArt art={s.art} size={80} />
+              <div>
+                <h2 id={`${s.id}-h`}>{s.name}</h2>
+                <p class="fw-fine">{s.season}</p>
+              </div>
+            </div>
+            <p>{s.blurb}</p>
+            <ul class="fw-checks" role="list">{s.included.map((x) => <li>{x}</li>)}</ul>
+            <p class="fw-s-freq"><span>Booked as</span> {s.freqs.map((f) => FREQUENCIES[f].label.toLowerCase()).join(", ")}</p>
+            <div class="fw-s-foot">
+              <p><span class="fw-price">From {usd(s.base[0])}</span> <span class="fw-fine">{unit[s.unit]}, small yard</span></p>
+              <a class="fw-btn fw-btn-sm" href={`${base}/quote/?service=${s.id}`}>Estimate {s.short.toLowerCase()}</a>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p class="fw-demo-note fw-s-note">Example pricing for demonstration purposes.</p>
+    </div>
+  </section>
+
+  <section class="fw-section fw-s-year" aria-labelledby="y-h">
+    <div class="fw-wrap">
+      <div class="fw-head">
+        <p class="fw-kicker">The year at a glance</p>
+        <h2 id="y-h">When each service runs.</h2>
+      </div>
+      <div class="fw-cal-scroll" tabindex="0" role="region" aria-label="Service calendar, scrolls sideways on small screens">
+        <table class="fw-cal">
+          <caption class="sr-only">Months each Fernway service runs</caption>
+          <thead><tr><th scope="col">Service</th>{months.map((m, i) => <th scope="col"><abbr title={monthNames[i]}>{m}</abbr></th>)}</tr></thead>
+          <tbody>
+            {serviceList.map((s) => (
+              <tr>
+                <th scope="row">{s.short}</th>
+                {months.map((_, i) => runs[s.id].includes(i)
+                  ? <td class="on"><span class="sr-only">{monthNames[i]}: yes</span></td>
+                  : <td><span class="sr-only">{monthNames[i]}: no</span></td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="fw-section fw-s-faq" aria-labelledby="f-h">
+    <div class="fw-wrap fw-s-faq-in">
+      <div class="fw-head">
+        <p class="fw-kicker">Questions</p>
+        <h2 id="f-h">Before you book.</h2>
+        <p class="fw-lead">Something else? <a class="fw-link" href={`${base}/contact/`}>Send us a message</a>.</p>
+      </div>
+      <div class="fw-faq">
+        {faqs.map(([q, a]) => (
+          <details>
+            <summary>{q}<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></svg></summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="fw-section fw-end">
+    <div class="fw-wrap">
+      <div class="fw-band">
+        <h2>Not sure which you need?</h2>
+        <p>Start the estimate with photos and let the crew suggest the right mix.</p>
+        <a class="fw-btn fw-btn-lime" href={`${base}/quote/`}>Get my estimate</a>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .fw-s-hero { background: var(--fw-cream); padding-bottom: clamp(32px, 5vw, 56px); }
+  .fw-s-hero h1 { font-size: clamp(2.25rem, 5.4vw, 4rem); max-width: 18ch; }
+  .fw-s-jump { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fw-s-jump a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 8px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line); color: var(--fw-ink); font-weight: 600; text-decoration: none; transition: box-shadow 160ms; }
+  .fw-s-jump a:hover { box-shadow: 0 0 0 1.5px var(--fw-moss); }
+  .fw-s-list { padding-top: clamp(32px, 5vw, 56px); }
+  .fw-s-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+  .fw-s-card { padding: clamp(22px, 3vw, 34px); gap: 16px; scroll-margin-top: 96px; }
+  .fw-s-top { display: flex; gap: 18px; align-items: center; }
+  .fw-s-top h2 { font-size: clamp(1.5rem, 2.6vw, 1.875rem); }
+  .fw-s-card > p { color: var(--fw-soft); }
+  .fw-s-freq { font-size: 0.9375rem; }
+  .fw-s-freq span { font-weight: 700; color: var(--fw-forest); }
+  .fw-s-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--fw-line); }
+  .fw-s-note { margin-top: 22px; }
+  .fw-s-year { background: var(--fw-cream); }
+  .fw-cal-scroll { position: relative; overflow-x: auto; border-radius: 22px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line); }
+  .fw-cal-scroll:focus-visible { outline: 3px solid var(--fw-moss); outline-offset: 3px; }
+  .fw-cal { width: 100%; min-width: 620px; border-collapse: separate; border-spacing: 4px; padding: 14px; }
+  .fw-cal th { font-size: 0.8125rem; font-weight: 700; color: var(--fw-soft); text-align: center; padding: 6px 0; }
+  .fw-cal abbr { text-decoration: none; }
+  .fw-cal tbody th { text-align: left; color: var(--fw-ink); font-size: 0.9375rem; padding-right: 12px; white-space: nowrap; }
+  .fw-cal td { height: 34px; border-radius: 8px; background: var(--fw-paper); }
+  .fw-cal td.on { background: var(--fw-moss); }
+  .fw-cal tr:last-child td.on { background: #5d7f9e; }
+  .fw-s-faq-in { display: grid; gap: 32px; }
+  @media (min-width: 960px) { .fw-s-faq-in { grid-template-columns: 0.8fr 1.2fr; } }
+  .fw-faq { display: grid; gap: 10px; }
+  .fw-faq details { border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line); }
+  .fw-faq summary { display: flex; justify-content: space-between; align-items: center; gap: 14px; min-height: 60px; padding: 14px 20px; font-weight: 650; cursor: pointer; list-style: none; }
+  .fw-faq summary::-webkit-details-marker { display: none; }
+  .fw-faq summary svg { flex: none; transition: transform 220ms var(--fw-ease); color: var(--fw-moss); }
+  .fw-faq details[open] summary svg { transform: rotate(45deg); }
+  .fw-faq details p { padding: 0 20px 18px; color: var(--fw-soft); }
+  .fw-end { padding-top: 0; }
+</style>

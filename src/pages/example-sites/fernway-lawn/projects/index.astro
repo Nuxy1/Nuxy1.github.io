@@ -1,0 +1,63 @@
+---
+// Fernway's example projects: four before/after pairs you can drag to compare. The pictures are drawn illustrations
+// (components/demo/fernway/ProjectArt.astro), each tagged "Example transformation"; no real customer or yard.
+import Shell from "../../../../components/demo/fernway/Shell.astro";
+import ProjectArt from "../../../../components/demo/fernway/ProjectArt.astro";
+import BeforeAfter from "../../../../components/demo/BeforeAfter.astro";
+import { base, projects } from "../../../../data/demos/fernway";
+---
+<Shell title="Projects" current="projects" description="Four example before-and-after landscaping transformations from Fernway, a fictional lawn care company in a Nuxy Automation demonstration. Drag each picture to compare.">
+  <section class="fw-section fw-p-hero" aria-labelledby="p-h">
+    <div class="fw-wrap">
+      <div class="fw-head">
+        <p class="fw-kicker">Projects</p>
+        <h1 id="p-h">Drag the line on any yard.</h1>
+        <p class="fw-lead">Four kinds of job we do every season. Each picture is an illustrated example, not a customer’s home.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="fw-section fw-p-list" aria-label="Example projects">
+    <div class="fw-wrap">
+      <ol class="fw-p-grid" role="list">
+        {projects.map((p, i) => (
+          <li class="fw-p fw-rise" style={`--d:${(i % 2) * 90}ms`}>
+            <BeforeAfter label={p.title} tag="Example transformation" start={i % 2 ? 58 : 42}>
+              <ProjectArt slot="before" art={p.art} state="before" />
+              <ProjectArt slot="after" art={p.art} state="after" />
+            </BeforeAfter>
+            <div class="fw-p-body">
+              <p class="fw-fine">{p.place} · {p.time}</p>
+              <h2>{p.title}</h2>
+              <ul class="fw-checks" role="list">{p.work.map((w) => <li>{w}</li>)}</ul>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p class="fw-demo-note fw-p-note">Illustrated example transformations. Fernway and the towns named are fictional.</p>
+    </div>
+  </section>
+
+  <section class="fw-section fw-end">
+    <div class="fw-wrap">
+      <div class="fw-band">
+        <h2>Got a yard that looks like a “before”?</h2>
+        <p>Add a few photos to the estimate and see a range in about a minute.</p>
+        <a class="fw-btn fw-btn-lime" href={`${base}/quote/`}>Get my estimate</a>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .fw-p-hero { background: var(--fw-cream); padding-bottom: clamp(24px, 4vw, 40px); }
+  .fw-p-hero h1 { font-size: clamp(2.25rem, 5.4vw, 4rem); }
+  .fw-p-list { background: linear-gradient(var(--fw-cream), var(--fw-paper) 240px); padding-top: clamp(16px, 3vw, 32px); }
+  .fw-p-grid { display: grid; gap: clamp(28px, 4vw, 48px) 28px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .fw-p { display: grid; gap: 18px; align-content: start; }
+  .fw-p :global(.ba) { --ba-radius: 26px; --ba-handle-ink: #173826; --ba-label-bg: rgba(19, 32, 26, 0.75); }
+  .fw-p-body { display: grid; gap: 10px; padding-inline: 4px; }
+  .fw-p-body h2 { font-size: clamp(1.375rem, 2.4vw, 1.75rem); }
+  .fw-p-note { margin-top: 28px; }
+  .fw-end { padding-top: 0; background: var(--fw-paper); }
+</style>

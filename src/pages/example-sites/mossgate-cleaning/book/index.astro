@@ -1,0 +1,386 @@
+---
+// Mossgate booking (a demonstration: nothing is booked, stored or sent). Five steps: the clean (carried from the
+// estimate's link, ?home=house&bed=3&clean=deep..., and changeable here), the day, the arrival window, the details
+// and a review; it ends with "Demo clean requested." and what a real build would do next. The calendar is a fixed
+// made-up pattern (lib/demo/mossgate-estimate.ts): the third day is full, and a long clean only fits a morning window.
+// The days come from the visitor's own clock, so the script labels them; without JavaScript every step shows at once.
+import Shell from "../../../../components/demo/mossgate/Shell.astro";
+import DemoComplete from "../../../../components/demo/DemoComplete.astro";
+import { base } from "../../../../data/demos/mossgate";
+import { HOMES, CLEANS, BEDS, BATHS, WINDOWS, DEFAULT, estimate, describe, hoursLabel, toQuery } from "../../../../lib/demo/mossgate-estimate";
+import { range } from "../../../../lib/demo/money";
+
+const steps = ["Clean", "Day", "Window", "Details", "Review"];
+const e0 = estimate(DEFAULT);
+const entries = <T extends string, V>(o: Record<T, V>) => Object.entries(o) as [T, V][];
+const flow = [
+  { title: "Team calendar", text: "The clean goes on the team calendar in that window, and a cleaner is assigned to it." },
+  { title: "Confirmation text", text: "A text confirms the clean, the window and the price range, with a link to move it." },
+  { title: "Reminder and on-the-way text", text: "A reminder the day before, then a text when the cleaner is on the way." },
+  { title: "Checklist after the clean", text: "The cleaner ticks the room checklist and sends it, with a photo, when they leave." },
+  { title: "Invoice and pay link", text: "An invoice with a card payment link arrives by email after the clean, so nothing is charged before." },
+  { title: "Review and rebook", text: "A short thank-you asks for a review and offers the next clean in one tap." },
+];
+const access = ["I’ll be home", "Key in a lockbox (the office calls to set it up)", "Front desk or concierge", "I’ll arrange it after booking"];
+---
+<Shell title="Book a clean" current="book" description="Try Mossgate's demonstration booking: confirm your clean, pick a day and an arrival window, and see what a real system would send next. Fictional company: nothing is booked or sent.">
+  <section class="mg-section mg-b-sec">
+    <div class="mg-wrap">
+      <div class="mg-head">
+        <p class="mg-kicker">Book a clean</p>
+        <h1 id="b-h">Pick a day. We’ll bring everything.</h1>
+        <p class="mg-lead">Confirm the clean, choose a two-hour arrival window, and you’re done. Nothing is charged until after the clean.</p>
+        <p class="mg-demo-note">Demonstration booking: nothing is booked, and nothing you type is sent or kept.</p>
+      </div>
+
+      <div class="mg-b" data-b-wrap>
+        <form class="mg-b-form" method="dialog" data-mg-book aria-labelledby="b-h">
+          <ol class="mg-b-prog" data-progress role="list" aria-label="Steps">
+            {steps.map((s, i) => <li><button type="button"><span aria-hidden="true">{i + 1}</span>{s}</button></li>)}
+          </ol>
+          <p class="sr-only" data-step-status aria-live="polite"></p>
+          <p class="mg-b-mini" data-b-mini aria-hidden="true"></p>
+
+          <fieldset class="mg-b-step" data-step aria-labelledby="b1-h">
+            <h2 id="b1-h" data-step-title>Your clean</h2>
+            <div class="mg-b-picks mg-b-cleans">
+              {entries(CLEANS).map(([id, c]) => (
+                <label class="mg-pick left"><input type="radio" name="clean" value={id} checked={id === DEFAULT.clean} required /><span>{c.name} clean<small>{c.note}</small></span></label>
+              ))}
+            </div>
+            <div class="mg-fields mg-b-home">
+              <label class="mg-field"><span>Home</span>
+                <select name="home">{entries(HOMES).map(([id, h]) => <option value={id} selected={id === DEFAULT.home}>{h.name}</option>)}</select>
+              </label>
+              <label class="mg-field"><span>Bedrooms</span>
+                <select name="bed">{BEDS.map((n) => <option value={n} selected={n === DEFAULT.bed}>{n === 5 ? "5 or more" : n}</option>)}</select>
+              </label>
+              <label class="mg-field"><span>Bathrooms</span>
+                <select name="bath">{BATHS.map((n) => <option value={n} selected={n === DEFAULT.bath}>{n === 4 ? "4 or more" : n}</option>)}</select>
+              </label>
+            </div>
+            <input type="hidden" name="sqft" value="" />
+            <input type="hidden" name="extras" value="" />
+            <input type="hidden" name="freq" value={DEFAULT.freq} />
+            <div class="mg-b-quote">
+              <p><span class="mg-num" data-b-range>{range(e0.low, e0.high)}</span> per clean</p>
+              <p class="mg-fine" data-b-quote-sub>{describe(DEFAULT)} · {e0.crew} cleaners, about {hoursLabel(e0.hours)}</p>
+              <a class="mg-link" href={`${base}/estimate/?${toQuery(DEFAULT)}`} data-b-est>Change size, extras or plan on the estimate</a>
+            </div>
+            <p class="mg-err" id="b-err-1" data-step-error role="alert"></p>
+            <div class="mg-b-nav"><button class="mg-btn" type="button" data-next>Continue</button></div>
+          </fieldset>
+
+          <fieldset class="mg-b-step" data-step aria-labelledby="b2-h">
+            <h2 id="b2-h" data-step-title>Which day?</h2>
+            <p class="mg-b-from" data-b-from hidden>Your clean is carried over from your estimate. Use Back to change it.</p>
+            <div class="mg-b-picks mg-b-days">
+              {Array.from({ length: 10 }, (_, i) => (
+                <label class="mg-pick left">
+                  <input type="radio" name="day" value={String(i)} required data-error="Pick a day." />
+                  <span><span data-day-name>{i === 0 ? "First working day" : `Working day ${i + 1}`}</span><small><span data-day-date></span> <span data-day-count></span></small></span>
+                </label>
+              ))}
+            </div>
+            <p class="mg-fine">Monday to Saturday. Demonstration calendar: the open windows follow a fixed pattern.</p>
+            <p class="mg-err" id="b-err-2" data-step-error role="alert"></p>
+            <div class="mg-b-nav"><button class="mg-btn mg-btn-line" type="button" data-back>Back</button><button class="mg-btn" type="button" data-next>Continue</button></div>
+          </fieldset>
+
+          <fieldset class="mg-b-step" data-step aria-labelledby="b3-h">
+            <h2 id="b3-h" data-step-title>When should we arrive?</h2>
+            <p class="mg-b-sub" data-b-win-sub></p>
+            <div class="mg-b-picks mg-b-wins">
+              {WINDOWS.map((w) => (
+                <label class="mg-pick left"><input type="radio" name="win" value={w.id} required data-error="Pick an arrival window, or go back and choose another day." /><span>{w.label}<small data-win-note>{w.morning ? "Morning" : "Afternoon"}</small></span></label>
+              ))}
+            </div>
+            <p class="mg-b-alert" data-b-morning hidden>A clean this size takes most of the day, so it starts in a morning window.</p>
+            <p class="mg-err" id="b-err-3" data-step-error role="alert"></p>
+            <div class="mg-b-nav"><button class="mg-btn mg-btn-line" type="button" data-back>Back</button><button class="mg-btn" type="button" data-next>Continue</button></div>
+          </fieldset>
+
+          <fieldset class="mg-b-step" data-step aria-labelledby="b4-h">
+            <h2 id="b4-h" data-step-title>Your details</h2>
+            <div class="mg-fields">
+              <label class="mg-field"><span>First name</span><input name="name" required autocomplete="given-name" maxlength="40" data-error="Add a first name, or press “Use sample details”." /></label>
+              <label class="mg-field"><span>Mobile number</span><input name="mobile" type="tel" inputmode="tel" required autocomplete="tel-national" maxlength="20" placeholder="(507) 555-0100" data-error="Add a 10-digit mobile number, or press “Use sample details”." /><small>For the confirmation and on-the-way texts. In this demo nothing is sent.</small></label>
+              <label class="mg-field mg-field-wide"><span>How do we get in?</span>
+                <select name="access">{access.map((a, i) => <option value={a} selected={i === 0}>{a}</option>)}</select>
+              </label>
+              <label class="mg-field mg-field-wide"><span>Notes <em>optional</em></span><textarea name="notes" rows="3" maxlength="300" placeholder="Pets, parking, rooms to skip…" aria-describedby="b-notes-hint"></textarea><small id="b-notes-hint">Please don’t write door or alarm codes here. On a real booking the office calls to set up access.</small></label>
+            </div>
+            <p class="mg-err" id="b-err-4" data-step-error role="alert"></p>
+            <div class="mg-b-nav">
+              <button class="mg-btn mg-btn-line" type="button" data-back>Back</button>
+              <button class="mg-btn mg-btn-line" type="button" data-b-sample>Use sample details</button>
+              <button class="mg-btn" type="button" data-next>Review</button>
+            </div>
+          </fieldset>
+
+          <fieldset class="mg-b-step" data-step aria-labelledby="b5-h">
+            <h2 id="b5-h" data-step-title>Check and confirm</h2>
+            <dl class="mg-b-review" data-b-review></dl>
+            <p class="mg-fine">Demonstration pricing only. Nothing is charged before the clean; move it for free up to a day ahead.</p>
+            <p class="mg-err" id="b-err-5" data-step-error role="alert"></p>
+            <div class="mg-b-nav"><button class="mg-btn mg-btn-line" type="button" data-back>Back</button><button class="mg-btn mg-btn-clay" type="submit">Request demo clean</button></div>
+          </fieldset>
+        </form>
+
+        <aside class="mg-b-side" aria-labelledby="b-side-h">
+          <div class="mg-b-ticket">
+            <p class="mg-label" id="b-side-h">Your clean</p>
+            <p class="mg-b-t-range mg-num" data-b-sum="range">{range(e0.low, e0.high)}</p>
+            <dl class="mg-b-sum">
+              <div><dt>Clean</dt><dd data-b-sum="clean">{describe(DEFAULT)}</dd></div>
+              <div><dt>Crew</dt><dd data-b-sum="crew">{e0.crew} cleaners, about {hoursLabel(e0.hours)}</dd></div>
+              <div><dt>Day</dt><dd data-b-sum="day">Not picked</dd></div>
+              <div><dt>Arrival</dt><dd data-b-sum="win">Not picked</dd></div>
+            </dl>
+            <p class="mg-b-disclaim">Demonstration booking: nothing is reserved or charged.</p>
+          </div>
+        </aside>
+      </div>
+
+      <DemoComplete id="b-done" heading="Demo clean requested." lead="Nothing was booked, saved or sent. Your name, number and notes were cleared from the page." flow={flow} restart="Book another clean" />
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .mg-b-sec { padding-top: clamp(40px, 6vw, 80px); }
+  .mg-b { display: grid; gap: 28px; align-items: start; }
+  @media (min-width: 1024px) { .mg-b { grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; } .mg-b-side { position: sticky; top: 96px; } }
+  .mg-b-form { container: bform / inline-size; display: grid; gap: 22px; padding: clamp(20px, 4vw, 40px); border-radius: 26px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+
+  .mg-b-prog { display: none; }
+  .mg-b-form.is-stepped .mg-b-prog { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .mg-b-prog li { flex: 1 0 auto; }
+  .mg-b-prog button { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--mg-linen); color: var(--mg-mute); font: inherit; font-size: 0.875rem; font-weight: 700; white-space: nowrap; cursor: pointer; transition: background-color 200ms ease-out, color 200ms ease-out; }
+  .mg-b-prog button span { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--mg-paper); font-size: 0.8125rem; }
+  .mg-b-prog button:disabled { cursor: default; }
+  .mg-b-prog li:not(.done):not([aria-current]) button:disabled { opacity: 0.6; }
+  .mg-b-prog li.done button { background: var(--mg-mint); color: var(--mg-moss-2); }
+  .mg-b-prog li.done button:hover { background: var(--mg-sage); }
+  .mg-b-prog li[aria-current] button { background: var(--mg-moss); color: var(--mg-linen); opacity: 1; }
+  .mg-b-prog li[aria-current] button span { background: var(--mg-clay-2); color: var(--mg-moss); }
+  .mg-b-prog button:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+  @container bform (max-width: 679px) { .mg-b-prog button { font-size: 0; gap: 0; padding: 0; } .mg-b-prog li[aria-current] button { font-size: 0.875rem; gap: 8px; padding: 0 14px 0 10px; } .mg-b-prog li { flex: 1 1 36px; } .mg-b-prog li[aria-current] { flex: 0 0 auto; } }
+  @container bform (max-width: 299px) { .mg-b-prog li, .mg-b-prog li[aria-current] { flex: 1 1 0; min-width: 0; } .mg-b-prog li[aria-current] button { font-size: 0; gap: 0; padding: 0; } }
+
+  .mg-b-mini { display: none; }
+  @media (max-width: 1023px) { .mg-b-form.is-stepped .mg-b-mini:not(:empty) { display: block; padding: 10px 14px; border-radius: 12px; background: var(--mg-mint); color: var(--mg-moss); font-size: 0.9375rem; font-weight: 600; } }
+
+  .mg-b-step { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .mg-b-step + .mg-b-step { padding-top: 28px; border-top: 1px solid var(--mg-line); }
+  .mg-b-form.is-stepped .mg-b-step + .mg-b-step { padding-top: 0; border-top: 0; }
+  .mg-b-step h2 { font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.125rem); color: var(--mg-moss); outline: none; }
+  :root[data-tier="1"] .mg-b-form.is-stepped .mg-b-step:not([hidden]), :root[data-tier="2"] .mg-b-form.is-stepped .mg-b-step:not([hidden]) { animation: mg-b-in 280ms var(--mg-ease) both; }
+  @keyframes mg-b-in { from { opacity: 0; transform: translateY(8px); } }
+
+  .mg-b-picks { display: grid; gap: 8px; }
+  .mg-b-cleans { grid-template-columns: 1fr; }
+  @media (min-width: 520px) { .mg-b-cleans { grid-template-columns: repeat(2, 1fr); } }
+  .mg-b-days { grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
+  .mg-b-wins { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+  .mg-b-picks .mg-pick > span { min-height: 64px; }
+  .mg-b-home { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 479px) { .mg-b-home { grid-template-columns: 1fr 1fr; } .mg-b-home .mg-field:first-child { grid-column: 1 / -1; } }
+  .mg-b-from, .mg-b-alert { padding: 10px 14px; border-radius: 12px; background: var(--mg-mint); color: var(--mg-moss); font-weight: 600; }
+  .mg-b-alert { background: var(--mg-clay-soft); color: #6d2f1c; }
+  .mg-b-quote { display: grid; gap: 4px; justify-items: start; padding: 16px 18px; border-radius: 16px; background: var(--mg-linen); }
+  .mg-b-quote > p:first-child { color: var(--mg-soft); }
+  .mg-b-quote > p:first-child span { font-size: 1.5rem; font-weight: 850; color: var(--mg-moss); letter-spacing: -0.02em; }
+  .mg-b-sub { color: var(--mg-soft); }
+  .mg-b-sub:empty { display: none; }
+  .mg-b-nav { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+  .mg-b-nav [data-back] { margin-right: auto; }
+  @media (max-width: 479px) { .mg-b-nav .mg-btn { flex: 1 1 auto; padding-inline: 18px; } .mg-b-nav [data-back] { margin-right: 0; } }
+  .mg-field em { font-style: normal; font-weight: 500; color: var(--mg-mute); }
+
+  .mg-b-review { display: grid; border-top: 1px solid var(--mg-line); }
+  .mg-b-review div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--mg-line); }
+  .mg-b-review dt { color: var(--mg-mute); }
+  .mg-b-review dd { font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+
+  .mg-b-ticket { display: grid; gap: 14px; padding: 26px; border-radius: 24px; background: var(--mg-moss); color: #d5e3dc; }
+  .mg-b-ticket .mg-label { color: var(--mg-clay-2); }
+  .mg-b-t-range { font-size: 2.25rem; font-weight: 850; letter-spacing: -0.03em; line-height: 1; color: var(--mg-linen); }
+  .mg-b-sum { display: grid; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+  .mg-b-sum div { display: grid; gap: 2px; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+  .mg-b-sum dt { font-size: 0.8125rem; color: #9fb8ad; }
+  .mg-b-sum dd { font-weight: 700; color: var(--mg-linen); }
+  .mg-b-disclaim { font-size: 0.875rem; color: #9fb8ad; }
+  @media (max-width: 1023px) { .mg-b-side { display: none; } }
+</style>
+
+<script>
+  import { stepper, firstInvalid, flag, type Stepper } from "../../../../lib/demo/stepper";
+  import { showComplete, onRestart } from "../../../../lib/demo/complete";
+  import { normalise, fromQuery, toQuery, estimate, describe, hoursLabel, typicalSqft, bookingDays, takenWindows, WINDOWS, DEFAULT, type Choice } from "../../../../lib/demo/mossgate-estimate";
+  import { range } from "../../../../lib/demo/money";
+  import { base } from "../../../../data/demos/mossgate";
+
+  const form = document.querySelector<HTMLFormElement>("[data-mg-book]");
+  if (form) {
+    const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
+    const now = new Date();
+    const days = bookingDays(now);
+    const wrap = $("[data-b-wrap]"), done = $("#b-done");
+    const radios = (n: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${n}"]`)];
+    const val = (n: string) => radios(n).find((r) => r.checked)?.value ?? "";
+    const field = <T extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(n: string) => form.elements.namedItem(n) as T;
+    const sqft = field<HTMLInputElement>("sqft"), extras = field<HTMLInputElement>("extras"), freq = field<HTMLInputElement>("freq");
+    const name = field<HTMLInputElement>("name"), mobile = field<HTMLInputElement>("mobile"), notes = field<HTMLTextAreaElement>("notes"), access = field<HTMLSelectElement>("access");
+
+    // the floor area only comes with a link that gave one; otherwise it follows the bedrooms
+    let sqftGiven = false;
+    const choice = (): Choice => normalise({
+      home: field<HTMLSelectElement>("home").value, bed: field<HTMLSelectElement>("bed").value, bath: field<HTMLSelectElement>("bath").value,
+      sqft: sqftGiven ? sqft.value : typicalSqft(+field<HTMLSelectElement>("bed").value), clean: val("clean"), freq: freq.value, extras: extras.value,
+    });
+    const applyStart = () => {
+      const c = fromQuery(location.search);
+      sqftGiven = !!c && new URLSearchParams(location.search).has("sqft");
+      const s = c ?? DEFAULT;
+      field<HTMLSelectElement>("home").value = s.home;
+      field<HTMLSelectElement>("bed").value = String(s.bed);
+      field<HTMLSelectElement>("bath").value = String(s.bath);
+      const r = radios("clean").find((x) => x.value === s.clean); if (r) r.checked = true;
+      sqft.value = String(s.sqft); extras.value = s.extras.join(","); freq.value = s.freq;
+      $("[data-b-from]").hidden = !c;
+    };
+
+    const short = (d: Date) => {
+      const t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      return d.toDateString() === t.toDateString() ? "Tomorrow" : d.toLocaleDateString("en-US", { weekday: "long" });
+    };
+    const long = (d: Date) => `${short(d) === "Tomorrow" ? "Tomorrow, " : ""}${d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`;
+    const winLabel = (id: string) => WINDOWS.find((w) => w.id === id)?.label ?? "";
+    /** the windows still open on day n for this clean: a long clean only fits a morning start */
+    const openWins = (n: number, morningOnly: boolean) => WINDOWS.filter((w) => !takenWindows(n).includes(w.id) && (w.morning || !morningOnly));
+
+    radios("day").forEach((r, i) => {
+      const box = r.closest("label")!;
+      $("[data-day-name]", box).textContent = short(days[i]);
+      $("[data-day-date]", box).textContent = days[i].toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    });
+
+    const winSub = $("[data-b-win-sub]"), morning = $("[data-b-morning]");
+    const draw = () => {
+      const e = estimate(choice());
+      radios("day").forEach((r, i) => {
+        const n = openWins(i, e.morningOnly).length;
+        r.disabled = n === 0;
+        if (r.disabled) r.checked = false;
+        $("[data-day-count]", r.closest("label")!).textContent = n ? `· ${n} open` : "· Full";
+      });
+      const day = val("day");
+      morning.hidden = !e.morningOnly;
+      radios("win").forEach((r) => {
+        const w = WINDOWS.find((x) => x.id === r.value)!;
+        const taken = day !== "" && takenWindows(+day).includes(w.id);
+        const late = e.morningOnly && !w.morning;
+        r.disabled = day === "" || taken || late;
+        if (r.disabled) r.checked = false;
+        $("[data-win-note]", r.closest("label")!).textContent = taken ? "Booked" : late ? "Too late for this clean" : w.morning ? "Morning" : "Afternoon";
+      });
+      winSub.textContent = day === "" ? "Pick a day first." : `${long(days[+day])}. The cleaner texts when they’re on the way.`;
+    };
+
+    const sumOut = (k: string) => $(`[data-b-sum="${k}"]`);
+    const mini = $("[data-b-mini]"), review = $("[data-b-review]");
+    const phoneLabel = (v: string) => {
+      const d = v.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+      return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : v.trim();
+    };
+    const facts = () => {
+      const c = choice(), e = estimate(c), day = val("day"), win = val("win");
+      return { c, e, range: range(e.low, e.high), crew: `${e.crew === 1 ? "1 cleaner" : `${e.crew} cleaners`}, about ${hoursLabel(e.hours)}`, day: day === "" ? "" : short(days[+day]), longDay: day === "" ? "" : long(days[+day]), win: winLabel(win) };
+    };
+    const sync = () => {
+      const f = facts();
+      $("[data-b-range]").textContent = f.range;
+      $("[data-b-quote-sub]").textContent = `${describe(f.c)} · ${f.crew}`;
+      $<HTMLAnchorElement>("[data-b-est]").href = `${base}/estimate/?${toQuery(f.c)}`;
+      sumOut("range").textContent = f.range;
+      sumOut("clean").textContent = describe(f.c);
+      sumOut("crew").textContent = f.crew;
+      sumOut("day").textContent = f.longDay || "Not picked";
+      sumOut("win").textContent = f.win || "Not picked";
+      mini.textContent = [`${f.range} · ${describe(f.c).split(" · ")[0]}`, f.day, f.win].filter(Boolean).join(" · ");
+      const rows: [string, string][] = [
+        ["Clean", describe(f.c)], ["Estimate", `${f.range} per clean (demonstration pricing)`], ["Crew", f.crew],
+        ["When", f.longDay && f.win ? `${f.longDay}, arriving ${f.win}` : ""], ["Access", access.value],
+        ["Name", name.value.trim()], ["Mobile", phoneLabel(mobile.value)], ["Notes", notes.value.trim() || "None"],
+      ];
+      review.replaceChildren(...rows.map(([k, v]) => {
+        const row = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd");
+        dt.textContent = k; dd.textContent = v || "Not given";
+        row.append(dt, dd);
+        return row;
+      }));
+    };
+
+    const checkMobile = () => { const n = mobile.value.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").length; mobile.setCustomValidity(mobile.value && n !== 10 ? "Add a 10-digit mobile number." : ""); };
+    mobile.addEventListener("input", checkMobile);
+    form.addEventListener("change", (e) => {
+      const n = (e.target as HTMLInputElement).name;
+      if (n === "clean" || n === "home" || n === "bed" || n === "bath" || n === "day") draw();
+      sync();
+    });
+    form.addEventListener("input", sync);
+
+    applyStart();
+    draw();
+    let steps: Stepper | undefined;
+    steps = stepper(form, {
+      check: (i) => (i === 2 && !radios("win").some((r) => !r.disabled) ? "No windows left that day for this clean. Go back and pick another day." : null),
+      onStep: () => sync(),
+    });
+    sync();
+    // arriving from the estimate, the clean is already chosen: start on the day
+    if (fromQuery(location.search)) steps.go(1, false);
+    // the note on the day step stops saying "carried over" once the clean itself is changed
+    $("[data-step]").addEventListener("change", () => { $("[data-b-from]").hidden = true; });
+
+    $("[data-b-sample]").addEventListener("click", () => {
+      name.value = "Sam";
+      mobile.value = "(507) 555-0100";
+      for (const f of [name, mobile]) f.dispatchEvent(new Event("input", { bubbles: true }));
+      form.querySelector<HTMLButtonElement>("[data-b-sample] ~ [data-next]")!.focus();
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const bad = firstInvalid(form);
+      if (bad) {
+        steps!.go([...form.querySelectorAll("[data-step]")].findIndex((s) => s.contains(bad)));
+        flag(bad);
+        return;
+      }
+      const f = facts();
+      showComplete(done, [
+        ["Clean", describe(f.c)],
+        ["Estimate", `${f.range} per clean, charged after the clean (demonstration pricing)`],
+        ["When", `${f.longDay}, arriving ${f.win}`],
+        ["Name", name.value.trim()],
+        ["Confirmation text", "Would go to the number you gave. Nothing was sent."],
+      ], [wrap]);
+      // nothing personal is kept: the details go as soon as the summary is shown
+      name.value = "";
+      mobile.value = "";
+      notes.value = "";
+      sync();
+    });
+
+    onRestart(done, () => {
+      form.reset();
+      wrap.hidden = false;
+      applyStart();
+      draw();
+      sync();
+      steps!.go(0);
+    });
+  }
+</script>

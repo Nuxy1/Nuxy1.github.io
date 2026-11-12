@@ -1,0 +1,84 @@
+---
+// The interactive comparison: pick a level and see six meters on the Basic / Enhanced / Advanced / Bespoke scale
+// (data/tiers.ts `meters` and each level's `scores`). It is the ARIA tabs pattern (arrow keys, Home, End); the first
+// time a visitor changes tab it counts `tier_comparison_opened`. Without JavaScript all four panels are shown one
+// under the other, so nothing is hidden behind a script.
+import Meter from "./Meter.astro";
+import { levels, meters } from "../../data/tiers";
+---
+<div class="cmp" data-cmp>
+  <div class="cmp-tabs" role="tablist" aria-label="Website level" hidden data-cmp-tabs>
+    {levels.map((l, i) => (
+      <button type="button" role="tab" id={`cmp-t-${l.id}`} aria-controls={`cmp-p-${l.id}`} aria-selected={i === 1 ? "true" : "false"} tabindex={i === 1 ? 0 : -1}>
+        <span class="cmp-tab-name">{l.name}</span><span class="cmp-tab-price">{l.price}</span>
+      </button>
+    ))}
+  </div>
+  <div class="cmp-panels">
+    {levels.map((l) => (
+      <section class="cmp-panel panel" id={`cmp-p-${l.id}`} data-level={l.id}>
+        <header class="cmp-head">
+          <h3>{l.name} <span>{l.promise}</span></h3>
+          <p>{l.for}</p>
+        </header>
+        <dl class="cmp-meters">
+          {meters.map((m) => <Meter name={m.name} text={m.text} score={l.scores[m.id]} />)}
+        </dl>
+        <p class="cmp-built">{l.built}</p>
+      </section>
+    ))}
+  </div>
+</div>
+
+<style>
+  .cmp-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
+  .cmp-tabs:not([hidden]) ~ .cmp-panels .cmp-panel[hidden] { display: none; }
+  @media (min-width: 720px) { .cmp-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .cmp-tabs button { display: grid; gap: 2px; justify-items: start; min-height: 56px; padding: 10px 14px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel); text-align: left; cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease; }
+  .cmp-tabs button:hover { border-color: var(--hairline-strong); }
+  .cmp-tabs button[aria-selected="true"] { border-color: var(--link); background: var(--accent-soft); }
+  .cmp-tab-name { color: var(--ink); font-weight: 650; }
+  .cmp-tab-price { color: var(--muted); font-size: 0.8125rem; }
+  .cmp-panels { display: grid; gap: 16px; }
+  .cmp-panel { padding: clamp(20px, 3vw, 32px); }
+  .cmp-head h3 { font-size: 1.375rem; }
+  .cmp-head h3 span { margin-left: 6px; color: var(--muted); font-size: 1rem; font-weight: 500; letter-spacing: 0; }
+  .cmp-head p { margin-top: 6px; color: var(--body); max-width: 62ch; }
+  .cmp-meters { margin: 16px 0 0; display: grid; }
+  @media (min-width: 900px) { .cmp-meters { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; } .cmp-meters :global(.meter:nth-last-child(2)) { border-bottom: 0; } }
+  .cmp-built { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--hairline-soft); color: var(--muted); font-size: 0.9375rem; }
+</style>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>("[data-cmp]")) {
+    const list = root.querySelector<HTMLElement>("[data-cmp-tabs]")!;
+    const tabs = [...list.querySelectorAll<HTMLButtonElement>("[role=tab]")];
+    const panels = tabs.map((t) => document.getElementById(t.getAttribute("aria-controls")!)!);
+    let counted = false;
+    const show = (i: number) => {
+      tabs.forEach((t, j) => {
+        const on = i === j;
+        t.setAttribute("aria-selected", String(on));
+        t.tabIndex = on ? 0 : -1;
+        panels[j].hidden = !on;
+      });
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener("click", () => {
+        show(i);
+        if (!counted) { counted = true; (window as unknown as { nuxyTrack?: (e: string) => void }).nuxyTrack?.("tier_comparison_opened"); }
+      });
+      t.addEventListener("keydown", (e) => {
+        const n = tabs.length;
+        const to = e.key === "ArrowRight" ? (i + 1) % n : e.key === "ArrowLeft" ? (i - 1 + n) % n : e.key === "Home" ? 0 : e.key === "End" ? n - 1 : -1;
+        if (to < 0) return;
+        e.preventDefault();
+        tabs[to].focus();
+        tabs[to].click();
+      });
+    });
+    panels.forEach((p, j) => { p.setAttribute("role", "tabpanel"); p.setAttribute("aria-labelledby", tabs[j].id); p.tabIndex = 0; });
+    list.hidden = false;
+    show(tabs.findIndex((t) => t.getAttribute("aria-selected") === "true"));
+  }
+</script>

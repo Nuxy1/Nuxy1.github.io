@@ -1,0 +1,78 @@
+---
+// Lantern Row's three barbers (all fictional): what each is known for, a signature style from the gallery, today's
+// board and a "Book with" link that opens the booking with that barber chosen.
+import Shell from "../../../../components/demo/lantern/Shell.astro";
+import StyleArt from "../../../../components/demo/lantern/StyleArt.astro";
+import { base, barbers, board, gallery, styleNames, slotLabel } from "../../../../data/demos/lantern";
+
+const signature = { marcus: "drop-fade", eli: "quiff", julian: "full-beard" } as const;
+---
+<Shell title="The barbers" current="barbers" description="Meet Marcus, Eli and Julian, the three fictional barbers at Lantern Row: their specialties, signature styles and today's open chairs, with booking.">
+  <section class="lr-section lr-team-top">
+    <div class="lr-wrap">
+      <div class="lr-head">
+        <p class="lr-kicker">The barbers</p>
+        <h1>Three chairs, three sets of hands.</h1>
+        <p class="lr-lead">Book the barber who knows your hair, or take whoever is free first. Everyone does every cut on the menu.</p>
+      </div>
+
+      <ul class="lr-bios" role="list">
+        {barbers.map((b, i) => {
+          const g = gallery.find((x) => x.id === signature[b.id])!;
+          const times = board[b.id];
+          return (
+            <li class="lr-bio lr-rise" style={`--tone:${b.tone}; --d:${i * 80}ms`} id={b.id}>
+              <div class="lr-bio-art">
+                <StyleArt cut={g.cut} uid={`bio-${b.id}`} label={`Illustration of ${b.name}'s signature style: ${g.name.toLowerCase()}`} />
+                <p class="lr-fine">Signature: {g.name}</p>
+              </div>
+              <div class="lr-bio-copy">
+                <p class="lr-label">Chair {b.chair} · {b.years} years cutting</p>
+                <h2>{b.name}</h2>
+                <p class="lr-bio-known">{b.known}</p>
+                <p class="lr-bio-line">“{b.line}”</p>
+                <p class="lr-bio-styles"><span class="lr-label">Good for</span> {b.styles.map((s) => styleNames[s as keyof typeof styleNames]).join(" · ")}</p>
+                <div class="lr-bio-today">
+                  {times.length
+                    ? <p>Open on the board: <strong>{times.map(slotLabel).join(", ")}</strong></p>
+                    : <p>Fully booked on the board. <a href={`${base}/booking/?barber=${b.id}#waitlist`}>Join the cancellation list</a></p>}
+                </div>
+                <a class="lr-btn" href={`${base}/booking/?barber=${b.id}`}>Book with {b.name}</a>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="lr-fine">Lantern Row and its barbers are fictional. The board shows demonstration times.</p>
+    </div>
+  </section>
+
+  <section class="lr-section lr-rule" aria-labelledby="any-h">
+    <div class="lr-wrap">
+      <div class="lr-band lr-rise">
+        <p class="lr-kicker">No preference?</p>
+        <h2 id="any-h">Take the first free chair.</h2>
+        <p>“First available” shows every open time across all three chairs.</p>
+        <a class="lr-btn" href={`${base}/booking/?barber=any`}>Book first available</a>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .lr-team-top { padding-top: clamp(40px, 6vw, 80px); }
+  .lr-bios { display: grid; gap: clamp(20px, 3vw, 32px); margin-bottom: 20px; }
+  .lr-bio { display: grid; gap: clamp(24px, 4vw, 56px); padding: clamp(24px, 4vw, 48px); background: var(--lr-panel); border: 1px solid var(--lr-line-soft); border-left: 3px solid var(--tone); scroll-margin-top: 96px; }
+  @media (min-width: 760px) { .lr-bio { grid-template-columns: minmax(180px, 280px) 1fr; align-items: center; } .lr-bio:nth-child(even) { grid-template-columns: 1fr minmax(180px, 280px); } .lr-bio:nth-child(even) .lr-bio-art { order: 2; } }
+  .lr-bio-art { display: grid; gap: 10px; justify-items: center; text-align: center; }
+  .lr-bio-art :global(.lr-style-art) { max-width: 260px; }
+  .lr-bio-copy { display: grid; gap: 14px; justify-items: start; }
+  .lr-bio-copy h2 { font-size: clamp(2.5rem, 5vw, 4rem); color: var(--lr-cream); }
+  .lr-bio-known { font-size: 1.125rem; color: var(--lr-cream); }
+  .lr-bio-line { font-family: "Bodoni Moda", Georgia, serif; font-size: 1.25rem; color: var(--lr-soft); max-width: 46ch; }
+  .lr-bio-styles { color: var(--lr-soft); }
+  .lr-bio-styles .lr-label { margin-right: 8px; font-size: 0.8125rem; }
+  .lr-bio-today { padding: 12px 16px; border: 1px dashed var(--lr-line); color: var(--lr-soft); }
+  .lr-bio-today strong { color: var(--lr-brass-2); }
+  .lr-bio-today a { color: var(--lr-brass-2); }
+</style>

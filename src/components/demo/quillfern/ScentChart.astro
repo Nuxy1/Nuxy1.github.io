@@ -1,0 +1,158 @@
+---
+// A candle's scent, three ways: a six-axis profile (woody, warm, sweet, fresh, green, smoky; 0-5 each) that can be laid
+// over any other candle's to compare, the notes as a pyramid (top, heart, base), and how far it carries plus how long
+// each size burns. Everything is drawn at build time and readable without JavaScript; the compare picker only redraws
+// the second shape and its caption (values from our own catalogue, written with setAttribute and textContent).
+import { AXES, CANDLES, SIZES, SIZE_IDS, type Candle } from "../../../lib/demo/quillfern-cart";
+
+interface Props { candle: Candle }
+const { candle } = Astro.props;
+const C = 150, R = 108, N = AXES.length;
+const at = (i: number, v: number) => {
+  const a = -Math.PI / 2 + (i / N) * Math.PI * 2;
+  return [C + Math.cos(a) * R * (v / 5), C + Math.sin(a) * R * (v / 5)];
+};
+const points = (p: Candle["profile"]) => AXES.map((ax, i) => at(i, p[ax.id]).map((n) => n.toFixed(1)).join(",")).join(" ");
+const rings = [1, 2, 3, 4, 5].map((v) => AXES.map((_, i) => at(i, v).map((n) => n.toFixed(1)).join(",")).join(" "));
+const labels = AXES.map((ax, i) => {
+  const [x, y] = at(i, 6.15);
+  return { ...ax, x, y, anchor: Math.abs(x - C) < 4 ? "middle" : x > C ? "start" : "end" };
+});
+const others = CANDLES.filter((c) => c.id !== candle.id);
+const data = JSON.stringify(Object.fromEntries(CANDLES.map((c) => [c.id, { name: c.name, v: AXES.map((a) => c.profile[a.id]) }])));
+const strongest = AXES.filter((a) => candle.profile[a.id] >= 4).map((a) => a.name.toLowerCase());
+const summary = `${candle.name} scores ${AXES.map((a) => `${a.name.toLowerCase()} ${candle.profile[a.id]}`).join(", ")} out of 5`;
+const id = `qf-sc-${candle.id}`;
+---
+<div class="qf-sc" data-qf-scent data-profiles={data} data-self={candle.id}>
+  <figure class="qf-sc-radar">
+    <svg viewBox="-34 -6 368 312" role="img" aria-labelledby={`${id}-cap`} focusable="false">
+      {rings.map((r, i) => <polygon points={r} fill={i === 4 ? "var(--qf-cream)" : "none"} stroke="var(--qf-line)" stroke-width={i === 4 ? 1.5 : 1} />)}
+      {AXES.map((_, i) => { const [x, y] = at(i, 5); return <line x1={C} y1={C} x2={x.toFixed(1)} y2={y.toFixed(1)} stroke="var(--qf-line)" />; })}
+      <polygon class="qf-sc-other" data-qf-other points={points(candle.profile)} hidden />
+      <polygon class="qf-sc-self" points={points(candle.profile)} />
+      {AXES.map((ax, i) => { const [x, y] = at(i, candle.profile[ax.id]); return <circle cx={x.toFixed(1)} cy={y.toFixed(1)} r="4" class="qf-sc-dot" />; })}
+      {labels.map((l) => <text x={l.x.toFixed(1)} y={(l.y + 5).toFixed(1)} text-anchor={l.anchor} class="qf-sc-axis">{l.name}</text>)}
+    </svg>
+    <figcaption id={`${id}-cap`}>
+      <span class="sr-only">{summary}.</span>
+      <span class="qf-sc-key"><i class="self"></i>{candle.name}</span>
+      <span class="qf-sc-key" data-qf-other-key hidden><i class="other"></i><span data-qf-other-name></span></span>
+    </figcaption>
+  </figure>
+
+  <div class="qf-sc-side">
+    <label class="qf-field qf-sc-compare">
+      <span>Compare with</span>
+      <select data-qf-compare aria-describedby={`${id}-diff`}>
+        <option value="">No comparison</option>
+        {others.map((o) => <option value={o.id}>{o.name}</option>)}
+      </select>
+    </label>
+    <p class="qf-fine" id={`${id}-diff`} data-qf-diff aria-live="polite">{strongest.length ? `Strongest: ${strongest.join(", ")}.` : ""}</p>
+
+    <div class="qf-pyr" aria-label="Scent notes">
+      <div style="--w: 62%"><span class="qf-label">Top</span><b>{candle.notes.top}</b></div>
+      <div style="--w: 81%"><span class="qf-label">Heart</span><b>{candle.notes.heart}</b></div>
+      <div style="--w: 100%"><span class="qf-label">Base</span><b>{candle.notes.base}</b></div>
+    </div>
+
+    <dl class="qf-sc-facts qf-ui">
+      <div>
+        <dt>Scent throw</dt>
+        <dd><span class="qf-meter" role="img" aria-label={`${candle.throw} out of 5`}>{[1, 2, 3, 4, 5].map((n) => <i class:list={{ on: n <= candle.throw }}></i>)}</span>
+          {candle.throw >= 5 ? "Fills a big room" : candle.throw >= 4 ? "Fills a living room" : candle.throw >= 3 ? "Fills a bedroom" : "Close and gentle"}</dd>
+      </div>
+      {SIZE_IDS.map((z) => <div><dt>{SIZES[z].label}</dt><dd>about {SIZES[z].hours} hours</dd></div>)}
+    </dl>
+  </div>
+</div>
+
+<style>
+  .qf-sc { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: start; }
+  @media (max-width: 767px) { .qf-sc { grid-template-columns: 1fr; } }
+  .qf-sc-radar { margin: 0; display: grid; gap: 10px; }
+  .qf-sc-radar svg { width: 100%; max-width: 440px; justify-self: center; overflow: visible; }
+  .qf-sc-self { fill: rgba(232, 160, 58, 0.32); stroke: var(--qf-ember); stroke-width: 2.5; stroke-linejoin: round; }
+  .qf-sc-other[hidden] { display: none; }
+  .qf-sc-other { fill: rgba(79, 106, 74, 0.14); stroke: var(--qf-fern); stroke-width: 2; stroke-dasharray: 6 5; stroke-linejoin: round; }
+  .qf-sc-dot { fill: var(--qf-ember); }
+  .qf-sc-axis { font-family: var(--qf-ui); font-size: 14px; font-weight: 650; fill: var(--qf-soft); }
+  .qf-sc-radar figcaption { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 20px; font-family: var(--qf-ui); font-size: 0.875rem; font-weight: 600; color: var(--qf-soft); }
+  .qf-sc-key { display: inline-flex; align-items: center; gap: 8px; }
+  .qf-sc-key[hidden] { display: none; }
+  .qf-sc-key i { width: 18px; height: 10px; border-radius: 2px; }
+  .qf-sc-key i.self { background: rgba(232, 160, 58, 0.45); box-shadow: inset 0 0 0 2px var(--qf-ember); }
+  .qf-sc-key i.other { background: rgba(79, 106, 74, 0.16); box-shadow: inset 0 0 0 2px var(--qf-fern); }
+  .qf-sc-side { display: grid; gap: 18px; }
+  .qf-sc-compare { max-width: 320px; }
+  .qf-pyr { display: grid; justify-items: center; gap: 4px; }
+  .qf-pyr div { display: grid; justify-items: center; gap: 2px; width: var(--w); padding: 12px 10px; background: var(--qf-wax); text-align: center; }
+  .qf-pyr div:first-child { border-radius: 999px 999px 0 0 / 60% 60% 0 0; padding-top: 18px; }
+  .qf-pyr div:last-child { border-radius: 0 0 6px 6px; }
+  .qf-pyr .qf-label { font-size: 0.6875rem; }
+  .qf-pyr b { font-weight: 560; font-size: 1.125rem; color: var(--qf-umber); }
+  .qf-sc-facts div { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--qf-line); font-size: 0.9375rem; }
+  .qf-sc-facts dt { font-weight: 650; color: var(--qf-umber); }
+  .qf-sc-facts dd { display: inline-flex; align-items: center; gap: 10px; color: var(--qf-soft); }
+  .qf-meter { display: inline-flex; gap: 3px; }
+  .qf-meter i { width: 14px; height: 6px; border-radius: 3px; background: var(--qf-line); }
+  .qf-meter i.on { background: var(--qf-ember); }
+</style>
+
+<script>
+  import { tier } from "../../../lib/demo/tier";
+
+  const AX = ["woody", "warm", "sweet", "fresh", "green", "smoky"];
+  const C = 150, R = 108;
+  const pts = (v: number[]) => v.map((n, i) => {
+    const a = -Math.PI / 2 + (i / v.length) * Math.PI * 2;
+    return `${(C + Math.cos(a) * R * (n / 5)).toFixed(1)},${(C + Math.sin(a) * R * (n / 5)).toFixed(1)}`;
+  }).join(" ");
+
+  for (const box of document.querySelectorAll<HTMLElement>("[data-qf-scent]")) {
+    let data: Record<string, { name: string; v: number[] }>;
+    try { data = JSON.parse(box.dataset.profiles ?? "{}"); } catch { continue; }
+    const self = data[box.dataset.self ?? ""];
+    const poly = box.querySelector<SVGPolygonElement>("[data-qf-other]");
+    const pick = box.querySelector<HTMLSelectElement>("[data-qf-compare]");
+    const key = box.querySelector<HTMLElement>("[data-qf-other-key]");
+    const name = box.querySelector<HTMLElement>("[data-qf-other-name]");
+    const diff = box.querySelector<HTMLElement>("[data-qf-diff]");
+    if (!self || !poly || !pick || !key || !name || !diff) continue;
+    const first = diff.textContent ?? "";
+    let shown = self.v.slice(), raf = 0;
+
+    const draw = (to: number[]) => {
+      cancelAnimationFrame(raf);
+      if (tier() === 3) { shown = to; poly.setAttribute("points", pts(to)); return; }
+      const from = shown.slice(), t0 = performance.now();
+      const step = (t: number) => {
+        const k = Math.min(1, (t - t0) / 320), e = 1 - Math.pow(1 - k, 3);
+        shown = from.map((f, i) => f + (to[i] - f) * e);
+        poly.setAttribute("points", pts(shown));
+        if (k < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+
+    pick.addEventListener("change", () => {
+      const other = data[pick.value];
+      if (!other) {
+        poly.setAttribute("hidden", ""); key.hidden = true; diff.textContent = first;
+        shown = self.v.slice(); poly.setAttribute("points", pts(shown));
+        return;
+      }
+      poly.removeAttribute("hidden"); key.hidden = false;
+      name.textContent = other.name;
+      draw(other.v);
+      // say in words where they differ most
+      const gaps = AX.map((a, i) => ({ a, d: other.v[i] - self.v[i] })).filter((g) => Math.abs(g.d) >= 2).sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
+      const more = gaps.filter((g) => g.d > 0).map((g) => g.a), less = gaps.filter((g) => g.d < 0).map((g) => g.a);
+      diff.textContent = !gaps.length ? `${other.name} is close to ${self.name} on every axis.`
+        : `${other.name} is ${[more.length ? `more ${more.join(" and ")}` : "", less.length ? `less ${less.join(" and ")}` : ""].filter(Boolean).join(", and ")} than ${self.name}.`;
+    });
+    // the browser may bring the last choice back (reload, back button): draw it
+    if (pick.value) pick.dispatchEvent(new Event("change"));
+  }
+</script>

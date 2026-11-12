@@ -32,6 +32,7 @@ const serviceNav: [string, string][] = [
   ["AI & Business Automation", "/automation/"],
   ["AI Voice Receptionist", "/automation/#voice"],
   ["Business Websites", "/websites/"],
+  ["Website Levels", "/web-design/"],
   ["E-Commerce", "/ecommerce/"],
   ["Website Repairs & Security", "/website-security/"],
   ["Video & Creative Studio", "/creative-studio/"],
@@ -44,7 +45,7 @@ const nav: [string, string][] = [
   ["About", "/about/"],
 ];
 const current = (href: string) => (href === "/" ? path === "/" : !href.includes("#") && path.startsWith(href));
-const inServices = serviceNav.some(([, href]) => current(href)) || path.startsWith("/get-a-website/");
+const inServices = serviceNav.some(([, href]) => current(href)) || ["/get-a-website/", "/business-websites/", "/signature-websites/", "/immersive-websites/"].some((p) => path.startsWith(p));
 
 // The old one-page site's anchors (outreach emails link to /#<service id>): sent on to where each now lives.
 const legacy: Record<string, string> = { request: "/contact/", services: "/solutions/", kinds: "/solutions/", plans: "/pricing/#plans", faq: "/pricing/#faq", work: "/demos/#technical", keep: "/about/#how-we-work", "reviews-from-clients": "/",
@@ -147,6 +148,7 @@ const isHome = path === "/";
               <h2>Services</h2>
               <ul>
                 <li><a href="/websites/">Business websites</a></li>
+                <li><a href="/web-design/">Website levels</a></li>
                 <li><a href="/websites/#redesign">Website redesign</a></li>
                 <li><a href="/ecommerce/">E-commerce stores</a></li>
                 <li><a href="/automation/">Business automation</a></li>

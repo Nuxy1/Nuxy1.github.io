@@ -38,7 +38,8 @@ const first = (html, re) => (html.match(re) || [])[1];
 const isNoindex = (html) => /<meta name="robots" content="noindex/.test(html);
 const ldJson = (html) => all(html, /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g).map((s) => JSON.parse(s));
 
-const demoUrls = demoSites.map((d) => `/example-sites/${d.slug}/`);
+// Every page of the made-up businesses' websites (a demo can have sub-pages, like /example-sites/fernway-lawn/quote/)
+const demoUrls = [...pages.keys()].filter((u) => u.startsWith("/example-sites/"));
 // Pages kept out of search on purpose: the 404, the after-sending page, and the made-up businesses' full websites.
 const expectedNoindex = new Set(["/404.html", "/contact/thanks/", ...demoUrls]);
 const indexable = [...pages.keys()].filter((u) => !expectedNoindex.has(u));
@@ -46,13 +47,31 @@ const indexable = [...pages.keys()].filter((u) => !expectedNoindex.has(u));
 const legacy = JSON.parse(first(pages.get("/"), /const legacy = (\{[^;]*\});/));
 
 test("the build has every page, and the made-up data matches the pages", () => {
-  assert.equal(pages.size, 35, `pages: ${[...pages.keys()].join(" ")}`);
+  assert.equal(pages.size, 64, `pages: ${[...pages.keys()].join(" ")}`);
+  for (const sub of ["quote", "services", "projects", "about", "contact"]) assert.ok(pages.has(`/example-sites/fernway-lawn/${sub}/`), `fernway ${sub}`);
+  for (const sub of ["services", "barbers", "booking", "gallery", "contact"]) assert.ok(pages.has(`/example-sites/lantern-row-barbers/${sub}/`), `lantern ${sub}`);
+  for (const sub of ["estimate", "checklist", "book", "about"]) assert.ok(pages.has(`/example-sites/mossgate-cleaning/${sub}/`), `mossgate ${sub}`);
+  for (const sub of ["shop", "cart", "checkout", "candles/cedar-evening", "candles/forest-cabin"]) assert.ok(pages.has(`/example-sites/quillfern-candles/${sub}/`), `quillfern ${sub}`);
   for (const u of ["/", "/websites/", "/get-a-website/", "/automation/", "/solutions/", "/pricing/", "/about/",
-    "/contact/", "/contact/thanks/", "/demos/", "/demo/", "/policies/", "/docs/", "/404.html", "/ecommerce/", "/portfolio/", "/website-security/"]) {
+    "/contact/", "/contact/thanks/", "/demos/", "/demo/", "/policies/", "/docs/", "/404.html", "/ecommerce/", "/portfolio/", "/website-security/",
+    "/web-design/", "/business-websites/", "/signature-websites/", "/immersive-websites/"]) {
     assert.ok(pages.has(u), `missing ${u}`);
   }
   for (const d of demoSites) assert.ok(pages.has(`/examples/${d.slug}/`) && pages.has(`/example-sites/${d.slug}/`), d.slug);
   for (const e of examples) assert.ok(pages.has(`/work/${e.slug}/`), e.slug);
+});
+
+test("every demo card offers Live Demo, View Project and Features, each named for its demo and pointing at a real page", () => {
+  for (const u of ["/demos/"]) { // the one page that shows all four default demos (Halvane, the Immersive concept, is left out of default lists)
+    const html = pages.get(u);
+    for (const d of demoSites.filter((x) => x.tier !== "immersive")) {
+      const live = html.match(new RegExp(`<a class="demo-act demo-live"[^>]*href="/example-sites/${d.slug}/"[^>]*>Live Demo<span class="sr-only"[^>]*>: ([^<]+)<`));
+      assert.ok(live, `${u} Live Demo for ${d.slug}`);
+      assert.match(html, new RegExp(`href="/examples/${d.slug}/"[^>]*>View Project<span class="sr-only"`), `${u} View Project for ${d.slug}`);
+      assert.match(html, new RegExp(`href="/examples/${d.slug}/#features"[^>]*>Features<span class="sr-only"`), `${u} Features for ${d.slug}`);
+    }
+  }
+  for (const d of demoSites) assert.match(pages.get(`/examples/${d.slug}/`), /<section id="features"/, `/examples/${d.slug}/ has #features`);
 });
 
 test("every page has a language, a viewport, one title, one h1 and a description of a useful length", () => {
@@ -139,16 +158,29 @@ test("the sitemap lists exactly the indexable pages, and robots.txt points at it
 });
 
 test("every demonstration says it is made up, where a reader sees it", () => {
+  for (const u of demoUrls) assert.match(visible(pages.get(u)), /demonstration by Nuxy Automation[\s\S]*fictional/i, u);
   for (const d of demoSites) {
-    assert.match(visible(pages.get(`/example-sites/${d.slug}/`)), /demonstration/i, `/example-sites/${d.slug}/`);
+    assert.ok(demoUrls.includes(`/example-sites/${d.slug}/`), d.slug);
     assert.match(visible(pages.get(`/examples/${d.slug}/`)), /is a made-up business/, `/examples/${d.slug}/`);
   }
   for (const e of examples) assert.match(visible(pages.get(`/work/${e.slug}/`)), /is made up for this example/, e.slug);
   assert.match(visible(pages.get("/demo/")), /is a made-up salon/);
 });
 
+test("demo pages opt in to view transitions before any stylesheet, with the inline style allowed by the CSP", () => {
+  // In a bundled stylesheet the opt-in was missed on pages whose CSS was not active at Chromium's first style pass,
+  // and the transition aborted (fix row 25).
+  const optIn = "<style>@view-transition{navigation:auto}</style>";
+  const hash = "'sha256-" + createHash("sha256").update("@view-transition{navigation:auto}").digest("base64") + "'";
+  for (const u of demoUrls) {
+    const h = pages.get(u), head = h.slice(0, h.indexOf("</head>"));
+    assert.ok(head.indexOf(optIn) > 0 && head.indexOf(optIn) < head.indexOf("<link rel=\"stylesheet\""), `${u}: opt-in first`);
+    assert.ok(/content-security-policy" content="[^"]*style-src [^;"]*/.exec(h)?.[0].includes(hash), `${u}: hash in the CSP`);
+  }
+});
+
 test("structured data parses, and its prices are the published ones in services.ts", () => {
-  for (const [u, html] of pages) ldJson(html); // throws on broken JSON-LD
+  for (const html of pages.values()) ldJson(html); // throws on broken JSON-LD
   const offers = new Map();
   const collect = (node) => {
     if (Array.isArray(node)) return node.forEach(collect);
@@ -192,6 +224,10 @@ test("every Nuxy price shown comes from services.ts, and every service and plan 
   // the built HTML this test reads (tests/contact-form.test.mjs covers that).
   const creative = new Set([...creativeRules.types.map((t) => t.base), ...creativeRules.durations.map((d) => d.add), ...creativeRules.extras.map((e) => e.add),
     creativeRules.extraFormat, creativeRules.revisions.extra].filter(Boolean).map(creativeUsd));
+  // The website levels print their own prices and add-on prices from data/tiers.ts (Business reads its price from
+  // services.ts). Node can't import tiers.ts as it stands (its imports leave out the .ts), so its amounts are read
+  // from the file's text: that file holds no amount that isn't a level or add-on price.
+  for (const a of readFileSync(join(here, "../src/data/tiers.ts"), "utf8").match(money) || []) known.add(a);
   // Not Nuxy prices: the made-up plumber's quote inside the lead demo.
   const demoAmounts = new Set(["$1,450"]);
   // Pages whose amounts belong to made-up businesses or sample program output, not to Nuxy.
@@ -200,7 +236,7 @@ test("every Nuxy price shown comes from services.ts, and every service and plan 
     if (notNuxy(u)) continue;
     const shown = visible(html.replace(/<select[^>]*name="budget"[\s\S]*?<\/select>/g, " ")).match(money) || [];
     if (u === "/creative-studio/") { for (const a of shown) assert.ok(creative.has(a), `${u} shows ${a}, which is not a price in creative.ts`); continue; }
-    for (const a of shown) assert.ok(known.has(a) || demoAmounts.has(a), `${u} shows ${a}, which is not a price in services.ts`);
+    for (const a of shown) assert.ok(known.has(a) || demoAmounts.has(a), `${u} shows ${a}, which is not a price in services.ts or tiers.ts`);
   }
   const solutions = visible(pages.get("/solutions/"));
   for (const s of [...services, ...variants]) assert.ok(solutions.includes(s.price), `/solutions/ doesn't show ${s.name} ${s.price}`);

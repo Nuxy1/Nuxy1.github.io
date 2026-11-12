@@ -1,0 +1,289 @@
+---
+// /web-design/: the website levels hub. Four levels (Business, Signature, Immersive, Flagship) with what each one is
+// for, the price, what it looks like (the same made-up café at three levels, then three concept projects), the
+// comparison meters, the expectation matrix, why immersive work costs more, the add-ons, where each level ends with
+// its timeline and revisions, automation that plugs into any level, the five-question level finder and the FAQ.
+// Every word about a level comes from data/tiers.ts, the one place its prices live (tests/levels.test.mjs pins them).
+// The anchors #levels, #compare, #finder and #add-ons are linked from the level pages; keep them.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import DemoSites from "../../components/DemoSites.astro";
+import LevelRail from "../../components/levels/LevelRail.astro";
+import LevelCompare from "../../components/levels/LevelCompare.astro";
+import LevelMatrix from "../../components/levels/LevelMatrix.astro";
+import Recommender from "../../components/levels/Recommender.astro";
+import ThreeLevels from "../../components/levels/ThreeLevels.astro";
+import { levels, addOns, fitsLabel, boundaries, costReasons, levelFaqs, principle, flows } from "../../data/tiers";
+import { serviceById } from "../../data/services";
+
+const site = "https://nuxyautomation.com";
+const url = `${site}/web-design/`;
+const title = "Website Design Levels: Business to Immersive · Nuxy Automation";
+const description = "Four website levels, from a fast Business site to an immersive 3D experience: what each one includes, costs and takes, and a quiz to find yours.";
+const where = (id: string) => `/solutions/#${id}`;
+
+const ld = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${url}#page`,
+    url,
+    name: "Website design levels",
+    description,
+    isPartOf: { "@id": `${site}/#website` },
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: levels.map((l, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "Service",
+          name: `${l.name} website`,
+          serviceType: "Website design and development",
+          description: l.tagline,
+          provider: { "@id": `${site}/#business` },
+          ...(l.page ? { url: `${site}${l.page}` } : {}),
+          offers: { "@type": "Offer", url: `${site}${l.page ?? "/web-design/#levels"}`, priceSpecification: { "@type": "PriceSpecification", minPrice: String(l.from), priceCurrency: "USD" } },
+        },
+      })),
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${site}/` },
+      { "@type": "ListItem", position: 2, name: "Website levels", item: url },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: levelFaqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+  },
+];
+---
+<Base title={title} description={description} wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />
+
+  <section class="wd-hero">
+    <div class="wrap">
+      <p class="eyebrow">Website levels</p>
+      <h1>Pick the website your business actually needs.</h1>
+      <p class="lead">Four levels, from a fast site that brings in calls to a launch people remember. Each one has a clear price, a timeline and a list of what it includes, so you can see what the money buys before we talk.</p>
+      <div class="wd-actions">
+        <a class="button" href="#finder">Find your level</a>
+        <a class="button secondary" href="#compare">Compare the levels</a>
+      </div>
+      <p class="wd-principle">{principle}</p>
+    </div>
+  </section>
+
+  <section class="section tight" id="levels" aria-labelledby="levels-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Choose your experience</p>
+        <h2 id="levels-h">Four levels, each one a step up</h2>
+        <p>Most local businesses do best with Business. The levels above it are for brands where the website itself has to persuade.</p>
+      </div>
+      <LevelRail />
+    </div>
+  </section>
+
+  <section class="section band" id="preview" aria-labelledby="preview-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">What does this actually look like?</p>
+        <h2 id="preview-h">One café, three levels</h2>
+        <p>The same made-up coffee shop, built three ways. Switch between them to see what changes: the words stay, the motion and depth step up.</p>
+      </div>
+      <ThreeLevels />
+      <h3 class="wd-sub">Concept projects at each level</h3>
+      <DemoSites only={["fernway-lawn", "lantern-row-barbers", "halvane-audio"]} level="h4" />
+    </div>
+  </section>
+
+  <section class="section" id="compare" aria-labelledby="compare-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Compare</p>
+        <h2 id="compare-h">How the levels compare</h2>
+        <p>Six things that change from level to level, each on a four-step scale: Basic, Enhanced, Advanced, Bespoke.</p>
+      </div>
+      <LevelCompare />
+    </div>
+  </section>
+
+  <section class="section tight" id="expect" aria-labelledby="expect-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">What to expect</p>
+        <h2 id="expect-h">What each level includes</h2>
+      </div>
+      <LevelMatrix />
+    </div>
+  </section>
+
+  <section class="section band" id="cost" aria-labelledby="cost-h">
+    <div class="wrap wd-two">
+      <div>
+        <p class="eyebrow">Fair question</p>
+        <h2 id="cost-h">Why does an immersive website cost more?</h2>
+        <p>It isn’t the same site with effects added. It is more work at every step, and every step is there to make it load fast and work for everyone.</p>
+      </div>
+      <ol class="wd-reasons" role="list">
+        {costReasons.map((r, i) => (
+          <li><span class="wd-n">{String(i + 1).padStart(2, "0")}</span><div><h3>{r.title}</h3><p>{r.text}</p></div></li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="add-ons" aria-labelledby="add-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Add-ons</p>
+        <h2 id="add-h">Add one piece without moving up a level</h2>
+        <p>Each one says which levels it fits. Prices are starting points, confirmed in your written quote before anything starts.</p>
+      </div>
+      <ul class="wd-adds" role="list">
+        {addOns.map((a) => (
+          <li class="panel"><strong>{a.name}</strong><span>{a.text}</span><b>{a.price.startsWith("+") ? `from ${a.price}` : a.price}</b><small>Fits: {fitsLabel(a.fits)}</small></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section band" id="scope" aria-labelledby="scope-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Good to know</p>
+        <h2 id="scope-h">Timelines, revisions and where each level ends</h2>
+        <p>So the quote holds no surprises. Anything outside a level is available at another level or as an add-on.</p>
+      </div>
+      <div class="wd-scope">
+        {levels.map((l) => (
+          <article class="wd-scope-item" aria-labelledby={`sc-${l.id}`}>
+            <h3 id={`sc-${l.id}`}>{l.name}</h3>
+            <dl>
+              <div><dt>Timeline</dt><dd>{l.timeline}</dd></div>
+              <div><dt>Revisions</dt><dd>{l.revisions}</dd></div>
+              <div><dt>Not included</dt><dd><ul role="list">{boundaries[l.id].map((b) => <li>{b}</li>)}</ul></dd></div>
+            </dl>
+          </article>
+        ))}
+      </div>
+      <p class="note wd-rev">Every level has a set number of revision rounds, named in the written plan. Changes beyond them are quoted before they start, never added to the bill afterwards.</p>
+    </div>
+  </section>
+
+  <section class="section" id="automation" aria-labelledby="auto-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Works at every level</p>
+        <h2 id="auto-h">Add automation, so the website keeps working after hours</h2>
+        <p>Any level can connect to the automations we build. Each one is priced on its own.</p>
+      </div>
+      <ul class="wd-flows" role="list">
+        {flows.map((f) => (
+          <li class="panel">
+            <h3>{f.title}</h3>
+            <ol class="wd-steps" role="list">{f.steps.map((s) => <li>{s}</li>)}</ol>
+            <p class="wd-flow-svc">{f.services.map((id, j) => (<>{j > 0 && " · "}<a href={where(id)}>{serviceById[id].name}</a>&nbsp;{serviceById[id].price}</>))}</p>
+          </li>
+        ))}
+      </ul>
+      <p class="wd-more"><a class="text-link" href="/automation/">All automations<Icon name="arrowRight" /></a></p>
+    </div>
+  </section>
+
+  <section class="section band" id="finder" aria-labelledby="finder-h">
+    <div class="wrap wd-two">
+      <div>
+        <p class="eyebrow">Find your website level</p>
+        <h2 id="finder-h">Five quick questions</h2>
+        <p>Answer five questions and we’ll suggest a level, with the reason. Nothing is sent until you choose to get in touch, and you can ask about any level you like.</p>
+      </div>
+      <Recommender />
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-h">
+    <div class="wrap faq-wrap">
+      <h2 id="faq-h">Questions about website levels</h2>
+      <div class="faq">
+        {levelFaqs.map((f) => (
+          <details>
+            <summary>{f.q}<Icon name="plus" /></summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>Tell us about your project</h2>
+          <p>Within one business day you’ll get a written plan: the level we’d suggest, what we’d build, the price and the timeline. If a smaller level does the job, we’ll say so.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="button" href="/contact/?level=unsure" data-track="tier_selected">Discuss My Project</a>
+          <a class="button secondary" href="/contact/?level=flagship" data-track="tier_selected">Discuss a Custom Project</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .wd-hero { padding-block: clamp(40px, 6vw, 88px) clamp(20px, 3vw, 40px); }
+  .wd-hero h1 { max-width: 17ch; }
+  .wd-hero .lead { margin-top: 20px; max-width: 60ch; }
+  .wd-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .wd-principle { margin-top: 28px; max-width: 60ch; padding-left: 16px; border-left: 2px solid var(--hairline-strong); color: var(--ink); font-style: italic; }
+  .wd-sub { margin: clamp(48px, 6vw, 72px) 0 20px; font-size: 1.375rem; }
+
+  .wd-two { display: grid; gap: 32px; }
+  @media (min-width: 1024px) { .wd-two { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 56px; align-items: start; } }
+  .wd-two h2 { margin-bottom: 16px; }
+  .wd-reasons { list-style: none; display: grid; border-top: 1px solid var(--hairline); }
+  .wd-reasons li { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: 12px; padding-block: 16px; border-bottom: 1px solid var(--hairline); }
+  .wd-n { color: var(--cyan); font-size: 0.875rem; font-weight: 600; font-variant-numeric: tabular-nums; padding-top: 3px; }
+  .wd-reasons h3 { font-size: 1.0625rem; }
+  .wd-reasons p { margin-top: 4px; color: var(--body); }
+
+  .wd-adds { list-style: none; display: grid; gap: 12px; }
+  @media (min-width: 720px) { .wd-adds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1200px) { .wd-adds { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .wd-adds li { display: grid; grid-template-rows: auto 1fr auto auto; gap: 6px; padding: 18px 20px; }
+  .wd-adds strong { color: var(--ink); font-weight: 600; }
+  .wd-adds span { color: var(--body); font-size: 0.9375rem; }
+  .wd-adds b { margin-top: 6px; color: var(--ink); font-weight: 650; }
+  .wd-adds small { color: var(--muted); font-size: 0.875rem; }
+
+  .wd-scope { display: grid; gap: 20px; }
+  @media (min-width: 720px) { .wd-scope { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1200px) { .wd-scope { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .wd-scope-item { padding-top: 14px; border-top: 2px solid var(--hairline-strong); }
+  .wd-scope-item h3 { font-size: 1.25rem; }
+  .wd-scope-item dl { margin: 10px 0 0; display: grid; gap: 12px; }
+  .wd-scope-item dt { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .wd-scope-item dd { margin: 2px 0 0; color: var(--body); font-size: 0.9375rem; }
+  .wd-scope-item ul { list-style: none; display: grid; gap: 4px; }
+  .wd-rev { margin-top: 24px; max-width: 72ch; }
+
+  .wd-flows { list-style: none; display: grid; gap: 16px; }
+  @media (min-width: 1024px) { .wd-flows { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .wd-flows > li { display: grid; gap: 14px; align-content: start; padding: 22px; }
+  .wd-flows h3 { font-size: 1.125rem; }
+  .wd-steps { list-style: none; display: grid; gap: 0; counter-reset: st; }
+  .wd-steps li { position: relative; padding: 0 0 12px 26px; color: var(--body); font-size: 0.9375rem; counter-increment: st; }
+  .wd-steps li::before { content: counter(st); position: absolute; left: 0; top: 2px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--hairline-strong); color: var(--ink); font-size: 0.6875rem; font-weight: 600; }
+  .wd-steps li:not(:last-child)::after { content: ""; position: absolute; left: 9px; top: 22px; bottom: 2px; width: 1px; background: var(--hairline-strong); }
+  .wd-flow-svc { padding-top: 12px; border-top: 1px solid var(--hairline-soft); color: var(--muted); font-size: 0.875rem; }
+  .wd-flow-svc a { color: var(--link); }
+  .wd-more { margin-top: 20px; }
+</style>

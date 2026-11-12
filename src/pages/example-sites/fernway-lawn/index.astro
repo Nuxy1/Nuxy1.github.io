@@ -1,0 +1,266 @@
+---
+// Example website: Fernway Lawn & Landscape, a fictional landscaping company (data/demo-sites.ts), home page.
+// Every name, price, town and quote is invented for the demonstration and the pages say so.
+import Shell from "../../../components/demo/fernway/Shell.astro";
+import YardHero from "../../../components/demo/fernway/YardHero.astro";
+import ServiceArt from "../../../components/demo/fernway/ServiceArt.astro";
+import ServiceMap from "../../../components/demo/fernway/ServiceMap.astro";
+import ContactForm from "../../../components/demo/fernway/ContactForm.astro";
+import ProjectArt from "../../../components/demo/fernway/ProjectArt.astro";
+import BeforeAfter from "../../../components/demo/BeforeAfter.astro";
+import { base, serviceList, testimonials, hours } from "../../../data/demos/fernway";
+import { usd } from "../../../lib/demo/money";
+
+const unit = { visit: "a visit", job: "a job", season: "a season" } as const;
+const featured = serviceList.filter((s) => ["mowing", "cleanup", "mulch"].includes(s.id));
+const month = 10; // November, when this demo was made; the season card that is "now" is fixed so screenshots match
+const seasons = [
+  { name: "Spring", months: "Mar – May", color: "#8fbf5a", items: ["Spring cleanup", "First mow and edging", "New beds and planting"], now: month >= 2 && month <= 4 },
+  { name: "Summer", months: "Jun – Aug", color: "#4f8a45", items: ["Weekly or biweekly mowing", "Hedge shaping", "Mulch top-ups"], now: month >= 5 && month <= 7 },
+  { name: "Fall", months: "Sep – Oct", color: "#c9792f", items: ["Leaf cleanup", "Last mow, low", "Perennials cut back"], now: month >= 8 && month <= 9 },
+  { name: "Winter", months: "Nov – Feb", color: "#5d7f9e", items: ["Snow on drives and walks", "Steps by hand", "Ice melt on request"], now: month >= 10 || month <= 1 },
+];
+---
+<Shell description="Fernway Lawn & Landscape is a fictional lawn care company: an interactive demonstration website by Nuxy Automation, with a yard you can play with and a working quote estimator.">
+  <YardHero />
+
+  <section class="fw-promise" aria-label="How Fernway works">
+    <ul class="fw-wrap fw-promise-in" role="list">
+      <li><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="2" /><circle cx="16.5" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="2" /><path d="M3 19c.8-3.6 3.2-5.4 6-5.4s5.2 1.8 6 5.4m.8-4.6c2.6-.2 4.4 1.3 5.2 4.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg><div><strong>Same crew every visit</strong><span>They know your gate and your dog.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M8 10h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg><div><strong>A text the night before</strong><span>Rain moves the day, never silently.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="2" /><circle cx="12" cy="12.5" r="3.4" fill="none" stroke="currentColor" stroke-width="2" /><path d="M8 6l1.5-2h5L16 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg><div><strong>A photo when it’s done</strong><span>Check the job from work.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg><div><strong>A price in a minute</strong><span>A range on screen, confirmed by text.</span></div></li>
+    </ul>
+  </section>
+
+  <section class="fw-section" aria-labelledby="svc-h">
+    <div class="fw-wrap">
+      <div class="fw-svc-top">
+        <div class="fw-head">
+          <p class="fw-kicker">Services</p>
+          <h2 id="svc-h">What we take off your list.</h2>
+        </div>
+        <a class="fw-link" href={`${base}/services/`}>All six services
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+      </div>
+      <div class="fw-svc">
+        {featured.map((s, i) => (
+          <article class="fw-card fw-svc-card fw-rise" style={`--d:${i * 80}ms`}>
+            <ServiceArt art={s.art} size={72} />
+            <h3>{s.name}</h3>
+            <p>{s.blurb}</p>
+            <ul class="fw-checks" role="list">{s.included.map((x) => <li>{x}</li>)}</ul>
+            <div class="fw-svc-foot">
+              <p><span class="fw-price">From {usd(s.base[0])}</span> <span class="fw-fine">{unit[s.unit]} · {s.season}</span></p>
+              <a class="fw-link" href={`${base}/quote/?service=${s.id}`} aria-label={`Estimate ${s.name.toLowerCase()}`}>Estimate
+                <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p class="fw-demo-note fw-svc-note">Example pricing for demonstration purposes.</p>
+    </div>
+  </section>
+
+  <section class="fw-section fw-how" aria-labelledby="how-h">
+    <div class="fw-wrap fw-how-in">
+      <div class="fw-how-copy">
+        <div class="fw-head">
+          <p class="fw-kicker">How a quote works</p>
+          <h2 id="how-h">From photo to price before your coffee’s cold.</h2>
+        </div>
+        <ol class="fw-steps" role="list">
+          <li class="fw-rise"><span>1</span><div><h3>Tell us about the yard</h3><p>Service, lot size, how often, extras, and a few photos if you like. About a minute.</p></div></li>
+          <li class="fw-rise" style="--d:90ms"><span>2</span><div><h3>See a range on screen</h3><p>The price range updates as you answer, so there’s no waiting to find out if it’s in budget.</p></div></li>
+          <li class="fw-rise" style="--d:180ms"><span>3</span><div><h3>The crew confirms by text</h3><p>The owner checks your photos and texts a firm price and a first day, usually the same day.</p></div></li>
+        </ol>
+        <a class="fw-btn fw-btn-lime" href={`${base}/quote/`}>Start my estimate</a>
+      </div>
+      <figure class="fw-phone-mock" data-texts>
+        <div class="fw-phone-frame">
+          <div class="fw-phone-bar"><span>Fernway · texts</span><small>Demo</small></div>
+          <ol class="fw-thread" role="list">
+            <li class="fw-msg in"><b>New quote</b> Sam R., Alder Bend. Weekly mowing, medium lot, edging. Range $65–$85/visit. 3 photos.</li>
+            <li class="fw-msg out">Hi Sam, Mia from Fernway. Photos look good: $70 a visit, edging included. First mow Thursday?</li>
+            <li class="fw-msg in">Thursday works. Gate code is on the form.</li>
+            <li class="fw-msg out">Booked. We’ll text Wednesday evening with a time window.</li>
+          </ol>
+        </div>
+        <figcaption>What the texts would look like. Sample conversation: nothing is sent in this demo.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fw-section" aria-labelledby="sea-h">
+    <div class="fw-wrap">
+      <div class="fw-head">
+        <p class="fw-kicker">All year</p>
+        <h2 id="sea-h">One crew for all four seasons.</h2>
+      </div>
+      <ol class="fw-seasons" role="list">
+        {seasons.map((s, i) => (
+          <li class:list={["fw-season fw-rise", { now: s.now }]} style={`--c:${s.color}; --d:${i * 70}ms`}>
+            <p class="fw-season-top"><strong>{s.name}</strong><span>{s.months}</span></p>
+            {s.now && <p class="fw-season-now">Now booking</p>}
+            <ul role="list">{s.items.map((x) => <li>{x}</li>)}</ul>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="fw-section fw-ba-sec" aria-labelledby="ba-h">
+    <div class="fw-wrap fw-ba-in">
+      <BeforeAfter label="Overgrown backyard" tag="Example transformation" start={46}>
+        <ProjectArt slot="before" art="backyard" state="before" />
+        <ProjectArt slot="after" art="backyard" state="after" />
+      </BeforeAfter>
+      <div class="fw-ba-copy">
+        <p class="fw-kicker">Projects</p>
+        <h2 id="ba-h">Drag the line. That’s one day’s work.</h2>
+        <p class="fw-lead">An overgrown backyard: first cut, haul-away, edged beds, then weekly mowing. Illustrated example; the projects page has three more.</p>
+        <a class="fw-btn fw-btn-ghost" href={`${base}/projects/`}>See all projects</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="fw-section fw-area" aria-labelledby="area-h">
+    <div class="fw-wrap">
+      <div class="fw-head">
+        <p class="fw-kicker">Service area</p>
+        <h2 id="area-h">Twenty-five miles, and we know every street.</h2>
+      </div>
+      <ServiceMap heading="Six towns, set crew days" id="home-map" />
+    </div>
+  </section>
+
+  <section class="fw-section" aria-labelledby="say-h">
+    <div class="fw-wrap">
+      <div class="fw-head">
+        <p class="fw-kicker">Neighbours</p>
+        <h2 id="say-h">What a good season sounds like.</h2>
+      </div>
+      <ul class="fw-quotes" role="list">
+        {testimonials.map((t, i) => (
+          <li class="fw-quote fw-rise" style={`--d:${i * 80}ms`}>
+            <p class="fw-quote-tag">Sample testimonial</p>
+            <blockquote><p>“{t.quote}”</p></blockquote>
+            <p class="fw-quote-who">{t.who} · {t.where}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="fw-section fw-call" aria-labelledby="call-h">
+    <div class="fw-wrap fw-call-in">
+      <div class="fw-head">
+        <p class="fw-kicker">Talk to a person</p>
+        <h2 id="call-h">Prefer a call back?</h2>
+        <p class="fw-lead">The owner returns calls between jobs. Tell us when suits you.</p>
+        <dl class="fw-call-hours">{hours.map(([d, h]) => <div><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
+      </div>
+      <ContactForm id="callback" />
+    </div>
+  </section>
+
+  <section class="fw-section fw-end">
+    <div class="fw-wrap">
+      <div class="fw-band">
+        <p class="fw-kicker" style="color:#c9e265">Spring fills up by March</p>
+        <h2>A yard you don’t have to think about.</h2>
+        <p>Get a demonstration estimate in about a minute. No account, no phone call, nothing sent.</p>
+        <a class="fw-btn fw-btn-lime" href={`${base}/quote/`}>Get my estimate</a>
+      </div>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .fw-promise { background: var(--fw-forest); color: #e6eee4; }
+  .fw-promise-in { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 4px 28px; padding-block: 26px; }
+  .fw-promise li { display: flex; gap: 14px; align-items: center; padding-block: 8px; }
+  .fw-promise svg { flex: none; color: var(--fw-lime); }
+  .fw-promise div { display: grid; }
+  .fw-promise strong { color: #fff; }
+  .fw-promise span { font-size: 0.875rem; color: #bcd0bb; }
+
+  .fw-svc-top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; margin-bottom: clamp(32px, 5vw, 56px); }
+  .fw-svc-top .fw-head { margin-bottom: 0; }
+  .fw-svc { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .fw-svc-card { padding: 30px; gap: 14px; }
+  .fw-svc-card :global(.fw-art) { transition: transform 360ms var(--fw-ease); }
+  .fw-svc-card:hover :global(.fw-art) { transform: rotate(-6deg) scale(1.06); }
+  .fw-svc-card > p { color: var(--fw-soft); }
+  .fw-svc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--fw-line); }
+  .fw-svc-card .fw-checks { font-size: 0.9375rem; }
+  .fw-svc-note { margin-top: 22px; }
+
+  .fw-how { background: var(--fw-cream); }
+  .fw-how-in { display: grid; gap: 48px; align-items: center; }
+  @media (min-width: 960px) { .fw-how-in { grid-template-columns: 1.1fr 0.9fr; } }
+  .fw-how-copy { display: grid; gap: 28px; justify-items: start; }
+  .fw-how-copy .fw-head { margin-bottom: 0; }
+  .fw-steps { display: grid; gap: 22px; }
+  .fw-steps li { display: grid; grid-template-columns: 48px 1fr; gap: 16px; }
+  .fw-steps li > span { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; background: var(--fw-forest); color: var(--fw-lime); font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.25rem; }
+  .fw-steps p { color: var(--fw-soft); margin-top: 4px; }
+  .fw-phone-mock { display: grid; gap: 12px; justify-items: center; }
+  .fw-phone-frame { width: min(360px, 100%); padding: 14px; border-radius: 40px; background: #13201a; box-shadow: 0 30px 60px rgba(19, 32, 26, 0.25); }
+  .fw-phone-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px 12px; color: #fff; font-weight: 650; font-size: 0.9375rem; }
+  .fw-phone-bar small { padding: 2px 8px; border-radius: 999px; background: var(--fw-lime); color: var(--fw-forest); font-weight: 700; }
+  .fw-thread { display: grid; gap: 10px; padding: 18px 14px 22px; border-radius: 28px; background: var(--fw-paper); min-height: 340px; align-content: start; }
+  .fw-msg { max-width: 86%; padding: 10px 14px; border-radius: 18px; font-size: 0.9375rem; line-height: 1.4; }
+  .fw-msg.in { justify-self: start; background: #fff; box-shadow: 0 0 0 1px var(--fw-line); border-bottom-left-radius: 6px; }
+  .fw-msg.out { justify-self: end; background: var(--fw-forest); color: #fff; border-bottom-right-radius: 6px; }
+  .fw-msg b { display: block; color: var(--fw-clay); font-size: 0.8125rem; }
+  .fw-phone-mock figcaption { font-size: 0.875rem; color: var(--fw-soft); text-align: center; max-width: 36ch; }
+  :global(:root[data-tier="1"]) .fw-phone-mock.play .fw-msg, :global(:root[data-tier="2"]) .fw-phone-mock.play .fw-msg { animation: fw-pop 420ms var(--fw-ease) both; }
+  .fw-phone-mock.play .fw-msg:nth-child(2) { animation-delay: 700ms; }
+  .fw-phone-mock.play .fw-msg:nth-child(3) { animation-delay: 1500ms; }
+  .fw-phone-mock.play .fw-msg:nth-child(4) { animation-delay: 2200ms; }
+  :global(:root[data-tier="1"]) .fw-phone-mock:not(.play) .fw-msg, :global(:root[data-tier="2"]) .fw-phone-mock:not(.play) .fw-msg { opacity: 0; }
+  @keyframes fw-pop { from { opacity: 0; transform: translateY(10px) scale(0.96); } }
+
+  .fw-seasons { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .fw-season { position: relative; display: grid; gap: 14px; align-content: start; padding: 26px; border-radius: var(--fw-radius); background: color-mix(in srgb, var(--c) 9%, #fff); box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 30%, var(--fw-line)); overflow: hidden; }
+  .fw-season-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .fw-season-top strong { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.5rem; letter-spacing: -0.02em; }
+  .fw-season-top span { font-size: 0.875rem; color: var(--fw-soft); }
+  .fw-season ul { display: grid; gap: 6px; color: var(--fw-soft); }
+  .fw-season ul li::before { content: "— "; color: var(--c); }
+  .fw-season.now { background: var(--fw-forest); color: #fff; box-shadow: none; }
+  .fw-season.now ul, .fw-season.now .fw-season-top span { color: #cfdccc; }
+  .fw-season-now { justify-self: start; padding: 3px 10px; border-radius: 999px; background: var(--fw-lime); color: var(--fw-forest); font-size: 0.75rem; font-weight: 750; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  .fw-ba-sec { background: linear-gradient(var(--fw-paper), var(--fw-cream)); }
+  .fw-ba-in { display: grid; gap: 40px; align-items: center; }
+  @media (min-width: 960px) { .fw-ba-in { grid-template-columns: 1.25fr 1fr; } }
+  .fw-ba-in :global(.ba) { --ba-radius: 28px; --ba-handle-ink: #173826; --ba-label-bg: rgba(19, 32, 26, 0.75); }
+  .fw-ba-copy { display: grid; gap: 18px; justify-items: start; }
+
+  .fw-quotes { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .fw-quote { display: grid; gap: 14px; align-content: start; padding: 28px; border-radius: var(--fw-radius); background: var(--fw-cream); }
+  .fw-quote-tag { justify-self: start; padding: 3px 10px; border-radius: 999px; background: #fff; font-size: 0.75rem; font-weight: 700; color: var(--fw-soft); letter-spacing: 0.04em; text-transform: uppercase; }
+  .fw-quote blockquote p { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.3125rem; font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; color: var(--fw-forest); }
+  .fw-quote-who { font-size: 0.875rem; color: var(--fw-soft); }
+
+  .fw-call { background: var(--fw-cream); }
+  .fw-call-in { display: grid; gap: 40px; align-items: start; }
+  @media (min-width: 960px) { .fw-call-in { grid-template-columns: 0.8fr 1.2fr; } }
+  .fw-call-hours { display: grid; gap: 8px; margin-top: 12px; max-width: 380px; }
+  .fw-call-hours div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px solid var(--fw-line); }
+  .fw-call-hours dt { color: var(--fw-soft); }
+  .fw-call-hours dd { font-weight: 600; }
+  .fw-end { padding-top: 0; }
+  .fw-end { background: var(--fw-cream); }
+</style>
+
+<script>
+  // the sample text thread plays once when it scrolls into view (tiers 1-2; tier 3 shows it at once)
+  const mock = document.querySelector<HTMLElement>("[data-texts]");
+  if (mock) {
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { mock.classList.add("play"); io.disconnect(); } }, { threshold: 0.4 });
+    io.observe(mock);
+  }
+</script>

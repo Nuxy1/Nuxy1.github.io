@@ -1,0 +1,55 @@
+---
+// A drawn style example for the gallery (not a photo of a client): a bust in an oval cameo, engraved-style, with the
+// hair shape for one cut. `cut` matches data/demos/lantern.ts gallery[].cut; `uid` keeps the gradient ids unique.
+interface Props { cut: string; uid: string; label?: string }
+const { cut, uid, label } = Astro.props;
+const hair: Record<string, { top: string; fade?: "low" | "high" | "full"; beard?: string; line?: string }> = {
+  "fade-curl": { top: "", fade: "high" },
+  taper: { top: "M56 98C54 60 70 44 100 42c30 2 46 18 44 56-6-18-12-28-44-32-32 4-38 14-44 32Z", fade: "low" },
+  "fade-high": { top: "M64 72c2-20 18-28 36-28s34 8 36 28c-16-6-56-6-72 0Z", fade: "high", line: "M84 46c-2 8-2 16 0 24" },
+  crop: { top: "M60 84c-4-30 14-44 40-44s44 14 40 44l-8-10-8 6-8-8-8 8-8-8-8 8-8-8-8 8-8-6Z", fade: "full" },
+  quiff: { top: "M60 84c-4-26 10-38 28-40 4-18 32-26 52-14-10 2-12 8-8 14 10 8 14 22 10 40-8-18-30-24-42-22-18 0-34 8-40 22Z", fade: "low" },
+  "beard-full": { top: "M58 86c-2-28 16-44 42-44s44 16 42 44c-8-14-22-20-42-20s-34 6-42 20Z", fade: "low", beard: "M58 110c0 40 20 66 42 68 22-2 42-28 42-68-6 18-20 24-42 24s-36-6-42-24Z" },
+  "beard-short": { top: "M62 80c0-24 16-36 38-36s38 12 38 36c-10-10-22-14-38-14s-28 4-38 14Z", fade: "high", beard: "M60 116c2 30 20 48 40 50 20-2 38-20 40-50-8 16-22 22-40 22s-32-6-40-22Z" },
+  part: { top: "M56 92c-2-34 16-50 44-50 30 0 46 16 44 50-4-18-16-28-44-30-10 0-16-2-18-6-6 8-20 16-26 36Z", fade: "low", line: "M82 44c-1 4-1 8 0 12" },
+  pomp: { top: "M58 88c-6-36 14-58 46-60 24-2 42 12 40 34v28c-6-20-20-28-44-28-20 0-36 10-42 26Z", fade: "low" },
+};
+const h = hair[cut] ?? hair.taper;
+const fadeTo = h.fade === "high" ? 0.55 : h.fade === "full" ? 0.75 : 0.95;
+---
+<svg class="lr-style-art" viewBox="0 0 200 220" role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : "true"} focusable="false">
+  <defs>
+    <radialGradient id={`${uid}-bg`} cx="0.5" cy="0.38" r="0.7"><stop offset="0" stop-color="#2a2219" /><stop offset="1" stop-color="#14110e" /></radialGradient>
+    <linearGradient id={`${uid}-fade`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a45c" stop-opacity="0.85" /><stop offset={fadeTo} stop-color="#c9a45c" stop-opacity="0" /></linearGradient>
+    <pattern id={`${uid}-hatch`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0v5" stroke="#14110e" stroke-width="1.6" opacity="0.55" /></pattern>
+    <clipPath id={`${uid}-oval`}><ellipse cx="100" cy="110" rx="92" ry="106" /></clipPath>
+  </defs>
+  <ellipse cx="100" cy="110" rx="92" ry="106" fill={`url(#${uid}-bg)`} />
+  <g clip-path={`url(#${uid}-oval)`}>
+    <!-- shoulders, neck, head -->
+    <path d="M24 226c4-36 34-48 58-52h36c24 4 54 16 58 52Z" fill="#2a241d" stroke="#8a7d66" stroke-width="1.5" />
+    <path d="M70 196c10 8 50 8 60 0" fill="none" stroke="#8a7d66" stroke-width="1.2" opacity="0.6" />
+    <path d="M82 148v28c6 6 30 6 36 0v-28" fill="#3a3128" stroke="#8a7d66" stroke-width="1.5" />
+    <ellipse cx="57" cy="112" rx="7" ry="12" fill="#3a3128" stroke="#8a7d66" stroke-width="1.5" />
+    <ellipse cx="143" cy="112" rx="7" ry="12" fill="#3a3128" stroke="#8a7d66" stroke-width="1.5" />
+    <ellipse cx="100" cy="106" rx="44" ry="54" fill="#3a3128" stroke="#8a7d66" stroke-width="1.5" />
+    <!-- features, a few engraved strokes -->
+    <path d="M78 98c6-3 12-3 16 0M106 98c4-3 10-3 16 0" fill="none" stroke="#b3a893" stroke-width="2" stroke-linecap="round" />
+    <path d="M100 106v18l-5 4" fill="none" stroke="#8a7d66" stroke-width="1.5" stroke-linecap="round" />
+    {!h.beard && <path d="M90 140c6 3 14 3 20 0" fill="none" stroke="#b3a893" stroke-width="1.8" stroke-linecap="round" />}
+    <!-- the cut -->
+    {h.fade && <path d="M56 112c-2-26 4-40 14-50v58c-6-2-10-4-14-8ZM144 112c2-26-4-40-14-50v58c6-2 10-4 14-8Z" fill={`url(#${uid}-fade)`} />}
+    {cut === "fade-curl"
+      ? <g fill="#c9a45c" stroke="#7a5d2c" stroke-width="1.2">{[[66, 66, 9], [78, 54, 10], [92, 46, 11], [108, 45, 11], [122, 52, 10], [134, 64, 9], [86, 62, 8], [102, 58, 9], [118, 63, 8], [72, 74, 6], [130, 75, 6]].map(([x, y, r]) => <circle cx={x} cy={y} r={r} />)}</g>
+      : <path d={h.top} fill="#c9a45c" stroke="#7a5d2c" stroke-width="1.2" />}
+    {cut !== "fade-curl" && <path d={h.top} fill={`url(#${uid}-hatch)`} />}
+    {h.line && <path d={h.line} stroke="#14110e" stroke-width="2.4" stroke-linecap="round" />}
+    {h.beard && <g><path d={h.beard} fill="#c9a45c" stroke="#7a5d2c" stroke-width="1.2" /><path d={h.beard} fill={`url(#${uid}-hatch)`} /><path d="M86 128c6-4 22-4 28 0-4 4-24 4-28 0Z" fill="#7a5d2c" /></g>}
+  </g>
+  <ellipse cx="100" cy="110" rx="92" ry="106" fill="none" stroke="#c9a45c" stroke-width="2" />
+  <ellipse cx="100" cy="110" rx="86" ry="100" fill="none" stroke="#c9a45c" stroke-width="0.8" opacity="0.5" />
+</svg>
+
+<style>
+  .lr-style-art { display: block; width: 100%; height: auto; }
+</style>

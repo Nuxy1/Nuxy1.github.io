@@ -1,0 +1,248 @@
+---
+// One Quillfern candle: the jar in the chosen size, size and quantity, add to the demo cart (never past this
+// browser's demo stock), the scent profile with a compare picker, care notes, and the two closest scents.
+import Shell from "../../../../components/demo/quillfern/Shell.astro";
+import ScentChart from "../../../../components/demo/quillfern/ScentChart.astro";
+import { base, care } from "../../../../data/demos/quillfern";
+import { CANDLES, FAMILIES, SIZES, SIZE_IDS, AXES, SHIP, MAX_QTY, stockNote, type Candle } from "../../../../lib/demo/quillfern-cart";
+import { cardArt } from "../../../../lib/demo/quillfern-art";
+
+export function getStaticPaths() {
+  return CANDLES.map((c) => ({ params: { id: c.id }, props: { candle: c } }));
+}
+interface Props { candle: Candle }
+const { candle } = Astro.props;
+const near = CANDLES.filter((c) => c.id !== candle.id)
+  .map((c) => ({ c, d: Math.hypot(...AXES.map((a) => c.profile[a.id] - candle.profile[a.id])) }))
+  .sort((a, b) => a.d - b.d).slice(0, 2).map((x) => x.c);
+const start = candle.stock["8oz"] > 0 ? "8oz" : SIZE_IDS.find((z) => candle.stock[z] > 0) ?? "8oz";
+---
+<Shell title={`${candle.name} candle · Quillfern Candle Co. (demo)`} current={`candles/${candle.id}`} description={`${candle.name}: ${candle.tagline.toLowerCase()}. A candle from Quillfern, a fictional candle maker's demonstration store by Nuxy Automation.`}>
+  <nav class="qf-wrap qf-crumbs qf-ui" aria-label="Breadcrumb">
+    <a href={`${base}/`}>Home</a><span aria-hidden="true">/</span><a href={`${base}/shop/`}>Shop</a><span aria-hidden="true">/</span><span aria-current="page">{candle.name}</span>
+  </nav>
+
+  <section class="qf-wrap qf-pdp" aria-labelledby="pdp-h">
+    <div class="qf-pdp-art qf-arch" style={`--glass: ${candle.glass}`} data-qf-art>
+      {SIZE_IDS.map((z) => <div class="qf-pdp-pic" data-size={z} hidden={z !== start} set:html={cardArt(candle, z, true)} />)}
+    </div>
+
+    <div class="qf-pdp-info">
+      <p class="qf-label">{FAMILIES[candle.family].name} · {candle.mood}</p>
+      <h1 id="pdp-h">{candle.name}</h1>
+      <p class="qf-pdp-price qf-ui"><span class="qf-num" data-qf-each>${SIZES[start].price}</span> <span data-qf-each-size>{SIZES[start].label}</span></p>
+      <p class="qf-pdp-tag">{candle.tagline}</p>
+      <p class="qf-pdp-blurb">{candle.blurb}</p>
+
+      <form class="qf-buy" data-qf-buy data-id={candle.id} aria-label={`Add ${candle.name} to the cart`}>
+        <fieldset class="qf-sizes">
+          <legend class="qf-field-legend qf-ui">Size</legend>
+          {SIZE_IDS.map((z) => (
+            <label class="qf-pick">
+              <input type="radio" name="size" value={z} checked={z === start} disabled={candle.stock[z] <= 0} />
+              <span>
+                <span class="qf-size-top"><span>{SIZES[z].label}</span><span class="qf-num">${SIZES[z].price}</span></span>
+                <small>About {SIZES[z].hours} hours <span class="qf-size-stock" data-qf-size-stock={z}>{candle.stock[z] <= 0 ? "· Sold out" : stockNote(candle.stock[z]) ? `· ${stockNote(candle.stock[z])}` : ""}</span></small>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <div class="qf-buy-row">
+          <div class="qf-qty" role="group" aria-label="Quantity">
+            <button type="button" data-qf-step="-1" aria-label="One fewer">−</button>
+            <output data-qf-qty aria-live="polite">1</output>
+            <button type="button" data-qf-step="1" aria-label="One more">+</button>
+          </div>
+          <button class="qf-btn qf-btn-flame qf-buy-btn" type="submit" data-qf-submit>Add to cart · <span class="qf-num" data-qf-price>${SIZES[start].price}</span></button>
+        </div>
+        <p class="qf-buy-said qf-ui" data-qf-said role="status"></p>
+        <p class="qf-fine">Up to {MAX_QTY} of each size. Free shipping over ${SHIP.freeOver}, or free pickup at the studio.</p>
+        <p class="qf-demo-note">Demo store: adding to the cart keeps the candle in this browser only.</p>
+      </form>
+    </div>
+  </section>
+
+  <section class="qf-section qf-pdp-scent" aria-labelledby="scent-h">
+    <div class="qf-wrap">
+      <div class="qf-head">
+        <p class="qf-label">Scent profile</p>
+        <h2 id="scent-h">What {candle.name} smells like</h2>
+      </div>
+      <ScentChart candle={candle} />
+    </div>
+  </section>
+
+  <section class="qf-section qf-pdp-care" aria-labelledby="care-h">
+    <div class="qf-wrap qf-care-in">
+      <div class="qf-head">
+        <p class="qf-label">Care</p>
+        <h2 id="care-h">Make it burn clean to the end.</h2>
+      </div>
+      <ol class="qf-care" role="list">
+        {care.map(([t, d], i) => <li><span class="qf-num">{i + 1}</span><h3>{t}</h3><p>{d}</p></li>)}
+      </ol>
+    </div>
+  </section>
+
+  <section class="qf-section qf-near" aria-labelledby="near-h">
+    <div class="qf-wrap">
+      <div class="qf-head">
+        <p class="qf-label">Close to this scent</p>
+        <h2 id="near-h">If you like {candle.name}</h2>
+      </div>
+      <ul class="qf-near-list" role="list">
+        {near.map((c) => (
+          <li>
+            <a class="qf-near-card" href={`${base}/candles/${c.id}/`} style={`--glass: ${c.glass}`}>
+              <span class="qf-near-art qf-arch" set:html={cardArt(c, "8oz", true)} />
+              <span><span class="qf-near-name">{c.name}</span><span class="qf-near-tag">{c.tagline}</span><span class="qf-link">See {c.name} <span aria-hidden="true">→</span></span></span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .qf-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-block: 22px 0; font-size: 0.875rem; color: var(--qf-mute); }
+  .qf-crumbs a { display: inline-flex; align-items: center; min-height: 32px; color: var(--qf-soft); }
+  .qf-crumbs span[aria-current] { display: inline-flex; align-items: center; min-height: 32px; color: var(--qf-umber); font-weight: 650; }
+  .qf-pdp { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 80px); align-items: start; padding-block: 24px clamp(56px, 8vw, 104px); }
+  @media (max-width: 899px) { .qf-pdp { grid-template-columns: 1fr; } }
+  .qf-pdp-art { position: sticky; top: 96px; aspect-ratio: 5 / 4; background: radial-gradient(120% 90% at 50% 100%, color-mix(in srgb, var(--glass) 30%, var(--qf-wax)), var(--qf-wax)); }
+  @media (max-width: 899px) { .qf-pdp-art { position: relative; top: 0; } }
+  .qf-pdp-pic { position: absolute; inset: 0; }
+  .qf-pdp-pic[hidden] { display: none; }
+  .qf-pdp-pic.is-in { animation: qf-swap 300ms var(--qf-ease); }
+  @keyframes qf-swap { from { opacity: 0; transform: scale(0.97); } }
+  :root[data-tier="3"] .qf-pdp-pic.is-in { animation: none; }
+  .qf-pdp-pic :global(svg) { display: block; width: 100%; height: 100%; }
+  .qf-pdp-info { display: grid; gap: 16px; }
+  .qf-pdp-info h1 { font-size: clamp(2.6rem, 1.6rem + 3.4vw, 4.4rem); }
+  .qf-pdp-tag { font-size: 1.25rem; color: var(--qf-umber); }
+  .qf-pdp-price { display: none; }
+  @media (max-width: 899px) {
+    /* on phones the price and size sit right under the name, so they show with the jar in the first screen */
+    .qf-pdp-price { display: flex; align-items: baseline; gap: 8px; font-size: 1.0625rem; color: var(--qf-soft); }
+    .qf-pdp-price .qf-num { font-size: 1.375rem; font-weight: 700; color: var(--qf-umber); }
+    .qf-pdp-art { aspect-ratio: 4 / 3; }
+  }
+  .qf-pdp-blurb { color: var(--qf-soft); max-width: 52ch; }
+  .qf-buy { display: grid; gap: 16px; margin-top: 8px; padding-top: 22px; border-top: 1px solid var(--qf-line); }
+  .qf-sizes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; border: 0; min-width: 0; }
+  @media (max-width: 479px) { .qf-sizes { grid-template-columns: 1fr; } }
+  .qf-field-legend { grid-column: 1 / -1; margin-bottom: 8px; padding: 0; font-weight: 650; font-size: 0.9375rem; color: var(--qf-umber); float: left; width: 100%; }
+  .qf-size-top { display: flex; justify-content: space-between; gap: 8px; }
+  .qf-buy-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .qf-buy-btn { flex: 1 1 220px; }
+  .qf-buy-said { min-height: 1.5em; font-weight: 600; color: var(--qf-fern); }
+  .qf-buy-said :global(a) { color: var(--qf-ember); font-weight: 700; }
+  .qf-pdp-scent { background: var(--qf-wax); }
+  .qf-pdp-scent :global(.qf-sc-radar polygon[fill="var(--qf-cream)"]) { fill: var(--qf-paper); }
+  .qf-care-in { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(28px, 5vw, 72px); }
+  @media (max-width: 899px) { .qf-care-in { grid-template-columns: 1fr; } }
+  .qf-care { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--qf-line-2); }
+  .qf-care li { display: grid; grid-template-columns: 48px 1fr; gap: 2px 14px; padding: 20px 0; border-bottom: 1px solid var(--qf-line-2); }
+  .qf-care li > span { grid-row: span 2; font-weight: 700; color: var(--qf-ember); padding-top: 4px; }
+  .qf-care p { color: var(--qf-soft); }
+  .qf-near { padding-top: 0; }
+  .qf-near-list { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 0; padding: 0; list-style: none; }
+  @media (max-width: 767px) { .qf-near-list { grid-template-columns: 1fr; } }
+  .qf-near-card { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr); gap: 20px; align-items: center; padding: 14px; border-radius: 6px; background: var(--qf-cream); box-shadow: 0 0 0 1px var(--qf-line); color: inherit; text-decoration: none; transition: box-shadow 240ms var(--qf-ease), transform 240ms var(--qf-ease); }
+  .qf-near-card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--qf-line-2), 0 16px 32px rgba(45, 34, 28, 0.1); }
+  .qf-near-card > span:last-child { display: grid; gap: 6px; }
+  .qf-near-art { display: block; aspect-ratio: 5 / 4; background: radial-gradient(120% 90% at 50% 100%, color-mix(in srgb, var(--glass) 26%, var(--qf-wax)), var(--qf-wax)); }
+  .qf-near-art :global(svg) { display: block; width: 100%; height: 100%; }
+  .qf-near-name { font-size: 1.5rem; font-weight: 540; color: var(--qf-umber); letter-spacing: -0.02em; }
+  .qf-near-tag { color: var(--qf-soft); }
+</style>
+
+<script>
+  import { cart, saveCart, stock, onCart } from "../../../../lib/demo/quillfern-store";
+  import { addLine, left, stockNote, candleById, SIZES, MAX_QTY, type SizeId } from "../../../../lib/demo/quillfern-cart";
+  import { tier } from "../../../../lib/demo/tier";
+  import { base } from "../../../../data/demos/quillfern";
+
+  const form = document.querySelector<HTMLFormElement>("[data-qf-buy]");
+  if (form) {
+    const id = form.dataset.id!;
+    const candle = candleById(id)!;
+    const out = form.querySelector<HTMLOutputElement>("[data-qf-qty]")!;
+    const price = form.querySelector<HTMLElement>("[data-qf-price]")!;
+    const each = document.querySelector<HTMLElement>("[data-qf-each]")!;
+    const eachSize = document.querySelector<HTMLElement>("[data-qf-each-size]")!;
+    const submit = form.querySelector<HTMLButtonElement>("[data-qf-submit]")!;
+    const said = form.querySelector<HTMLElement>("[data-qf-said]")!;
+    const minus = form.querySelector<HTMLButtonElement>('[data-qf-step="-1"]')!;
+    const plus = form.querySelector<HTMLButtonElement>('[data-qf-step="1"]')!;
+    const pics = [...document.querySelectorAll<HTMLElement>("[data-qf-art] [data-size]")];
+    const radios = [...form.querySelectorAll<HTMLInputElement>('input[name="size"]')];
+    let qty = 1;
+
+    const size = () => (radios.find((r) => r.checked)?.value ?? "8oz") as SizeId;
+    // how many more of this size can go in: the stock left, less what is already in the cart, never past 9 a line
+    const room = (z: SizeId) => {
+      const inCart = cart().lines.find((l) => l.id === id && l.size === z)?.qty ?? 0;
+      return Math.max(0, Math.min(MAX_QTY, left(stock(), id, z)) - inCart);
+    };
+    const paint = () => {
+      const z = size(), r = room(z);
+      qty = Math.max(1, Math.min(qty, Math.max(1, r)));
+      out.textContent = String(qty);
+      minus.disabled = qty <= 1;
+      plus.disabled = qty >= r;
+      submit.disabled = r <= 0;
+      price.textContent = `$${SIZES[z].price * qty}`;
+      each.textContent = `$${SIZES[z].price}`;
+      eachSize.textContent = SIZES[z].label;
+      submit.firstChild!.textContent = r <= 0 ? (left(stock(), id, z) <= 0 ? "Sold out · " : "All in your cart · ") : "Add to cart · ";
+    };
+    const show = (z: SizeId, anim: boolean) => {
+      for (const p of pics) {
+        const on = p.dataset.size === z;
+        if (on && p.hidden && anim && tier() !== 3) { p.classList.remove("is-in"); void p.offsetWidth; p.classList.add("is-in"); }
+        p.hidden = !on;
+      }
+    };
+
+    onCart((c, s) => {
+      for (const r of radios) {
+        const z = r.value as SizeId, n = left(s, id, z);
+        r.disabled = n <= 0;
+        const note = form.querySelector<HTMLElement>(`[data-qf-size-stock="${z}"]`);
+        if (note) note.textContent = n <= 0 ? "· Sold out" : stockNote(n) ? `· ${stockNote(n)}` : "";
+      }
+      // the chosen size sold out (another tab, or a demo order): move to one that's left
+      if (radios.find((r) => r.checked)?.disabled) {
+        const next = radios.find((r) => !r.disabled);
+        if (next) { next.checked = true; show(next.value as SizeId, false); }
+      }
+      paint();
+    });
+    show(size(), false);
+
+    form.addEventListener("change", (e) => {
+      if ((e.target as HTMLInputElement).name === "size") { qty = 1; show(size(), true); said.textContent = ""; paint(); }
+    });
+    form.addEventListener("click", (e) => {
+      const b = (e.target as Element).closest<HTMLButtonElement>("[data-qf-step]");
+      if (!b || b.disabled) return;
+      qty += Number(b.dataset.qfStep);
+      paint();
+    });
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const z = size();
+      const { cart: next, added } = addLine(cart(), id, z, qty, stock());
+      if (!added) { paint(); return; }
+      saveCart(next);
+      said.replaceChildren(
+        document.createTextNode(`Added ${added} × ${candle.name}, ${SIZES[z].label}. `),
+        Object.assign(document.createElement("a"), { href: `${base}/cart/`, textContent: "View cart" }),
+      );
+      qty = 1;
+      paint();
+    });
+  }
+</script>

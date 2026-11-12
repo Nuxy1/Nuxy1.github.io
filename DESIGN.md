@@ -120,6 +120,13 @@ screenshots or working pages. The owner approved the generation budget on 2026-1
 (`src/data/cinematic-manifest.json`). A page whose loop is not listed there builds and looks as it did before the
 brief.
 
+A second exception, from the owner's website levels brief (2026-11-12), which sells four website levels and needs
+to show what the higher ones look like: real-time 3D appears in exactly one place, the Halvane Audio concept
+(`/example-sites/halvane-audio/`, a made-up speaker brand labelled as a Nuxy demonstration), as the Immersive
+level's example. Nuxy's own pages stay flat: the level pages, `/web-design/` and `/portfolio/` use the tokens
+below, and the only "deeper" motion on them is the CSS-only three-levels café (ThreeLevels). The 3D is held to the
+rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
+
 ## Colors
 
 - **Navy layers:** `bg` for the page, `bg-2` for alternating sections, `panel` for cards, `surface-strong` for
@@ -132,6 +139,9 @@ brief.
 - **Focus:** a visible `focus` ring on every interactive element; never removed.
 - The demo websites under `/example-sites/` and the salon inside `/demo/` are made-up businesses with their own palettes and fonts on
   purpose. They don't follow these tokens.
+- Demo-brand fonts never cost a download: Halvane Audio uses the same self-hosted Inter in its own warm palette,
+  and the Ostrel Coffee café inside ThreeLevels uses the system serif stack (`ui-serif, serif`) with `--mono`
+  for small labels. No demo requests a font from another site.
 
 ## Typography
 
@@ -163,6 +173,8 @@ brief.
 | `/automation/` | Lead response and follow-up, missed-call text-back, review requests and the other automations |
 | `/ecommerce/` | Online stores in the client's own Shopify or Square Online account, with the two published sizes |
 | `/website-security/` | Free website health consultation, repairs at a fixed written price, and security assessments only with the owner's written authorization |
+| `/web-design/` | The four website levels (Business, Signature, Immersive, Flagship): the level cards, the comparison tabs, the expectation matrix, the three-levels café, the five-question finder, add-ons, "Why does immersive cost more?", package boundaries, timelines and the levels FAQ |
+| `/business-websites/`, `/signature-websites/`, `/immersive-websites/` | One page per level (`LevelPage.astro`): who it suits, what's included, what's not, timeline and revisions, add-ons, the other levels. There is no Flagship page: Flagship is a written scope, reached from `/contact/?level=flagship` |
 | `/portfolio/` | "Our Work": the example websites and the online store, each for a made-up business and labelled so, on a computer and a phone |
 | `/solutions/` | Every service, grouped, with search and filters (all services visible without JavaScript) |
 | `/pricing/` | Published one-time prices, the monthly plans, bundle discount, FAQ |
@@ -280,6 +292,19 @@ part coming forward), `--dur-4` 520ms (section reveals, the hero's camera move);
   nothing on the site can start it.
 - **Creative Studio demos** (`CreativeGallery.astro`): nothing plays until the visitor presses play, one player at
   a time, each labelled a fictional concept demonstration. The gallery is all three demos or none. `VideoTeasers.astro` shows the same three posters, each with that label, under the home page's four service cards and on `/portfolio/`: plain links to the gallery, lazy-loaded pictures, no video file requested, no price, and nothing at all unless all three demos exist.
+- **The three-levels café** (`ThreeLevels.astro`): one made-up café drawn as a Business, a Signature and an
+  Immersive site, switched by three radio buttons and CSS (works without JavaScript). The Signature and Immersive
+  versions fade their parts in on switching unless motion is reduced; the Immersive loop runs only with
+  `html[data-ambient]`, while the drawing is on screen and the tab is visible (the script sets `.run`).
+- **Halvane 3D** (`src/lib/halvane/scene.ts`, Three.js): loaded as its own file (about 131 KB gzip) only after the
+  page has loaded, never with reduced motion or save-data, and only when WebGL works; otherwise the page keeps its
+  SVG drawing, which is complete on its own. Pixel ratio `Math.min(devicePixelRatio, 1.5)`, drawing paused while
+  off screen or in a hidden tab, and `dispose()` frees every geometry, material, texture and the renderer (then
+  forces a context loss). Switching reduced motion on stops and frees the scene. The scene is built in short steps
+  that yield to the page, its shaders compile asynchronously before the first frame, and changing the finish swaps
+  colours only (no shader rebuild), so no task blocks a tap for long. No reflection map on any device: three's
+  reflection blur held the page for about 0.4 s on a Windows desktop and the lights alone give the same look.
+  `tests/levels.test.mjs` checks it.
 - **Prices are never typed into motion components.** The hero panels and the goal picker read names and prices from
   `data/services.ts`, skip any id that isn't in the catalogue, and the goal picker is a fixed list per goal, not AI.
 - Analytics: a demo counts `demo_start` and `demo_complete` at most once each per demo per page view; the goal picker's buttons are
@@ -306,6 +331,15 @@ Counted since the Creative Studio brief: `cta_creative_quote`, `cta_creative_est
 `cta_creative_product_showcases` (the quote button under each kind of video work), `cta_creative_estimator` (the
 estimator's button), `creative_demo_play` and `cta_creative_similar` (the demo gallery), `cta_video_upsell` (the
 video block on `/websites/` and `/automation/`), `cta_home_creative` (the home page's line about video work), `cta_video_teasers` and `video_teaser_card` (the strip of three demo posters under the home page's service cards and on `/portfolio/`: its button and its cards).
+Counted since the website levels brief: `tier_viewed` (a level page opens; once per page view),
+`tier_selected` (a level's button, the finder's "Discuss My Project" and the portfolio's custom-project link),
+`tier_comparison_opened` (the first tab change in the comparison), `website_recommender_started` (the finder's
+first answer) and `website_recommender_completed` (a result shown), `portfolio_tier_filter` (each change of the
+portfolio's level filter), `immersive_demo_opened` (the Halvane card on `/immersive-websites/`), `contact_started`
+(the form's first answer) and `contact_completed` (the form sent). None says which level, answer or filter was
+chosen: the level travels only in the form's address (`/contact/?level=…`). `tests/levels.test.mjs` checks each
+fires and what it carries.
+
 The same rule holds: an event name and the page, never a choice or a price. The counting service drops any name
 that is not lowercase letters, digits and underscores, 32 at most, without an error: `tests/creative.test.mjs`
 checks every `data-track` in the build against that.

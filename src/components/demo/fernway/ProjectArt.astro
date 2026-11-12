@@ -1,0 +1,127 @@
+---
+// Before/after pictures for Fernway's example projects, drawn as SVG (800 x 500). They are illustrations of the kind
+// of work, not photos of a real customer's yard; the projects page tags each pair "Example transformation".
+interface Props { art: string; state: "before" | "after" }
+const { art, state } = Astro.props;
+const after = state === "after";
+
+let seed = art.length * 97 + (after ? 13 : 3);
+const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+const many = (n: number, f: (i: number) => any) => Array.from({ length: n }, (_, i) => f(i));
+
+// tall untidy grass for "before" lawns, as one path
+const shaggy = (y0: number, y1: number, n: number) => many(n, () => {
+  const x = rnd() * 820 - 10, y = y0 + rnd() * (y1 - y0), h = 18 + rnd() * 30, b = (rnd() - 0.5) * 18;
+  return `M${(x - 3).toFixed(0)} ${y.toFixed(0)}Q${(x + b * 0.4).toFixed(0)} ${(y - h * 0.6).toFixed(0)} ${(x + b).toFixed(0)} ${(y - h).toFixed(0)}Q${(x + 3).toFixed(0)} ${(y - h * 0.5).toFixed(0)} ${(x + 3).toFixed(0)} ${y.toFixed(0)}Z`;
+}).join("");
+const leaves = (n: number, y0: number, y1: number) => many(n, () => ({ x: rnd() * 800, y: y0 + rnd() * (y1 - y0), r: rnd() * 180, c: ["#c9792f", "#a2522a", "#e0a43c", "#b8642a"][Math.floor(rnd() * 4)] }));
+const stripes = many(10, (i) => -600 + i * 200);
+---
+<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id={`pa-sky-${art}-${state}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color={art === "fall" ? "#f1e3cf" : "#e3eee0"} /><stop offset="1" stop-color="#f6f1df" /></linearGradient>
+  </defs>
+  <rect width="800" height="500" fill={`url(#pa-sky-${art}-${state})`} />
+
+  {art === "backyard" && (
+    <g>
+      <path d="M0 180C200 150 600 160 800 170V260H0Z" fill="#a6c787" />
+      <g fill="#7e6a4f">{many(22, (i) => <path d={`M${20 + i * 36} 290V196l7-10 7 10V290Z`} opacity={after ? 1 : 0.9} transform={after ? "" : `rotate(${(rnd() - 0.5) * 8} ${27 + i * 36} 290)`} />)}</g>
+      <path d="M0 220H800M0 260H800" stroke="#6b5a42" stroke-width="6" />
+      {after ? (
+        <g>
+          <rect y="280" width="800" height="220" fill="#6aa651" />
+          <g fill="#5a9645">{stripes.map((x) => <path d={`M400 180L${x} 520H${x + 100}Z`} />)}</g>
+          <rect y="270" width="800" height="26" fill="#7d4b2d" />
+          {many(9, (i) => <circle cx={50 + i * 90} cy={270} r={22 + (i % 3) * 5} fill={i % 2 ? "#2f5d3a" : "#3f7845"} />)}
+          <path d="M0 296H800" stroke="#f3ecdb" stroke-width="3" />
+        </g>
+      ) : (
+        <g>
+          <rect y="270" width="800" height="230" fill="#93a85a" />
+          <path d={shaggy(280, 520, 520)} fill="#6f8a3c" />
+          <path d={shaggy(300, 520, 300)} fill="#a8b862" />
+          {many(10, () => <path d={`M${rnd() * 760} ${330 + rnd() * 150}l${30 + rnd() * 40} ${(rnd() - 0.5) * 16}`} stroke="#6b4a33" stroke-width="5" stroke-linecap="round" />)}
+          {many(14, () => { const x = rnd() * 780, y = 300 + rnd() * 180; return <g><path d={`M${x} ${y}V${y - 40}`} stroke="#5b7a33" stroke-width="3" /><circle cx={x} cy={y - 42} r="6" fill="#e8d36a" /></g>; })}
+        </g>
+      )}
+    </g>
+  )}
+
+  {art === "bed" && (
+    <g>
+      <rect x="0" y="0" width="800" height="300" fill="#efe6d2" />
+      <g stroke="#ddd0b4" stroke-width="2">{many(14, (i) => <path d={`M0 ${20 + i * 22}H800`} />)}</g>
+      <rect x="250" y="70" width="120" height="150" rx="4" fill="#ffe3a0" stroke="#2c3a33" stroke-width="6" />
+      <path d="M310 70v150M250 145h120" stroke="#2c3a33" stroke-width="4" />
+      <rect x="520" y="90" width="90" height="210" rx="4" fill="#a2522a" />
+      <rect y="300" width="800" height="200" fill={after ? "#6aa651" : "#86a158"} />
+      {after ? (
+        <g>
+          <path d="M0 290H800V400C600 420 200 420 0 400Z" fill="#6b3f25" />
+          <path d="M0 400C200 420 600 420 800 400" stroke="#f3ecdb" stroke-width="4" fill="none" />
+          {[[90, 300, 52, "#2f5d3a"], [700, 300, 56, "#2f5d3a"], [430, 296, 46, "#3f7845"]].map(([x, y, r, c]) => <circle cx={x} cy={y} r={r} fill={c as string} />)}
+          {many(12, (i) => { const x = 160 + i * 46 + (i > 5 ? 40 : 0), y = 360 + (i % 2) * 18; return <g><path d={`M${x} ${y + 18}V${y}`} stroke="#2f5d3a" stroke-width="4" /><circle cx={x} cy={y - 4} r="13" fill={["#e0a43c", "#a2522a", "#f2c94c", "#b48fd6"][i % 4]} /><circle cx={x} cy={y - 4} r="4" fill="#f5f1e6" /></g>; })}
+        </g>
+      ) : (
+        <g>
+          <path d="M0 290H800V400C600 410 200 416 0 398Z" fill="#8a6a4a" />
+          {many(26, () => { const x = rnd() * 800, y = 320 + rnd() * 70; return <path d={`M${x} ${y}l-6-14m6 14 5-16m-5 16 1-20`} stroke="#6f8a3c" stroke-width="3" stroke-linecap="round" />; })}
+          {many(30, () => <circle cx={rnd() * 800} cy={300 + rnd() * 100} r={2 + rnd() * 3} fill="#6e5236" />)}
+          <path d={shaggy(420, 520, 160)} fill="#6f8a3c" />
+        </g>
+      )}
+    </g>
+  )}
+
+  {art === "fall" && (
+    <g>
+      <path d="M0 210C220 180 560 190 800 200V300H0Z" fill={after ? "#a6c787" : "#b9b77a"} />
+      <path d="M570 330c4-60 4-130-2-190h26c-6 60-6 130-2 190Z" fill="#6b4a33" />
+      <path d="M584 220c-30-20-50-44-60-80M588 200c30-20 50-46 56-80" stroke="#6b4a33" stroke-width="12" stroke-linecap="round" fill="none" />
+      {after
+        ? many(9, () => <circle cx={520 + rnd() * 140} cy={80 + rnd() * 120} r={6 + rnd() * 8} fill={["#c9792f", "#e0a43c"][Math.floor(rnd() * 2)]} />)
+        : <g>{many(9, (i) => <circle cx={500 + (i % 3) * 70 + rnd() * 20} cy={70 + Math.floor(i / 3) * 50 + rnd() * 20} r={44 + rnd() * 18} fill={["#c9792f", "#e0a43c", "#a2522a"][i % 3]} opacity="0.92" />)}</g>}
+      <rect y="300" width="800" height="200" fill="#6aa651" />
+      {after ? (
+        <g>
+          <g fill="#5a9645">{stripes.map((x) => <path d={`M420 220L${x} 520H${x + 100}Z`} />)}</g>
+          <path d="M0 300H800" stroke="#f3ecdb" stroke-width="3" />
+          <rect x="40" y="300" width="300" height="30" fill="#6b3f25" />
+          {many(6, (i) => <path d={`M${70 + i * 50} 316v-16m-6 16v-10m12 10v-12`} stroke="#4f6b38" stroke-width="3" stroke-linecap="round" />)}
+        </g>
+      ) : (
+        <g>
+          {leaves(420, 300, 500).map((l) => <ellipse cx={l.x.toFixed(0)} cy={l.y.toFixed(0)} rx="9" ry="5" fill={l.c} transform={`rotate(${l.r.toFixed(0)} ${l.x.toFixed(0)} ${l.y.toFixed(0)})`} />)}
+          <ellipse cx="190" cy="420" rx="110" ry="42" fill="#b8642a" />
+          <ellipse cx="190" cy="410" rx="90" ry="30" fill="#c9792f" />
+          {many(40, () => <ellipse cx={(100 + rnd() * 180).toFixed(0)} cy={(392 + rnd() * 36).toFixed(0)} rx="9" ry="5" fill="#e0a43c" />)}
+          <rect x="40" y="300" width="300" height="30" fill="#7a5a3a" />
+          {many(10, (i) => <path d={`M${56 + i * 28} 316c-4-24-12-38-20-46m20 46c6-22 14-34 22-40`} stroke="#8a7a4a" stroke-width="3" fill="none" />)}
+        </g>
+      )}
+    </g>
+  )}
+
+  {art === "hedge" && (
+    <g>
+      <rect x="0" y="0" width="800" height="250" fill="#efe6d2" />
+      <path d="M0 250H800" stroke="#cdbf9f" stroke-width="6" />
+      <rect y="380" width="800" height="120" fill="#6aa651" />
+      <rect y="370" width="800" height="16" fill="#e7dfcd" />
+      {after ? (
+        <g>
+          <rect x="30" y="200" width="740" height="176" rx="70" fill="#2f5d3a" />
+          <rect x="30" y="200" width="740" height="60" rx="30" fill="#3f7845" />
+          <g stroke="#4a8a4c" stroke-width="5" fill="none" stroke-linecap="round">{many(10, (i) => <path d={`M${70 + i * 70} 290c14-10 30-10 44 0`} />)}</g>
+        </g>
+      ) : (
+        <g>
+          <path d="M20 376V230c30-60 70-30 100-70 30 40 70-10 110 30 40-50 80 10 120-30 30 40 80-20 120 20 40-40 90 10 120-20 40 30 70-10 110 40V376Z" fill="#2f5d3a" />
+          {many(70, () => { const x = 30 + rnd() * 740, y = 170 + rnd() * 80; return <path d={`M${x.toFixed(0)} ${(y + 30).toFixed(0)}l${((rnd() - 0.5) * 30).toFixed(0)} -${(20 + rnd() * 40).toFixed(0)}`} stroke={rnd() > 0.5 ? "#4a8a4c" : "#3f7845"} stroke-width="4" stroke-linecap="round" />; })}
+          {many(20, () => <circle cx={(30 + rnd() * 740).toFixed(0)} cy={(260 + rnd() * 100).toFixed(0)} r={(6 + rnd() * 10).toFixed(0)} fill="#7a6a3a" opacity="0.6" />)}
+        </g>
+      )}
+    </g>
+  )}
+</svg>

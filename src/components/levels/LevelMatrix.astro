@@ -1,0 +1,76 @@
+---
+// The expectation matrix (data/tiers.ts `matrix`): a real table on wider screens, and on phones a four-way choice
+// that shows one level's column as a list. The phone choice is plain radio buttons and CSS (no script): each list
+// shows when its radio is checked. The table and the lists hold the same words; only one of them is ever displayed,
+// so a screen reader meets it once.
+import { levels, matrix } from "../../data/tiers";
+---
+<div class="mx">
+  <div class="mx-table-wrap">
+    <table class="mx-table">
+      <caption class="sr-only">What each website level usually includes</caption>
+      <thead>
+        <tr><th scope="col"><span class="sr-only">What’s included</span></th>{levels.map((l) => <th scope="col">{l.name}</th>)}</tr>
+      </thead>
+      <tbody>
+        {matrix.map((r) => (
+          <tr>
+            <th scope="row">{r.row}</th>
+            {levels.map((l) => <td>{r.cells[l.id]}</td>)}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mx-phone">
+    {levels.map((l, i) => <input class="sr-only mx-radio" type="radio" name="mx-level" id={`mx-${l.id}`} value={l.id} checked={i === 0} aria-label={`Show the ${l.name} level`} />)}
+    <div class="mx-pick" aria-hidden="true">
+      {levels.map((l) => <label for={`mx-${l.id}`} data-for={l.id}>{l.name}</label>)}
+    </div>
+    {levels.map((l) => (
+      <dl class="mx-list panel" data-level={l.id}>
+        {matrix.map((r) => <div><dt>{r.row}</dt><dd>{r.cells[l.id]}</dd></div>)}
+      </dl>
+    ))}
+  </div>
+</div>
+
+<style>
+  .mx-table-wrap { display: none; }
+  @media (min-width: 900px) {
+    .mx-table-wrap { display: block; border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; }
+    .mx-phone { display: none; }
+  }
+  .mx-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.9375rem; }
+  .mx-table th, .mx-table td { padding: 14px 16px; border-bottom: 1px solid var(--hairline-soft); text-align: left; vertical-align: top; overflow-wrap: break-word; }
+  .mx-table tbody tr:last-child > * { border-bottom: 0; }
+  .mx-table thead th { color: var(--ink); font-size: 1rem; background: var(--surface-strong); }
+  .mx-table thead th:first-child { width: 15%; }
+  .mx-table tbody th { color: var(--muted); font-weight: 600; font-size: 0.875rem; }
+  .mx-table td { color: var(--body); }
+  .mx-table tbody tr:nth-child(even) { background: rgba(148, 163, 184, 0.03); }
+  .mx-table tbody tr:last-child td { color: var(--ink); font-weight: 600; }
+
+  .mx-pick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; margin-bottom: 12px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel); }
+  .mx-pick label { display: grid; place-items: center; min-height: 44px; padding: 0 4px; border-radius: 8px; color: var(--body); font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+  .mx-list { display: none; margin: 0; padding: 4px 18px; }
+  .mx-list div { padding-block: 12px; border-bottom: 1px solid var(--hairline-soft); }
+  .mx-list div:last-child { border-bottom: 0; }
+  .mx-list dt { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .mx-list dd { margin: 4px 0 0; color: var(--ink); }
+
+  /* the checked radio shows its list and marks its label; keyboard focus on a radio rings its label */
+  #mx-business:checked ~ .mx-list[data-level="business"],
+  #mx-signature:checked ~ .mx-list[data-level="signature"],
+  #mx-immersive:checked ~ .mx-list[data-level="immersive"],
+  #mx-flagship:checked ~ .mx-list[data-level="flagship"] { display: block; }
+  #mx-business:checked ~ .mx-pick [data-for="business"],
+  #mx-signature:checked ~ .mx-pick [data-for="signature"],
+  #mx-immersive:checked ~ .mx-pick [data-for="immersive"],
+  #mx-flagship:checked ~ .mx-pick [data-for="flagship"] { background: var(--accent-soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--link); }
+  #mx-business:focus-visible ~ .mx-pick [data-for="business"],
+  #mx-signature:focus-visible ~ .mx-pick [data-for="signature"],
+  #mx-immersive:focus-visible ~ .mx-pick [data-for="immersive"],
+  #mx-flagship:focus-visible ~ .mx-pick [data-for="flagship"] { outline: 2px solid var(--focus); outline-offset: 2px; }
+</style>

@@ -1,0 +1,36 @@
+---
+// One meter on the website-level scale (data/tiers.ts): four segments, the first `score` of them filled, and the
+// scale's word beside it. The word carries the meaning; the bar is drawn for sighted readers and hidden from
+// screen readers so they hear "Motion: Advanced" once.
+import { scaleName, type Score } from "../../data/tiers";
+
+interface Props {
+  name: string;
+  score: Score;
+  /** a short explanation under the name (the comparison shows it; the case studies leave it out) */
+  text?: string;
+}
+const { name, score, text } = Astro.props;
+---
+<div class="meter" data-score={score}>
+  <dt>{name}{text && <span class="meter-text">{text}</span>}</dt>
+  <dd>
+    <span class="meter-bar" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= score }}></i>)}</span>
+    <span class="meter-word">{scaleName(score)}</span>
+  </dd>
+</div>
+
+<style>
+  .meter { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; padding-block: 12px; border-bottom: 1px solid var(--hairline-soft); }
+  .meter:last-child { border-bottom: 0; }
+  dt { color: var(--ink); font-weight: 600; font-size: 0.9375rem; }
+  .meter-text { display: block; margin-top: 2px; color: var(--muted); font-size: 0.875rem; font-weight: 400; }
+  dd { margin: 0; display: flex; align-items: center; gap: 10px; }
+  .meter-bar { display: inline-grid; grid-template-columns: repeat(4, 18px); gap: 3px; }
+  .meter-bar i { display: block; height: 6px; border-radius: 2px; background: var(--hairline-strong); }
+  /* the fill steps up with the score: one quiet blue for Basic, the cyan accent for Bespoke */
+  .meter-bar i.on { background: var(--link); }
+  .meter[data-score="3"] .meter-bar i.on, .meter[data-score="4"] .meter-bar i.on { background: var(--cyan); }
+  .meter-word { min-width: 7ch; color: var(--body); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+  @media (max-width: 419px) { .meter-bar { grid-template-columns: repeat(4, 12px); } }
+</style>
