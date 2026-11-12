@@ -6,6 +6,7 @@
 // "completely secure", and every button goes to the existing quote form (/contact/?want=<id>).
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
+import CinematicLoop from "../../components/CinematicLoop.astro";
 import { health, plans, primary, serviceById } from "../../data/services";
 import type { IconName } from "../../components/Icon.astro";
 
@@ -58,7 +59,8 @@ const faqs: [string, string][] = [
 ---
 <Base title="Website Security, Health Checks & Repairs · Nuxy Automation" description="Free website health consultation, repairs at a fixed written price, and security assessments done only with the owner’s written authorization." wide>
   <div class="wrap ws">
-  <section class="ws-hero">
+  <section class="ws-hero cine-host">
+    <CinematicLoop id="security" backdrop eager />
     <div class="ws-hero-copy">
     <p class="eyebrow">Website security &amp; repairs</p>
     <h1>Protect Your Website. Fix Problems. Keep Your Business Running.</h1>
@@ -100,7 +102,7 @@ const faqs: [string, string][] = [
           {o.id === "repairs" && <p class="note">Small fixes start at {fixes.price.replace("from ", "")}: see <a href="/solutions/#site-fixes">Website quick fixes</a>. Larger repairs are quoted after the free look.</p>}
           {o.id === "maintenance" && <p class="note">This is our published <a href={`/pricing/#${care.id}`}>{care.name}</a>. Fix times and what’s covered are on the pricing page.</p>}
           <p class="ws-auth"><Icon name={o.id === "health-consultation" ? "info" : "lockSimple"} /><span>{o.auth}</span></p>
-          <a class="button secondary" href={o.id === "maintenance" ? `/contact/?service=${care.id}` : ask(o.want)} data-track={`cta_ws_${o.want}`}>{o.cta}</a>
+          <a class="button secondary" href={o.id === "maintenance" ? `/contact/?service=${care.id}` : ask(o.want)} data-track={`cta_ws_${o.want.replaceAll("-", "_")}`}>{o.cta}</a>
         </article>
       ))}
     </div>

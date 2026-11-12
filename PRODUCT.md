@@ -36,6 +36,19 @@ open-source code anyone can open, clearly labelled as demonstrations, not testim
 3. AI and business automation (one-time setups from $149; the AI Voice Receptionist is available after consultation)
 4. Optional website management (Website Care $79/month)
 
+### Also: AI Creative & Video Advertising
+
+An additional service, from the owner's Creative Studio brief (2026-11-11): short video ads, motion graphics and
+product showcases, made with AI video tools and finished by a person. Nuxy stays a website and automation business;
+the four main services and the home page's message are unchanged, and video work is offered beside them
+(`/creative-studio/`, the Services menu, one block on `/websites/`, `/automation/` and `/solutions/`).
+**The creative prices, add-ons and the monthly term ("Cancel any time; unused videos don't carry over") were approved
+by the owner on 2026-11-11** and are published prices: `src/data/creative.ts` holds them, `tests/creative.test.mjs`
+pins them, and a change needs the owner's written yes. They are printed on `/creative-studio/`. `/contact/` carries
+the estimator's rules too, so that a visitor arriving from the estimator sees the same estimated starting price
+worked out again beside the form; it prints no creative price otherwise. The three videos in the page's gallery are
+fictional concept demonstrations, labelled as such on the page and inside each file, never client work.
+
 ### Home page
 
 The home page has one job: a small-business owner understands within seconds what Nuxy can do for them, sees the
@@ -59,6 +72,16 @@ inquiry, friendly follow-ups that stop when the customer replies, and an alert t
   accepted in links and the form), the bundle discount, the four main services, the FAQ and the service areas.
   Pages, the pricing table, the inquiry form's list and the structured data read from it; no Nuxy price is typed
   anywhere else on the site.
+- **Creative work:** `src/data/creative.ts` holds the kinds of video work, their starting prices, the estimator's
+  rules, the three demo briefs, the limits and the FAQ; `src/data/creative-estimate.ts` is the arithmetic, shared by
+  the estimator and the quote form. The estimator sends nothing: its choices travel as a short code in the quote
+  form's address, the form checks the code against the same rules, works the price out again and writes it into
+  the project box as words. The request is saved as `want: creative` with no service id. The inquiry service must
+  be deployed before the site, or it refuses that answer.
+- **Videos are made privately.** Generation runs in the owner's own Higgsfield account, by hand, after the owner
+  approves the credits. The site has no route, key or script that can reach a video service, and a visitor can
+  never spend credits. `src/data/cinematic-manifest.json` lists the finished files; a page shows a video only
+  when its file is listed there and really exists (`tests/creative.test.mjs`).
 - The inquiry form posts to Nuxy's own inquiry service (`inquiryUrl` in `src/data/site.ts`), which saves the
   message and emails it to the Nuxy inbox. If sending fails, the page says so and shows the email address.
 - Old one-page links (`/#booking`, `/#request`, ...) are redirected to their new pages; see DESIGN.md "Anchors and
@@ -76,6 +99,10 @@ inquiry, friendly follow-ups that stop when the customer replies, and an alert t
 - 50% to start, 50% at handover, by invoice. Written plan and price within one business day.
 - Client websites are built in the client's own Squarespace or Wix account so they can edit them alone; the
   demonstration websites are custom-coded to show what's possible.
+- Video work: the customer approves a concept and a fixed written price before anything is made. The page says the
+  videos are made with AI tools, that files sent for a video may be uploaded to the AI video service, that a real
+  person's face or voice is used only with that person's written permission, and that views or sales are never
+  promised.
 - No ranking or growth guarantees. No unlimited support. Nothing is sent to a business's customers without rules the
   owner approved.
 
@@ -96,6 +123,10 @@ inquiry, friendly follow-ups that stop when the customer replies, and an alert t
   demo's real output; the businesses in them are made up and say so.
 - Open-source projects with docs and code: the small-business automations, a webhook relay, Zapier/n8n code steps, a
   CSV contact cleaner and a community Discord bot.
+- No video work for a client yet. Three Creative Studio demo videos exist (made 2026-11-11): they are for made-up
+  brands and are labelled fictional concept demonstrations on the page and on each video's end card. The gallery
+  and every link that says "portfolio" for videos appear only while all three exist as real, checked files. Never
+  show an AI-made video as client work or as a before and after.
 - No client reviews, testimonials, customer logos or results yet. `src/data/reviews.ts` takes real reviews only, word
   for word with their source; while it is empty no reviews section is shown. Never fabricate reviews, logos, numbers,
   certifications, partnerships or people.

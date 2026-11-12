@@ -7,6 +7,7 @@
 import Base from "../layouts/Base.astro";
 import Icon from "../components/Icon.astro";
 import AutomationCore from "../components/AutomationCore.astro";
+import CinematicLoop from "../components/CinematicLoop.astro";
 import AutopilotDemos from "../components/AutopilotDemos.astro";
 import AutomateSelector from "../components/AutomateSelector.astro";
 import PackageEstimator from "../components/PackageEstimator.astro";
@@ -67,7 +68,8 @@ const business = {
 <Base title="Nuxy Automation · Websites, Online Stores & Automation · Faribault, MN" wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(business)} />
 
-  <section class="hero" data-hero>
+  <section class="hero cine-host" data-hero>
+    <CinematicLoop id="hero" backdrop eager />
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="eyebrow">Websites, online stores & automation · Faribault, MN</p>
@@ -104,6 +106,7 @@ const business = {
       </div>
       <p class="more"><a class="text-link" href="/solutions/" data-track="cta_services">See all {services.length} services<Icon name="arrowRight" /></a></p>
       <p class="note also-note"><Icon name="shieldCheck" /><span>Already have a website that’s broken, slow or showing a security warning? We also do <a href="/website-security/" data-track="cta_home_security">website health checks, repairs and authorized security assessments</a>, starting with a free look.</span></p>
+      <p class="note also-note"><Icon name="filmSlate" /><span>Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person.</span></p>
     </div>
   </section>
 

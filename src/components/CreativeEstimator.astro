@@ -1,0 +1,274 @@
+---
+// The Creative Studio price estimator (brief, Phase 8): pick the kind of video, how many, the length, formats,
+// complexity, revision rounds and extras, and see a starting price. Not a quote: the page says so beside the number.
+//
+// Every price and rule comes from data/creative.ts and the sum is done by data/creative-estimate.ts (tested on its
+// own), the same list the service cards print. The page script gets the rules as data and the arithmetic module; it
+// holds no prices of its own. "Get My Custom Quote" opens the quote form with the choices as a short code in the
+// address (?cq=...): the form checks that code against the same rules and works the estimate out again, so a
+// changed address can never put a made-up price in front of the owner. Nothing is sent anywhere from this page.
+// Without JavaScript the starting prices are all still printed and the button opens the quote form.
+import Icon from "./Icon.astro";
+import { rules, types, usd, priceOf, levelHelp, estimatorNotes, creativeWant, quoteParam } from "../data/creative";
+import { check, quote, priceText } from "../data/creative-estimate";
+
+const first = types[0];
+const start = check({ type: first.id, videos: 1, duration: rules.durations[0].id, formats: rules.formats.slice(0, first.formats).map((f) => f.id), level: rules.levels[0].id, revisions: rules.revisions.included, extras: [] }, rules)!;
+const startQuote = quote(start, rules);
+const rounds = Array.from({ length: rules.revisions.max - rules.revisions.included + 1 }, (_, i) => rules.revisions.included + i);
+const counts = Array.from({ length: rules.maxVideos }, (_, i) => i + 1);
+const plus = (n: number, each = true) => (n ? `+${usd(n)}${each ? " per video" : ""}` : "included");
+---
+<form class="ce" action="/contact/" method="get" data-creative-estimator data-rules={JSON.stringify(rules)} data-param={quoteParam}>
+  <input type="hidden" name="want" value={creativeWant} />
+  <!-- (filled in by the script: without it no code travels, so the quote form is never told choices nobody checked) -->
+  <input type="hidden" name={quoteParam} value="" data-code />
+
+  <div class="ce-fields">
+    <fieldset class="ce-set">
+      <legend>What do you need?</legend>
+      <div class="ce-options">
+        {types.map((t, i) => (
+          <label class="ce-option">
+            <input type="radio" name="ce-type" value={t.id} checked={i === 0} />
+            <span class="ce-mark" aria-hidden="true"></span>
+            <span class="ce-name">{t.label}</span>
+            <span class="ce-price">{priceOf(t.id)}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <div class="ce-row">
+      <div class="ce-set" data-videos-field>
+        <label class="ce-label" for="ce-videos">How many videos?</label>
+        <select id="ce-videos" name="ce-videos" aria-describedby="ce-videos-help">
+          {counts.map((n) => <option value={n} selected={n === 1}>{n}</option>)}
+        </select>
+        <p class="ce-help" id="ce-videos-help" data-videos-help>Each one is priced the same.</p>
+      </div>
+      <div class="ce-set">
+        <label class="ce-label" for="ce-rounds">Revision rounds</label>
+        <select id="ce-rounds" name="ce-rounds" aria-describedby="ce-rounds-help">
+          {rounds.map((n) => <option value={n} selected={n === rules.revisions.included}>{n}{n === rules.revisions.included ? " (included)" : ""}</option>)}
+        </select>
+        <p class="ce-help" id="ce-rounds-help">{rules.revisions.included} are included. Each extra round is {usd(rules.revisions.extra)} per video.</p>
+      </div>
+    </div>
+
+    <fieldset class="ce-set">
+      <legend>How long is each video?</legend>
+      <div class="ce-options">
+        {rules.durations.map((d, i) => (
+          <label class="ce-option">
+            <input type="radio" name="ce-duration" value={d.id} checked={i === 0} />
+            <span class="ce-mark" aria-hidden="true"></span>
+            <span class="ce-name">{d.label}</span>
+            <span class="ce-price">{plus(d.add)}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset class="ce-set" aria-describedby="ce-formats-help">
+      <legend>Which shapes do you need?</legend>
+      <p class="ce-help" id="ce-formats-help" data-formats-help>{first.formats} included. Each extra shape is {usd(rules.extraFormat)} per video.</p>
+      <div class="ce-options two">
+        {rules.formats.map((f, i) => (
+          <label class="ce-option">
+            <input type="checkbox" name="ce-format" value={f.id} checked={i < first.formats} />
+            <span class="ce-mark box" aria-hidden="true"><Icon name="check" /></span>
+            <span class="ce-name">{f.label}</span>
+          </label>
+        ))}
+      </div>
+      <p class="ce-error" data-formats-error hidden>Choose at least one shape to see a price.</p>
+    </fieldset>
+
+    <fieldset class="ce-set">
+      <legend>How complex is it?</legend>
+      <div class="ce-options">
+        {rules.levels.map((l, i) => (
+          <label class="ce-option tall">
+            <input type="radio" name="ce-level" value={l.id} checked={i === 0} />
+            <span class="ce-mark" aria-hidden="true"></span>
+            <span class="ce-name">{l.label}<span class="ce-sub">{levelHelp[l.id]}</span></span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset class="ce-set">
+      <legend>Extras <span class="ce-optional">(optional)</span></legend>
+      <div class="ce-options">
+        {rules.extras.map((x) => (
+          <label class="ce-option">
+            <input type="checkbox" name="ce-extra" value={x.id} />
+            <span class="ce-mark box" aria-hidden="true"><Icon name="check" /></span>
+            <span class="ce-name">{x.label}</span>
+            <span class="ce-price">{plus(x.add)}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  </div>
+
+  <!-- On a narrow screen the summary sits below every choice, so the price also rides at the bottom of the screen while
+       the choices are in view. It repeats the summary's figure for the eye only (the live region announces changes), and
+       appears only once the script is running: without it the figure could not follow the choices. -->
+  <div class="ce-bar" data-bar aria-hidden="true" hidden><p><span>Starting price</span><strong data-bar-total>{priceText(startQuote)}</strong></p></div>
+
+  <aside class="ce-sum" aria-labelledby="ce-sum-h">
+    <h3 id="ce-sum-h">Your starting price</h3>
+    <ul class="ce-lines" data-lines>
+      {startQuote.lines.map((l) => <li><span>{l.label}</span><span>{usd(l.amount)}</span></li>)}
+    </ul>
+    <p class="ce-total"><span data-total-label>Estimated starting price</span><strong data-total>{priceText(startQuote)}</strong></p>
+    <noscript><p class="ce-range">Turn on JavaScript to see this figure change with your choices. Every starting price is in the list above.</p></noscript>
+    <p class="ce-range" data-range hidden>The lower figure is a standard video and the higher one is an advanced one. Your written quote settles which.</p>
+    <button class="button wide" type="submit" data-track="cta_creative_estimator">Get My Custom Quote<Icon name="arrowRight" /></button>
+    <ul class="ce-notes">
+      {estimatorNotes.map((n) => <li>{n}</li>)}
+    </ul>
+    <p class="sr-only" role="status" aria-live="polite" data-status></p>
+  </aside>
+</form>
+
+<script>
+  import { check, quote, encode, priceText, type CreativeRules } from "../data/creative-estimate";
+
+  const money = (n: number) => "$" + n.toLocaleString("en-US");
+  const track = (e: string) => (window as unknown as { nuxyTrack?: (e: string) => void }).nuxyTrack?.(e);
+
+  for (const form of document.querySelectorAll<HTMLFormElement>("[data-creative-estimator]")) {
+    const rules: CreativeRules = JSON.parse(form.dataset.rules!);
+    const param = form.dataset.param!;
+    const q = <T extends HTMLElement = HTMLElement>(s: string) => form.querySelector<T>(s)!;
+    const all = (name: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`)];
+    const one = (name: string) => all(name).find((i) => i.checked)?.value ?? "";
+    const many = (name: string) => all(name).filter((i) => i.checked).map((i) => i.value);
+    const videos = q<HTMLSelectElement>("#ce-videos"), rounds = q<HTMLSelectElement>("#ce-rounds");
+    const lines = q("[data-lines]"), total = q("[data-total]"), range = q("[data-range]"), status = q("[data-status]");
+    const code = q<HTMLInputElement>("[data-code]"), formatsError = q("[data-formats-error]");
+    const typeOf = () => rules.types.find((t) => t.id === one("ce-type")) ?? rules.types[0];
+    // The riding price steps aside while the summary's own figure is on screen, so the price is never shown twice.
+    const bar = q("[data-bar]"), barTotal = q("[data-bar-total]");
+    bar.hidden = false;
+    if ("IntersectionObserver" in window) new IntersectionObserver(([seen]) => bar.classList.toggle("away", seen.isIntersecting)).observe(total);
+
+    // The visitor's own number of videos, kept while a monthly package fixes the count and put back when they leave it.
+    let own = typeOf().count ? "1" : videos.value;
+
+    const read = () => check({ type: one("ce-type"), videos: Number(videos.value), duration: one("ce-duration"), formats: many("ce-format"), level: one("ce-level"), revisions: Number(rounds.value), extras: many("ce-extra") }, rules);
+
+    const render = (announce: boolean) => {
+      const type = typeOf();
+      // A monthly package is a fixed number of videos: the count is shown, not chosen.
+      if (type.count) videos.value = String(Math.min(type.count, rules.maxVideos));
+      else if (videos.disabled) videos.value = own; // (back from a package: the number the visitor chose themselves)
+      videos.disabled = type.count > 0;
+      q("[data-videos-help]").textContent = type.count ? `This package is ${type.count} videos each month.` : "Each one is priced the same.";
+      q("[data-formats-help]").textContent = `${type.formats} included${type.count ? " for each video" : ""}. Each extra shape is ${money(rules.extraFormat)} per video.`;
+
+      const choice = read();
+      formatsError.hidden = many("ce-format").length > 0;
+      if (!choice) {
+        code.value = "";
+        lines.replaceChildren();
+        total.textContent = barTotal.textContent = "—";
+        range.hidden = true;
+        if (announce) status.textContent = "Choose at least one shape to see a price.";
+        return;
+      }
+      const result = quote(choice, rules);
+      code.value = encode(choice);
+      lines.replaceChildren(...result.lines.map((l) => {
+        const li = document.createElement("li"), a = document.createElement("span"), b = document.createElement("span");
+        a.textContent = l.label; b.textContent = money(l.amount);
+        li.append(a, b);
+        return li;
+      }));
+      total.textContent = barTotal.textContent = priceText(result);
+      range.hidden = result.high === result.low;
+      if (announce) status.textContent = `Estimated starting price ${priceText(result).replace("–", " to ")}.`;
+    };
+
+    let used = false;
+    form.addEventListener("change", (e) => {
+      // (a new kind of video starts from the shapes its price includes)
+      if ((e.target as HTMLInputElement).name === "ce-type") { const n = typeOf().formats; all("ce-format").forEach((box, i) => { box.checked = i < n; }); }
+      if (e.target === videos) own = videos.value;
+      if (!used) { used = true; track("creative_estimator_use"); }
+      render(true);
+    });
+    // Only the two things the quote form reads travel in the address: the answer to pick and the choices' code.
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const want = q<HTMLInputElement>('input[name="want"]').value;
+      location.href = `/contact/?want=${want}${code.value ? `&${param}=${code.value}` : ""}`;
+    });
+    // (the browser may bring the choices back after Back or a reload: show the price that matches them)
+    addEventListener("pageshow", () => render(false));
+    render(false);
+  }
+</script>
+
+<style>
+  .ce { display: grid; gap: 24px; align-items: start; }
+  .ce-fields { display: grid; gap: 26px; grid-area: 1 / 1; }
+  .ce-set { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .ce-set > legend, .ce-label { display: block; margin-bottom: 10px; padding: 0; color: var(--ink); font-size: 1.0625rem; font-weight: 650; }
+  .ce-optional { color: var(--muted); font-size: 0.875rem; font-weight: 500; }
+  .ce-help { margin: -4px 0 12px; color: var(--muted); font-size: 0.875rem; }
+  .ce-label + select + .ce-help { margin: 8px 0 0; }
+  .ce-error { margin-top: 10px; color: var(--warn, #fbbf24); font-size: 0.9375rem; }
+  .ce-row { display: grid; gap: 22px; }
+  @media (min-width: 560px) { .ce-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ce select { width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid var(--hairline-strong); border-radius: 12px; background: var(--panel); color: var(--ink); font: inherit; }
+  .ce select:disabled { opacity: 0.7; }
+  .ce select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .ce-options { display: grid; gap: 10px; }
+  @media (min-width: 560px) { .ce-options.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ce-option { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 52px; padding: 10px 16px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--panel); cursor: pointer; transition: border-color var(--dur-1) ease, background-color var(--dur-1) ease; }
+  .ce-option.tall { align-items: start; }
+  /* (the real input covers its whole row, so the row is the tap target; the drawn mark follows its state) */
+  .ce-option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .ce-mark { display: grid; place-items: center; width: 22px; height: 22px; border: 1.5px solid var(--hairline-strong); border-radius: 50%; color: transparent; transition: border-color var(--dur-1) ease, background-color var(--dur-1) ease; }
+  .ce-mark.box { border-radius: 7px; }
+  .ce-mark :global(.icon) { width: 15px; height: 15px; }
+  .ce-option:hover { border-color: var(--hairline-strong); }
+  .ce-option:has(input:checked) { border-color: var(--button); background: rgba(59, 130, 246, 0.08); }
+  .ce-option input:checked + .ce-mark { border-color: var(--button); background: var(--button); color: #fff; }
+  .ce-option input[type="radio"]:checked + .ce-mark { background: radial-gradient(circle, #fff 0 32%, var(--button) 36%); }
+  .ce-option input:focus-visible + .ce-mark { outline: 2px solid var(--focus); outline-offset: 3px; }
+  .ce-name { color: var(--ink); font-weight: 600; line-height: 1.35; }
+  .ce-sub { display: block; margin-top: 2px; color: var(--muted); font-size: 0.875rem; font-weight: 400; line-height: 1.45; }
+  .ce-price { color: var(--body); font-size: 0.9375rem; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+  .ce-sum { display: grid; gap: 16px; padding: clamp(20px, 3vw, 28px); border: 1px solid var(--hairline-strong); border-radius: var(--r-lg); background: var(--bg-2); box-shadow: var(--shadow); }
+  .ce-sum h3 { font-size: 1.1875rem; }
+  .ce-lines { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 0.9375rem; }
+  .ce-lines :global(li) { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .ce-lines :global(li > span:last-child) { flex: none; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ce-total { display: grid; gap: 4px; padding-top: 14px; border-top: 1px solid var(--hairline); color: var(--ink); font-weight: 650; }
+  .ce-total strong { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .ce-range { color: var(--body); font-size: 0.875rem; }
+  .ce-notes { display: grid; gap: 6px; padding-left: 18px; color: var(--muted); font-size: 0.8125rem; line-height: 1.5; }
+
+  /* The riding price: it shares the choices' cell and sits at its foot, so it rides the bottom of the screen for as long
+     as the choices are in view, and takes no room in the page (height 0), so showing or hiding it never moves anything. */
+  .ce-bar { grid-area: 1 / 1; align-self: end; position: sticky; bottom: 0; z-index: 5; height: 0; pointer-events: none; }
+  .ce-bar[hidden] { display: none; }
+  .ce-bar p { position: absolute; inset: auto 0 calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; margin: 0; padding: 12px 16px; border: 1px solid var(--hairline-strong); border-radius: 14px; background: var(--bg-2); box-shadow: var(--shadow); color: var(--body); font-size: 0.9375rem; transition: opacity var(--dur-1) ease; }
+  .ce-bar span { white-space: nowrap; }
+  .ce-bar strong { color: var(--ink); font-size: 1.125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ce-bar.away p { opacity: 0; }
+
+  @media (min-width: 960px) {
+    .ce-bar { display: none; }
+    .ce { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 32px; }
+    .ce-sum { position: sticky; top: calc(var(--nav-h) + 20px); }
+  }
+  @media (max-width: 419px) { .ce-option { padding-inline: 12px; gap: 10px; } }
+</style>

@@ -683,7 +683,7 @@ test("header: Services, Pricing, Demos, Our Work, About and one quote button; th
     await drop.locator("summary").click();
     assert.equal(await isOpen(), true);
     const links = await drop.locator("a").evaluateAll((as) => as.map((a) => ({ name: a.textContent.trim(), href: a.getAttribute("href"), h: a.getBoundingClientRect().height })));
-    assert.deepEqual(links.map((l) => l.name), ["AI & Business Automation", "AI Voice Receptionist", "Business Websites", "E-Commerce", "Website Repairs & Security", "All Services"]);
+    assert.deepEqual(links.map((l) => l.name), ["AI & Business Automation", "AI Voice Receptionist", "Business Websites", "E-Commerce", "Website Repairs & Security", "Video & Creative Studio", "All Services"]);
     for (const l of links) {
       const [path, hash] = l.href.split("#");
       assert.ok(urls.includes(path), `${l.name} -> ${l.href}`);

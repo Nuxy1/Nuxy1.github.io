@@ -1,0 +1,245 @@
+---
+// AI Creative & Video Advertising (owner's Creative Studio brief, 2026-11-11: the division's name, the headline, the
+// three category names, what each offers and the button labels are the brief's words). Everything printed here comes
+// from data/creative.ts, the one list the cards, the estimator and the quote form share.
+// Rules this page keeps, checked by tests/creative.test.mjs:
+//   - the prices are starting prices and say so; the estimate is "not a quote"; every card has a custom-quote button;
+//   - nothing promises views, sales or how an ad will perform;
+//   - it says plainly that the videos are made with AI tools, and no generated scene is passed off as filmed;
+//   - the portfolio gallery appears only when all three concept demonstrations have real, checked video files
+//     (data/cinematic.ts), each labelled a fictional concept demonstration; until then there is no gallery and no
+//     link to one. The same goes for the screen in the hero: no file, no screen.
+//   - nothing on the page calls a video service: making videos is the owner's private work, never a visitor's click.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import type { IconName } from "../../components/Icon.astro";
+import CinematicLoop from "../../components/CinematicLoop.astro";
+import CreativeGallery from "../../components/CreativeGallery.astro";
+import CreativeEstimator from "../../components/CreativeEstimator.astro";
+import { rules, types, offers, monthly, everyVideo, limits, demos, steps, faqs, priceOf, quoteHref, quoteParam } from "../../data/creative";
+import { check, encode } from "../../data/creative-estimate";
+import { loopOf, demosReady } from "../../data/cinematic";
+
+const screen = loopOf("creative-studio");
+const gallery = demosReady(demos.map((d) => d.id));
+/** the monthly packages: every price of the first card after its headline price */
+const packs = offers[0].prices.slice(1);
+// A card's button opens the quote form already naming that kind of video, at its starting choices.
+const ask = (id: string) => {
+  const t = types.find((x) => x.id === id)!;
+  const start = check({ type: id, videos: 1, duration: rules.durations[0].id, formats: rules.formats.slice(0, t.formats).map((f) => f.id), level: rules.levels[0].id, revisions: rules.revisions.included, extras: [] }, rules)!;
+  return `${quoteHref}&${quoteParam}=${encode(start)}`;
+};
+const first: { icon: IconName; title: string; text: string }[] = [
+  { icon: "filmSlate", title: "A concept you approve first", text: "You see the scenes and the words on screen before anything is made." },
+  { icon: "sparkle", title: "Made with AI, finished by hand", text: "Generated scenes, then edited, titled and checked by a person." },
+  { icon: "receipt", title: "A written price first", text: "Nothing is charged before you approve the quote." },
+];
+---
+<Base title="AI Video Ads, Motion Graphics & Product Showcases · Nuxy Automation" description="Short video ads, moving menus and product showcases for small businesses, made with AI video tools and finished by a person. See starting prices." wide>
+  <div class="wrap cs">
+  <section class:list={["cs-hero", { screen: Boolean(screen) }]}>
+    <div class="cs-hero-copy">
+      <p class="eyebrow">AI Creative &amp; Video Advertising</p>
+      <h1>Turn Your Brand Into Something Worth Watching.</h1>
+      <p class="lead">Short video ads, moving menus and product showcases for your business, made with AI video tools and finished by a person. You approve the concept and a fixed written price before anything is made.</p>
+      <div class="cs-actions">
+        <a class="button" href={quoteHref} data-track="cta_creative_quote">Get My Custom Quote</a>
+        {gallery
+          ? <a class="button secondary" href="#portfolio" data-track="cta_creative_portfolio">Explore Our Video Portfolio</a>
+          : <a class="button secondary" href="#estimate" data-track="cta_creative_estimate">Estimate a Starting Price</a>}
+      </div>
+    </div>
+    {screen && (
+      <figure class="cs-screen">
+        <CinematicLoop id="creative-studio" eager />
+        <figcaption>An AI-generated scene, made by Nuxy for this page.</figcaption>
+      </figure>
+    )}
+    <aside class="panel cs-first" aria-labelledby="cs-first-h">
+      <h2 id="cs-first-h">Before anything is made</h2>
+      <ul role="list">
+        {first.map((f) => (
+          <li><span class="cs-icon"><Icon name={f.icon} /></span><p><strong>{f.title}</strong>{f.text}</p></li>
+        ))}
+      </ul>
+    </aside>
+  </section>
+
+  <section class="cs-section" id="services" aria-labelledby="cs-offers-h">
+    <h2 id="cs-offers-h">Three kinds of video work</h2>
+    <p class="cs-sub">Each has a starting price. Your project gets its own written quote, and anything that doesn’t fit these three can still be quoted.</p>
+    <div class="cs-offers">
+      {offers.map((o) => (
+        <article class="panel cs-offer reveal" id={o.id}>
+          <div class="cs-offer-top">
+            <span class="cs-icon"><Icon name={o.icon} /></span>
+            <p class="cs-price"><strong>{priceOf(o.prices[0].type)}</strong><span>{o.prices[0].note}</span></p>
+          </div>
+          <h3>{o.name}</h3>
+          <p>{o.text}</p>
+          <ul class="ticks">
+            {o.offers.map((p) => <li><Icon name="check" />{p}</li>)}
+          </ul>
+          <div class="cs-included">
+            <h4>What’s included</h4>
+            <ul>{o.included.map((p) => <li>{p}</li>)}</ul>
+          </div>
+          <a class="button secondary" href={ask(o.prices[0].type)} data-track={`cta_creative_${o.id.replaceAll("-", "_")}`}>Get My Custom Quote<span class="sr-only">: {o.name}</span></a>
+        </article>
+      ))}
+    </div>
+    {packs.length > 0 && (
+      <div class="panel cs-monthly reveal" id="packages">
+        <div>
+          <h3>{monthly.title}</h3>
+          <p>{monthly.text}</p>
+        </div>
+        <ul class="cs-packs" role="list">
+          {packs.map((p) => (
+            <li><a href={ask(p.type)} data-track="cta_creative_package"><span class="cs-pack-name"><strong>{p.name}</strong><span class="cs-pack-price">{priceOf(p.type)}</span>{p.note}</span><Icon name="arrowRight" /><span class="sr-only">: ask for a quote</span></a></li>
+          ))}
+        </ul>
+      </div>
+    )}
+    <div class="cs-every">
+      <h3>With every video</h3>
+      <ul class="ticks">{everyVideo.map((p) => <li><Icon name="check" />{p}</li>)}</ul>
+    </div>
+  </section>
+
+  {gallery && (
+    <section class="cs-section" id="portfolio" aria-labelledby="cs-portfolio-h">
+      <h2 id="cs-portfolio-h">Video portfolio</h2>
+      <p class="cs-sub">Three concept demonstrations, one for each kind of work. Press play to watch one; nothing plays by itself.</p>
+      <CreativeGallery />
+    </section>
+  )}
+
+  <section class="cs-section" id="estimate" aria-labelledby="cs-estimate-h">
+    <h2 id="cs-estimate-h">Estimate your starting price</h2>
+    <p class="cs-sub">Pick what you need and see where the price starts. It uses the same prices as the cards above, and nothing is sent until you fill in the quote form.</p>
+    <CreativeEstimator />
+  </section>
+
+  <section class="cs-section" aria-labelledby="cs-flow-h">
+    <h2 id="cs-flow-h">How a video gets made</h2>
+    <ol class="cs-flow" role="list">
+      {steps.map((s, i) => (
+        <li><span class="cs-num" aria-hidden="true">{i + 1}</span><div><h3>{s.title}</h3><p>{s.text}</p></div></li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="cs-section" aria-labelledby="cs-limits-h">
+    <h2 id="cs-limits-h">What this is, and what it isn’t</h2>
+    <ul class="cs-limits" role="list">
+      {limits.map((l) => (
+        <li><Icon name={l.icon} /><div><h3>{l.title}</h3><p>{l.text}</p></div></li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="cs-section" aria-labelledby="cs-faq-h">
+    <h2 id="cs-faq-h">Common questions</h2>
+    <dl class="cs-faq">
+      {faqs.map(([q, a]) => (<div><dt>{q}</dt><dd>{a}</dd></div>))}
+    </dl>
+  </section>
+
+  <section class="cs-section cs-cta" aria-labelledby="cs-cta-h">
+    <h2 id="cs-cta-h">Tell us what the video is for</h2>
+    <p>Describe it in a few sentences: what you sell, where the video will run and what it should say. Within one business day you’ll hear back from a person, with questions or a written quote. Nothing is made or charged until you approve it.</p>
+    <div class="cs-actions">
+      <a class="button" href={quoteHref} data-track="cta_creative_quote">Get My Custom Quote</a>
+      {gallery
+        ? <a class="button secondary" href="#portfolio" data-track="cta_creative_portfolio">Explore Our Video Portfolio</a>
+        : <a class="button secondary" href="#estimate" data-track="cta_creative_estimate">Estimate a Starting Price</a>}
+    </div>
+  </section>
+  </div>
+</Base>
+
+<style>
+  .cs > section { max-width: 1120px; }
+  .cs-hero { display: grid; gap: 32px; align-items: center; padding-block: clamp(40px, 6vw, 80px) 8px; }
+  .cs-hero h1 { max-width: 20ch; }
+  .cs-hero .lead { margin-top: 20px; max-width: 60ch; }
+  .cs-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  @media (max-width: 639px) { .cs-actions .button { flex: 1 1 100%; } }
+
+  .cs-first { padding: 24px; }
+  .cs-first h2 { font-size: 1.0625rem; line-height: 1.35; }
+  .cs-first ul { display: grid; gap: 18px; margin: 18px 0 0; padding: 0; list-style: none; }
+  .cs-first li { display: flex; align-items: flex-start; gap: 14px; }
+  .cs-first p { margin: 0; color: var(--body); font-size: 0.9375rem; }
+  .cs-first strong { display: block; color: var(--ink); font-size: 1rem; }
+  .cs-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
+  .cs-icon :global(.icon) { width: 24px; height: 24px; }
+  /* Without the screen the three promises sit beside the headline; with it they run in a row underneath. */
+  @media (min-width: 1160px) { .cs-hero:not(.screen) { grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 48px; } }
+  @media (min-width: 720px) and (max-width: 1159px) { .cs-first ul { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } .cs-first li { flex-direction: column; gap: 10px; } }
+  @media (min-width: 720px) { .cs-hero.screen .cs-first ul { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } }
+  @media (min-width: 1000px) {
+    .cs-hero.screen { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 32px 48px; }
+    .cs-hero.screen .cs-first { grid-column: 1 / -1; }
+  }
+
+  /* The screen: one muted loop in a plain frame, the way a monitor sits on a desk. */
+  .cs-screen { margin: 0; }
+  .cs-screen :global(.cine) { border: 1px solid var(--hairline-strong); border-radius: var(--r-lg); box-shadow: var(--shadow); }
+  .cs-screen figcaption { margin-top: 10px; color: var(--muted); font-size: 0.8125rem; }
+
+  .cs-section { margin-top: clamp(56px, 8vw, 96px); scroll-margin-top: calc(var(--nav-h) + 16px); }
+  .cs-section h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
+  .cs-sub { margin: 8px 0 28px; color: var(--body); max-width: 62ch; }
+
+  .cs-offers { display: grid; gap: 20px; }
+  @media (min-width: 1000px) { .cs-offers { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .cs-offer { display: flex; flex-direction: column; gap: 14px; padding: clamp(20px, 3vw, 28px); scroll-margin-top: calc(var(--nav-h) + 16px); }
+  .cs-offer-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .cs-price { display: grid; justify-items: end; text-align: right; color: var(--muted); font-size: 0.875rem; }
+  .cs-price strong { color: var(--ink); font-size: 1.25rem; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .cs-offer h3 { font-size: 1.25rem; }
+  .cs-offer > p { color: var(--body); }
+  /* The monthly packages: their own row under the cards, so the three cards stay the same height. */
+  .cs-monthly { display: grid; gap: 18px; margin-top: 20px; padding: clamp(20px, 3vw, 28px); scroll-margin-top: calc(var(--nav-h) + 16px); }
+  .cs-monthly h3 { font-size: 1.125rem; }
+  .cs-monthly p { margin-top: 6px; color: var(--body); font-size: 0.9375rem; max-width: 52ch; }
+  @media (min-width: 1000px) { .cs-monthly { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: center; } }
+  .cs-packs { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  @media (min-width: 640px) { .cs-packs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .cs-pack-name { display: grid; gap: 2px; min-width: 0; }
+  .cs-packs a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--hairline); border-radius: 12px; color: var(--body); font-size: 0.875rem; text-decoration: none; transition: border-color var(--dur-1) ease, background-color var(--dur-1) ease; }
+  .cs-packs a:hover { border-color: var(--hairline-strong); background: var(--accent-soft); }
+  .cs-packs a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .cs-packs strong { color: var(--ink); font-size: 0.9375rem; }
+  .cs-pack-price { color: var(--ink); font-weight: 650; font-size: 1.125rem; font-variant-numeric: tabular-nums; }
+  .cs-packs a > :global(.icon) { flex: none; width: 18px; height: 18px; color: var(--link); }
+  .cs-included { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--hairline-soft); }
+  .cs-included h4 { color: var(--ink); font-size: 0.9375rem; font-weight: 650; }
+  .cs-included ul { display: grid; gap: 6px; margin: 8px 0 0; padding-left: 18px; color: var(--body); font-size: 0.9375rem; }
+  .cs-offer .button { align-self: flex-start; }
+  @media (max-width: 479px) { .cs-offer .button { align-self: stretch; } }
+
+  .cs-every { margin-top: 28px; padding: clamp(18px, 2.5vw, 24px); border: 1px solid var(--hairline-soft); border-radius: var(--r-lg); }
+  .cs-every h3 { margin-bottom: 14px; font-size: 1.0625rem; }
+  .cs-every li { color: var(--body); }
+  @media (min-width: 800px) { .cs-every .ticks { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; } }
+
+  .cs-flow, .cs-limits { display: grid; gap: 22px; margin: 28px 0 0; padding: 0; list-style: none; max-width: 820px; }
+  .cs-flow li, .cs-limits li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .cs-num { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--link); font-weight: 650; }
+  .cs-flow h3, .cs-limits h3 { font-size: 1.0625rem; }
+  .cs-flow p, .cs-limits p { margin-top: 4px; color: var(--body); }
+  .cs-limits { max-width: none; }
+  @media (min-width: 800px) { .cs-limits { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; } }
+  .cs-limits li > :global(.icon) { width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
+
+  .cs-faq { display: grid; gap: 22px; margin-top: 28px; max-width: 820px; }
+  .cs-faq dt { color: var(--ink); font-weight: 600; font-size: 1.0625rem; }
+  .cs-faq dd { margin: 6px 0 0; color: var(--body); }
+
+  .cs-cta { padding-bottom: clamp(56px, 8vw, 96px); }
+  .cs-cta p { margin-top: 12px; color: var(--body); max-width: 62ch; }
+</style>

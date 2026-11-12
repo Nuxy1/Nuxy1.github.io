@@ -1,4 +1,7 @@
 import { defineConfig } from "astro/config";
+import { cpSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // Published by GitHub Pages from repo Nuxy1/Nuxy1.github.io under the custom domain (Settings > Pages > Custom
 // domain), so no base path.
@@ -15,7 +18,23 @@ import { defineConfig } from "astro/config";
 // except in <head> above the policy tag (the homepage's old-link redirect, which must run before the page draws).
 // The site tests fail on any blocked script or style.
 const INQUIRY_HOST = "https://preview.nuxyautomation.com";
+
+// Test build only (tests/cinematic.test.mjs): CINEMATIC_FIXTURE=<manifest.json> builds the site against test-pattern
+// clips made by scripts/cinematic-fixture.mjs, so the video components can be tested before any real video exists.
+// That build reads the fixture's list in place of src/data/cinematic-manifest.json, takes its files from the `media`
+// folder beside that list, and goes to dist-fixture/. It never writes dist/, the only folder that is published.
+const FIXTURE = process.env.CINEMATIC_FIXTURE ? resolve(process.env.CINEMATIC_FIXTURE) : "";
+const fixture = FIXTURE ? {
+  outDir: "./dist-fixture",
+  vite: { resolve: { alias: [{ find: /^.*\/cinematic-manifest\.json$/, replacement: FIXTURE.replace(/\\/g, "/") }] } },
+  integrations: [{
+    name: "cinematic-fixture",
+    hooks: { "astro:build:done": ({ dir }) => cpSync(join(dirname(FIXTURE), "media"), join(fileURLToPath(dir), "media"), { recursive: true }) },
+  }],
+} : {};
+
 export default defineConfig({
+  ...fixture,
   site: "https://nuxyautomation.com",
   markdown: { shikiConfig: { theme: "github-dark-default" } },
   security: {

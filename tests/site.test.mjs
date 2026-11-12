@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { services, plans, primary, groups, health, wants, variants, bundles, bundleMath, money as usd } from "../src/data/services.ts";
+import { rules as creativeRules, usd as creativeUsd } from "../src/data/creative.ts";
 import { demoSites } from "../src/data/demo-sites.ts";
 import { examples } from "../src/data/examples.ts";
 import { caseStudies } from "../src/data/case-studies.ts";
@@ -45,7 +46,7 @@ const indexable = [...pages.keys()].filter((u) => !expectedNoindex.has(u));
 const legacy = JSON.parse(first(pages.get("/"), /const legacy = (\{[^;]*\});/));
 
 test("the build has every page, and the made-up data matches the pages", () => {
-  assert.equal(pages.size, 34, `pages: ${[...pages.keys()].join(" ")}`);
+  assert.equal(pages.size, 35, `pages: ${[...pages.keys()].join(" ")}`);
   for (const u of ["/", "/websites/", "/get-a-website/", "/automation/", "/solutions/", "/pricing/", "/about/",
     "/contact/", "/contact/thanks/", "/demos/", "/demo/", "/policies/", "/docs/", "/404.html", "/ecommerce/", "/portfolio/", "/website-security/"]) {
     assert.ok(pages.has(u), `missing ${u}`);
@@ -184,6 +185,13 @@ test("every Nuxy price shown comes from services.ts, and every service and plan 
   const known = new Set(
     [...[...services, ...variants].flatMap((s) => [s.price, s.monthly ?? ""]), ...plans.map((p) => p.price), ...primary.map((p) => p.price),
       ...bundles.flatMap((b) => [b.price, usd(bundleMath(b).separately), usd(bundleMath(b).save)])].flatMap((p) => p.match(money) || []));
+  // The Creative Studio page prints amounts from its own table (data/creative.ts) and nothing else. Every other page
+  // may print only services.ts amounts, so a creative amount that is not also a services.ts price fails here if it
+  // turns up anywhere else. Two limits, stated so nobody reads more into this: an amount that is in both lists can't
+  // be told apart, and /contact/ repeats a visitor's own estimate from the address in the browser, which is not in
+  // the built HTML this test reads (tests/contact-form.test.mjs covers that).
+  const creative = new Set([...creativeRules.types.map((t) => t.base), ...creativeRules.durations.map((d) => d.add), ...creativeRules.extras.map((e) => e.add),
+    creativeRules.extraFormat, creativeRules.revisions.extra].filter(Boolean).map(creativeUsd));
   // Not Nuxy prices: the made-up plumber's quote inside the lead demo.
   const demoAmounts = new Set(["$1,450"]);
   // Pages whose amounts belong to made-up businesses or sample program output, not to Nuxy.
@@ -191,6 +199,7 @@ test("every Nuxy price shown comes from services.ts, and every service and plan 
   for (const [u, html] of pages) {
     if (notNuxy(u)) continue;
     const shown = visible(html.replace(/<select[^>]*name="budget"[\s\S]*?<\/select>/g, " ")).match(money) || [];
+    if (u === "/creative-studio/") { for (const a of shown) assert.ok(creative.has(a), `${u} shows ${a}, which is not a price in creative.ts`); continue; }
     for (const a of shown) assert.ok(known.has(a) || demoAmounts.has(a), `${u} shows ${a}, which is not a price in services.ts`);
   }
   const solutions = visible(pages.get("/solutions/"));

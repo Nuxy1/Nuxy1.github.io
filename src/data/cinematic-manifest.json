@@ -1,0 +1,219 @@
+{
+  "loops": {
+    "automation": {
+      "width": 1280,
+      "height": 720,
+      "duration": 6.04,
+      "audio": false,
+      "poster": {
+        "src": "/media/loop-automation.webp",
+        "bytes": 31264
+      },
+      "posterMobile": {
+        "src": "/media/loop-automation-m.webp",
+        "bytes": 13250
+      },
+      "sources": [
+        {
+          "src": "/media/loop-automation.webm",
+          "bytes": 306190,
+          "type": "video/webm"
+        },
+        {
+          "src": "/media/loop-automation.mp4",
+          "bytes": 356398,
+          "type": "video/mp4"
+        }
+      ],
+      "mobile": [
+        {
+          "src": "/media/loop-automation-m.mp4",
+          "bytes": 108482,
+          "type": "video/mp4"
+        }
+      ]
+    },
+    "creative-studio": {
+      "width": 1280,
+      "height": 720,
+      "duration": 8.04,
+      "audio": false,
+      "poster": {
+        "src": "/media/loop-creative-studio.webp",
+        "bytes": 39238
+      },
+      "posterMobile": {
+        "src": "/media/loop-creative-studio-m.webp",
+        "bytes": 17488
+      },
+      "sources": [
+        {
+          "src": "/media/loop-creative-studio.mp4",
+          "bytes": 589128,
+          "type": "video/mp4"
+        }
+      ],
+      "mobile": [
+        {
+          "src": "/media/loop-creative-studio-m.mp4",
+          "bytes": 177424,
+          "type": "video/mp4"
+        }
+      ]
+    },
+    "hero": {
+      "width": 1280,
+      "height": 720,
+      "duration": 8.04,
+      "audio": false,
+      "poster": {
+        "src": "/media/loop-hero.webp",
+        "bytes": 53036
+      },
+      "posterMobile": {
+        "src": "/media/loop-hero-m.webp",
+        "bytes": 20122
+      },
+      "sources": [
+        {
+          "src": "/media/loop-hero.mp4",
+          "bytes": 736894,
+          "type": "video/mp4"
+        }
+      ],
+      "mobile": [
+        {
+          "src": "/media/loop-hero-m.mp4",
+          "bytes": 233815,
+          "type": "video/mp4"
+        }
+      ]
+    },
+    "security": {
+      "width": 1280,
+      "height": 720,
+      "duration": 6.04,
+      "audio": false,
+      "poster": {
+        "src": "/media/loop-security.webp",
+        "bytes": 63020
+      },
+      "posterMobile": {
+        "src": "/media/loop-security-m.webp",
+        "bytes": 23930
+      },
+      "sources": [
+        {
+          "src": "/media/loop-security.mp4",
+          "bytes": 714229,
+          "type": "video/mp4"
+        }
+      ],
+      "mobile": [
+        {
+          "src": "/media/loop-security-m.mp4",
+          "bytes": 211458,
+          "type": "video/mp4"
+        }
+      ]
+    },
+    "web-development": {
+      "width": 1280,
+      "height": 720,
+      "duration": 6.04,
+      "audio": false,
+      "poster": {
+        "src": "/media/loop-web-development.webp",
+        "bytes": 16892
+      },
+      "posterMobile": {
+        "src": "/media/loop-web-development-m.webp",
+        "bytes": 7538
+      },
+      "sources": [
+        {
+          "src": "/media/loop-web-development.mp4",
+          "bytes": 315808,
+          "type": "video/mp4"
+        }
+      ],
+      "mobile": [
+        {
+          "src": "/media/loop-web-development-m.mp4",
+          "bytes": 92686,
+          "type": "video/mp4"
+        }
+      ]
+    }
+  },
+  "demos": {
+    "ember-oak": {
+      "width": 1280,
+      "height": 720,
+      "duration": 18,
+      "audio": true,
+      "poster": {
+        "src": "/media/demo-ember-oak.webp",
+        "bytes": 37652
+      },
+      "sources": [
+        {
+          "src": "/media/demo-ember-oak.mp4",
+          "bytes": 2237675,
+          "type": "video/mp4"
+        }
+      ]
+    },
+    "noctis-skin": {
+      "width": 720,
+      "height": 1280,
+      "duration": 15,
+      "audio": true,
+      "poster": {
+        "src": "/media/demo-noctis-skin.webp",
+        "bytes": 15392
+      },
+      "sources": [
+        {
+          "src": "/media/demo-noctis-skin.mp4",
+          "bytes": 1487829,
+          "type": "video/mp4"
+        }
+      ]
+    },
+    "vantage-motors": {
+      "width": 1280,
+      "height": 720,
+      "duration": 15,
+      "audio": true,
+      "poster": {
+        "src": "/media/demo-vantage-motors.webp",
+        "bytes": 43128
+      },
+      "sources": [
+        {
+          "src": "/media/demo-vantage-motors.mp4",
+          "bytes": 2151224,
+          "type": "video/mp4"
+        }
+      ],
+      "vertical": {
+        "width": 720,
+        "height": 1280,
+        "duration": 15,
+        "audio": true,
+        "poster": {
+          "src": "/media/demo-vantage-motors-v.webp",
+          "bytes": 26904
+        },
+        "sources": [
+          {
+            "src": "/media/demo-vantage-motors-v.mp4",
+            "bytes": 1529175,
+            "type": "video/mp4"
+          }
+        ]
+      }
+    }
+  }
+}

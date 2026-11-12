@@ -107,7 +107,7 @@ const wires = place.map((p) => {
           <h2 class="panel-h" id={`core-${p.id}-h`}>{p.title}</h2>
           <p class="panel-text">{p.text}</p>
           {s && (
-            <a class="panel-svc" href={`/solutions/#${s.id}`} data-track={`core_${p.id}`}>
+            <a class="panel-svc" href={`/solutions/#${s.id}`} data-track={`core_${p.id.replaceAll("-", "_")}`}>
               <span class="panel-svc-name">{s.name}</span>
               <span class="panel-svc-price">{s.price}{s.monthly && <> + {s.monthly}</>}</span>
               <Icon name="arrowRight" />

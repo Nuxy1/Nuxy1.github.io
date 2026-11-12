@@ -11,10 +11,14 @@
 // project box (the server takes one service id, so the first is sent as the service and the list travels as text).
 // Any service, smaller or larger version, bundle or plan can be named; a retired id names the plan that replaced it
 // and is sent as it came, so the owner sees the link was an old one.
+// The Creative Studio estimator opens /contact/?want=creative&cq=<code> (data/creative-estimate.ts): the code is
+// checked against the same rules the estimator used and the starting price is worked out again here, never read from
+// the address. The choices are named at the top and written into the project box as plain text; no service id is sent.
 import Icon from "./Icon.astro";
 import { inquiryUrl, inbox } from "../data/site";
 import { groups, plans, variants, bundles, retired, wants, wantOf } from "../data/services";
 import { ask } from "../lib/request";
+import { rules as creativeRules, creativeWant, quoteParam } from "../data/creative";
 
 // (everything a link can ask about: its name and price for the note, which answer it picks, and for a retired id
 // the name it had)
@@ -24,7 +28,7 @@ const asked: Record<string, { name: string; price: string; want: string; was?: s
 const oldNames: Record<string, string> = { "automation-care": "Automation care" };
 for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], was: oldNames[id] ?? id };
 ---
-<div class="inq" data-inquiry data-services={JSON.stringify(asked)}>
+<div class="inq" data-inquiry data-services={JSON.stringify(asked)} data-creative={JSON.stringify(creativeRules)} data-creative-param={quoteParam} data-creative-want={creativeWant}>
   <form class="inq-form" method="post" action={inquiryUrl} accept-charset="UTF-8" data-endpoint={inquiryUrl}>
     <p class="inq-legend">Required unless marked optional. Takes about two minutes.</p>
 
@@ -286,6 +290,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
 <script>
   import { askWith } from "../lib/request";
   import { emailTypo } from "../lib/email-typo";
+  import type { CreativeRules } from "../data/creative-estimate";
 
   type Rule = { required?: boolean; min?: number; max: number; test?: (v: string) => boolean; label: string; problem?: string; missing?: string };
   // (the same rules as the server, in the order the fields appear; it checks everything again)
@@ -347,6 +352,29 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       }
       about.hidden = false;
     }
+    // ?cq=<code> from the Creative Studio estimator: only a code that passes the estimator's own rules is used, and
+    // the price shown is worked out here from those rules. It travels to the owner as text in the project box.
+    // The sums are loaded only when the address carries a code, so every other visit to the form asks for no
+    // extra file (a second file loaded by this one costs about 150 ms of Lighthouse's largest-paint time).
+    let creativeRules: CreativeRules | null = null;
+    try { creativeRules = JSON.parse(root.dataset.creative ?? "null"); } catch { /* (no estimator rules: no code is read) */ }
+    const code = service ? "" : params.get(root.dataset.creativeParam ?? "") ?? "";
+    if (code && creativeRules) {
+      const rules = creativeRules;
+      import("../data/creative-estimate").then(({ decode, quote, describe, priceText }) => {
+        const choice = decode(code, rules);
+        // (what became of the code, readable on the form itself; the page's tests wait on it)
+        root.dataset.estimate = choice ? "shown" : "refused";
+        if (!choice) return;
+        const summary = describe(choice, rules), price = priceText(quote(choice, rules));
+        about.querySelector("[data-about-name]")!.textContent = `${summary.split("; ")[0]} (estimated starting price ${price})`;
+        if (!need.value.trim()) need.value = listed = `I’d like a quote for: ${summary}.\nEstimator’s starting price: ${price} (an estimate, not a quote).\n`;
+        about.hidden = false;
+        // (an estimator link always names its answer; this covers a code that arrives without one)
+        const creative = radio(root.dataset.creativeWant ?? "");
+        if (creative && !chosen()) creative.checked = true;
+      }).catch(() => { root.dataset.estimate = "unread"; /* (the file did not load: the form works as it does with no code) */ });
+    }
     const want = params.get("want") ?? "";
     // (several services: the answer most of them belong to, the first one on a tie)
     const answers = ids.map((x) => services[x].want);
@@ -357,6 +385,10 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     about.querySelector("[data-about-clear]")!.addEventListener("click", () => {
       serviceInput.value = "";
       about.hidden = true;
+      // (the address forgets it too, so loading the page again does not bring back what the customer took out)
+      const url = new URL(location.href);
+      for (const key of ["service", "services", root.dataset.creativeParam ?? ""]) url.searchParams.delete(key);
+      history.replaceState(history.state, "", url);
       if (listed && need.value.trim() === listed.trim()) need.value = "";
       focusOf("want")?.focus();
       status.textContent = "Removed. Choose what you need, or describe it below.";

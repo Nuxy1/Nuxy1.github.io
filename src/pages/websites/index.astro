@@ -10,6 +10,8 @@ import Icon from "../../components/Icon.astro";
 import ServiceCard from "../../components/ServiceCard.astro";
 import DemoSites from "../../components/DemoSites.astro";
 import DeviceShot from "../../components/DeviceShot.astro";
+import CinematicLoop from "../../components/CinematicLoop.astro";
+import VideoUpsell from "../../components/VideoUpsell.astro";
 import { serviceById, variantById, plans, faqs, dollars } from "../../data/services";
 import type { IconName } from "../../components/Icon.astro";
 
@@ -92,7 +94,8 @@ const service = {
 <Base title="Website Development for Small Businesses · Nuxy Automation" description={`Phone-friendly websites for small businesses in southern Minnesota and the US: one page ${starter.price}, up to 4 pages ${web.price}, on your own domain. No monthly plan needed.`} wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(service)} />
 
-  <section class="hero-web">
+  <section class="hero-web cine-host">
+    <CinematicLoop id="web-development" backdrop eager />
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="eyebrow">Website development</p>
@@ -240,6 +243,8 @@ const service = {
       </div>
     </div>
   </section>
+
+  <VideoUpsell />
 
   <section class="section">
     <div class="wrap">

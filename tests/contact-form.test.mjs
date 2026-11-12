@@ -17,6 +17,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { serveDist } from "./serve-dist.mjs";
 import { services, wants } from "../src/data/services.ts";
 import { emailTypo as siteTypo } from "../src/lib/email-typo.ts";
+import { check, quote, encode, priceText, describe } from "../src/data/creative-estimate.ts";
+import { rules, types, creativeWant, quoteParam } from "../src/data/creative.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, "..", "dist");
@@ -181,6 +183,39 @@ test("a real request is saved, shows its reference, and the page count carries n
   await context.close();
 });
 
+test("a request from the Creative Studio estimator is saved as video work, with the choices as text and no service id", async () => {
+  const first = types[0];
+  const choice = check({ type: first.id, videos: 2, duration: rules.durations[1].id, formats: rules.formats.slice(0, first.formats).map((f) => f.id), level: rules.levels[0].id, revisions: rules.revisions.included, extras: [rules.extras[0].id] }, rules);
+  assert.ok(choice, "the test's choice passes the estimator's rules");
+  const price = priceText(quote(choice, rules)), summary = describe(choice, rules);
+  const { page, context, sent, errors } = await open(`/contact/?want=${creativeWant}&${quoteParam}=${encodeURIComponent(encode(choice))}`);
+  assert.equal(await page.isChecked(`[name=want][value="${creativeWant}"]`), true);
+  assert.equal(await page.inputValue("[name=service]"), "");
+  // (the estimator's sums load on demand: the banner appears once the code has been checked)
+  await page.locator("[data-about]").waitFor({ state: "visible" });
+  const need = await page.inputValue("[name=need]");
+  assert.ok(need.includes(summary) && need.includes(`Estimator’s starting price: ${price} (an estimate, not a quote).`), need);
+  await page.waitForTimeout(2600);
+  // (the customer leaves the project box as the estimator filled it, and adds one line of their own)
+  const typed = { name: "Test Person", business: "Example Bakery", email: "video@example.com", need: need + "For our spring opening." };
+  for (const [k, val] of Object.entries(typed)) await page.fill(`[name="${k}"]`, val);
+  await page.click("[data-submit]");
+  await panel(page, "done").waitFor({ state: "visible" });
+  const ref = await page.textContent("[data-ref]");
+  assert.match(ref, REF);
+  const saved = store.find(ref);
+  assert.equal(saved.want, creativeWant);
+  assert.equal(saved.service, "", "a creative request is not a catalogue service");
+  assert.ok(saved.need.includes(summary) && saved.need.includes(price) && saved.need.includes("For our spring opening."), saved.need);
+  assert.equal(saved.stage, "new", "not treated as spam");
+  // (the code itself is never posted: the owner reads the choices as words, and no field carries a price)
+  const body = new URLSearchParams(sent.inquiry.at(-1));
+  assert.equal(body.has(quoteParam), false);
+  assert.ok(![...body.keys()].some((k) => /price|amount|total/i.test(k)), [...body.keys()].join());
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 test("an unknown ?service= is ignored", async () => {
   const { page, context } = await open("/contact/?service=not-a-service");
   assert.equal(await page.inputValue("[name=service]"), "");
@@ -194,7 +229,7 @@ test("an unknown ?service= is ignored", async () => {
 });
 
 test("?want= picks an answer, and wins over the service's own", async () => {
-  for (const [query, picked, service] of [["?want=shopify", "shopify", ""], ["?want=health-check", "health-check", ""], ["?want=repair", "repair", ""], ["?want=security", "security", ""], ["?service=site-fixes", "redesign", "site-fixes"], ["?service=site-fixes&want=new-website", "new-website", "site-fixes"], ["?want=everything", null, ""]]) {
+  for (const [query, picked, service] of [["?want=creative", "creative", ""], ["?want=shopify", "shopify", ""], ["?want=health-check", "health-check", ""], ["?want=repair", "repair", ""], ["?want=security", "security", ""], ["?service=site-fixes", "redesign", "site-fixes"], ["?service=site-fixes&want=new-website", "new-website", "site-fixes"], ["?want=everything", null, ""]]) {
     const { page, context, errors } = await open(`/contact/${query}`);
     const checked = await page.locator("[name=want]:checked");
     assert.equal(await checked.count(), picked ? 1 : 0, query);
@@ -213,6 +248,11 @@ test("'Not this one' takes the service off the request", async () => {
   assert.equal(await page.isHidden("[data-about]"), true);
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("name")), "want");
   assert.match(await page.textContent("[data-status]"), /Removed/);
+  // (the address forgets the service too: loading the page again does not bring it back)
+  assert.equal(new URL(page.url()).searchParams.has("service"), false);
+  await page.reload();
+  assert.equal(await page.inputValue("[name=service]"), "");
+  assert.equal(await page.isHidden("[data-about]"), true);
   await page.waitForTimeout(2600);
   await fill(page, { want: "other", email: "notthis@example.com" });
   await page.click("[data-submit]");

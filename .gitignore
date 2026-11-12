@@ -3,3 +3,8 @@ dist/
 .astro/
 *.log
 tests/visual/out/
+dist-fixture
+tests/fixtures/cinematic
+# video masters: large, kept outside git (assets/cinematic/README.md)
+assets/cinematic/*
+!assets/cinematic/README.md

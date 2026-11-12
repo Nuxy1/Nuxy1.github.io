@@ -111,6 +111,15 @@ often on a phone, deciding in under a minute whether this is worth a message.
 What it is not: no robots or AI imagery, no glowing gradients, no heavy glass or 3D, no fake dashboards, no invented
 numbers, logos or reviews. Decoration never stands in for evidence.
 
+One exception, from the owner's cinematic brief (2026-11-11), which asks for a more premium, cinematic first
+impression: the heroes of `/`, `/websites/`, `/automation/` and `/website-security/`, and a screen on
+`/creative-studio/`, may each carry one short silent video loop made with an AI video tool. The footage is abstract
+(light, structure, networks): no people, no robots, no logos, no words. It is decoration and is held to the rules
+under "Cinematic loops" in Motion. Everything else above still holds, and real website demonstrations stay real
+screenshots or working pages. The owner approved the generation budget on 2026-11-11 and the five loops exist
+(`src/data/cinematic-manifest.json`). A page whose loop is not listed there builds and looks as it did before the
+brief.
+
 ## Colors
 
 - **Navy layers:** `bg` for the page, `bg-2` for alternating sections, `panel` for cards, `surface-strong` for
@@ -157,6 +166,7 @@ numbers, logos or reviews. Decoration never stands in for evidence.
 | `/portfolio/` | "Our Work": the example websites and the online store, each for a made-up business and labelled so, on a computer and a phone |
 | `/solutions/` | Every service, grouped, with search and filters (all services visible without JavaScript) |
 | `/pricing/` | Published one-time prices, the monthly plans, bundle discount, FAQ |
+| `/creative-studio/` | AI Creative & Video Advertising: three kinds of video work with starting prices, what every video includes, the starting-price estimator, the three fictional concept demos (only once all three exist as real files), limits and FAQ. **Its prices are proposed: publishing the page needs the owner's written yes** |
 | `/about/` | How we work and what we won't do |
 | `/contact/` | The inquiry form (and `/contact/thanks/`) |
 | `/demos/` | Index of the demos: the interactive lead demo, demo websites and technical write-ups |
@@ -258,6 +268,18 @@ part coming forward), `--dur-4` 520ms (section reveals, the hero's camera move);
 - **Section reveals** fade up once as they enter the screen, only for sections that start below the first screen.
 - **The /solutions/ filter** glides the cards to their new places with a view transition, started only when motion is
   on.
+- **Cinematic loops** (`CinematicLoop.astro`, `src/scripts/cinematic.ts`, files listed in
+  `src/data/cinematic-manifest.json`). A loop is silent decoration, hidden from screen readers, with nothing a
+  visitor needs inside it. On `reduced` and `light` motion, with a data saver, or without JavaScript, only the
+  poster image is shown and the video file is never requested. Otherwise the video is fetched after the page has
+  loaded, one loop at a time, and only the most visible loop plays; none plays behind an open video player. As a
+  hero backdrop the footage is capped to a dim slate (the page colour under the headline) and fades out at its
+  edges, so every text keeps at least 4.5:1 even over a pure white frame (`tests/cinematic.test.mjs` measures
+  it). A loop that is not in the manifest renders nothing: no box, no script. Files are made by
+  `scripts/encode-cinematic.mjs` from masters; generating footage is the owner's private, approved step and
+  nothing on the site can start it.
+- **Creative Studio demos** (`CreativeGallery.astro`): nothing plays until the visitor presses play, one player at
+  a time, each labelled a fictional concept demonstration. The gallery is all three demos or none.
 - **Prices are never typed into motion components.** The hero panels and the goal picker read names and prices from
   `data/services.ts`, skip any id that isn't in the catalogue, and the goal picker is a fixed list per goal, not AI.
 - Analytics: a demo counts `demo_start` and `demo_complete` at most once each per demo per page view; the goal picker's buttons are
@@ -278,6 +300,15 @@ buttons), `cta_hero`, `cta_see_working`, `cta_services`, `cta_home_security`, `c
 `estimator_use` (the estimator: the button, and the first tick per page view), `cta_portfolio_quote` and
 `portfolio_demos` (`/portfolio/`). None carries what was ticked, typed or chosen: the estimator's choices travel
 only in the address of the quote form, in the visitor's own browser. `tests/pages.test.mjs` checks that.
+
+Counted since the Creative Studio brief: `cta_creative_quote`, `cta_creative_estimate`, `cta_creative_package`,
+`cta_creative_portfolio` (the page's buttons), `cta_creative_video_ads`, `cta_creative_motion_graphics` and
+`cta_creative_product_showcases` (the quote button under each kind of video work), `cta_creative_estimator` (the
+estimator's button), `creative_demo_play` and `cta_creative_similar` (the demo gallery), `cta_video_upsell` (the
+video block on `/websites/` and `/automation/`), `cta_home_creative` (the home page's line about video work).
+The same rule holds: an event name and the page, never a choice or a price. The counting service drops any name
+that is not lowercase letters, digits and underscores, 32 at most, without an error: `tests/creative.test.mjs`
+checks every `data-track` in the build against that.
 
 ## Anchors and old links
 

@@ -1,0 +1,63 @@
+---
+// A silent background loop (cinematic brief, 2026-11-11). Decoration only: nothing a visitor needs is inside it, so it
+// is hidden from screen readers and the page reads the same without it.
+//
+// What a visitor gets depends on the motion level (styles/motion.css):
+//   no JavaScript, reduced, light, data saver   the poster image only; the video file is never requested
+//   standard, enhanced                          the poster first, then the video once the page has finished loading
+// The video's addresses are not in the HTML: the script adds them the first time this loop should play, so a page
+// with several loops downloads one at a time and never one that is off screen.
+//   mode="view"   plays while it is the most visible loop on screen, pauses when it is not
+//   mode="hover"  plays while a mouse is over, or keyboard focus is inside, the nearest [data-cine-host]
+// backdrop: the loop fills the section behind its words (the section carries class "cine-host"). Text contrast never
+// depends on the footage: a "darken" layer caps every pixel at a dim slate on the right and at the page colour on
+// the left, where the headline is, so even a white frame stays darker than the limit the muted text needs (4.5:1).
+// Renders nothing at all (no box, no script) when the loop is not listed in data/cinematic-manifest.json.
+import { loopOf } from "../data/cinematic";
+
+interface Props { id: string; mode?: "view" | "hover"; class?: string; /** the poster is in the first screen: load it with the page */ eager?: boolean; backdrop?: boolean }
+const { id, mode = "view", class: className, eager = false, backdrop = false } = Astro.props;
+const loop = loopOf(id);
+---
+{loop && (
+  <div class:list={["cine", { backdrop }, className]} data-cine={mode} data-sources={JSON.stringify(loop.sources)} data-mobile={loop.mobile ? JSON.stringify(loop.mobile) : undefined} aria-hidden="true">
+    <picture>
+      {loop.posterMobile && <source media="(max-width: 640px)" srcset={loop.posterMobile.src} />}
+      <img src={loop.poster.src} alt="" width={loop.width} height={loop.height} loading={eager ? "eager" : "lazy"} decoding="async" fetchpriority={eager ? undefined : "low"} />
+    </picture>
+    <video muted loop playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback width={loop.width} height={loop.height}></video>
+  </div>
+  <script>
+    import "../scripts/cinematic";
+  </script>
+)}
+
+<style>
+  .cine { position: relative; overflow: hidden; aspect-ratio: 16 / 9; background: var(--bg-2); }
+  .cine img, .cine video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* The video sits over the poster and fades in only once it is really playing, so a slow start is never a black box */
+  .cine video { opacity: 0; transition: opacity var(--dur-4) ease; pointer-events: none; }
+  .cine:global(.on) video { opacity: 1; }
+  @media print { .cine video { display: none; } }
+
+  :global(.cine-host) { position: relative; isolation: isolate; }
+  .cine.backdrop {
+    position: absolute; inset: 0; z-index: -1; aspect-ratio: auto; background: none; pointer-events: none; isolation: isolate;
+    /* (the picture fades out towards the next section and both sides, so it never ends on a hard line) */
+    -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent), linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+    mask-image: linear-gradient(to bottom, #000 62%, transparent), linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+    -webkit-mask-composite: source-in; mask-composite: intersect;
+  }
+  /* The cap: the page colour under the headline column, a dim slate elsewhere. Under the muted text colour the slate
+     is 5.2:1 on its own and still 4.6:1 where the home hero lays its blue glow over it (tests/cinematic.test.mjs
+     measures both on a pure white frame). */
+  .cine.backdrop::after { content: ""; position: absolute; inset: 0; z-index: 1; background: rgb(28 36 54); mix-blend-mode: darken; }
+  /* The floor: nothing is darker than the page either, so black footage melts into the page instead of boxing it. */
+  .cine.backdrop::before { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--bg); mix-blend-mode: lighten; }
+  @media (min-width: 1024px) {
+    .cine.backdrop::after { background: linear-gradient(90deg, var(--bg) 0%, var(--bg) 34%, rgb(32 40 58) 78%); }
+  }
+  /* (a stacked phone layout makes the section very tall: the picture keeps to the top of it, not stretched over all of it) */
+  @media (max-width: 1023px) { .cine.backdrop { inset: 0 0 auto; height: min(100%, 600px); } }
+  @media print { .cine.backdrop { display: none; } }
+</style>

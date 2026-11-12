@@ -343,7 +343,8 @@ export const planTerms: string[] = [
 ];
 export const planNote = "Monitoring runs 24/7: websites are checked every 5 minutes, and automations alert me when a run fails. Fixes start within each plan’s stated reply time, not instantly, and you hear from me when work starts and again when it’s fixed. If a fix waits on someone else (your host, an app’s outage, a change only you can approve), it comes as soon as they allow, with updates until then.";
 
-// What the quote form asks first (brief 4 §8, three more in brief 5): nine plain choices, required. A service page's link names the exact
+// What the quote form asks first (brief 4 §8, three more in brief 5, video & creative in the Creative Studio brief):
+// ten plain choices, required. A service page's link names the exact
 // service (/contact/?service=<id>), which picks the matching choice here and is kept with the request; a page with no
 // single service can name a choice instead (/contact/?want=<id>). The inquiry service (src/inquiry.js) has the same
 // ids and labels, and a test fails when the two lists differ.
@@ -356,6 +357,7 @@ export const wants: { id: string; label: string }[] = [
   { id: "health-check", label: "Website health check" },
   { id: "repair", label: "Website repair" },
   { id: "security", label: "Security assessment" },
+  { id: "creative", label: "Video & creative work" },
   { id: "other", label: "Other" },
 ];
 const wantFor: Record<string, string> = { "new-website": "new-website", "starter-website": "new-website", "site-fixes": "redesign", "online-shop": "shopify", "mini-store": "shopify", store: "shopify", care: "maintenance" };

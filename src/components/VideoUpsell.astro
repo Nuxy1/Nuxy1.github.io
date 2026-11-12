@@ -1,0 +1,33 @@
+---
+// The optional video add-on shown on the website and automation pages (Creative Studio brief, Phase 9). One short
+// block that links to /creative-studio/. It prints no price: creative prices are shown on that page only, so a
+// price is published in exactly one place. It says the videos are made with AI tools and promises no result.
+// The button says "portfolio" only once all three demo videos really exist (data/cinematic-manifest.json).
+import Icon from "./Icon.astro";
+import { upsell, demos } from "../data/creative";
+import { demosReady } from "../data/cinematic";
+
+const gallery = demosReady(demos.map((d) => d.id));
+---
+<section class="section tight" aria-labelledby="video-upsell-h">
+  <div class="wrap">
+    <div class="panel vu reveal">
+      <span class="vu-icon"><Icon name="filmSlate" /></span>
+      <div class="vu-text">
+        <h2 id="video-upsell-h">{upsell.title}</h2>
+        <p>{upsell.text}</p>
+      </div>
+      <a class="button secondary" href={gallery ? `${upsell.href}#portfolio` : upsell.href} data-track="cta_video_upsell">{gallery ? upsell.ctaWithDemos : upsell.cta}<Icon name="arrowRight" /></a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .vu { display: grid; gap: 16px 24px; align-items: center; padding: clamp(20px, 3vw, 32px); }
+  @media (min-width: 860px) { .vu { grid-template-columns: auto minmax(0, 1fr) auto; } }
+  .vu-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
+  .vu-icon :global(.icon) { width: 24px; height: 24px; }
+  .vu h2 { font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem); }
+  .vu p { margin-top: 6px; max-width: 70ch; color: var(--body); }
+  @media (max-width: 479px) { .vu .button { justify-self: stretch; } }
+</style>
