@@ -82,8 +82,12 @@ const isHome = path === "/";
     <link rel="preload" href="/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin />
     {isHome && <script is:inline define:vars={{ legacy }}>
       // (runs before the page draws, so an old link never flashes the homepage first)
-      var to = legacy[decodeURIComponent(location.hash.slice(1))];
-      if (to) location.replace(to);
+      // (only the old names listed above: "constructor" and the like are on every object and are not a link, and a
+      // badly encoded hash is ignored)
+      try {
+        var old = decodeURIComponent(location.hash.slice(1));
+        if (Object.prototype.hasOwnProperty.call(legacy, old) && typeof legacy[old] === "string") location.replace(legacy[old]);
+      } catch (e) {}
     </script>}
     <slot name="head" />
   </head>
