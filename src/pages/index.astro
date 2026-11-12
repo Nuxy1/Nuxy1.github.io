@@ -13,6 +13,12 @@ import AutomateSelector from "../components/AutomateSelector.astro";
 import PackageEstimator from "../components/PackageEstimator.astro";
 import DemoSites from "../components/DemoSites.astro";
 import CaseStudy from "../components/CaseStudy.astro";
+import VideoTeasers from "../components/VideoTeasers.astro";
+import { demos as videoDemos } from "../data/creative";
+import { demosReady } from "../data/cinematic";
+
+// the home page links to the video portfolio only when all three demo videos have real, checked files
+const hasVideos = demosReady(videoDemos.map((d) => d.id));
 import { featured, tiers, steps, services, areas, automationFrom, dollars, money, variantById } from "../data/services";
 import { inbox, caseStudies } from "../data/site";
 import type { IconName } from "../components/Icon.astro";
@@ -106,7 +112,16 @@ const business = {
       </div>
       <p class="more"><a class="text-link" href="/solutions/" data-track="cta_services">See all {services.length} services<Icon name="arrowRight" /></a></p>
       <p class="note also-note"><Icon name="shieldCheck" /><span>Already have a website that’s broken, slow or showing a security warning? We also do <a href="/website-security/" data-track="cta_home_security">website health checks, repairs and authorized security assessments</a>, starting with a free look.</span></p>
-      <p class="note also-note"><Icon name="filmSlate" /><span>Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person.</span></p>
+      {!hasVideos && (
+        <p class="note also-note"><Icon name="filmSlate" /><span>Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person.</span></p>
+      )}
+      {hasVideos && (
+        <div class="home-video">
+          <VideoTeasers level={3} headingId="home-video-h" title="We Also Make Video: Three Concept Demonstrations">
+            <p slot="intro">Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person. These three are for made-up brands: open one to watch it.</p>
+          </VideoTeasers>
+        </div>
+      )}
     </div>
   </section>
 
@@ -294,6 +309,7 @@ const business = {
   .also-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; max-width: 80ch; }
   .also-note :global(.icon) { flex: none; margin-top: 0.2em; width: 1.05em; height: 1.05em; }
   .cases { display: grid; gap: 20px; margin-top: 24px; }
+  .home-video { margin-top: clamp(32px, 4vw, 48px); }
 
   /* the five steps as numbered rows: number, title, then the text in its own column on wide screens */
   .steps { list-style: none; border-top: 1px solid var(--hairline); }

@@ -10,6 +10,9 @@ import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import DeviceShot from "../../components/DeviceShot.astro";
 import CaseStudy from "../../components/CaseStudy.astro";
+import VideoTeasers from "../../components/VideoTeasers.astro";
+import { demos } from "../../data/creative";
+import { demosReady } from "../../data/cinematic";
 import { caseStudies } from "../../data/case-studies";
 import { demoSites } from "../../data/demo-sites";
 import { examples } from "../../data/examples";
@@ -18,6 +21,8 @@ import { serviceById } from "../../data/services";
 const repo = "https://github.com/Nuxy1/small-business-automations";
 // real client projects: only the ones with the client's recorded yes (CaseStudy renders nothing without it)
 const clients = caseStudies.filter((c) => c.consent?.trim());
+// the video demos are listed here only when all three have real, checked files (the same rule as the gallery)
+const hasVideo = demosReady(demos.map((d) => d.id));
 const isStore = (project: string) => project === "E-commerce store";
 const where = (id: string) => (id === "new-website" ? "/websites/#new-website" : id === "online-shop" ? "/ecommerce/" : `/solutions/#${id}`);
 const sites = demoSites.filter((d) => !isStore(d.project)).length;
@@ -44,6 +49,7 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
           {demoSites.map((d) => (
             <li><a href={`#${d.slug}`}><Icon name={d.icon} /><span><strong>{d.name}</strong><span>{d.project}</span></span></a></li>
           ))}
+          {hasVideo && <li><a href="#video"><Icon name="filmSlate" /><span><strong>Video concept demonstrations</strong><span>Three short videos for made-up brands</span></span></a></li>}
           <li><a href="#technical"><Icon name="githubLogo" /><span><strong>Automations, with the code</strong><span>{count(examples.length, "open-source example", "open-source examples").replace(/^\w/, (c) => c.toUpperCase())}</span></span></a></li>
         </ul>
       </nav>
@@ -95,6 +101,14 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
       })}
     </div>
   </section>
+
+  {hasVideo && (
+    <section class="section" id="video" aria-labelledby="video-h">
+      <div class="wrap">
+        <VideoTeasers level={2} headingId="video-h" title="Video concept demonstrations" />
+      </div>
+    </section>
+  )}
 
   <section class="section band" id="technical" aria-labelledby="technical-h">
     <div class="wrap">

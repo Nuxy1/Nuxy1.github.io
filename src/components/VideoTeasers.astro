@@ -1,0 +1,99 @@
+---
+// The three concept-demonstration videos, shown as small posters where a visitor looks first: under the home
+// page's service cards and on /portfolio/. Without this they were only on /creative-studio/, several screens
+// down, and a visitor who looked for them anywhere else did not find them.
+//
+// Each card is a plain link to the gallery on /creative-studio/: nothing plays here and no video file is
+// requested. Each card carries the "Fictional concept demonstration" label, so the label goes wherever the demo
+// does and a made-up brand is never shown as a client. No price is printed (creative prices are on
+// /creative-studio/ only). It renders nothing unless all three demos have real, checked files.
+import Icon from "./Icon.astro";
+import { demos, demoLabel } from "../data/creative";
+import { demoOf, demosReady, clock } from "../data/cinematic";
+
+interface Props { level?: 2 | 3; headingId?: string; title: string }
+const { level = 3, headingId = "video-teasers-h", title } = Astro.props;
+const Heading = `h${level}` as "h2" | "h3";
+const Title = `h${level + 1}` as "h3" | "h4";
+const items = demos.map((d) => ({ d, m: demoOf(d.id) }));
+const ready = demosReady(demos.map((d) => d.id));
+const href = "/creative-studio/#portfolio";
+// where the subject sits in a poster, for the narrow phone crop (the burger is right of centre, its menu type on the left)
+const subject: Record<string, "right"> = { "ember-oak": "right" };
+---
+{ready && (
+  <div class="vt reveal">
+    <div class="vt-head">
+      <div class="vt-intro">
+        {level === 2 && <p class="eyebrow">Video work</p>}
+        <Heading id={headingId}>{title}</Heading>
+        <slot name="intro"><p>A car advert, a moving menu board and a product showcase, each for a made-up brand. Made with AI video tools and finished by a person. Open one to watch it in the Creative Studio.</p></slot>
+      </div>
+      <a class="button secondary" href={href} data-track="cta_video_teasers">Watch the Videos<Icon name="arrowRight" /></a>
+    </div>
+    <ul class="vt-grid" role="list">
+      {items.map(({ d, m }) => m && (
+        <li>
+          <a class="panel vt-card" href={href} data-track="video_teaser_card">
+            <div class:list={["vt-shot", { tall: m.height > m.width }, subject[d.id] && `at-${subject[d.id]}`]}>
+              {m.height > m.width && <img class="vt-back" src={m.poster.src} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" aria-hidden="true" />}
+              <img src={m.poster.src} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" />
+              <span class="vt-play" aria-hidden="true"><Icon name="play" /></span>
+              <span class="vt-time" aria-hidden="true">{clock(m.duration)}</span>
+            </div>
+            <div class="vt-body">
+              <p class="vt-label">{demoLabel}</p>
+              <Title class="vt-title">{d.title}</Title>
+              <p class="vt-cat">{d.category}<span class="sr-only">, {Math.round(m.duration)} seconds. Opens the video portfolio.</span></p>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
+
+<style>
+  .vt-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; margin-bottom: 24px; }
+  .vt-intro { max-width: 70ch; }
+  .vt-intro h3 { font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem); }
+  /* (the home page passes its own paragraph in: a slotted element carries the page's scope, not this component's) */
+  .vt-intro :global(p:not(.eyebrow)) { margin-top: 8px; color: var(--body); }
+  @media (max-width: 479px) { .vt-head .button { flex: 1 1 100%; } }
+
+  .vt-grid { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  /* (a phone gets three short rows, picture left and words right, rather than three tall cards to scroll past) */
+  .vt-card { display: grid; grid-template-columns: minmax(0, 132px) minmax(0, 1fr); align-items: center; height: 100%; overflow: hidden; color: inherit; text-decoration: none; transition: border-color var(--dur-2, 160ms) var(--ease-out, ease-out); }
+  .vt-card:hover { border-color: var(--link); }
+  .vt-card:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  @media (min-width: 720px) {
+    .vt-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    .vt-card { grid-template-columns: minmax(0, 1fr); align-items: start; align-content: start; }
+  }
+
+  /* (on a phone the picture fills its narrow column at the row's height; a 16:9 box there would be wider than the column and cover the words) */
+  .vt-shot { position: relative; align-self: stretch; min-height: 92px; overflow: hidden; background: #060b16; }
+  @media (min-width: 720px) { .vt-shot { min-height: 0; aspect-ratio: 16 / 9; } }
+  @media (max-width: 719px) { .vt-shot.at-right img { object-position: 100% 50%; } }
+  /* (the narrow crop would leave the last letters of the menu type at the left edge: a short fade into the poster's own dark covers them) */
+  @media (max-width: 719px) { .vt-shot.at-right::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 36px; background: linear-gradient(90deg, #060b16 30%, transparent); } }
+  .vt-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* (a 9:16 demo keeps its whole frame; the same poster, blurred, fills the sides: one file, one request) */
+  .vt-shot.tall img { object-fit: contain; }
+  .vt-shot.tall img.vt-back { object-fit: cover; filter: blur(22px) brightness(1.5) saturate(1.15); transform: scale(1.3); }
+  .vt-play { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; background: var(--button); color: #fff; }
+  .vt-play :global(.icon) { width: 16px; height: 16px; margin-left: 2px; }
+  .vt-time { position: absolute; right: 8px; bottom: 6px; padding: 1px 7px; border-radius: var(--r-full); background: rgba(6, 11, 22, 0.8); color: #fff; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+  @media (max-width: 719px) { .vt-time { display: none; } }
+  @media (min-width: 720px) {
+    .vt-play { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+    .vt-play :global(.icon) { width: 21px; height: 21px; }
+  }
+
+  .vt-body { display: grid; gap: 4px; padding: 12px 14px; }
+  @media (min-width: 720px) { .vt-body { padding: 16px 20px 18px; } }
+  .vt-label { color: var(--cyan); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .vt-title { font-size: 1.0625rem; letter-spacing: 0.02em; }
+  .vt-cat { color: var(--muted); font-size: 0.875rem; }
+  @media (min-width: 720px) { .vt-label { font-size: 0.75rem; } .vt-title { font-size: 1.1875rem; } }
+</style>

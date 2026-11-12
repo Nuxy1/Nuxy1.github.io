@@ -279,7 +279,7 @@ part coming forward), `--dur-4` 520ms (section reveals, the hero's camera move);
   `scripts/encode-cinematic.mjs` from masters; generating footage is the owner's private, approved step and
   nothing on the site can start it.
 - **Creative Studio demos** (`CreativeGallery.astro`): nothing plays until the visitor presses play, one player at
-  a time, each labelled a fictional concept demonstration. The gallery is all three demos or none.
+  a time, each labelled a fictional concept demonstration. The gallery is all three demos or none. `VideoTeasers.astro` shows the same three posters, each with that label, under the home page's four service cards and on `/portfolio/`: plain links to the gallery, lazy-loaded pictures, no video file requested, no price, and nothing at all unless all three demos exist.
 - **Prices are never typed into motion components.** The hero panels and the goal picker read names and prices from
   `data/services.ts`, skip any id that isn't in the catalogue, and the goal picker is a fixed list per goal, not AI.
 - Analytics: a demo counts `demo_start` and `demo_complete` at most once each per demo per page view; the goal picker's buttons are
@@ -305,7 +305,7 @@ Counted since the Creative Studio brief: `cta_creative_quote`, `cta_creative_est
 `cta_creative_portfolio` (the page's buttons), `cta_creative_video_ads`, `cta_creative_motion_graphics` and
 `cta_creative_product_showcases` (the quote button under each kind of video work), `cta_creative_estimator` (the
 estimator's button), `creative_demo_play` and `cta_creative_similar` (the demo gallery), `cta_video_upsell` (the
-video block on `/websites/` and `/automation/`), `cta_home_creative` (the home page's line about video work).
+video block on `/websites/` and `/automation/`), `cta_home_creative` (the home page's line about video work), `cta_video_teasers` and `video_teaser_card` (the strip of three demo posters under the home page's service cards and on `/portfolio/`: its button and its cards).
 The same rule holds: an event name and the page, never a choice or a price. The counting service drops any name
 that is not lowercase letters, digits and underscores, 32 at most, without an error: `tests/creative.test.mjs`
 checks every `data-track` in the build against that.

@@ -47,7 +47,7 @@ by the owner on 2026-11-11** and are published prices: `src/data/creative.ts` ho
 pins them, and a change needs the owner's written yes. They are printed on `/creative-studio/`. `/contact/` carries
 the estimator's rules too, so that a visitor arriving from the estimator sees the same estimated starting price
 worked out again beside the form; it prints no creative price otherwise. The three videos in the page's gallery are
-fictional concept demonstrations, labelled as such on the page and inside each file, never client work.
+fictional concept demonstrations, labelled as such on the page and inside each file, never client work. Their three posters are also shown, with the same label, under the home page's four service cards and on `/portfolio/` (`VideoTeasers.astro`): each is a plain link to the gallery, plays nothing and prints no price.
 
 ### Home page
 
