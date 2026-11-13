@@ -1,11 +1,11 @@
 ---
 layout: ../../layouts/Doc.astro
-title: "Small-business automations"
+title: "Small-Business Automations"
 description: "Four working automations for made-up local businesses: booking reminders, lead follow-up, invoice reminders and review requests, with tests and a demo week."
 repo: small-business-automations
 ---
 
-# Small-business automations
+# Small-Business Automations
 
 Four working automations for made-up local businesses: booking reminders for a dog groomer, lead follow-up for a plumber, invoice reminders for a cleaning company and review requests for a salon. Each one cleans messy real-world data, never sends the same message twice, never fails silently, and keeps quiet at night. Zero dependencies, Node 20+.
 
@@ -18,7 +18,7 @@ The businesses are invented for the demo: every address ends in `.example` and e
 | [Invoice reminders](https://github.com/Nuxy1/small-business-automations/blob/main/invoice-reminders/index.js) | Cannon River Cleaning | Reads the open-invoices export (QuickBooks, Wave, Square or a sheet) and sends reminders 3, 7 and 14 days after the due date, with partial payments shown. At 30 days the owner is told to step in. A list every Monday. |
 | [Review requests](https://github.com/Nuxy1/small-business-automations/blob/main/review-requests/index.js) | Juniper & Rose Salon | A thank-you with the Google review link a couple of hours after each visit; never after a no-show or cancellation, never twice in 180 days, never to anyone who said stop. |
 
-## Try it
+## Try It
 
 ```
 npm test        # 18 tests, messy data included
@@ -44,7 +44,7 @@ Lead follow-up: Northfield Plumbing Co. (made up)
   Fri 09:00  -> wei.chen@example.com                 Still happy to help: Northfield Plumbing Co.
 ```
 
-## The promises, and how each is kept
+## The Promises, and How Each Is Kept
 
 **Never twice.** Every message has a key (`invoice:1042:day-7`, `lead:<id>:follow-up:1`). A key that went out is never sent again, however often the automation runs, so it can safely run every few minutes and after a restart. ([core/mail.js](https://github.com/Nuxy1/small-business-automations/blob/main/core/mail.js))
 
@@ -58,7 +58,7 @@ Lead follow-up: Northfield Plumbing Co. (made up)
 
 **People stay in charge.** Every follow-up stops the moment the customer replies; a 30-days-late invoice goes to the owner, not to a fourth email; anyone who replies "stop" to a review request is never asked again; everyone gets the same public review link (asking only happy customers is against Google's rules).
 
-## How this is used for a real client
+## How This Is Used for a Real Client
 
 For a real business the same logic runs inside their own accounts:
 
@@ -66,7 +66,7 @@ For a real business the same logic runs inside their own accounts:
 - **The transport is theirs.** Here, `outbox()` writes each email to a folder. In a client's setup it is their own email account or the tool they already use; the keys, retries and alerts stay the same.
 - **Tested on their messy data first.** A dry run on a copy of their real export, every message read by a person before anything goes live.
 
-## Limits (on purpose, for small businesses)
+## Limits (On Purpose, for Small Businesses)
 
 - The state is a JSON file: right for a few thousand customers, not for a large company's database.
 - The lead server ([lead-follow-up/server.js](https://github.com/Nuxy1/small-business-automations/blob/main/lead-follow-up/server.js)) is a minimal webhook with a shared secret. In production it sits behind HTTPS (Caddy or the host's proxy).

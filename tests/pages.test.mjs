@@ -196,9 +196,10 @@ test("without JavaScript: every service is listed, the form posts to the inquiry
     assert.equal(await page.locator(".svc[data-fits]:visible").count(), services.length, "every service visible");
     assert.equal(await page.locator("[data-finder]").isVisible(), false, "the search box needs JavaScript, so it stays hidden");
     await go(page, "/contact/");
-    const form = page.locator("form[method='post']");
-    assert.equal(await form.count(), 1);
-    assert.match(await form.getAttribute("action"), /^https:\/\/[^/]+\/inquiry$/);
+    // the quote form and the callback form both post without JavaScript, to the same inquiry service
+    const actions = await page.locator("form[method='post']").evaluateAll((fs) => fs.map((f) => f.getAttribute("action")));
+    assert.equal(actions.length, 2, "the quote form and the callback form");
+    for (const action of actions) assert.match(action, /^https:\/\/[^/]+\/inquiry$/);
     await go(page, `/examples/${demoSites[0].slug}/`);
     assert.equal(await page.locator("[data-toggle]").isVisible(), false);
     assert.ok(await page.locator("[data-stage] iframe").isVisible());
@@ -402,7 +403,7 @@ test("the form knows every service, version, bundle and plan, ?service= names on
     }
     await go(page, "/contact/?service=not-a-service");
     assert.equal(await page.locator("[name=service]").inputValue(), "");
-    // every "Request a proposal" or quote link on the site points at an id the form knows and an answer it has
+    // every quote link on the site points at an id the form knows and an answer it has
     for (const u of ["/", "/solutions/", "/pricing/", "/automation/", "/websites/", "/ecommerce/", "/get-a-website/", "/website-security/"]) {
       const res = await go(page, u);
       if (res.status() === 404) continue;
@@ -544,6 +545,7 @@ test("without JavaScript: the hero's parts, the simulated demos and the goal pic
     await page.locator(".ap-tab", { hasText: "Lead Qualification" }).click();
     assert.deepEqual(await shown("#autopilot .ap-demo", "id"), ["ap-qualify"]);
 
+    await go(page, "/automation/"); // the goal picker lives here since approvals 87
     assert.deepEqual(await shown(".as-panel", "id"), ["as-calls"]);
     await page.locator(".as-goal", { hasText: "Improve my website" }).click();
     assert.deepEqual(await shown(".as-panel", "id"), ["as-website"]);
@@ -561,6 +563,10 @@ test("simulated demos: Play steps through on its own, Pause holds, the end stops
     const demo = page.locator("#ap-voice");
     await demo.scrollIntoViewIfNeeded();
     assert.match(await caption(), /Press start/);
+    // at rest the first step is already filled in, and the later ones wait as empty outlines (approvals 89)
+    const rest = await demo.locator(".ap-card:not(.later)").evaluateAll((els) => els.map((e) => e.dataset.from));
+    assert.ok(rest.length > 0 && rest.every((f) => f === "1"), "only the first step's cards show before Start");
+    assert.ok((await demo.locator(".ap-card.later").count()) > 0, "the later steps wait");
     await demo.locator("[data-play]").click();
     assert.match(await caption(), /^Step 1 of 6/);
     await page.waitForTimeout(2900);
@@ -603,7 +609,8 @@ test("simulated demos on a phone: the cards play in a window that keeps the newe
       await page.waitForTimeout(500);
       const idle = await measure(page);
       assert.ok(idle.scrolls && idle.win[1] - idle.win[0] <= height * 0.47, `${width}: the cards sit in a window under half the screen tall`);
-      assert.equal(idle.overflow, "hidden", "before the first step the empty window doesn't scroll");
+      assert.equal(idle.overflow, "hidden", "before the first press the window doesn't scroll");
+      assert.ok(idle.newest && idle.newest[0] >= idle.win[0] - 1 && idle.newest[1] <= idle.win[1] + 1, `${width}: at rest the first step's cards sit inside the window`);
       assert.equal(idle.tabindex, null, "and isn't a keyboard stop");
 
       await demo.locator("[data-next]").click();
@@ -622,7 +629,9 @@ test("simulated demos on a phone: the cards play in a window that keeps the newe
       await demo.locator("[data-reset]").dispatchEvent("click");
       await page.waitForTimeout(500);
       const again = await measure(page);
-      assert.deepEqual([again.section, again.newest, again.tabindex, again.overflow], [idle.section, null, null, "hidden"]);
+      // Start over puts the first step back where it was at rest (measured from the window's own top)
+      const inWindow = (m) => m.newest && Math.round(m.newest[0] - m.win[0]);
+      assert.deepEqual([again.section, inWindow(again), again.tabindex, again.overflow], [idle.section, inWindow(idle), null, "hidden"]);
     } finally {
       await tab.context.close();
     }
@@ -645,7 +654,7 @@ test("the goal picker and the hero show only catalogue services, with their cata
   const tab = await open({ width: 1440 });
   const { page } = tab;
   try {
-    await go(page, "/");
+    await go(page, "/automation/"); // the goal picker lives here since approvals 87
     const byId = Object.fromEntries(services.map((s) => [s.id, s]));
     const cards = await page.$$eval(".as-card", (els) => els.map((el) => ({
       id: el.querySelector("a[href^='/contact/?service=']").getAttribute("href").split("=")[1],
@@ -655,9 +664,11 @@ test("the goal picker and the hero show only catalogue services, with their cata
     assert.ok(cards.length >= 12, `${cards.length} cards`);
     for (const c of cards) {
       assert.ok(byId[c.id], `${c.id} is in the catalogue`);
-      assert.equal(c.name, byId[c.id].name);
+      assert.equal(c.name.toLowerCase(), byId[c.id].name.toLowerCase()); // shown in Title Case (approvals 85)
       assert.ok(c.price.includes(byId[c.id].price), `${c.id}: ${c.price}`);
     }
+    await go(page, "/"); // the hero's list of services
+    assert.ok((await page.locator(".panel-svc").count()) > 0, "the hero lists services");
     for (const a of await page.$$eval(".panel-svc", (els) => els.map((e) => ({ id: e.getAttribute("href").split("#")[1], text: e.textContent })))) {
       assert.ok(byId[a.id], a.id);
       assert.ok(a.text.includes(byId[a.id].price), `${a.id}: ${a.text}`);
@@ -669,13 +680,13 @@ test("the goal picker and the hero show only catalogue services, with their cata
 
 // ---- 2026-11 conversion upgrade: header menu, package estimator, a list of services on the quote form, phone quote button ----
 
-test("header: Services, Pricing, Demos, Our Work, About and one quote button; the Services list works by click and keyboard and every link is a real page", async () => {
+test("header: Services, Pricing, Live Demos, Our Work, About and one quote button; the Services list works by click and keyboard and every link is a real page", async () => {
   const tab = await open({ width: 1440 });
   const { page } = tab;
   try {
     await go(page, "/");
     const top = await page.locator("header .nav-list > li").evaluateAll((lis) => lis.map((li) => (li.querySelector(":scope > details > summary, :scope > a")?.textContent ?? "").trim()));
-    assert.deepEqual(top, ["Services", "Pricing", "Demos", "Our Work", "About"]);
+    assert.deepEqual(top, ["Services", "Pricing", "Live Demos", "Our Work", "About"]);
     const cta = page.locator("header a.head-cta");
     assert.equal(await cta.count(), 1);
     assert.deepEqual([(await cta.textContent()).trim(), await cta.getAttribute("href"), await cta.isVisible()], ["Get a Free Quote", "/contact/", true]);
@@ -758,7 +769,7 @@ test("package estimator: catalogue prices, one discount at a time, consultation 
   const price = Object.fromEntries(listed.map((s) => [s.id, dollars(s.price)]));
   const sum = (ids) => ids.reduce((t, id) => t + price[id], 0);
   try {
-    await page.goto(real + "/");
+    await page.goto(real + "/pricing/");
     const est = page.locator("#package");
     await est.locator("details.est-group").evaluateAll((ds) => ds.forEach((d) => (d.open = true))); // (two groups start open; the tests use them all)
 
@@ -848,11 +859,11 @@ test("package estimator: catalogue prices, one discount at a time, consultation 
     await tick("follow-up", "missed-calls", "reviews");
     const order = boxes.map((b) => b.id).filter((id) => ["follow-up", "missed-calls", "reviews"].includes(id));
     assert.equal(await leave(), `/contact/?services=${order.join(",")}`);
-    await page.goto(real + "/");
+    await page.goto(real + "/pricing/");
     await reset();
     assert.equal(await leave(), "/contact/", "nothing ticked opens the plain form");
     const whole = bundles.find((b) => sum(b.items) - dollars(b.price) >= Math.floor((sum(b.items) * (b.items.length >= 3 ? 15 : 10)) / 100));
-    await page.goto(real + "/");
+    await page.goto(real + "/pricing/");
     await est.locator("details.est-group").evaluateAll((ds) => ds.forEach((d) => (d.open = true))); // (two groups start open; the tests use them all)
     await reset();
     await tick(...whole.items);
@@ -878,7 +889,7 @@ test("package estimator: catalogue prices, one discount at a time, consultation 
   // without JavaScript the list and its prices are all there, and the button still opens the quote form with the ticks
   const plain = await open({ width: 390, javaScriptEnabled: false });
   try {
-    await go(plain.page, "/");
+    await go(plain.page, "/pricing/");
     const form = plain.page.locator("#package form");
     assert.deepEqual([await form.getAttribute("action"), await form.getAttribute("method")], ["/contact/", "get"]);
     assert.equal(await form.locator("input[name=services]").count(), listed.length + consultOnly.length);
@@ -946,7 +957,7 @@ test("quote form: services chosen in the estimator are named, listed in the proj
   }
 });
 
-test("phone quote button: absent at the top, shown mid-page clear of the header, out of the way at the estimator, the last box and the footer, and closed for the visit once dismissed", async () => {
+test("phone quote button: absent at the top, shown mid-page clear of the header, out of the way at the last box and the footer, and closed for the visit once dismissed", async () => {
   const tab = await open({ width: 390, height: 780 });
   const { page } = tab;
   const on = () => page.locator("[data-sticky]").evaluate((b) => !b.hidden && b.classList.contains("is-on"));
@@ -973,7 +984,6 @@ test("phone quote button: absent at the top, shown mid-page clear of the header,
     assert.ok(m.a[1] >= 44 && m.x[0] >= 44 && m.x[1] >= 44, `targets ${m.a} and ${m.x}`);
     assert.equal(m.sw, m.vw, "no sideways scroll with the bar showing");
     assert.deepEqual([m.href, m.label], ["/contact/", "Hide the quote button"]);
-    await at("#package", false, "the estimator has its own button");
     await at("[data-final]", false, "the last box is the same button");
     await at("end", false, "the footer is never covered");
     // (hidden means out of the keyboard's way too)
@@ -1011,7 +1021,7 @@ test("the homepage in its new order: one h1, the sections in the brief's sequenc
     await go(page, "/");
     assert.equal(await page.locator("h1").count(), 1);
     const order = await page.locator("main > section[id], main > section[data-final]").evaluateAll((ss) => ss.map((s) => s.id || "final"));
-    const want = ["what-we-do", "autopilot", "what-to-automate", "package", "portfolio", "start-small", "how", "why-nuxy", "final"];
+    const want = ["what-we-do", "website-levels", "portfolio", "autopilot", "how", "handover", "why-nuxy", "home-faq", "final"];
     assert.deepEqual(order.filter((id) => want.includes(id)), want);
     // headings go h1 > h2 > h3 without skipping a level
     const levels = await page.locator("main :is(h1, h2, h3, h4)").evaluateAll((hs) => hs.map((h) => Number(h.tagName[1])));
@@ -1022,6 +1032,17 @@ test("the homepage in its new order: one h1, the sections in the brief's sequenc
     const trust = await page.locator("#why-nuxy .trust h3").allTextContents();
     assert.deepEqual(trust, ["Clear Pricing", "Your Accounts", "Tested Before Launch", "No Long Contracts", "Direct Support"]);
     assert.doesNotMatch(await page.locator("#why-nuxy").textContent(), /\d+\s*(\+|%)?\s*(clients|customers|businesses served|reviews|stars)/i);
+    // the goal picker and the estimator are linked from under the demos, and each is on its own page once (approvals 87)
+    for (const [route, id] of [["/automation/", "what-to-automate"], ["/pricing/", "package"]]) {
+      assert.equal(await page.locator(`[id="${id}"]`).count(), 0, `#${id} is off the home page`);
+      assert.equal(await page.locator(`#autopilot a[href="${route}#${id}"]`).count(), 1, `the home link to ${route}#${id}`);
+    }
+    for (const [route, id] of [["/automation/", "what-to-automate"], ["/pricing/", "package"]]) {
+      await go(page, route);
+      assert.equal(await page.locator(`[id="${id}"]`).count(), 1, `${route}#${id}`);
+      const ids = await page.locator("[id]").evaluateAll((els) => els.map((e) => e.id));
+      assert.deepEqual(ids.filter((x, i) => ids.indexOf(x) !== i), [], `${route} has no id twice`);
+    }
     assert.deepEqual(tab.errors, []);
   } finally {
     await tab.context.close();

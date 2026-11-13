@@ -56,7 +56,6 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
         <p class="demo-acts">
           <a class="demo-act demo-live" href={`/example-sites/${d.slug}/`} data-track="example_full">Live Demo<span class="sr-only">: {d.name}</span><Icon name="arrowUpRight" /></a>
           <a class="demo-act demo-view" href={`/examples/${d.slug}/`} data-track="example_open">View Project<span class="sr-only">: {d.name}</span></a>
-          <a class="demo-act demo-feat" href={`/examples/${d.slug}/#features`}>Features<span class="sr-only"> of {d.name}</span></a>
         </p>
       </div>
     </li>
@@ -72,13 +71,13 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
   /* the site on a computer, cut off by the card's edge, with its phone version standing in front */
   .demo-shot {
     position: relative; aspect-ratio: 16 / 10; padding: clamp(16px, 4%, 26px) clamp(16px, 4%, 26px) 0; border-bottom: 1px solid var(--hairline); overflow: hidden;
-    background: radial-gradient(90% 110% at 15% 0%, rgba(59, 130, 246, 0.2), transparent 70%), var(--bg-2);
+    background: radial-gradient(90% 110% at 15% 0%, rgb(var(--blue-rgb) / 0.2), transparent 70%), var(--bg-2);
   }
   .demo-desk { width: 88%; height: 100%; border: 1px solid var(--hairline-strong); border-bottom: 0; border-radius: 10px 10px 0 0; background: var(--surface-strong); box-shadow: var(--shadow); overflow: hidden; }
   .demo-bar { display: flex; gap: 5px; padding: 7px 10px; border-bottom: 1px solid var(--hairline); background: var(--panel); }
   .demo-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--hairline-strong); }
   .demo-desk img { display: block; width: 100%; height: auto; }
-  .demo-phone { position: absolute; right: clamp(14px, 4%, 26px); bottom: -12%; width: 21%; aspect-ratio: 390 / 780; border: 3px solid #26324a; border-radius: 14px; background: var(--surface-strong); box-shadow: var(--shadow); overflow: hidden; }
+  .demo-phone { position: absolute; right: clamp(14px, 4%, 26px); bottom: -12%; width: 21%; aspect-ratio: 390 / 780; border: 3px solid var(--hairline); border-radius: 14px; background: var(--surface-strong); box-shadow: var(--shadow); overflow: hidden; }
   /* a blue rule draws across the top of the picture on hover: the card's one accent, in the site's own blue */
   .demo-shot::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--link); transform: scaleX(0); transform-origin: left; }
   .demo-phone img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
@@ -95,14 +94,14 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
   .demo-kind { display: inline-flex; align-items: center; gap: 6px; color: var(--cyan); font-size: 0.8125rem; font-weight: 600; }
   .demo-tier { margin-left: auto; padding: 2px 8px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); color: var(--ink); font-size: 0.75rem; letter-spacing: 0.02em; }
   .demo-name { font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
-  /* three links; the whole card is View Project's hit area, and Live Demo and Features sit above that layer */
+  /* two links; the whole card is View Project's hit area, and Live Demo sits above that layer */
   .demo-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--hairline-soft); }
   .demo-act { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--link); font-size: 0.9375rem; font-weight: 650; text-decoration: none; }
   .demo-act:hover { text-decoration: underline; text-underline-offset: 3px; }
   .demo-act :global(.icon) { width: 1em; height: 1em; }
   .demo-live { padding: 0 14px; border: 1px solid var(--hairline-strong); border-radius: var(--r-sm, 8px); color: var(--ink); }
   .demo-live:hover { border-color: var(--link); text-decoration: none; }
-  .demo-live, .demo-feat { position: relative; z-index: 1; }
+  .demo-live { position: relative; z-index: 1; }
   .demo-view::after { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
   .demo-view:focus-visible { outline: none; }
   .demo-view:focus-visible::after { outline: 2px solid var(--focus); outline-offset: -2px; }

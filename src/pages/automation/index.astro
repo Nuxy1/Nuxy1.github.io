@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // AI & business automation: the flagship (lead response & follow-up), then the lead, booking and sales services
 // (#leads, where the homepage's fourth primary service links), the AI Voice Receptionist with its comparison and a
 // labelled simulated call (#voice), admin automations (#admin) and AI and custom systems (#ai), how automations are
@@ -6,6 +7,7 @@
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import ServiceCard from "../../components/ServiceCard.astro";
+import AutomateSelector from "../../components/AutomateSelector.astro";
 import CinematicLoop from "../../components/CinematicLoop.astro";
 import VideoUpsell from "../../components/VideoUpsell.astro";
 import { serviceById, variantById, keep, faqs, dollars, money, statusWords, plans } from "../../data/services";
@@ -99,7 +101,7 @@ const data = {
   hasOfferCatalog: { "@id": `${site}/solutions/#catalog` },
 };
 ---
-<Base title="Business Automation, Lead Follow-Up & AI Receptionist · Nuxy Automation" description={`Lead follow-up (${flagship.price}), missed-call text-back (${textBack.price}), booking, invoice reminders and an AI Voice Receptionist, built in your own accounts.`} wide>
+<Base title="Lead Follow-Up, Automation & AI Receptionist · Nuxy Automation" description={`Lead follow-up (${flagship.price}), missed-call text-back (${textBack.price}), booking, invoice reminders and an AI Voice Receptionist, built in your own accounts.`} wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(data)} />
 
   <section class="au-hero cine-host">
@@ -107,7 +109,7 @@ const data = {
     <div class="wrap au-grid">
       <div>
       <p class="eyebrow">AI &amp; business automation</p>
-      <h1>Automations that answer, remind and follow up for you.</h1>
+      <h1>Automations That Answer, Remind and Follow Up for You</h1>
       <p class="lead">Every inquiry answered in seconds, missed calls texted back, quotes followed up, bookings with reminders and invoices that chase themselves. Built in the accounts you already have, at a price agreed in writing before you pay.</p>
       <div class="hero-actions">
         <a class="button" href="/contact/?want=automation" data-track="cta_automation_hero">Get My Free Automation Plan<Icon name="arrowRight" /></a>
@@ -129,17 +131,19 @@ const data = {
     </div>
   </section>
 
+  <AutomateSelector />
+
   <section class="section band" id="lead-response" aria-labelledby="flag-h">
     <div class="wrap flag">
       <div class="flag-copy">
         <p class="eyebrow">Most asked for</p>
-        <h2 id="flag-h">{flagship.name}</h2>
+        <h2 id="flag-h">{titleCase(flagship.name)}</h2>
         <p class="flag-fixes">Fixes: {flagship.fixes.charAt(0).toLowerCase() + flagship.fixes.slice(1)}</p>
         <p>{flagship.text}</p>
         <p class="flag-price"><strong>{flagship.price}</strong> one time</p>
         <p class="flag-costs">Other companies’ costs: {flagship.costs.charAt(0).toLowerCase() + flagship.costs.slice(1)}</p>
         <div class="flag-actions">
-          <a class="button" href={`/contact/?service=${flagship.id}`} data-track="flagship_ask">Ask about lead follow-up</a>
+          <a class="button" href={`/contact/?service=${flagship.id}`} data-track="flagship_ask">Get a Free Quote<span class="sr-only">: {flagship.name}</span></a>
           <a class="text-link" href="/demos/#try">Watch it handle one inquiry<Icon name="arrowRight" /></a>
         </div>
       </div>
@@ -147,7 +151,7 @@ const data = {
         {flow.map(([title, text], i) => (
           <li>
             <span class="flow-num" aria-hidden="true">{i + 1}</span>
-            <div><h3>{title}</h3><p>{text}</p></div>
+            <div><h3>{titleCase(title)}</h3><p>{text}</p></div>
           </li>
         ))}
       </ol>
@@ -158,7 +162,7 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Leads, quotes &amp; customer follow-ups</p>
-        <h2 id="leads-h">{leads.title}</h2>
+        <h2 id="leads-h">{titleCase(leads.title)}</h2>
         <p>{leads.lead}</p>
       </div>
       <div class="grid-3 cards">
@@ -172,7 +176,7 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Phone calls</p>
-        <h2 id="voice-h">{voice.name}</h2>
+        <h2 id="voice-h">{titleCase(voice.name)}</h2>
         <p>{voice.text}</p>
       </div>
       <div class="voice-top">
@@ -181,25 +185,25 @@ const data = {
           <p class="voice-price"><strong>{voice.price}</strong> setup; optional management {voice.monthly}</p>
           <p>{advanced.name}: {advanced.price} setup; optional management {advanced.monthly}. {advanced.text}</p>
           <p class="voice-costs">Other companies’ costs: {voice.costs.charAt(0).toLowerCase() + voice.costs.slice(1)}</p>
-          <a class="button" href={`/contact/?service=${voice.id}`} data-track="voice_ask">Ask about a consultation</a>
+          <a class="button" href={`/contact/?service=${voice.id}`} data-track="voice_ask">Get a Free Quote<span class="sr-only">: {voice.name}</span></a>
         </div>
         <ul class="limits" role="list">
           {limits.map(([icon, text]) => <li><Icon name={icon} /><span>{text}</span></li>)}
         </ul>
       </div>
 
-      <h3 class="voice-sub" id="voice-compare-h">Text-back, receptionist or advanced?</h3>
+      <h3 class="voice-sub" id="voice-compare-h">Text-Back, Receptionist or Advanced?</h3>
       <div class="table-scroll" role="region" aria-labelledby="voice-compare-h" tabindex="0">
         <table class="compare">
           <thead><tr><td></td><th scope="col">{textBack.name}</th><th scope="col">{voice.name}</th><th scope="col">Advanced receptionist</th></tr></thead>
-          <tbody>{compare.map(([row, a, b, c]) => <tr><th scope="row">{row}</th><td>{a}</td><td>{b}</td><td>{c}</td></tr>)}</tbody>
+          <tbody>{compare.map(([row, a, b, c]) => <tr><th scope="row">{row}</th><td data-label={textBack.name}>{a}</td><td data-label={voice.name}>{b}</td><td data-label="Advanced receptionist">{c}</td></tr>)}</tbody>
         </table>
       </div>
 
       <article class="sim" aria-labelledby="sim-h">
         <div class="sim-head">
           <span class="chip plain">Simulated example</span>
-          <h3 id="sim-h">How a receptionist is designed to handle a call</h3>
+          <h3 id="sim-h">How a Receptionist Is Designed to Handle a Call</h3>
           <p>Example Heating Co. and its caller are made up. This is a written example of the design, not a recording, a live demo or a customer’s system.</p>
         </div>
         <div class="sim-body">
@@ -223,20 +227,20 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Admin automations</p>
-        <h2 id="admin-h">{admin.title}</h2>
+        <h2 id="admin-h">{titleCase(admin.title)}</h2>
         <p>{admin.lead}</p>
       </div>
       <div class="grid-3 cards">
         {admin.items.map((s) => <ServiceCard service={s} compact />)}
         <div class="tile">
           <Icon name="question" />
-          <h3>Something else eating your week?</h3>
+          <h3>Something Else Eating Your Week?</h3>
           <p>Describe the task you keep repeating. If it can be automated safely you’ll get a written plan and price; if it isn’t worth automating, we’ll say so.</p>
-          <a class="text-link" href="/contact/" data-track="cta_automation_other">Describe the problem<Icon name="arrowRight" /></a>
+          <a class="text-link" href="/contact/" data-track="cta_automation_other">Get a Free Quote<Icon name="arrowRight" /></a>
         </div>
         <div class="tile">
           <Icon name="storefront" />
-          <h3>Selling online?</h3>
+          <h3>Selling Online?</h3>
           <p>{serviceById.store.name} ({serviceById.store.price}), online ordering and gift cards are on the e-commerce page, next to the online shop itself.</p>
           <a class="text-link" href="/ecommerce/#extras">E-commerce services<Icon name="arrowRight" /></a>
         </div>
@@ -248,14 +252,14 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">AI, used carefully</p>
-        <h2 id="ai-h">{ai.title}</h2>
+        <h2 id="ai-h">{titleCase(ai.title)}</h2>
         <p>{ai.lead}</p>
       </div>
       <div class="grid-3 cards">
         {ai.items.map((s) => <ServiceCard service={s} compact />)}
         <div class="tile">
           <Icon name="sealCheck" />
-          <h3>How AI is used here</h3>
+          <h3>How AI Is Used Here</h3>
           <ul class="ticks ai-ticks" role="list">
             <li><Icon name="check" /><span><strong>AI drafts, you approve.</strong> A drafted answer waits in your inbox for you to approve.</span></li>
             <li><Icon name="check" /><span><strong>Nothing is sent without your rules.</strong> What goes out on its own is named in your written plan first.</span></li>
@@ -272,13 +276,13 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">After launch</p>
-        <h2 id="safe-h">How an automation keeps working</h2>
+        <h2 id="safe-h">How an Automation Keeps Working</h2>
       </div>
       <ul class="keep" role="list">
         {keep.map((k) => (
           <li>
             <Icon name={k.icon} />
-            <div><h3>{k.title}</h3><p>{k.text}</p></div>
+            <div><h3>{titleCase(k.title)}</h3><p>{k.text}</p></div>
           </li>
         ))}
       </ul>
@@ -290,7 +294,7 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Working examples</p>
-        <h2 id="ex-h">Four of these, running on made-up businesses</h2>
+        <h2 id="ex-h">Four of These, Running on Made-Up Businesses</h2>
         <p>Each example shows a week of what came in, what went out and how messy data was handled. The code is open source.</p>
       </div>
       <ul class="ex-list" role="list">
@@ -305,7 +309,7 @@ const data = {
     <div class="wrap faq-wrap">
       <div class="section-head">
         <p class="eyebrow">Questions</p>
-        <h2 id="faq-h">Before you ask</h2>
+        <h2 id="faq-h">Before You Ask</h2>
       </div>
       <div class="faq">
         {questions.map(([q, a]) => (
@@ -325,7 +329,7 @@ const data = {
     <div class="wrap">
       <div class="cta-band">
         <div>
-          <h2>Find out what you could automate</h2>
+          <h2>Find Out What You Could Automate</h2>
           <p>Tell us what takes up your time. You’ll get a written plan and a price within one business day, or an honest “this isn’t worth automating”.</p>
         </div>
         <div class="cta-actions">
@@ -392,13 +396,26 @@ const data = {
   .limits li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; align-items: start; }
   .limits :global(.icon) { width: 22px; height: 22px; margin-top: 1px; color: var(--cyan); }
   .voice-sub { margin: clamp(40px, 5vw, 56px) 0 14px; font-size: 1.25rem; }
-  .table-scroll { overflow-x: auto; }
+  .table-scroll { overflow-x: auto; container-type: inline-size; }
   .compare { width: 100%; min-width: 680px; border-collapse: collapse; font-size: 0.9375rem; }
   .compare th, .compare td { padding: 11px 14px 11px 0; border-top: 1px solid var(--hairline); text-align: left; vertical-align: top; }
   .compare tbody tr:last-child > * { border-bottom: 1px solid var(--hairline); }
   .compare thead th { width: 27%; color: var(--ink); font-weight: 650; }
   .compare tbody th { width: 19%; color: var(--muted); font-weight: 600; }
   .compare td { color: var(--body); }
+  /* narrower than the table needs: each row becomes a short block with its column names written in, so nothing
+     is cut off or scrolled sideways (the box's own width decides, not the screen's) */
+  @container (max-width: 679.98px) {
+    .compare { min-width: 0; }
+    .compare, .compare tbody, .compare tr, .compare th, .compare td { display: block; }
+    .compare thead { display: none; }
+    .compare tbody tr { padding: 14px 0; border-top: 1px solid var(--hairline); }
+    .compare tbody tr:last-child { border-bottom: 1px solid var(--hairline); }
+    .compare tbody th, .compare tbody td, .compare tbody tr:last-child > * { width: auto; padding: 0; border: 0; }
+    .compare tbody th { color: var(--ink); font-weight: 650; }
+    .compare tbody td { margin-top: 8px; }
+    .compare tbody td::before { content: attr(data-label) ": "; display: block; color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
+  }
 
   .sim { margin-top: clamp(40px, 5vw, 56px); padding: clamp(20px, 3vw, 32px); border: 1px dashed var(--hairline-strong); border-radius: var(--r-lg); }
   .sim-head { display: grid; gap: 8px; justify-items: start; max-width: 68ch; }

@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../lib/title-case";
 // One service from data/services.ts. `compact` (homepage) shows the problem, what's built and the price; the full
 // card (/solutions/) adds who it suits, what's needed and other companies' costs. `anchor={false}` drops the id, for a
 // card shown a second time on a page or a variant of a service (the "Full rebuild" card on /websites/ asks about new-website).
@@ -26,7 +27,7 @@ const variants = s.variants ?? [];
       {s.addon && <span class="chip plain">Add-on</span>}
     </span>
   </div>
-  <H class="svc-name">{s.name}</H>
+  <H class="svc-name">{titleCase(s.name)}</H>
   <p class="svc-fixes">Fixes: {s.fixes.charAt(0).toLowerCase() + s.fixes.slice(1)}</p>
   <p class="svc-text">{shownAbove ? "Shown in full just above: what happens, step by step, and what it costs." : s.text}</p>
   {!compact && (
@@ -46,7 +47,7 @@ const variants = s.variants ?? [];
     <p class="svc-price"><span class="sr-only">Price: </span>{s.price} <span class="note">{note}</span></p>
     {shownAbove
       ? <a class="text-link" href={shownAbove} data-track="service_up">See how it works<span class="sr-only">: {s.name}</span><Icon name="arrowUp" /></a>
-      : <a class="text-link" href={ask} data-track="service_ask">Request a proposal<span class="sr-only">: {s.name}</span><Icon name="arrowRight" /></a>}
+      : <a class="text-link" href={ask} data-track="service_ask">Get a Free Quote<span class="sr-only">: {s.name}</span><Icon name="arrowRight" /></a>}
   </div>
 </article>
 
@@ -58,7 +59,7 @@ const variants = s.variants ?? [];
     scroll-margin-top: calc(var(--nav-h) + 20px);
   }
   .svc:hover { border-color: var(--hairline-strong); }
-  .svc:target { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+  .svc:target { border-color: var(--blue-line); box-shadow: 0 0 0 1px var(--blue); }
   .svc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
   .svc-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; background: var(--accent-soft); color: var(--link); }
   .svc-icon :global(.icon) { width: 22px; height: 22px; }

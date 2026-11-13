@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../lib/title-case";
 // The concept-demonstration gallery (Creative Studio brief, Phase 6). Three made-up brands, each labelled as a
 // fictional concept demonstration on its card and again in the player: never presented as client work.
 //
@@ -31,7 +32,7 @@ const mp4 = (sources: { src: string; type: string }[]) => (sources.find((s) => s
           </a>
           <div class="cg-body">
             <p class="cg-label">{demoLabel}</p>
-            <h3>{d.title}</h3>
+            <h3>{titleCase(d.title)}</h3>
             <p class="cg-cat">{d.category}</p>
             <p class="cg-text">{d.text}</p>
             <a class="button secondary" href={similar(d.request)} data-track="cta_creative_similar">Request Similar Project<span class="sr-only">: {d.category.toLowerCase()} like {d.title}</span></a>
@@ -143,7 +144,7 @@ const mp4 = (sources: { src: string; type: string }[]) => (sources.find((s) => s
 
   .cg-dialog { width: min(100vw - 24px, 1040px); max-width: none; max-height: calc(100dvh - 24px); margin: auto; padding: 0; overflow: auto; border: 1px solid var(--hairline-strong); border-radius: var(--r-lg); background: var(--bg-2); color: var(--body); }
   .cg-dialog.tall { width: min(100vw - 24px, 460px); }
-  .cg-dialog::backdrop { background: rgba(2, 6, 23, 0.82); }
+  .cg-dialog::backdrop { background: rgb(2 5 12 / 0.82); }
   .cg-frame { display: grid; gap: 14px; padding: clamp(14px, 2.5vw, 22px); }
   .cg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
   .cg-head h3 { margin-top: 4px; font-size: 1.1875rem; letter-spacing: 0.02em; }

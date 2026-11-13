@@ -13,7 +13,7 @@ Every new Shopify order lands as a clean row in a Google Sheet and pings your te
 
 *(Diagram: see the README on GitHub.)*
 
-## What it does
+## What It Does
 
 - **Verifies every webhook.** Shopify's HMAC-SHA256 signature is checked against the raw body. Forged or tampered requests get a `401` and never touch your data.
 - **Answers Shopify at once.** Shopify waits only 5 seconds and retries on a timeout, so the relay acknowledges first and delivers after.
@@ -23,13 +23,13 @@ Every new Shopify order lands as a clean row in a Google Sheet and pings your te
 - **Cleans the data.** Phone numbers go to E.164, emails are trimmed and lower-cased, times go to UTC ISO 8601, and line items become one readable cell (`2 x Ceramic Mug (Ash Grey); 1 x Pour-Over Kit`).
 - **Has no dependencies.** It needs only Node.js 22+. Google's service-account login is done with Node's own crypto, so there's no `googleapis` package to keep updated.
 
-## The row it writes
+## The Row It Writes
 
 | order | created_at | customer | email | phone | items | item_count | total | currency | city | country | payment |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | #1042 | 2026-10-27T14:15:00.000Z | Jordan Example | jordan.example@example.com | +15550104477 | 2 x Ceramic Mug (Ash Grey); 1 x Pour-Over Kit | 3 | 84.50 | USD | Columbus | US | paid |
 
-## Try it in one minute (no accounts needed)
+## Try It in One Minute (No Accounts Needed)
 
 ```bash
 npm test              # 11 tests: signatures, duplicates, retries, dead letters, the HTTP server, the Sheets login, formula-safe cells
@@ -38,7 +38,7 @@ npm run demo          # terminal 2: sends the sample order, signed as Shopify si
 cat data/orders.csv   # the row
 ```
 
-## Set it up for a store
+## Set It Up for a Store
 
 1. **Configure the relay.** Copy `.env.example` to `.env`.
 2. **Google Sheets** (optional):
@@ -52,7 +52,7 @@ cat data/orders.csv   # the row
    - Copy the signing secret shown there into `SHOPIFY_WEBHOOK_SECRET`.
 6. **Check it:** `GET /health` answers `ok`. Then place a test order.
 
-## Project layout
+## Project Layout
 
 ```
 src/verify.js       HMAC check (timing-safe)
@@ -64,7 +64,7 @@ src/server.js       node:http server, 1 MB body limit, graceful shutdown that fi
 scripts/            send-test-webhook.js, replay-dead-letters.js
 ```
 
-## Notes for production
+## Notes for Production
 
 - Duplicate detection is kept in memory, which is right for one instance. Behind a load balancer with several instances, move it to Redis or a database table.
 - Every request's HMAC signature is checked against the raw body before anything is read (timing-safe; a wrong or missing one gets 401), and a customer's text that a spreadsheet would run as a formula (`=HYPERLINK(...)` as a name) reaches the sheet and the CSV with a leading `'`, so it shows as plain text.

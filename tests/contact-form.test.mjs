@@ -15,13 +15,14 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { serveDist } from "./serve-dist.mjs";
-import { services, wants } from "../src/data/services.ts";
+import { services, wants, wantsShown } from "../src/data/services.ts";
 import { emailTypo as siteTypo } from "../src/lib/email-typo.ts";
 import { check, quote, encode, priceText, describe } from "../src/data/creative-estimate.ts";
 import { rules, types, creativeWant, quoteParam } from "../src/data/creative.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dist = join(here, "..", "dist");
+// (SITE_DIST points the test at another build folder, e.g. a scratch build that must not touch dist/)
+const dist = process.env.SITE_DIST || join(here, "..", "dist");
 const agent = process.env.INQUIRY_JS;
 if (!agent || !existsSync(agent)) throw new Error("Set INQUIRY_JS to the inquiry service's src/inquiry.js (see the header of this file).");
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE || "playwright-core");
@@ -228,12 +229,44 @@ test("an unknown ?service= is ignored", async () => {
   await c2.close();
 });
 
+test("the form offers five answers; an answer named by a link shows as a sixth and is what gets saved (approvals 88)", async () => {
+  const { page, context, errors } = await open("/contact/");
+  const shownIds = wants.map((w) => w.id).filter((id) => wantsShown.includes(id));
+  assert.equal(shownIds.length, 5);
+  assert.deepEqual((await page.locator(".pick:visible").allTextContents()).map((t) => t.trim()), shownIds.map(wantLabel));
+  assert.equal(await page.locator("[name=want]:disabled").count(), wants.length - 5, "the other answers are switched off, so they are never sent by accident");
+  // (the arrow keys go round the five that show and never land on a hidden one)
+  await page.focus("[name=want][value=new-website]");
+  const seen = [];
+  for (let i = 0; i < 5; i++) {
+    await page.keyboard.press("ArrowDown");
+    seen.push(await page.evaluate(() => document.activeElement.value));
+  }
+  assert.deepEqual(seen, [...shownIds.slice(1), shownIds[0]]);
+  await page.waitForTimeout(300); // (the page's own count of a started form finishes before the tab closes)
+  await context.close();
+  const again = await open("/contact/?want=repair");
+  assert.deepEqual((await again.page.locator(".pick:visible").allTextContents()).map((t) => t.trim()), wants.filter((w) => wantsShown.includes(w.id) || w.id === "repair").map((w) => w.label));
+  await again.page.waitForTimeout(2600);
+  await fill(again.page, { want: "", email: "sixth@example.com" });
+  await again.page.click("[data-submit]");
+  await panel(again.page, "done").waitFor({ state: "visible" });
+  assert.equal(store.find(await again.page.textContent("[data-ref]")).want, "repair");
+  await again.page.waitForTimeout(300);
+  assert.deepEqual([...errors, ...again.errors], []);
+  await again.context.close();
+});
+
 test("?want= picks an answer, and wins over the service's own", async () => {
   for (const [query, picked, service] of [["?want=creative", "creative", ""], ["?want=shopify", "shopify", ""], ["?want=health-check", "health-check", ""], ["?want=repair", "repair", ""], ["?want=security", "security", ""], ["?service=site-fixes", "redesign", "site-fixes"], ["?service=site-fixes&want=new-website", "new-website", "site-fixes"], ["?want=everything", null, ""]]) {
     const { page, context, errors } = await open(`/contact/${query}`);
     const checked = await page.locator("[name=want]:checked");
     assert.equal(await checked.count(), picked ? 1 : 0, query);
     if (picked) assert.equal(await checked.getAttribute("value"), picked, query);
+    // (five answers show; a link that names one of the other five shows it too, and nothing checked is switched off)
+    const shown = await page.locator("[name=want]").evaluateAll((els) => els.filter((e) => !e.disabled && e.checkVisibility()).map((e) => e.value));
+    assert.deepEqual(shown, wants.map((w) => w.id).filter((id) => wantsShown.includes(id) || id === picked), query);
+    assert.equal(await page.locator("[name=want]:disabled:checked").count(), 0, query);
     assert.equal(await page.inputValue("[name=service]"), service, query);
     assert.equal(await page.isHidden("[data-about]"), !service, query);
     assert.deepEqual(errors, []);
@@ -267,7 +300,7 @@ test("a likely email typo is asked about, and changed only when the customer say
   const { page, context, errors } = await open("/contact/");
   const tip = page.locator("[data-tip-box]");
   await page.fill("[name=email]", "owner@gmial.com");
-  await page.locator("[name=email]").blur();
+  await page.locator("[data-inquiry] [name=email]").blur(); // (the callback form below has an email field too)
   await tip.waitFor({ state: "visible" });
   assert.equal(await page.textContent("[data-tip-address]"), "owner@gmail.com");
   assert.equal(await page.inputValue("[name=email]"), "owner@gmial.com", "nothing changed yet");
@@ -276,15 +309,15 @@ test("a likely email typo is asked about, and changed only when the customer say
   assert.equal(await tip.isHidden(), true);
   // a real domain that is close to a known one is left alone
   await page.fill("[name=email]", "owner@yahoo.ca");
-  await page.locator("[name=email]").blur();
+  await page.locator("[data-inquiry] [name=email]").blur();
   assert.equal(await tip.isHidden(), true);
   // "No, it's right" keeps what they typed, and the question isn't asked again for it
   await page.fill("[name=email]", "owner@hotmial.com");
-  await page.locator("[name=email]").blur();
+  await page.locator("[data-inquiry] [name=email]").blur();
   await tip.waitFor({ state: "visible" });
   await page.click("[data-tip-keep]");
   assert.equal(await tip.isHidden(), true);
-  await page.locator("[name=email]").blur();
+  await page.locator("[data-inquiry] [name=email]").blur();
   assert.equal(await tip.isHidden(), true);
   await page.waitForTimeout(2600);
   await fill(page, { email: "owner@hotmial.com", business: "Typo Kept Co" });
@@ -341,7 +374,7 @@ test("when the server fails, the page says NOT sent and offers the answers as an
   await page.check("[name=contact][value=either]");
   await page.click("[data-submit]");
   await panel(page, "fail").waitFor({ state: "visible" });
-  assert.match(await page.textContent("[data-fail] h2"), /NOT sent/);
+  assert.match(await page.textContent("[data-fail] h2"), /NOT sent/i); // headings are in Title Case (approvals 85)
   assert.match(await page.textContent("[data-fail-text]"), /NOT saved/);
   assert.equal(await panel(page, "done").isHidden(), true);
   const href = await page.getAttribute("[data-mailto]", "href");
@@ -407,7 +440,7 @@ test("without JavaScript the form still sends and lands on the thank-you page", 
   assert.equal(store.find(ref).business, v.business);
   assert.equal(store.find(ref).want, "new-website");
   assert.equal(store.find(ref).stage, "new", "no-JS sends no timing, so it isn't treated as too fast");
-  assert.match(await page.textContent("h1"), /got your request/);
+  assert.match(await page.textContent("h1"), /got your request/i);
   await context.close();
 });
 
@@ -447,7 +480,7 @@ test("a website level link picks the level and shows the website questions; othe
   await page.check("[name=want][value=automation]");
   assert.equal(await page.isHidden("[data-web]"), true);
   assert.equal(await page.$eval("[data-web]", (f) => f.disabled), true);
-  await page.check("[name=want][value=redesign]");
+  await page.check("[name=want][value=shopify]"); // (a website answer the form offers: approvals 88)
   assert.equal(await page.isVisible("[data-web]"), true);
   assert.equal(await page.inputValue("[name=level]"), "signature", "the answer is kept while hidden");
   await page.waitForTimeout(2600);
@@ -457,7 +490,7 @@ test("a website level link picks the level and shows the website questions; othe
   await page.click("[data-submit]");
   await panel(page, "done").waitFor({ state: "visible" });
   const saved = store.find(await page.textContent("[data-ref]"));
-  assert.deepEqual([saved.want, saved.level, saved.goal, saved.features, saved.business], ["redesign", "signature", "standout", "Online booking\n3D product view", v.business]);
+  assert.deepEqual([saved.want, saved.level, saved.goal, saved.features, saved.business], ["shopify", "signature", "standout", "Online booking\n3D product view", v.business]);
   // (the counts: one contact_started however much is typed, a contact_completed after the reference shows, no answers)
   await page.waitForTimeout(300);
   const events = sent.hit.map((b) => new URLSearchParams(b).get("e"));
@@ -516,4 +549,70 @@ test("every website answer fits its closed select, from a 320-pixel phone to a w
     assert.deepEqual(cut, [], "cut short at " + width + "px");
     await context.close();
   }
+});
+
+// ---------- "Request a callback" (components/CallbackForm.astro, on when data/site.ts callbackForm is true) ----------
+
+const fillCallback = async (page, values = {}) => {
+  const v = { name: "Call Person", business: "Example Roofing", phone: "(507) 555-0142", ...values };
+  for (const [k, val] of Object.entries(v)) await page.fill(`[data-callback] [name="${k}"]`, val);
+  await page.check('[data-callback] [name=reason][value="automation"]');
+  await page.check('[data-callback] [name=window][value="morning"]');
+  return v;
+};
+
+test("the callback form offers the server's choices, needs a ticked yes and a phone, and its email is optional", async (t) => {
+  const { CALLBACK_REASONS, CALLBACK_WINDOWS } = await import(pathToFileURL(agent).href);
+  const { page, context, sent, errors } = await open("/contact/");
+  if (!(await page.locator("[data-callback]").count())) { await context.close(); return t.skip("callbackForm is off in data/site.ts"); }
+  const options = (name) => page.locator(`[data-callback] [name=${name}]`).evaluateAll((r) => Object.fromEntries(r.map((x) => [x.value, x.closest("label").textContent.trim()])));
+  assert.deepEqual(await options("reason"), CALLBACK_REASONS);
+  assert.deepEqual(await options("window"), CALLBACK_WINDOWS);
+  assert.equal(await page.isChecked("#cb-consent"), false, "permission is never ticked for them");
+  await page.click("[data-cb-submit]");
+  for (const id of ["name", "business", "phone", "reason", "window", "consent"]) assert.equal(await page.isHidden(`#cb-${id}-err`), false, id);
+  assert.equal(await page.isHidden("#cb-email-err"), true, "email is optional");
+  assert.equal(await page.evaluate(() => document.activeElement?.id), "cb-name");
+  await fillCallback(page, { phone: "12345" });
+  await page.click("[data-cb-submit]");
+  assert.match(await page.textContent("#cb-phone-err"), /at least 7 digits/);
+  assert.match(await page.textContent("#cb-consent-err"), /Tick the box/);
+  assert.equal(sent.inquiry.length, 0);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("a callback request is saved as one, and the success message promises no time", async (t) => {
+  const { page, context, sent } = await open("/contact/");
+  if (!(await page.locator("[data-callback]").count())) { await context.close(); return t.skip("callbackForm is off"); }
+  await page.waitForTimeout(2600); // (a form sent in under 2.5 seconds is held as spam)
+  const v = await fillCallback(page);
+  await page.check("#cb-consent");
+  await page.click("[data-cb-submit]");
+  await page.locator("[data-cb-done]").waitFor({ state: "visible" });
+  const ref = await page.textContent("[data-cb-ref]");
+  assert.match(ref, REF);
+  const r = store.find(ref);
+  assert.deepEqual([r.kind, r.phone, r.email, r.reason, r.window, r.callConsent, r.stage], ["callback", v.phone, "", "automation", "morning", "yes", "new"]);
+  const done = await page.textContent("[data-cb-done]");
+  assert.match(done, /not an appointment: no call time has been set/);
+  assert.doesNotMatch(done, /scheduled|booked|confirmed|reserved/i);
+  assert.match(done, /\(507\) 555-0142/);
+  const events = sent.hit.map((b) => new URLSearchParams(b).get("e"));
+  if (events.length) assert.ok(events.includes("callback_completed") && !events.includes("contact_completed"), events.join());
+  await context.close();
+});
+
+test("without JavaScript a callback request lands on the thank-you page's callback wording", async (t) => {
+  const { page, context } = await open("/contact/", { js: false });
+  if (!(await page.locator("[data-callback]").count())) { await context.close(); return t.skip("callbackForm is off"); }
+  await fillCallback(page, { phone: "507-555-0177" });
+  await page.check("#cb-consent");
+  await Promise.all([page.waitForURL(/\/contact\/thanks\/\?ref=.+#callback$/), page.click("[data-cb-submit]")]);
+  const ref = new URL(page.url()).searchParams.get("ref");
+  assert.equal(store.find(ref).kind, "callback");
+  assert.equal(await page.isVisible("#callback"), true);
+  assert.match(await page.textContent("#callback"), /not an appointment/);
+  assert.equal(await page.locator(".for-quote").first().isVisible(), false);
+  await context.close();
 });

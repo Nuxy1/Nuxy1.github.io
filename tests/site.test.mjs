@@ -14,7 +14,8 @@ import { services, plans, primary, groups, health, wants, variants, bundles, bun
 import { rules as creativeRules, usd as creativeUsd } from "../src/data/creative.ts";
 import { demoSites } from "../src/data/demo-sites.ts";
 import { examples } from "../src/data/examples.ts";
-import { caseStudies } from "../src/data/case-studies.ts";
+import { caseStudies, liveLink, publishable } from "../src/data/case-studies.ts";
+import { arrangementsNote, delivery, dependsNote, leaving, nuxyHandles, youDo } from "../src/data/handover.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, "..", "dist");
@@ -47,7 +48,8 @@ const indexable = [...pages.keys()].filter((u) => !expectedNoindex.has(u));
 const legacy = JSON.parse(first(pages.get("/"), /const legacy = (\{[^;]*\});/));
 
 test("the build has every page, and the made-up data matches the pages", () => {
-  assert.equal(pages.size, 64, `pages: ${[...pages.keys()].join(" ")}`);
+  assert.equal(pages.size, 65, `pages: ${[...pages.keys()].join(" ")}`);
+  assert.ok(pages.has("/handover/"), "the handover page");
   for (const sub of ["quote", "services", "projects", "about", "contact"]) assert.ok(pages.has(`/example-sites/fernway-lawn/${sub}/`), `fernway ${sub}`);
   for (const sub of ["services", "barbers", "booking", "gallery", "contact"]) assert.ok(pages.has(`/example-sites/lantern-row-barbers/${sub}/`), `lantern ${sub}`);
   for (const sub of ["estimate", "checklist", "book", "about"]) assert.ok(pages.has(`/example-sites/mossgate-cleaning/${sub}/`), `mossgate ${sub}`);
@@ -61,14 +63,14 @@ test("the build has every page, and the made-up data matches the pages", () => {
   for (const e of examples) assert.ok(pages.has(`/work/${e.slug}/`), e.slug);
 });
 
-test("every demo card offers Live Demo, View Project and Features, each named for its demo and pointing at a real page", () => {
+test("every demo card offers two links, Live Demo and View Project, each named for its demo and pointing at a real page", () => {
   for (const u of ["/demos/"]) { // the one page that shows all four default demos (Halvane, the Immersive concept, is left out of default lists)
     const html = pages.get(u);
     for (const d of demoSites.filter((x) => x.tier !== "immersive")) {
       const live = html.match(new RegExp(`<a class="demo-act demo-live"[^>]*href="/example-sites/${d.slug}/"[^>]*>Live Demo<span class="sr-only"[^>]*>: ([^<]+)<`));
       assert.ok(live, `${u} Live Demo for ${d.slug}`);
       assert.match(html, new RegExp(`href="/examples/${d.slug}/"[^>]*>View Project<span class="sr-only"`), `${u} View Project for ${d.slug}`);
-      assert.match(html, new RegExp(`href="/examples/${d.slug}/#features"[^>]*>Features<span class="sr-only"`), `${u} Features for ${d.slug}`);
+      assert.doesNotMatch(html, new RegExp(`<a class="demo-act[^>]*href="/examples/${d.slug}/#features"`), `${u} has no third card link for ${d.slug} (approvals 91)`);
     }
   }
   for (const d of demoSites) assert.match(pages.get(`/examples/${d.slug}/`), /<section id="features"/, `/examples/${d.slug}/ has #features`);
@@ -130,7 +132,7 @@ test("the security & repairs page keeps its rules: authorization named, no certi
   for (const o of health) assert.ok(wants.some((w) => w.id === o.want), `${o.id} asks through ${o.want}`);
   // which work needs written authorization, said per offer and in its own section
   assert.match(text, /Written authorization from the website's owner is required before any testing starts\./);
-  assert.match(text, /Only with your written authorization/);
+  assert.match(text, /Only with your written authorization/i);
   assert.match(text, /If that isn't clear, we don't test\./);
   for (const o of health) assert.ok(text.includes(o.auth.replace(/’/g, "'")), `${o.id}: authorization line`);
   // no claims Nuxy can't back
@@ -138,7 +140,7 @@ test("the security & repairs page keeps its rules: authorization named, no certi
     assert.doesNotMatch(text, banned);
   }
   for (const m of text.matchAll(/certified/gi)) assert.equal(text.slice(m.index - 6, m.index), "not a ", "“certified” only as something we are not");
-  for (const m of text.matchAll(/completely secure/gi)) assert.match(text.slice(m.index - 20, m.index), /No promise of .$/, "“completely secure” only as something we don't promise");
+  for (const m of text.matchAll(/completely secure/gi)) assert.match(text.slice(m.index - 20, m.index), /No promise of .$/i, "“completely secure” only as something we don't promise");
   // every dollar amount is a published one
   const published = new Set([services.find((s) => s.id === "site-fixes").price.replace("from ", ""), plans[0].amount]);
   for (const price of text.match(/\$[\d,]+/g) ?? []) assert.ok(published.has(price), `${price} is not a published price for this page`);
@@ -148,6 +150,45 @@ test("the security & repairs page keeps its rules: authorization named, no certi
   assert.equal(all(home.slice(home.indexOf("<main"), home.indexOf("</main>")), /<a [^>]*href="([/]website-security[/])"/g).length, 1);
   assert.ok(all(pages.get("/solutions/"), /<a [^>]*href="([/]website-security[/])"/g).length >= 3, "menu, footer and the catalogue's own link");
   for (const [u, page] of pages) if (!demoUrls.includes(u)) assert.ok(page.includes('href="/website-security/"'), `${u} has no link to the page`);
+});
+
+test("the handover page restates published terms only: published prices, both arrangements told apart, no portal, no unlimited or guaranteed anything", () => {
+  const html = pages.get("/handover/");
+  const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+  const text = visible(main);
+  assert.equal(all(main, /<h1[^>]*>([^<]+)</g).join("|"), "How Your Website Is Handed Over");
+  // the eight things the brief asks the page to explain, each a section a link can land on
+  for (const id of ["delivery", "who-does-what", "ownership", "costs", "care", "changes", "leaving"]) assert.match(main, new RegExp(`<section[^>]* id="${id}"`), `#${id}`);
+  const plain = (line) => line.replace(/’/g, "'"); // visible() writes every apostrophe straight
+  for (const line of [...delivery.map((d) => d.title), ...nuxyHandles, ...youDo, ...leaving]) assert.ok(text.toLowerCase().includes(plain(line).toLowerCase()), line); // step titles show in Title Case (approvals 85)
+  // the two arrangements are not presented as the same thing, and the contract and the platform decide
+  assert.ok(text.includes(plain(arrangementsNote)), "the arrangements note");
+  assert.match(arrangementsNote, /not the same thing/);
+  assert.match(arrangementsNote, /your plan and your contract/);
+  assert.ok(text.includes(plain(dependsNote)), "what the customer sets up depends on the platform and the plan");
+  // every dollar amount is a published one
+  const published = new Set([services.find((s) => s.id === "site-fixes").price.replace("from ", ""), plans[0].amount]);
+  const shown = text.match(/\$[\d,]+/g) ?? [];
+  assert.ok(shown.length >= 2, "the care plan's price and the one-off fix price are shown");
+  for (const price of shown) assert.ok(published.has(price), `${price} is not a published price for this page`);
+  // nothing unlimited, guaranteed or instant; changes are said to be limited
+  for (const m of text.matchAll(/unlimited/gi)) assert.match(text.slice(m.index - 8, m.index), /aren't $/, "“unlimited” only as something the plan is not");
+  assert.doesNotMatch(text, /guarantee|instant|24\/7 support|always available/i);
+  // the client portal isn't live, so no page says a customer can sign in to one
+  // (site.ts reads import.meta.env, so the flag is read from the source text rather than imported)
+  const handoverPortal = readFileSync(join(here, "..", "src", "data", "site.ts"), "utf8").match(/export const handoverPortal = (true|false);/)?.[1];
+  assert.equal(handoverPortal, "false", "when the portal goes live, write its section from the working system and update this test");
+  for (const [u, page] of pages) {
+    if (demoUrls.includes(u) || u.startsWith("/docs/")) continue;
+    const body = visible(page.slice(page.indexOf("<main"), page.indexOf("</main>")));
+    assert.doesNotMatch(body, /(client|customer|handover) portal|log ?in to your (portal|dashboard)|sign in to your (portal|dashboard)/i, `${u} speaks of a portal that doesn't exist yet`);
+  }
+  // the same leaving steps on /websites/, and the page is reachable from the home page and every footer
+  const websites = visible(pages.get("/websites/"));
+  for (const line of leaving) assert.ok(websites.includes(plain(line)), `/websites/: ${line}`);
+  const home = pages.get("/");
+  assert.ok(all(home.slice(home.indexOf("<main"), home.indexOf("</main>")), /<a [^>]*href="([/]handover[/])"/g).length >= 1, "the home page links to it");
+  for (const [u, page] of pages) if (!demoUrls.includes(u)) assert.ok(page.includes('href="/handover/"'), `${u} has no link to the page`);
 });
 
 test("the sitemap lists exactly the indexable pages, and robots.txt points at it", () => {
@@ -415,9 +456,13 @@ test("a client case study is published only with recorded consent, sourced resul
   for (const c of caseStudies) {
     assert.ok(c.consent?.trim().length >= 20, `${c.slug}: consent says who agreed, when and to what`);
     assert.match(c.slug, /^[a-z0-9-]+$/);
-    for (const k of ["business", "industry", "location", "problem"]) assert.ok(c[k]?.trim(), `${c.slug}: ${k}`);
-    assert.ok(c.built.length > 0, `${c.slug}: what was built`);
-    for (const r of c.results) assert.ok(r.value.trim() && r.label.trim() && r.source.trim(), `${c.slug}: every result names its source`);
+    for (const k of ["business", "industry", "projectType", "problem"]) assert.ok(c[k]?.trim(), `${c.slug}: ${k}`);
+    assert.ok(c.built.length > 0 && c.services.length > 0, `${c.slug}: what was built and which services were delivered`);
+    // the four checks: finished, permission on file, pictures approved, text confirmed (data/case-studies.ts)
+    assert.ok(publishable(c), `${c.slug}: every publication check is written down`);
+    assert.equal(Boolean(c.url), Boolean(liveLink(c)), `${c.slug}: a live link needs the client's yes to a link (checks.url)`);
+    if (c.location) assert.doesNotMatch(c.location, /\d/, `${c.slug}: location is a town at most, never a street address`);
+    for (const r of c.results ?? []) assert.ok(r.value.trim() && r.label.trim() && r.source.trim(), `${c.slug}: every result names its source`);
     if (c.quote) assert.ok(c.quote.text.trim() && c.quote.name.trim(), `${c.slug}: a quote has its speaker`);
     for (const p of [...(c.shots ?? []), ...(c.beforeAfter ? [c.beforeAfter.before, c.beforeAfter.after] : [])]) {
       assert.ok(p.alt.trim().length >= 10, `${c.slug}: ${p.src} is described`);

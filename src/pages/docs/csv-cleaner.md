@@ -22,7 +22,7 @@ The input file is never changed. You get three files:
 | `needs-review.csv` | Rows a person must look at, each with a `reasons` column, exactly as they were typed. |
 | `report.md` | What happened, in counts a client can read. |
 
-## Before and after (from `fixtures/contacts-messy.csv`)
+## Before and After (From `fixtures/contacts-messy.csv`)
 
 | Before | After |
 |---|---|

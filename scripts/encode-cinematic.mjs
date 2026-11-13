@@ -145,7 +145,7 @@ function cutOf(master, stem, posterAt) {
   if (src.duration < 5 || src.duration > 61) fail(`${master} is ${round(src.duration)} s: a demo is 5 to 60 seconds`);
   if (posterAt >= src.duration) fail("--poster-at is past the end of the video");
   const file = fit(master, `${stem}.mp4`, LIMITS.demo, h264(fill(w, h), src.audio), 23);
-  return { width: w, height: h, duration: round(probe(join(dir, `${stem}.mp4`)).duration), audio: src.audio, poster: poster(master, posterAt, `${stem}.webp`, w * 0.75, h * 0.75), sources: [{ ...file, type: "video/mp4" }] };
+  return { width: w, height: h, duration: round(probe(join(dir, `${stem}.mp4`)).duration), audio: src.audio, poster: poster(master, posterAt, `${stem}.webp`, w * 0.75, h * 0.75), posterMobile: poster(master, posterAt, `${stem}-s.webp`, w * 0.3125, h * 0.3125), sources: [{ ...file, type: "video/mp4" }] };
 }
 function demo(id, master) {
   if (!/^[a-z0-9-]{1,40}$/.test(id)) fail(`not a demo id: ${id}`);

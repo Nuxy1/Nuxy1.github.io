@@ -11,8 +11,10 @@ interface Props {
   /** leave a level out (a level page shows the other three) */
   except?: LevelId;
   heading?: "h2" | "h3";
+  /** the short card for the home page: who the level is for, its price, and one link to its page (no feature list) */
+  compact?: boolean;
 }
-const { except, heading = "h3" } = Astro.props;
+const { except, heading = "h3", compact = false } = Astro.props;
 const H = heading;
 const list = levels.filter((l) => l.id !== except);
 const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
@@ -23,20 +25,30 @@ const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
       <article class="lv-card" aria-labelledby={`lv-${l.id}-h`}>
         <p class="lv-index"><span>{String(levels.indexOf(l) + 1).padStart(2, "0")}</span>{l.promise}</p>
         <H class="lv-name" id={`lv-${l.id}-h`}>{l.name}</H>
-        <p class="lv-tag">{l.tagline}</p>
+        <p class="lv-tag">{compact ? l.for : l.tagline}</p>
         <p class="lv-price">{l.price}</p>
         <p class="lv-note">{l.priceNote}</p>
         <p class="lv-complex">
           <span class="lv-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps[l.complexity] }}></i>)}</span>
           {l.complexity} complexity · {l.timeline.replace(/ after we have your words and photos|, set in the written plan/, "")}
         </p>
-        <ul class="ticks lv-points" role="list">
-          {l.points.slice(0, 3).map((p) => <li><Icon name="check" />{p}</li>)}
-        </ul>
-        <div class="lv-actions">
-          <a class="button secondary wide" href={l.href} data-track="tier_selected">{l.cta}</a>
-          {l.page && <a class="text-link" href={l.page}>What {l.name} includes<Icon name="arrowRight" /></a>}
-        </div>
+        {!compact && (
+          <ul class="ticks lv-points" role="list">
+            {l.points.slice(0, 3).map((p) => <li><Icon name="check" />{p}</li>)}
+          </ul>
+        )}
+        {compact ? (
+          <div class="lv-actions">
+            {l.page
+              ? <a class="text-link" href={l.page}>See {l.name} websites<Icon name="arrowRight" /></a>
+              : <a class="text-link" href={l.href} data-track="tier_selected">{l.cta}<Icon name="arrowRight" /></a>}
+          </div>
+        ) : (
+          <div class="lv-actions">
+            <a class="button secondary wide" href={l.href} data-track="tier_selected">{l.cta}</a>
+            {l.page && <a class="text-link" href={l.page}>What {l.name} includes<Icon name="arrowRight" /></a>}
+          </div>
+        )}
       </article>
     </li>
   ))}
@@ -61,6 +73,7 @@ const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
   .lv-steps i.on { background: var(--link); }
   .lv-points { font-size: 0.9375rem; }
   .lv-actions { display: grid; gap: 14px; justify-items: start; margin-top: auto; padding-top: 10px; }
+  .lv-actions .text-link { min-height: 44px; }
 
   /* Signature: a stronger edge and a fine blue rule along the top */
   .lv-signature .lv-card { border-color: var(--hairline-strong); background: linear-gradient(var(--link), var(--link)) top / 100% 2px no-repeat, var(--panel); }
@@ -73,7 +86,7 @@ const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
   .lv-immersive .lv-steps i.on, .lv-flagship .lv-steps i.on { background: var(--cyan); }
 
   /* Flagship: the darkest ground, a light outline and a second rule inside it */
-  .lv-flagship .lv-card { border-color: rgba(248, 250, 252, 0.5); background: var(--bg); outline: 1px solid var(--hairline); outline-offset: -7px; }
+  .lv-flagship .lv-card { border-color: rgb(var(--ink-rgb) / 0.5); background: var(--bg); outline: 1px solid var(--hairline); outline-offset: -7px; }
 
   /* Under a mouse, with motion on, the Immersive card tilts a few degrees and its plates part: depth you can feel,
      transform only, and nothing at all on touch screens or with motion reduced */

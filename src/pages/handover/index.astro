@@ -1,0 +1,293 @@
+---
+import { titleCase } from "../../lib/title-case";
+// How a finished website is handed over, for someone who has never owned one (improvement brief, phase 4): how delivery
+// works, what Nuxy handles, what the customer does, the two account arrangements, other companies' costs, optional
+// care, how to ask for changes, and how to leave. Every promise is a published term, read from data/handover.ts,
+// data/services.ts and /policies/: nothing is promised here that isn't promised there.
+// There is no client portal yet, so the page says nothing about one (data/site.ts handoverPortal). When it is live,
+// write that section from real screens of the working system; never from a mock-up.
+// Approval needed before deploy: this page is new, and it restates the handover list and the "if you stop a monthly
+// plan" steps of /websites/ that are themselves waiting for the owner's yes.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import { callbackForm, inbox } from "../../data/site";
+import { faqs, plans, serviceById } from "../../data/services";
+import { arrangements, arrangementsNote, delivery, dependsNote, leaving, nuxyHandles, youDo } from "../../data/handover";
+
+const care = plans[0];
+const fixes = serviceById["site-fixes"];
+const published = (q: string) => {
+  const found = faqs.find(([question]) => question === q);
+  if (!found) throw new Error(`/handover/: no published answer for “${q}” in data/services.ts`);
+  return found[1];
+};
+const otherCosts = published("Are there costs from other companies?");
+
+const contents: [string, string][] = [
+  ["How delivery works", "#delivery"],
+  ["Who does what", "#who-does-what"],
+  ["Who owns what", "#ownership"],
+  ["Other costs", "#costs"],
+  ["Care after launch", "#care"],
+  ["Changes", "#changes"],
+  ["Leaving", "#leaving"],
+];
+
+// Four ways a change gets made, from the published terms (one round of changes: /policies/#refunds; the care plan's
+// minutes and what counts as a small change: /policies/#cancel; anything new is quoted first: /policies/#terms).
+const changes: [string, string][] = [
+  ["In the first 14 days", "One round of changes is included with every website. Tell us by email what you’d like changed."],
+  ["Everyday edits, yourself", "Your website comes with a short video guide. For a Business website it shows how to change prices, hours and photos on your own."],
+  [`With ${care.name}`, `${care.points[3]}. Small changes are quick edits to what’s already there, such as prices, hours, photos or a line of text. ${care.points[4]}.`],
+  ["Anything new", `A new page, form or tool is quoted in writing, at a fixed price, before any work starts. Small one-off fixes without a plan are ${fixes.price}.`],
+];
+
+const site = "https://nuxyautomation.com";
+const crumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${site}/` },
+    { "@type": "ListItem", position: 2, name: "How handover works", item: `${site}/handover/` },
+  ],
+};
+---
+<Base title="How Website Handover Works · Nuxy Automation" description="How Nuxy hands over a finished website: your review, setup in your own accounts, launch, a 30-day watch, optional care, and how to change things or leave later." wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(crumbs)} />
+
+  <section class="hd-hero">
+    <div class="wrap hd-hero-grid">
+      <div>
+        <p class="eyebrow">Easy handover</p>
+        <h1>How Your Website Is Handed Over</h1>
+        <p class="lead">What we do, what you do, who owns and pays for what, and how to change things or leave later. Written for someone who has never owned a website.</p>
+        <div class="hd-actions">
+          <a class="button" href="/contact/" data-track="cta_handover_quote">Get a Free Quote<Icon name="arrowRight" /></a>
+          <a class="button secondary" href="/web-design/" data-track="cta_handover_levels">Compare Website Levels</a>
+        </div>
+      </div>
+      <aside class="panel hd-short" aria-labelledby="short-h">
+        <h2 id="short-h">The Short Version</h2>
+        <ul role="list">
+          <li><span class="hd-icon"><Icon name="lockSimple" /></span><p><strong>It’s in your name</strong>Your website account and your domain belong to you, and you hold the owner login.</p></li>
+          <li><span class="hd-icon"><Icon name="eye" /></span><p><strong>You approve it first</strong>You see the website working before you pay the second half and before it goes live.</p></li>
+          <li><span class="hd-icon"><Icon name="handshake" /></span><p><strong>No lock-in</strong>A monthly plan is optional. Stopping one never takes your site down or costs a release fee.</p></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="wrap">
+      <nav class="hd-toc" aria-label="On this page">
+        <ul role="list">
+          {contents.map(([name, href]) => <li><a href={href}>{name}</a></li>)}
+        </ul>
+      </nav>
+    </div>
+  </section>
+
+  <section class="section band" id="delivery" aria-labelledby="delivery-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">How delivery works</p>
+        <h2 id="delivery-h">From Finished Website to Yours, in Six Steps</h2>
+        <p>The same order for every website. Your written plan says what is included at each step.</p>
+      </div>
+      <ol class="hd-flow">
+        {delivery.map((s, i) => (
+          <li>
+            <span class="hd-num" aria-hidden="true">{i + 1}</span>
+            <div><h3><span class="sr-only">Step {i + 1}: </span>{titleCase(s.title)}</h3><p>{s.text}</p></div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="who-does-what" aria-labelledby="who-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Who does what</p>
+        <h2 id="who-h">We Do the Technical Work. You Make the Decisions.</h2>
+      </div>
+      <div class="grid-2 hd-two">
+        <article class="panel hd-card">
+          <h3><Icon name="wrench" />What Nuxy Handles</h3>
+          <ul class="ticks" role="list">{nuxyHandles.map((t) => <li><Icon name="check" />{t}</li>)}</ul>
+        </article>
+        <article class="panel hd-card">
+          <h3><Icon name="userCircle" />What You Do</h3>
+          <ul class="ticks" role="list">{youDo.map((t) => <li><Icon name="check" />{t}</li>)}</ul>
+        </article>
+      </div>
+      <p class="note hd-after">{dependsNote}</p>
+    </div>
+  </section>
+
+  <section class="section band" id="ownership" aria-labelledby="own-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Account ownership</p>
+        <h2 id="own-h">Two Arrangements, Written Down Before You Start</h2>
+        <p>Every website is delivered the first way. The second is an optional monthly plan on top of it.</p>
+      </div>
+      <div class="grid-2 hd-two">
+        {arrangements.map((a) => (
+          <article class="panel hd-card">
+            <p class="hd-tag"><Icon name={a.icon} />{a.tag}</p>
+            <h3>{titleCase(a.title)}</h3>
+            <p class="hd-plain">{a.plain}</p>
+            <p>{a.text}</p>
+            <ul class="ticks" role="list">{a.points.map((pt) => <li><Icon name="check" />{pt}</li>)}</ul>
+          </article>
+        ))}
+      </div>
+      <p class="note hd-after">{arrangementsNote}</p>
+    </div>
+  </section>
+
+  <section class="section" id="costs" aria-labelledby="costs-h">
+    <div class="wrap hd-split">
+      <div class="section-head">
+        <p class="eyebrow">Other companies’ costs</p>
+        <h2 id="costs-h">What You Pay Others, Named Before You Pay Us</h2>
+      </div>
+      <div class="hd-prose">
+        <p>{otherCosts}</p>
+        <p>Those companies set their own fees and can change them. That isn’t ours to control, so we tell you about every cost before you sign up, and every account and paid plan stays in your name and on your card.</p>
+        <p class="note">The full wording is in the <a href="/policies/#terms">terms of service</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" id="care" aria-labelledby="care-h">
+    <div class="wrap hd-split">
+      <div class="section-head">
+        <p class="eyebrow">Care after launch</p>
+        <h2 id="care-h">Optional, Month to Month</h2>
+        <p>Every website includes the 30-day launch watch. After that you can look after it yourself, or have us keep watching it.</p>
+      </div>
+      <article class="panel hd-card">
+        <p class="hd-price"><strong>{care.price}</strong><span>{care.name} · optional</span></p>
+        <ul class="ticks" role="list">{care.points.map((p) => <li><Icon name="check" />{p}</li>)}</ul>
+        <p class="note">Changes aren’t unlimited: anything new, like a page, a form or a tool, is quoted in writing first. Stop whenever you like: the plan ends with the month you’ve paid for.</p>
+        <div class="hd-links">
+          <a class="button secondary small" href={`/pricing/#${care.id}`} data-track="cta_handover_care">See the plan and its terms</a>
+          <a class="hd-link" href="/website-security/">Repairs without a plan<Icon name="arrowRight" /></a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="changes" aria-labelledby="changes-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Asking for changes</p>
+        <h2 id="changes-h">Four Ways a Change Gets Made</h2>
+        <p>Ask by email at <a href={`mailto:${inbox}`}>{inbox}</a>. You get the answer, and any price, in writing.</p>
+      </div>
+      <dl class="hd-changes">
+        {changes.map(([t, d]) => <div><dt>{t}</dt><dd>{d}</dd></div>)}
+      </dl>
+    </div>
+  </section>
+
+  <section class="section band" id="leaving" aria-labelledby="leave-h">
+    <div class="wrap hd-split">
+      <div>
+        <div class="section-head">
+          <p class="eyebrow">Leaving or moving</p>
+          <h2 id="leave-h">You Can Leave Whenever You Like</h2>
+        </div>
+        <div class="hd-prose">
+          <p>Without a monthly plan there is nothing to cancel. Your website already runs in your own accounts, and you can remove our access at any time.</p>
+          <p>Because the accounts are yours, you can invite another developer the same way you invited us. There is no release fee, and nothing is switched off.</p>
+        </div>
+      </div>
+      <div class="panel hd-card">
+        <h3>If You Stop a Monthly Plan</h3>
+        <ol class="hd-leave">
+          {leaving.map((t) => <li>{t}</li>)}
+        </ol>
+        <p class="note"><a href="/policies/#cancel">Monthly plan cancellations</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="hd-cta-h">
+    <div class="wrap">
+      <div class="hd-cta">
+        <h2 id="hd-cta-h">Want to See What Yours Would Take?</h2>
+        <p>Tell us about your business. You’ll get a written plan and a fixed price within one business day, with what you would need to set up named in it.</p>
+        <div class="hd-actions center">
+          <a class="button" href="/contact/" data-track="cta_handover_final">Get a Free Quote<Icon name="arrowRight" /></a>
+          {callbackForm && <a class="button secondary" href="/contact/#callback" data-track="cta_handover_callback"><Icon name="phone" />Request a callback</a>}
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hd-hero { padding-block: clamp(40px, 6vw, 80px) clamp(32px, 4vw, 48px); }
+  .hd-hero-grid { display: grid; gap: 32px; align-items: center; }
+  @media (min-width: 1040px) { .hd-hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: 56px; } }
+  .hd-hero h1 { max-width: 16ch; }
+  .hd-hero .lead { margin-top: 20px; max-width: 58ch; }
+  .hd-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .hd-actions.center { justify-content: center; }
+  @media (max-width: 559px) { .hd-actions .button { flex: 1 1 100%; } }
+
+  .hd-short { padding: 24px; }
+  .hd-short h2 { font-size: 1.0625rem; line-height: 1.35; }
+  .hd-short ul { display: grid; gap: 18px; margin: 18px 0 0; padding: 0; list-style: none; }
+  .hd-short li { display: flex; align-items: flex-start; gap: 14px; }
+  .hd-short p { margin: 0; color: var(--body); font-size: 0.9375rem; }
+  .hd-short strong { display: block; color: var(--ink); font-size: 1rem; }
+  @media (min-width: 720px) and (max-width: 1039px) { .hd-short ul { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } .hd-short li { flex-direction: column; gap: 10px; } }
+  .hd-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
+  .hd-icon :global(.icon) { width: 24px; height: 24px; }
+
+  .hd-toc { margin-top: clamp(28px, 4vw, 44px); padding-top: 20px; border-top: 1px solid var(--hairline-soft); }
+  .hd-toc ul { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0; padding: 0; list-style: none; }
+  .hd-toc a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid var(--hairline); border-radius: var(--r-full); color: var(--body); font-size: 0.9375rem; font-weight: 500; text-decoration: none; transition: border-color 160ms ease-out, color 160ms ease-out; }
+  .hd-toc a:hover { border-color: var(--blue-line); color: var(--ink); }
+
+  .hd-flow { display: grid; gap: 28px; margin: 0; padding: 0; list-style: none; max-width: 820px; }
+  .hd-flow li { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 18px; align-items: start; }
+  .hd-flow li:not(:last-child)::before { content: ""; position: absolute; left: 21px; top: 50px; bottom: -22px; width: 1px; background: var(--hairline-strong); }
+  .hd-num { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--hairline-strong); border-radius: 50%; background: var(--panel); color: var(--link); font-weight: 650; font-variant-numeric: tabular-nums; }
+  .hd-flow h3 { padding-top: 9px; font-size: 1.1875rem; }
+  .hd-flow p { margin-top: 6px; color: var(--body); }
+
+  @media (min-width: 800px) { .hd-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .hd-card { display: flex; flex-direction: column; gap: 14px; padding: clamp(20px, 3vw, 28px); }
+  .hd-card h3 { display: flex; align-items: flex-start; gap: 10px; font-size: 1.25rem; letter-spacing: -0.02em; }
+  .hd-card h3 :global(.icon) { flex: none; margin-top: 0.12em; color: var(--cyan); }
+  .hd-card > p:not(.note):not(.hd-tag):not(.hd-price):not(.hd-plain) { color: var(--body); }
+  .hd-plain { margin-top: -8px; color: var(--ink); font-size: 1.0625rem; font-weight: 600; }
+  .hd-card .ticks { color: var(--body); }
+  .hd-tag { display: flex; align-items: center; gap: 8px; color: var(--cyan); font-size: 0.875rem; font-weight: 600; }
+  .hd-tag :global(.icon) { flex: none; width: 1.15em; height: 1.15em; }
+  .hd-after { max-width: 86ch; margin-top: 20px; }
+
+  .hd-split { display: grid; gap: 28px; }
+  @media (min-width: 900px) { .hd-split { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 56px; align-items: start; } .hd-split .section-head { margin-bottom: 0; } }
+  .hd-split .section-head + .hd-prose { margin-top: 20px; }
+  .hd-prose { display: grid; gap: 14px; max-width: 64ch; color: var(--body); }
+  .hd-price { display: grid; gap: 2px; }
+  .hd-price strong { color: var(--ink); font-size: 1.5rem; letter-spacing: -0.02em; }
+  .hd-price span { color: var(--muted); font-size: 0.9375rem; }
+  .hd-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 4px; }
+  .hd-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; text-decoration: none; }
+
+  .hd-changes { display: grid; gap: 0; margin: 0; max-width: 900px; border-top: 1px solid var(--hairline); }
+  .hd-changes > div { display: grid; gap: 6px; padding-block: 20px; border-bottom: 1px solid var(--hairline); }
+  @media (min-width: 720px) { .hd-changes > div { grid-template-columns: 240px minmax(0, 1fr); gap: 32px; } }
+  .hd-changes dt { color: var(--ink); font-weight: 600; font-size: 1.0625rem; }
+  .hd-changes dd { margin: 0; color: var(--body); }
+
+  .hd-leave { display: grid; gap: 12px; margin: 0; padding-left: 1.4em; color: var(--body); }
+  .hd-leave li::marker { color: var(--link); font-weight: 600; }
+
+  .hd-cta { max-width: 760px; margin-inline: auto; text-align: center; }
+  .hd-cta p { margin: 14px auto 0; max-width: 60ch; color: var(--body); font-size: 1.0625rem; }
+</style>

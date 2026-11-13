@@ -1,10 +1,12 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // About: who Nuxy is (one independent business in Faribault, no names or photos until the owner approves them:
 // data/site.ts `team`), what it stands for, how a job runs (#how-we-work, where the old /#keep link lands), where it
 // works (one page for every area, no near-identical city pages), the tools it builds in, and what it won't do.
 // Every commitment here is already published in data/services.ts or /policies/.
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
+import Logo from "../../components/Logo.astro";
 import { steps, keep, areas, tools } from "../../data/services";
 import { inbox, team } from "../../data/site";
 import type { IconName } from "../../components/Icon.astro";
@@ -51,7 +53,7 @@ const data = {
     <div class="wrap ab-grid">
       <div>
       <p class="eyebrow"><Icon name="mapPin" />Faribault, Minnesota</p>
-      <h1>A small, local business that builds websites and automations.</h1>
+      <h1>A Small, Local Business That Builds Websites and Automations</h1>
       <p class="lead">Nuxy Automation helps small service businesses answer every inquiry, book jobs without phone tag and stop typing the same details twice. You deal directly with the person who builds your project, from your first question to handover, and every answer comes in writing.</p>
       {team.length > 0 && (
         <ul class="team" role="list">
@@ -76,13 +78,13 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">What you can count on</p>
-        <h2 id="values-h">Straight answers, fair prices, work you own</h2>
+        <h2 id="values-h">Straight Answers, Fair Prices, Work You Own</h2>
       </div>
       <ul class="values" role="list">
         {values.map((v) => (
           <li>
             <Icon name={v.icon} />
-            <div><h3>{v.title}</h3><p>{v.text}</p></div>
+            <div><h3>{titleCase(v.title)}</h3><p>{v.text}</p></div>
           </li>
         ))}
       </ul>
@@ -93,24 +95,24 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">How we work</p>
-        <h2 id="how-h">Five steps, all in writing</h2>
+        <h2 id="how-h">Five Steps, All in Writing</h2>
         <p>No sales call and no long contract. Nothing is charged until you agree to the written plan.</p>
       </div>
       <ol class="steps" role="list">
         {steps.map((s, i) => (
           <li class="step">
             <span class="step-num" aria-hidden="true">{i + 1}</span>
-            <h3><span class="sr-only">Step {i + 1}: </span>{s.title}</h3>
+            <h3><span class="sr-only">Step {i + 1}: </span>{titleCase(s.title)}</h3>
             <p>{s.text}</p>
           </li>
         ))}
       </ol>
-      <h3 class="sub-h">After launch</h3>
+      <h3 class="sub-h">After Launch</h3>
       <ul class="keep" role="list">
         {keep.map((k) => (
           <li>
             <Icon name={k.icon} />
-            <div><h4>{k.title}</h4><p>{k.text}</p></div>
+            <div><h4>{titleCase(k.title)}</h4><p>{k.text}</p></div>
           </li>
         ))}
       </ul>
@@ -121,7 +123,7 @@ const data = {
     <div class="wrap split">
       <div>
         <p class="eyebrow">Where we work</p>
-        <h2 id="areas-h">Southern Minnesota, the Twin Cities and anywhere in the US</h2>
+        <h2 id="areas-h">Southern Minnesota, the Twin Cities and Anywhere in the US</h2>
       </div>
       <div class="split-text">
         <p>Nuxy Automation is based in Faribault and works with businesses in {areaText}, and remotely anywhere in the US.</p>
@@ -135,7 +137,7 @@ const data = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">The tools</p>
-        <h2 id="tools-h">Built in the tools you already use</h2>
+        <h2 id="tools-h">Built in the Tools You Already Use</h2>
         <p>We set things up inside your own accounts with these and similar tools. Nuxy Automation isn’t a partner of, or endorsed by, any of these companies.</p>
       </div>
       <ul class="tools" role="list">{tools.map((t) => <li>{t}</li>)}</ul>
@@ -146,7 +148,7 @@ const data = {
     <div class="wrap split">
       <div>
         <p class="eyebrow">Plainly</p>
-        <h2 id="wont-h">What we won’t do</h2>
+        <h2 id="wont-h">What We Won’t Do</h2>
         <p class="split-sub">The full terms, refunds and privacy policy are on the <a href="/policies/">policies page</a>.</p>
       </div>
       <ul class="wont" role="list">
@@ -155,11 +157,13 @@ const data = {
     </div>
   </section>
 
-  <section class="section">
+  <section class="section ab-close">
     <div class="wrap">
+      {/* the logo with its tagline: its panel is the page colour, so it sits here with no visible edge */}
+      <Logo variant="dark" class="ab-brand" alt="Nuxy Automation. Intelligence in motion." sizes="(max-width: 592px) calc(100vw - 32px), 560px" />
       <div class="cta-band">
         <div>
-          <h2>Tell us what slows you down</h2>
+          <h2>Tell Us What Slows You Down</h2>
           <p>A short form, then a written plan and a fixed price within one business day, or an honest “this isn’t worth automating”.</p>
         </div>
         <div class="cta-actions">
@@ -172,6 +176,7 @@ const data = {
 </Base>
 
 <style>
+  .ab-close :global(.ab-brand) { width: min(560px, 100%); height: auto; margin: 0 auto clamp(28px, 4vw, 44px); }
   .ab-hero { padding-block: clamp(40px, 6vw, 80px) clamp(48px, 7vw, 88px); }
   .ab-grid { display: grid; gap: 32px 64px; }
   @media (min-width: 1024px) { .ab-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); align-items: center; } }

@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // The Immersive scroll metaphor: one small web page drawn four ways, flat → layers → depth → immersive, beside four
 // short steps that say which level each one is. On a wide screen with motion on, the drawing stays in view while the
 // steps scroll past and moves to each step's state as it reaches the middle of the screen. The page scrolls
@@ -31,7 +32,7 @@ const planes: [string, number][] = [["bg", 0], ["nav", 1], ["h1", 3], ["h2", 2],
           </div>
         </div>
         <p class="ds-num">{String(i + 1).padStart(2, "0")} · {s.level}</p>
-        <h4>{s.name}</h4>
+        <h4>{titleCase(s.name)}</h4>
         <p>{s.text}</p>
       </li>
     ))}
@@ -75,7 +76,7 @@ const planes: [string, number][] = [["bg", 0], ["nav", 1], ["h1", 3], ["h2", 2],
   .ds-c3 { top: 72%; left: 66%; width: 28%; height: 20%; }
   .ds-obj { top: 14%; left: 61%; width: 28%; aspect-ratio: 1; border-radius: 50%; background: none; opacity: 0; transition: transform 800ms var(--ease-out, ease), opacity 500ms ease; }
   /* the object is a speaker seen from the front: a rim, a cone and a dust cap (flat rings, no glow) */
-  .ds-obj::before { opacity: 1; border-radius: 50%; background: radial-gradient(circle, #cbd5e1 0 13%, #334155 14% 18%, #1e293b 19% 52%, #475569 53% 57%, #0f172a 58% 92%, #64748b 93% 100%); }
+  .ds-obj::before { opacity: 1; border-radius: 50%; background: radial-gradient(circle, #cbd5e1 0 13%, #334155 14% 18%, #1e293b 19% 52%, #475569 53% 57%, #0f172a 58% 92%, var(--placeholder) 93% 100%); }
 
   /* colour arrives from the second state on */
   .ds-h1::before { background: var(--ink); }

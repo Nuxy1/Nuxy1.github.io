@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // E-commerce (brief 4 §7): the published online shop, what it includes, how the store stays the client's (Shopify's
 // own collaborator and client-transfer flows, never a password), the extras for stores, the example store and the
 // questions. Prices come from data/services.ts and are the published ones. The example store is a made-up business
@@ -62,14 +63,14 @@ const service = {
   offers: [shop, mini].map((s) => ({ "@type": "Offer", name: s.name, price: String(dollars(s.price)), priceCurrency: "USD", url: `${site}/ecommerce/#included` })),
 };
 ---
-<Base title="E-Commerce Stores for Small Businesses · Shopify & Square Online · Nuxy Automation" description={`A Shopify or Square Online store in your own account, with payments and pickup or shipping: 5 products ${mini.price}, up to 25 ${shop.price}. You own the store.`} wide>
+<Base title="Online Stores on Shopify & Square Online · Nuxy Automation" description={`A Shopify or Square Online store in your own account, with payments and pickup or shipping: 5 products ${mini.price}, up to 25 ${shop.price}. You own the store.`} wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(service)} />
 
   <section class="hero-shop">
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="eyebrow">E-commerce stores</p>
-        <h1>An online store that’s yours from day one.</h1>
+        <h1>An Online Store That’s Yours from Day One</h1>
         <p class="lead">We set up your Shopify or Square Online store in your own account, with your products, payments, and pickup or shipping, ready to take orders. You pay the platform directly, and the store belongs to you.</p>
         <div class="hero-actions">
           <a class="button" href="/contact/?service=online-shop" data-track="cta_shop_quote">Get a Free Store Quote</a>
@@ -89,20 +90,20 @@ const service = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Online shop · {shop.price}</p>
-        <h2 id="included-h">Everything a store needs to take its first order</h2>
+        <h2 id="included-h">Everything a Store Needs to Take Its First Order</h2>
         <p>{shop.text}</p>
       </div>
       <ul class="included" role="list">
         {included.map((i) => (
-          <li><Icon name={i.icon} /><div><h3>{i.title}</h3><p>{i.text}</p></div></li>
+          <li><Icon name={i.icon} /><div><h3>{titleCase(i.title)}</h3><p>{i.text}</p></div></li>
         ))}
       </ul>
       <dl class="facts">
         <div><dt>What we need from you</dt><dd>{shop.needs}</dd></div>
         <div><dt>What you pay other companies</dt><dd>{shop.costs}</dd></div>
       </dl>
-      <p class="mini-note"><strong>Only a few products?</strong> The {mini.name} is {mini.price}: {mini.text.charAt(0).toLowerCase() + mini.text.slice(1)} <a href={`/contact/?service=${mini.id}`} data-track="cta_shop_mini">Ask about the {mini.name}</a></p>
-      <p class="more-line"><a class="button" href="/contact/?service=online-shop" data-track="cta_shop_quote">Ask about an online shop<Icon name="arrowRight" /></a></p>
+      <p class="mini-note"><strong>Only a few products?</strong> The {mini.name} is {mini.price}: {mini.text.charAt(0).toLowerCase() + mini.text.slice(1)} <a href={`/contact/?service=${mini.id}`} data-track="cta_shop_mini">Get a free quote for the {mini.name}</a></p>
+      <p class="more-line"><a class="button" href="/contact/?service=online-shop" data-track="cta_shop_quote">Get a Free Store Quote<Icon name="arrowRight" /></a></p>
     </div>
   </section>
 
@@ -110,13 +111,13 @@ const service = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Who owns the store</p>
-        <h2 id="ownership-h">Your store, in your account, from the start</h2>
+        <h2 id="ownership-h">Your Store, in Your Account, from the Start</h2>
         <p>We use the platform’s own access tools, so you never hand over a password, and the store is never in our name.</p>
       </div>
       <div class:list={["paths", { single: !shopifyPartner }]}>
         <article class="path panel">
           <span class="path-icon"><Icon name="userCircle" /></span>
-          <h3>You open the store, we’re invited in</h3>
+          <h3>You Open the Store, We’re Invited In</h3>
           <ol class="path-list">
             <li>You start a Shopify account in your own name and choose your plan.</li>
             <li>You send us the 4-digit collaborator request code from <strong>Settings &gt; Users &gt; Security</strong>.</li>
@@ -128,7 +129,7 @@ const service = {
         {shopifyPartner && (
           <article class="path panel">
             <span class="path-icon"><Icon name="arrowsClockwise" /></span>
-            <h3>We start the store, then transfer it to you</h3>
+            <h3>We Start the Store, Then Transfer It to You</h3>
             <ol class="path-list">
               <li>We build the store as a Shopify client transfer store, while nothing is billed to you.</li>
               <li>When it’s ready, we start Shopify’s transfer to your email address.</li>
@@ -140,7 +141,7 @@ const service = {
       </div>
       <ul class="promises" role="list">
         {promises.map((p) => (
-          <li><Icon name={p.icon} /><div><h3>{p.title}</h3><p>{p.text}</p></div></li>
+          <li><Icon name={p.icon} /><div><h3>{titleCase(p.title)}</h3><p>{p.text}</p></div></li>
         ))}
       </ul>
       <p class="more-line">After launch, the optional {care.name.toLowerCase()} ({care.price}) keeps the store watched. Stop it whenever you like and the store stays exactly where it is. <a href="/websites/#ownership">How ownership works</a></p>
@@ -154,7 +155,7 @@ const service = {
       </a>
       <div class="ex-copy">
         <p class="eyebrow"><Icon name={demo.icon} />{demo.kind} · demonstration</p>
-        <h2 id="example-h">See an example store</h2>
+        <h2 id="example-h">See an Example Store</h2>
         <p>{demo.name} is a made-up business. {demo.summary}</p>
         <ul class="ticks">{demo.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
         <p class="note"><Icon name="info" />You can fill its cart and try a demo checkout, but it never asks for a card: nothing can be bought, and every page says it’s a demonstration. Your own store runs on Shopify or Square Online, so the details follow what that platform can do.</p>
@@ -167,7 +168,7 @@ const service = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Extras for stores</p>
-        <h2 id="extras-h">Already selling? Keep orders moving.</h2>
+        <h2 id="extras-h">Already Selling? Keep Orders Moving.</h2>
         <p>Fixed prices, for a new store or one you already run. Order two one-time services together and save {bundle.two}%; three or more, {bundle.three}% (not on top of a <a href="/pricing/#bundles">preset bundle</a>).</p>
       </div>
       <div class="grid-3">
@@ -180,7 +181,7 @@ const service = {
     <div class="wrap faq-wrap">
       <div class="section-head">
         <p class="eyebrow">Questions</p>
-        <h2 id="faq-h">Online store questions, answered</h2>
+        <h2 id="faq-h">Online Store Questions, Answered</h2>
       </div>
       <div class="faq">
         {questions.map(([q, a]) => (
@@ -197,7 +198,7 @@ const service = {
     <div class="wrap">
       <div class="cta-band">
         <div>
-          <h2>Get a free store quote</h2>
+          <h2>Get a Free Store Quote</h2>
           <p>Tell us what you sell and how you sell it today. Within one business day you’ll get a written plan with the platform we’d use, the price and the timeline. No call required.</p>
         </div>
         <div class="cta-actions">

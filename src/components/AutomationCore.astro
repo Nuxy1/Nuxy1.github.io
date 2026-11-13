@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../lib/title-case";
 // The homepage hero's "automation core" (owner's motion brief, 2026-11-11; study in business/motion-upgrade/README.md).
 // A sphere of glowing points with a tilted orbit ring, and the five parts of the system around it. Choosing a part
 // brings it forward and shows what it does, with the service that does it and its published price (data/services.ts,
@@ -45,7 +46,7 @@ const place = parts.map((_, i) => {
 // The sphere: points spread evenly over a ball (a Fibonacci lattice), tipped forward, seen from the front. Nearer
 // points are larger and brighter; colour runs cyan → blue → indigo across it, as in the reference.
 const N = 200, tilt = 0.38, golden = Math.PI * (3 - Math.sqrt(5));
-const colours = ["#22d3ee", "#3b82f6", "#818cf8"];
+const colours = ["#43c7fa", "#4f8af5", "#a5b4c8"];
 const dots: string[][] = [[], [], []];
 for (let i = 0; i < N; i++) {
   const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), t = golden * i;
@@ -104,7 +105,7 @@ const wires = place.map((p) => {
       return (
         <section class="panel" id={`core-${p.id}`} data-part={p.id} aria-labelledby={`core-${p.id}-h`}>
           <p class="panel-kicker"><span class="panel-num">{i + 1}/{parts.length}</span>{p.name}</p>
-          <h2 class="panel-h" id={`core-${p.id}-h`}>{p.title}</h2>
+          <h2 class="panel-h" id={`core-${p.id}-h`}>{titleCase(p.title)}</h2>
           <p class="panel-text">{p.text}</p>
           {s && (
             <a class="panel-svc" href={`/solutions/#${s.id}`} data-track={`core_${p.id.replaceAll("-", "_")}`}>
@@ -182,30 +183,30 @@ const wires = place.map((p) => {
   .scene[data-cam] { transform: translate(var(--cam-x, 0), var(--cam-y, 0)) scale(1.04); }
   :global(html[data-motion]:not([data-motion="reduced"])) .scene { transition: transform var(--dur-4) var(--ease-io); }
 
-  .glow { position: absolute; inset: 14%; border-radius: 50%; background: radial-gradient(closest-side, rgba(59, 130, 246, 0.34), rgba(34, 211, 238, 0.1) 55%, transparent 100%); }
+  .glow { position: absolute; inset: 14%; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--blue-rgb) / 0.34), rgb(var(--cyan-rgb) / 0.1) 55%, transparent 100%); }
   .field { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .specks { fill: #7cb3ff; opacity: 0.45; }
-  .wires { stroke: #7cb3ff; stroke-width: 0.45; stroke-linecap: round; stroke-dasharray: 0.01 1.5; opacity: 0.7; }
+  .specks { fill: var(--link); opacity: 0.45; }
+  .wires { stroke: var(--link); stroke-width: 0.45; stroke-linecap: round; stroke-dasharray: 0.01 1.5; opacity: 0.7; }
 
   .ring { position: absolute; pointer-events: none; }
   .ring.r1 { inset: 3%; transform: perspective(900px) rotateX(74deg); }
   .ring.r2 { inset: 13%; transform: perspective(900px) rotate(-22deg) rotateX(70deg); }
   .spin, .spin svg { width: 100%; height: 100%; display: block; }
   .ring circle { fill: none; stroke-width: 0.9; stroke-linecap: round; stroke-dasharray: 0.01 2.4; }
-  .r1 circle { stroke: #22d3ee; opacity: 0.85; }
-  .r2 circle { stroke: #818cf8; opacity: 0.6; stroke-dasharray: 0.01 3.2; }
+  .r1 circle { stroke: var(--cyan); opacity: 0.85; }
+  .r2 circle { stroke: var(--muted); opacity: 0.6; stroke-dasharray: 0.01 3.2; }
 
   .orb { position: absolute; inset: 28%; transform: translate(calc(var(--px) * 6px), calc(var(--py) * 6px)); }
   .orb-a, .orb-b { position: absolute; inset: 0; }
   .orb svg { width: 100%; height: 100%; display: block; overflow: visible; }
-  .nucleus { position: absolute; inset: 38%; border-radius: 50%; background: radial-gradient(closest-side, rgba(248, 250, 252, 0.9), rgba(34, 211, 238, 0.55) 45%, transparent 100%); }
+  .nucleus { position: absolute; inset: 38%; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--ink-rgb) / 0.9), rgb(var(--cyan-rgb) / 0.55) 45%, transparent 100%); }
   .ring.r1 .spin { translate: calc(var(--px) * -4px) calc(var(--py) * -3px); }
 
   /* travelling signals, Enhanced only: each wire is a line from the middle out to a part */
   .pulses { position: absolute; inset: 0; }
   .wire { position: absolute; left: 50%; top: 50%; width: 32%; height: 0; transform-origin: 0 0; transform: rotate(var(--deg)); }
   .pulse { position: absolute; left: 0; top: -2px; width: 100%; height: 4px; display: none; }
-  .pulse::before { content: ""; position: absolute; left: 0; top: 0; width: 4px; height: 4px; border-radius: 50%; background: #a5f3fc; }
+  .pulse::before { content: ""; position: absolute; left: 0; top: 0; width: 4px; height: 4px; border-radius: 50%; background: #b9e9fd; }
 
   /* ambient loops: only from the motion script, at the standard and enhanced levels */
   :global(html[data-ambient]) .r1 .spin { animation: core-spin 90s linear infinite; }
@@ -231,18 +232,18 @@ const wires = place.map((p) => {
   .node input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
   .node-dot {
     position: relative; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%;
-    border: 1px solid var(--hairline-strong); background: rgba(17, 28, 48, 0.92); color: var(--link);
+    border: 1px solid var(--hairline-strong); background: rgb(16 27 45 / 0.92); color: var(--link);
   }
-  .node-dot::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid rgba(34, 211, 238, 0.55); opacity: 0; transform: scale(0.85); }
+  .node-dot::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid rgb(var(--cyan-rgb) / 0.55); opacity: 0; transform: scale(0.85); }
   .node-dot :global(.icon) { width: 22px; height: 22px; }
   /* a dark backing keeps the name readable over the ring and the points behind it */
-  .node-name { padding: 2px 7px; border-radius: 6px; background: rgba(11, 18, 32, 0.78); color: var(--body); font-size: 0.8125rem; font-weight: 600; line-height: 1.25; }
-  .node:hover .node-dot { border-color: rgba(34, 211, 238, 0.6); color: var(--ink); }
-  .node:has(input:checked) .node-dot { transform: scale(1.1); border-color: var(--cyan); color: var(--ink); background: #12305a; }
+  .node-name { padding: 2px 7px; border-radius: 6px; background: rgb(var(--bg-rgb) / 0.78); color: var(--body); font-size: 0.8125rem; font-weight: 600; line-height: 1.25; }
+  .node:hover .node-dot { border-color: rgb(var(--cyan-rgb) / 0.6); color: var(--ink); }
+  .node:has(input:checked) .node-dot { transform: scale(1.1); border-color: var(--cyan); color: var(--ink); background: #123063; }
   .node:has(input:checked) .node-dot::after { opacity: 1; transform: none; }
   .node:has(input:checked) .node-name { color: var(--ink); }
   .node:has(input:focus-visible) .node-dot { outline: 2px solid var(--focus); outline-offset: 3px; }
-  .stage:has(.node input:checked) .node:not(:has(input:checked)) { opacity: 0.62; }
+  .stage:has(.node input:checked) .node:not(:has(input:checked)) { opacity: 0.78; }
   .stage:has(.node input:checked) .node:not(:has(input:checked)):hover { opacity: 1; }
   :global(html[data-motion]:not([data-motion="reduced"])) :is(.node, .node-dot, .node-dot::after) {
     transition: transform var(--dur-3) var(--ease-out), opacity var(--dur-2) ease, border-color var(--dur-1) ease, background-color var(--dur-1) ease;
@@ -252,7 +253,7 @@ const wires = place.map((p) => {
   .panels { display: grid; width: min(100%, 440px); }
   .panel {
     grid-area: 1 / 1; display: grid; align-content: start; gap: 8px; padding: 18px 20px;
-    border: 1px solid var(--hairline); border-radius: var(--r-lg); background: rgba(22, 34, 56, 0.86);
+    border: 1px solid var(--hairline); border-radius: var(--r-lg); background: rgb(25 39 60 / 0.86);
     visibility: hidden; opacity: 0; transform: translateY(6px);
   }
   .core:has(input[value="leads"]:checked) #core-leads,

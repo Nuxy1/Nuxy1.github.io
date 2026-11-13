@@ -156,6 +156,10 @@
         "src": "/media/demo-ember-oak.webp",
         "bytes": 37652
       },
+      "posterMobile": {
+        "src": "/media/demo-ember-oak-s.webp",
+        "bytes": 10758
+      },
       "sources": [
         {
           "src": "/media/demo-ember-oak.mp4",
@@ -172,6 +176,10 @@
       "poster": {
         "src": "/media/demo-noctis-skin.webp",
         "bytes": 15392
+      },
+      "posterMobile": {
+        "src": "/media/demo-noctis-skin-s.webp",
+        "bytes": 4922
       },
       "sources": [
         {
@@ -190,6 +198,10 @@
         "src": "/media/demo-vantage-motors.webp",
         "bytes": 43128
       },
+      "posterMobile": {
+        "src": "/media/demo-vantage-motors-s.webp",
+        "bytes": 11694
+      },
       "sources": [
         {
           "src": "/media/demo-vantage-motors.mp4",
@@ -205,6 +217,10 @@
         "poster": {
           "src": "/media/demo-vantage-motors-v.webp",
           "bytes": 26904
+        },
+        "posterMobile": {
+          "src": "/media/demo-vantage-motors-v-s.webp",
+          "bytes": 7608
         },
         "sources": [
           {

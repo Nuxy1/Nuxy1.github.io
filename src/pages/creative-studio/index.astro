@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // AI Creative & Video Advertising (owner's Creative Studio brief, 2026-11-11: the division's name, the headline, the
 // three category names, what each offers and the button labels are the brief's words). Everything printed here comes
 // from data/creative.ts, the one list the cards, the estimator and the quote form share.
@@ -35,8 +36,22 @@ const first: { icon: IconName; title: string; text: string }[] = [
   { icon: "sparkle", title: "Made with AI, finished by hand", text: "Generated scenes, then edited, titled and checked by a person." },
   { icon: "receipt", title: "A written price first", text: "Nothing is charged before you approve the quote." },
 ];
+
+// Structured data for search: what this page is, tied to the business entry in Base.astro.
+const pageData = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "https://nuxyautomation.com/creative-studio/#service",
+  name: "Creative Studio video production",
+  serviceType: "Short video ads, motion graphics and product showcases",
+  url: "https://nuxyautomation.com/creative-studio/",
+  description: "Short video ads, moving menus and product showcases for small businesses, made with AI video tools and finished by a person.",
+  provider: { "@id": "https://nuxyautomation.com/#business" },
+  areaServed: [{ "@type": "AdministrativeArea", name: "Southern Minnesota" }, { "@type": "Country", name: "United States" }],
+};
 ---
-<Base title="AI Video Ads, Motion Graphics & Product Showcases · Nuxy Automation" description="Short video ads, moving menus and product showcases for small businesses, made with AI video tools and finished by a person. See starting prices." wide>
+<Base title="AI Video Ads & Motion Graphics · Nuxy Automation" description="Short video ads, moving menus and product showcases for small businesses, made with AI video tools and finished by a person. See starting prices." wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(pageData)} />
   <div class="wrap cs">
   <section class:list={["cs-hero", { screen: Boolean(screen) }]}>
     <div class="cs-hero-copy">
@@ -57,7 +72,7 @@ const first: { icon: IconName; title: string; text: string }[] = [
       </figure>
     )}
     <aside class="panel cs-first" aria-labelledby="cs-first-h">
-      <h2 id="cs-first-h">Before anything is made</h2>
+      <h2 id="cs-first-h">Before Anything Is Made</h2>
       <ul role="list">
         {first.map((f) => (
           <li><span class="cs-icon"><Icon name={f.icon} /></span><p><strong>{f.title}</strong>{f.text}</p></li>
@@ -67,7 +82,7 @@ const first: { icon: IconName; title: string; text: string }[] = [
   </section>
 
   <section class="cs-section" id="services" aria-labelledby="cs-offers-h">
-    <h2 id="cs-offers-h">Three kinds of video work</h2>
+    <h2 id="cs-offers-h">Three Kinds of Video Work</h2>
     <p class="cs-sub">Each has a starting price. Your project gets its own written quote, and anything that doesn’t fit these three can still be quoted.</p>
     <div class="cs-offers">
       {offers.map((o) => (
@@ -76,13 +91,13 @@ const first: { icon: IconName; title: string; text: string }[] = [
             <span class="cs-icon"><Icon name={o.icon} /></span>
             <p class="cs-price"><strong>{priceOf(o.prices[0].type)}</strong><span>{o.prices[0].note}</span></p>
           </div>
-          <h3>{o.name}</h3>
+          <h3>{titleCase(o.name)}</h3>
           <p>{o.text}</p>
           <ul class="ticks">
             {o.offers.map((p) => <li><Icon name="check" />{p}</li>)}
           </ul>
           <div class="cs-included">
-            <h4>What’s included</h4>
+            <h4>What’s Included</h4>
             <ul>{o.included.map((p) => <li>{p}</li>)}</ul>
           </div>
           <a class="button secondary" href={ask(o.prices[0].type)} data-track={`cta_creative_${o.id.replaceAll("-", "_")}`}>Get My Custom Quote<span class="sr-only">: {o.name}</span></a>
@@ -92,7 +107,7 @@ const first: { icon: IconName; title: string; text: string }[] = [
     {packs.length > 0 && (
       <div class="panel cs-monthly reveal" id="packages">
         <div>
-          <h3>{monthly.title}</h3>
+          <h3>{titleCase(monthly.title)}</h3>
           <p>{monthly.text}</p>
         </div>
         <ul class="cs-packs" role="list">
@@ -103,52 +118,52 @@ const first: { icon: IconName; title: string; text: string }[] = [
       </div>
     )}
     <div class="cs-every">
-      <h3>With every video</h3>
+      <h3>With Every Video</h3>
       <ul class="ticks">{everyVideo.map((p) => <li><Icon name="check" />{p}</li>)}</ul>
     </div>
   </section>
 
   {gallery && (
     <section class="cs-section" id="portfolio" aria-labelledby="cs-portfolio-h">
-      <h2 id="cs-portfolio-h">Video portfolio</h2>
+      <h2 id="cs-portfolio-h">Video Portfolio</h2>
       <p class="cs-sub">Three concept demonstrations, one for each kind of work. Press play to watch one; nothing plays by itself.</p>
       <CreativeGallery />
     </section>
   )}
 
   <section class="cs-section" id="estimate" aria-labelledby="cs-estimate-h">
-    <h2 id="cs-estimate-h">Estimate your starting price</h2>
+    <h2 id="cs-estimate-h">Estimate Your Starting Price</h2>
     <p class="cs-sub">Pick what you need and see where the price starts. It uses the same prices as the cards above, and nothing is sent until you fill in the quote form.</p>
     <CreativeEstimator />
   </section>
 
   <section class="cs-section" aria-labelledby="cs-flow-h">
-    <h2 id="cs-flow-h">How a video gets made</h2>
+    <h2 id="cs-flow-h">How a Video Gets Made</h2>
     <ol class="cs-flow" role="list">
       {steps.map((s, i) => (
-        <li><span class="cs-num" aria-hidden="true">{i + 1}</span><div><h3>{s.title}</h3><p>{s.text}</p></div></li>
+        <li><span class="cs-num" aria-hidden="true">{i + 1}</span><div><h3>{titleCase(s.title)}</h3><p>{s.text}</p></div></li>
       ))}
     </ol>
   </section>
 
   <section class="cs-section" aria-labelledby="cs-limits-h">
-    <h2 id="cs-limits-h">What this is, and what it isn’t</h2>
+    <h2 id="cs-limits-h">What This Is, and What It Isn’t</h2>
     <ul class="cs-limits" role="list">
       {limits.map((l) => (
-        <li><Icon name={l.icon} /><div><h3>{l.title}</h3><p>{l.text}</p></div></li>
+        <li><Icon name={l.icon} /><div><h3>{titleCase(l.title)}</h3><p>{l.text}</p></div></li>
       ))}
     </ul>
   </section>
 
   <section class="cs-section" aria-labelledby="cs-faq-h">
-    <h2 id="cs-faq-h">Common questions</h2>
+    <h2 id="cs-faq-h">Common Questions</h2>
     <dl class="cs-faq">
       {faqs.map(([q, a]) => (<div><dt>{q}</dt><dd>{a}</dd></div>))}
     </dl>
   </section>
 
   <section class="cs-section cs-cta" aria-labelledby="cs-cta-h">
-    <h2 id="cs-cta-h">Tell us what the video is for</h2>
+    <h2 id="cs-cta-h">Tell Us What the Video Is For</h2>
     <p>Describe it in a few sentences: what you sell, where the video will run and what it should say. Within one business day you’ll hear back from a person, with questions or a written quote. Nothing is made or charged until you approve it.</p>
     <div class="cs-actions">
       <a class="button" href={quoteHref} data-track="cta_creative_quote">Get My Custom Quote</a>

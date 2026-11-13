@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../lib/title-case";
 // "What Do You Want to Automate?": the visitor picks a goal and sees the three services that fit it best (owner's
 // motion brief, 2026-11-11). It is a fixed list per goal, not an AI request: each list names catalogue ids in order
 // of fit, an id that isn't in the catalogue is skipped, and every name, price and fact comes from data/services.ts.
@@ -42,7 +43,7 @@ const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
     <div class="as-panels reveal">
       {picks.map((g) => (
         <div class="as-panel" id={`as-${g.id}`} role="region" aria-labelledby={`as-${g.id}-h`}>
-          <h3 class="as-panel-h" id={`as-${g.id}-h`}>Best fits to {lower(g.label)}</h3>
+          <h3 class="as-panel-h" id={`as-${g.id}-h`}>{titleCase(`Best fits to ${lower(g.label)}`)}</h3>
           <ul class="as-cards">
             {g.services.map((s, k) => (
               <li class="as-card" style={`--k:${k}`}>
@@ -50,7 +51,7 @@ const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
                   <span class="as-icon"><Icon name={s.icon} /></span>
                   {k === 0 && <span class="chip">Best fit</span>}
                 </div>
-                <h4 class="as-name">{s.name}</h4>
+                <h4 class="as-name">{titleCase(s.name)}</h4>
                 <p class="as-fixes">Fixes: {lower(s.fixes)}</p>
                 <p class="as-text">{s.text}</p>
                 <details class="as-more">
@@ -65,7 +66,7 @@ const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
                   <p class="as-price"><span class="sr-only">Price: </span>{s.price}{s.monthly ? <span class="note"> + {s.monthly}</span> : <span class="note">{s.addon ? " add-on" : " one-time"}</span>}</p>
                   <div class="as-links">
                     <a class="text-link" href={`/solutions/#${s.id}`} data-track="service_details">See details<span class="sr-only">: {s.name}</span></a>
-                    <a class="button small" href={`/contact/?service=${s.id}`} data-track="cta_selector">Get a quote<span class="sr-only">: {s.name}</span></a>
+                    <a class={`button small${k === 0 ? "" : " secondary"}`} href={`/contact/?service=${s.id}`} data-track="cta_selector">Get a Free Quote<span class="sr-only">: {s.name}</span></a>
                   </div>
                 </div>
               </li>
@@ -89,7 +90,7 @@ const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
   .as-goal input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
   .as-goal :global(.icon) { flex: none; width: 1.25em; height: 1.25em; color: var(--muted); }
   .as-goal:hover { border-color: var(--hairline-strong); color: var(--ink); }
-  .as-goal:has(input:checked) { border-color: var(--blue); background: rgba(37, 99, 235, 0.14); color: var(--ink); }
+  .as-goal:has(input:checked) { border-color: var(--blue-line); background: rgb(var(--blue-rgb) / 0.14); color: var(--ink); }
   .as-goal:has(input:checked) :global(.icon) { color: var(--cyan); }
   .as-goal:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 

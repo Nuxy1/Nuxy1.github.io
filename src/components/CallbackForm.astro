@@ -1,0 +1,302 @@
+---
+// "Request a callback": a short form for people who would rather talk on the phone. It posts to the same inquiry
+// service as the quote form (data/site.ts inquiryUrl) with kind=callback, which checks it again and stores it with the
+// other leads (agent src/inquiry.js). It asks for a call; it never books one: no times are offered or shown, the time
+// of day is only a preference, and the success message says that no call time has been set.
+// Without JavaScript it posts as a plain form and lands on /contact/thanks/#callback. With JavaScript it sends in the
+// background and says "received" only when the service answers with a reference; anything else is an honest
+// "NOT sent" with an email that carries the answers. The script has no imports and stays under Vite's 4 KB inline limit, so Astro writes it into the page
+// and /contact/ still loads one script file (tests/cinematic.test.mjs counts them): keep it small.
+// Every id here starts with cb- and every hook with data-cb-, so nothing collides with the quote form above it.
+import Icon from "./Icon.astro";
+import { inquiryUrl, inbox } from "../data/site";
+import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/callback";
+---
+<div class="cb" data-callback data-inbox={inbox}>
+  <form class="cb-form" aria-labelledby="callback-title" method="post" action={inquiryUrl} accept-charset="UTF-8" data-endpoint={inquiryUrl} data-callback-form>
+    <p class="cb-legend">Required unless marked optional. Takes under a minute.</p>
+    <input type="hidden" name="kind" value="callback" />
+
+    <div class="cb-grid">
+      <div class="field">
+        <label for="cb-name">Your name</label>
+        <input id="cb-name" name="name" type="text" autocomplete="name" required maxlength="100" aria-describedby="cb-name-err" />
+        <p class="err" id="cb-name-err" data-cb-err="name" data-l="Name" data-missing="Your name is required." hidden></p>
+      </div>
+      <div class="field">
+        <label for="cb-business">Business name</label>
+        <input id="cb-business" name="business" type="text" autocomplete="organization" required maxlength="120" aria-describedby="cb-business-err" />
+        <p class="err" id="cb-business-err" data-cb-err="business" data-l="Business" data-missing="Business name is required." hidden></p>
+      </div>
+      <div class="field">
+        <label for="cb-phone">Phone number</label>
+        <input id="cb-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="40" aria-describedby="cb-phone-help cb-phone-err" />
+        <p class="help" id="cb-phone-help">The number we should call or text.</p>
+        <p class="err" id="cb-phone-err" data-cb-err="phone" data-l="Phone" data-missing="Phone number is required." data-problem="Enter a phone number with at least 7 digits." hidden></p>
+      </div>
+      <div class="field">
+        <label for="cb-email">Email <span class="opt">(optional)</span></label>
+        <input id="cb-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" spellcheck="false" aria-describedby="cb-email-help cb-email-err" />
+        <p class="help" id="cb-email-help">Only if you’d also like a written reply.</p>
+        <p class="err" id="cb-email-err" data-cb-err="email" data-l="Email" data-problem="Enter an email address like name@business.com, or leave it empty." hidden></p>
+      </div>
+    </div>
+
+    <fieldset class="field radios" id="cb-reason" aria-describedby="cb-reason-err">
+      <legend>What is the call about?</legend>
+      {callbackReasons.map((r) => (
+        <label><input type="radio" name="reason" value={r.id} required /> {r.label}</label>
+      ))}
+      <p class="err" id="cb-reason-err" data-cb-err="reason" data-l="About" data-missing="Choose what the call is about." hidden></p>
+    </fieldset>
+
+    <fieldset class="field radios" id="cb-window" aria-describedby="cb-window-help cb-window-err">
+      <legend>Best time of day for a call</legend>
+      <p class="help" id="cb-window-help">A preference, not an appointment ({callbackWindowNote}).</p>
+      {callbackWindows.map((w) => (
+        <label><input type="radio" name="window" value={w.id} required /> {w.label}</label>
+      ))}
+      <p class="err" id="cb-window-err" data-cb-err="window" data-l="Best time" data-missing="Choose a time of day." hidden></p>
+    </fieldset>
+
+    <div class="field">
+      <label for="cb-details">Anything we should know <span class="opt">(optional)</span></label>
+      <textarea id="cb-details" name="details" rows="3" maxlength="500" aria-describedby="cb-details-err"></textarea>
+      <p class="err" id="cb-details-err" data-cb-err="details" data-l="Note" hidden></p>
+    </div>
+
+    <!-- (people never see this field; automated senders fill it in) -->
+    <div class="hp" aria-hidden="true">
+      <label for="cb-hp">Leave this empty</label>
+      <input id="cb-hp" name="nx_hp" type="text" tabindex="-1" autocomplete="off" />
+    </div>
+    <input type="hidden" name="t" value="" />
+
+    <div class="field check">
+      <label for="cb-consent"><input id="cb-consent" name="callConsent" type="checkbox" value="yes" required aria-describedby="cb-consent-help cb-consent-err" /> <span>I agree that Nuxy Automation may call or text me at this number about this request.</span></label>
+      <p class="help" id="cb-consent-help">Needed for a callback. Your number is used only for this request: never for marketing, and never shared.</p>
+      <p class="err" id="cb-consent-err" data-cb-err="callConsent" data-l="OK to call or text" data-missing="Tick the box so we may call or text you about this request." hidden></p>
+    </div>
+
+    <div class="cb-actions">
+      <button class="button" type="submit" data-cb-submit><span data-cb-label>Request a callback</span><Icon name="phone" /></button>
+      <p class="cb-alt">Sending this asks for a call. It doesn’t set a time.</p>
+    </div>
+    <p class="sr-only" role="status" aria-live="polite" data-cb-status></p>
+  </form>
+
+  <div class="cb-done" tabindex="-1" hidden data-cb-done>
+    <span class="cb-badge ok"><Icon name="checkCircle" /></span>
+    <h3>We Got Your Callback Request</h3>
+    <p>Your reference is <strong class="cb-ref" data-cb-ref></strong>. This is a request, not an appointment: no call time has been set yet.</p>
+    <p>We’ll try to reach you at <strong data-cb-phone></strong> by call or text, aiming for the time of day you chose (<span data-cb-window></span>, {callbackWindowNote}).</p>
+    <p class="note">Need to add something? Email <a href={`mailto:${inbox}`}>{inbox}</a> with your reference.</p>
+  </div>
+
+  <div class="cb-fail" tabindex="-1" role="alert" hidden data-cb-fail>
+    <span class="cb-badge bad"><Icon name="warningCircle" /></span>
+    <h3>Your Callback Request Was NOT Sent</h3>
+    <p data-cb-fail-text>Something went wrong on our side.</p>
+    <p>Your answers are still in the form. You can try again, or send them as an email: it opens with everything filled in.</p>
+    <div class="cb-fail-actions">
+      <a class="button" href={`mailto:${inbox}?subject=${encodeURIComponent("Callback request")}`} data-cb-mailto><Icon name="envelopeSimple" />Email it instead</a>
+      <button class="button secondary" type="button" data-cb-retry><Icon name="arrowCounterClockwise" />Back to the form</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .cb-form { display: grid; gap: 20px; }
+  .cb-legend { color: var(--muted); font-size: 0.9375rem; }
+  .cb-grid { display: grid; gap: 20px; }
+  @media (min-width: 640px) { .cb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .field { display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .field > label, .field > legend { color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
+  .opt { color: var(--muted); font-weight: 400; }
+  .field input:not([type="radio"]):not([type="checkbox"]), .field textarea {
+    width: 100%; min-height: 48px; padding: 11px 14px; border: 1px solid var(--field-line); border-radius: 10px;
+    background: var(--field); color: var(--ink); font-size: 1rem; line-height: 1.4;
+    transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+  }
+  .field textarea { min-height: 96px; resize: vertical; }
+  .field input:hover, .field textarea:hover { border-color: var(--field-line-hover); }
+  .field input:focus, .field textarea:focus { outline: 2px solid transparent; /* (shows in forced-colors mode) */ border-color: var(--blue-line); box-shadow: 0 0 0 3px rgb(var(--blue-rgb) / 0.35); }
+  .field [aria-invalid="true"] { border-color: var(--bad); }
+  .help { color: var(--muted); font-size: 0.875rem; line-height: 1.45; }
+  .err { color: var(--bad); font-size: 0.875rem; font-weight: 500; line-height: 1.45; }
+  fieldset.field { margin: 0; padding: 0; border: 0; min-width: 0; }
+  fieldset.field > legend { padding: 0; margin-bottom: 6px; }
+  fieldset.radios { display: flex; flex-wrap: wrap; column-gap: 24px; row-gap: 0; }
+  .radios .err, .radios .help { flex-basis: 100%; }
+  .radios label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--body); cursor: pointer; }
+  /* Radios and checkboxes drawn in the palette (the native ones come out warm grey on a dark page). Still real inputs:
+     keyboard, form posting and screen readers are unchanged, and forced-colors mode gets the native control back. */
+  .field input[type="radio"], .field input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; width: 20px; height: 20px; margin: 0; flex: none;
+    border: 1.5px solid var(--field-line); background: var(--field); cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out;
+  }
+  .field input[type="radio"] { border-radius: 50%; }
+  .field input[type="checkbox"] { border-radius: 5px; }
+  .field input[type="radio"]::before, .field input[type="checkbox"]::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; transform: scale(0); transition: transform 140ms ease-out; }
+  .field input[type="checkbox"]::before { width: 12px; height: 12px; border-radius: 0; clip-path: polygon(13% 47%, 0 62%, 38% 100%, 100% 22%, 86% 9%, 37% 70%); }
+  .field input[type="radio"]:hover, .field input[type="checkbox"]:hover { border-color: var(--field-line-hover); }
+  .field input[type="radio"]:checked, .field input[type="checkbox"]:checked { border-color: var(--blue-line); background: var(--blue); }
+  .field input[type="radio"]:checked::before, .field input[type="checkbox"]:checked::before { transform: scale(1); }
+  @media (prefers-reduced-motion: reduce) { .field input[type="radio"], .field input[type="checkbox"], .field input[type="radio"]::before, .field input[type="checkbox"]::before { transition: none; } }
+  @media (forced-colors: active) { .field input[type="radio"], .field input[type="checkbox"] { appearance: auto; -webkit-appearance: auto; } .field input[type="radio"]::before, .field input[type="checkbox"]::before { display: none; } }
+  .radios input:focus-visible, .check input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .radios[data-invalid] > legend { color: var(--bad); }
+  .check > label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding-top: 10px; color: var(--body); font-weight: 400; cursor: pointer; }
+  .check input[type="checkbox"] { margin-top: 0.1em; }
+  .check .help, .check .err { padding-left: 30px; }
+  .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .cb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  .cb-actions .button[aria-busy="true"] { opacity: 0.8; cursor: progress; }
+  .cb-alt { color: var(--muted); font-size: 0.9375rem; }
+  .cb-done, .cb-fail { display: grid; gap: 14px; justify-items: start; outline: none; scroll-margin-top: 16px; }
+  .cb-done p, .cb-fail p { overflow-wrap: anywhere; }
+  .cb-done h3, .cb-fail h3 { font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.5rem); }
+  .cb-badge { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; }
+  .cb-badge .icon { width: 28px; height: 28px; }
+  .cb-badge.ok { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
+  .cb-badge.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+  .cb-ref { font-family: var(--mono); letter-spacing: 0.02em; }
+  .note { color: var(--muted); }
+  .cb-fail-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+  @media (max-width: 479px) { .cb-actions .button, .cb-fail-actions .button { width: 100%; } }
+</style>
+
+<script>
+  // The rules are the server's CALLBACK_FIELDS (it checks everything again). The messages live on each field's error
+  // line (data-missing, data-problem; data-l names the field in the fallback email), which keeps this script small
+  // enough for Astro to inline it, so /contact/ still loads one script file. Lengths are held by maxlength.
+  const TESTS: Record<string, (v: string) => boolean> = {
+    phone: (v) => /^[0-9+().\-\s x]+$/i.test(v) && (v.match(/\d/g) ?? []).length >= 7,
+    email: (v) => /^[^\s@<>"(),;:\\[\]]+@[^\s@<>"'(),;:\\[\]]+\.[a-z]{2,}$/i.test(v),
+  };
+  const GROUPS = ["reason", "window"];
+  const track = (e: string) => (window as any).nuxyTrack?.(e);
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-callback]")) {
+    const form = root.querySelector("form")!;
+    const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
+    const button = q<HTMLButtonElement>("[data-cb-submit]");
+    const label = q("[data-cb-label]");
+    const idle = label.textContent;
+    const status = q("[data-cb-status]");
+    const done = q("[data-cb-done]");
+    const fail = q("[data-cb-fail]");
+    const errs = [...root.querySelectorAll<HTMLElement>("[data-cb-err]")];
+    const names = errs.map((e) => e.dataset.cbErr!);
+    const opened = performance.now();
+    form.noValidate = true; // (our own messages, next to each field)
+
+    const el = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+    const picked = (name: string) => form.querySelector<HTMLInputElement>(`[name="${name}"]:checked`);
+    const group = (name: string) => GROUPS.includes(name);
+    const valueOf = (name: string) => group(name) ? picked(name)?.value ?? "" : name == "callConsent" ? (el(name).checked ? "yes" : "") : el(name).value.trim();
+    const focusOf = (name: string) => group(name) ? picked(name) ?? form.querySelector<HTMLInputElement>(`[name="${name}"]`) : el(name);
+    const show = (name: string, message: string) => {
+      const err = errs[names.indexOf(name)];
+      if (!err) return false;
+      if (group(name)) err.parentElement!.toggleAttribute("data-invalid", !!message);
+      else el(name).setAttribute("aria-invalid", String(!!message));
+      err.textContent = message;
+      err.hidden = !message;
+      return true;
+    };
+    const check = (name: string) => {
+      const v = valueOf(name), d = errs[names.indexOf(name)].dataset;
+      const message = !v ? d.missing ?? "" : TESTS[name] && !TESTS[name](v) ? d.problem ?? "" : "";
+      show(name, message);
+      return !message;
+    };
+    // (checked when you leave a field, and again as you change it once it shows an error)
+    for (const name of names) {
+      if (group(name)) { form.querySelectorAll(`[name="${name}"]`).forEach((r) => r.addEventListener("change", () => check(name))); continue; }
+      const input = el(name);
+      input.addEventListener("blur", () => valueOf(name) && check(name));
+      input.addEventListener("input", () => input.getAttribute("aria-invalid") == "true" && check(name));
+    }
+
+    // callback_started: once, at the first answer (only the event name and page travel: Base.astro)
+    let started = false;
+    const start = () => { if (!started) { started = true; track("callback_started"); } };
+    form.addEventListener("input", start);
+    form.addEventListener("change", start);
+
+    const answer = (name: string) => group(name) ? picked(name)?.parentElement?.textContent?.trim() ?? "" : name == "callConsent" ? (valueOf(name) ? "Yes" : "No") : valueOf(name);
+    const reveal = (box: HTMLElement) => {
+      box.hidden = false;
+      form.hidden = true;
+      box.focus();
+      box.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    };
+    const failed = (text: string) => {
+      q("[data-cb-fail-text]").textContent = text;
+      const body = errs.map((e) => `${e.dataset.l}: ${answer(e.dataset.cbErr!).slice(0, 500)}`).join("\n");
+      q<HTMLAnchorElement>("[data-cb-mailto]").href = `mailto:${root.dataset.inbox}?subject=Callback%20request&body=${encodeURIComponent(body)}`;
+      reveal(fail);
+    };
+    q("[data-cb-retry]").addEventListener("click", () => {
+      fail.hidden = true;
+      form.hidden = false;
+      button.focus();
+    });
+    const busy = (on: boolean) => {
+      button.disabled = on;
+      button.setAttribute("aria-busy", String(on));
+      label.textContent = on ? "Sending…" : idle;
+      status.textContent = on ? "Sending your callback request…" : "";
+    };
+
+    let sending = false;
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (sending) return; // (a second click while the first is on its way)
+      const bad = names.filter((name) => !check(name));
+      if (bad.length) {
+        focusOf(bad[0])?.focus();
+        status.textContent = `${bad.length == 1 ? "One field needs" : `${bad.length} fields need`} fixing.`;
+        return;
+      }
+      el("t").value = String(Math.round(performance.now() - opened));
+      sending = true;
+      busy(true);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15e3);
+      try {
+        const res = await fetch(form.dataset.endpoint!, { method: "POST", body: new URLSearchParams(new FormData(form) as any), headers: { accept: "application/json" }, signal: controller.signal, credentials: "omit" });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok && /^NX-\d{6}-[A-Z0-9]{4}$/.test(data.ref ?? "")) {
+          q("[data-cb-ref]").textContent = data.ref;
+          q("[data-cb-phone]").textContent = valueOf("phone");
+          q("[data-cb-window]").textContent = answer("window").toLowerCase();
+          reveal(done);
+          track("form_submit");
+          track("callback_completed");
+          form.reset();
+          return;
+        }
+        if (res.status == 400 && data.errors) {
+          // (shown next to their fields; an error for a field this form doesn't have can't be fixed here, so it fails)
+          const shown = Object.keys(data.errors).filter((name) => show(name, String(data.errors[name])));
+          if (shown.length) {
+            focusOf(shown[0])?.focus();
+            status.textContent = "Some fields need fixing.";
+            return;
+          }
+        }
+        failed(data.message || "Something went wrong on our side.");
+      } catch (error) {
+        failed((error as Error).name == "AbortError"
+          ? "Our server took too long to answer, so we can’t confirm it arrived. Please treat it as not sent."
+          : "Your browser couldn’t reach our server (the connection may be down, or something blocked it).");
+      } finally {
+        clearTimeout(timer);
+        sending = false;
+        busy(false);
+      }
+    });
+  }
+</script>

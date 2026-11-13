@@ -4,8 +4,8 @@
 // any failure says NOT sent and offers the same answers as a ready-to-send email instead.
 // Without JavaScript it is an ordinary form: the server shows its own error page or the thank-you page.
 // Rules mirror FIELDS in the inquiry service's src/inquiry.js (private business repo): change both together.
-// fv=2 tells the server this page asks "What do you need?" (the six answers in data/services.ts `wants`); a page loaded
-// before that question existed sends no fv and is accepted without it. A service's "Request a proposal" link opens
+// fv=2 tells the server this page asks "What do you need?" (the answers in data/services.ts `wants`, five of them shown); a page loaded
+// before that question existed sends no fv and is accepted without it. A service's "Get a Free Quote" link opens
 // /contact/?service=<id> (it is named at the top and picks its answer), and ?want=<id> picks an answer directly.
 // The package estimator opens /contact/?services=<id>,<id>: all of them are named at the top and listed in the
 // project box (the server takes one service id, so the first is sent as the service and the list travels as text).
@@ -16,12 +16,12 @@
 // the address. The choices are named at the top and written into the project box as plain text; no service id is sent.
 import Icon from "./Icon.astro";
 import { inquiryUrl, inbox } from "../data/site";
-import { groups, plans, variants, bundles, retired, wants, wantOf } from "../data/services";
+import { groups, plans, variants, bundles, retired, wants, wantsShown, wantOf } from "../data/services";
 import { ask } from "../lib/request";
 import { rules as creativeRules, creativeWant, quoteParam } from "../data/creative";
 import { formLevels, goals, levelById } from "../data/tiers";
 // ?level=<id> from a website level's button (data/tiers.ts) picks that level, shows the website questions and names it
-// at the top; with no answer to "What do you need?" yet it picks "New website".
+// at the top; with no answer to "What do you need?" yet it picks "Website".
 const levelNames = Object.fromEntries([...formLevels.map((l) => [l.id, l.id === "unsure" ? "" : `the ${levelById[l.id as keyof typeof levelById].name} website level (${levelById[l.id as keyof typeof levelById].price.toLowerCase()})`])]);
 
 // (everything a link can ask about: its name and price for the note, which answer it picks, and for a retired id
@@ -33,7 +33,7 @@ const oldNames: Record<string, string> = { "automation-care": "Automation care" 
 for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], was: oldNames[id] ?? id };
 ---
 <div class="inq" data-inquiry data-services={JSON.stringify(asked)} data-creative={JSON.stringify(creativeRules)} data-creative-param={quoteParam} data-creative-want={creativeWant} data-levels={JSON.stringify(levelNames)}>
-  <form class="inq-form" method="post" action={inquiryUrl} accept-charset="UTF-8" data-endpoint={inquiryUrl}>
+  <form class="inq-form" aria-labelledby="contact-title" method="post" action={inquiryUrl} accept-charset="UTF-8" data-endpoint={inquiryUrl}>
     <p class="inq-legend">Required unless marked optional. Takes about two minutes.</p>
 
     <div class="inq-about" hidden data-about>
@@ -48,7 +48,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       <p class="err" id="f-want-err" hidden></p>
       <div class="pick-grid">
         {wants.map((w) => (
-          <label class="pick"><input type="radio" name="want" value={w.id} required /><span>{w.label}</span></label>
+          <label class="pick" hidden={!wantsShown.includes(w.id)}><input type="radio" name="want" value={w.id} required disabled={!wantsShown.includes(w.id)} /><span>{w.label}</span></label>
         ))}
       </div>
     </fieldset>
@@ -230,14 +230,14 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
 
   <div class="inq-done" tabindex="-1" hidden data-done>
     <span class="inq-badge ok"><Icon name="checkCircle" /></span>
-    <h2>Thanks, we got your request.</h2>
+    <h2>Thanks, We Got Your Request</h2>
     <p>Your reference is <strong class="inq-ref" data-ref></strong>. We’ll reply to <strong data-email></strong> within one business day with what we’d build, what it costs and what we’d need from you.</p>
     <p class="note">Nothing is charged and nothing happens until you agree to a written plan. If our reply doesn’t arrive, check your spam folder or email <a href={`mailto:${inbox}`}>{inbox}</a> with your reference.</p>
   </div>
 
   <div class="inq-fail" tabindex="-1" role="alert" hidden data-fail>
     <span class="inq-badge bad"><Icon name="warningCircle" /></span>
-    <h2>Your request was NOT sent.</h2>
+    <h2>Your Request Was NOT Sent</h2>
     <p data-fail-text>Something went wrong on our side.</p>
     <p>Your answers are still in the form. You can try again, or send them as an email: it opens with everything filled in.</p>
     <div class="inq-fail-actions">
@@ -256,8 +256,8 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   .field > label, .field > legend { color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
   .opt { color: var(--muted); font-weight: 400; }
   .field input:not([type="radio"]):not([type="checkbox"]), .field select, .field textarea {
-    width: 100%; min-height: 48px; padding: 11px 14px; border: 1px solid var(--hairline-strong); border-radius: 10px;
-    background: #0e1a30; color: var(--ink); font-size: 1rem; line-height: 1.4;
+    width: 100%; min-height: 48px; padding: 11px 14px; border: 1px solid var(--field-line); border-radius: 10px;
+    background: var(--field); color: var(--ink); font-size: 1rem; line-height: 1.4;
     transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
   }
   .field textarea { min-height: 132px; resize: vertical; }
@@ -266,37 +266,55 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   .inq-web .help a { color: var(--cyan); }
   #f-features { min-height: 84px; }
   .field select { appearance: none; padding-right: 36px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 21px, calc(100% - 15px) 21px; background-size: 5px 5px; background-repeat: no-repeat; }
-  .field input::placeholder { color: #64748b; }
-  .field input:hover, .field select:hover, .field textarea:hover { border-color: #46608f; }
-  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid transparent; /* (shows in forced-colors mode, where the shadow ring is dropped) */ border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35); }
+  .field input::placeholder { color: var(--placeholder); }
+  .field input:hover, .field select:hover, .field textarea:hover { border-color: var(--field-line-hover); }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid transparent; /* (shows in forced-colors mode, where the shadow ring is dropped) */ border-color: var(--blue-line); box-shadow: 0 0 0 3px rgb(var(--blue-rgb) / 0.35); }
   .field [aria-invalid="true"] { border-color: var(--bad); }
   .field [aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.3); }
   .help { color: var(--muted); font-size: 0.875rem; line-height: 1.45; }
-  .err { display: flex; gap: 6px; color: #fca5a5; font-size: 0.875rem; font-weight: 500; line-height: 1.45; }
+  .err { display: flex; gap: 6px; color: var(--bad); font-size: 0.875rem; font-weight: 500; line-height: 1.45; }
   fieldset.field { margin: 0; padding: 0; border: 0; min-width: 0; }
   fieldset.field > legend { padding: 0; margin-bottom: 6px; }
   fieldset.radios { display: flex; flex-wrap: wrap; column-gap: 24px; row-gap: 0; }
   .radios .err { flex-basis: 100%; }
   .radios label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--body); cursor: pointer; }
   .check > label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding-top: 10px; color: var(--body); font-weight: 400; cursor: pointer; }
-  .check input { width: 20px; height: 20px; margin: 0.1em 0 0; flex: none; accent-color: var(--blue); }
+  .check input[type="checkbox"] { margin-top: 0.1em; }
   .check .help { padding-left: 30px; }
   .radios .help { flex-basis: 100%; }
-  .radios input, .pick input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--blue); }
-  /* "What do you need?": six big choices, two across when there's room */
+  /* Radios and checkboxes drawn in the palette (the native ones come out warm grey on a dark page). Still real inputs:
+     keyboard, form posting and screen readers are unchanged, and forced-colors mode gets the native control back. */
+  .field input[type="radio"], .field input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; width: 20px; height: 20px; margin: 0; flex: none;
+    border: 1.5px solid var(--field-line); background: var(--field); cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out;
+  }
+  .field input[type="radio"] { border-radius: 50%; }
+  .field input[type="checkbox"] { border-radius: 5px; }
+  .field input[type="radio"]::before, .field input[type="checkbox"]::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; transform: scale(0); transition: transform 140ms ease-out; }
+  .field input[type="checkbox"]::before { width: 12px; height: 12px; border-radius: 0; clip-path: polygon(13% 47%, 0 62%, 38% 100%, 100% 22%, 86% 9%, 37% 70%); }
+  .field input[type="radio"]:hover, .field input[type="checkbox"]:hover { border-color: var(--field-line-hover); }
+  .field input[type="radio"]:checked, .field input[type="checkbox"]:checked { border-color: var(--blue-line); background: var(--blue); }
+  .field input[type="radio"]:checked::before, .field input[type="checkbox"]:checked::before { transform: scale(1); }
+  @media (prefers-reduced-motion: reduce) { .field input[type="radio"], .field input[type="checkbox"], .field input[type="radio"]::before, .field input[type="checkbox"]::before { transition: none; } }
+  @media (forced-colors: active) { .field input[type="radio"], .field input[type="checkbox"] { appearance: auto; -webkit-appearance: auto; } .field input[type="radio"]::before, .field input[type="checkbox"]::before { display: none; } }
+  .radios input:focus-visible, .check input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  /* "What do you need?": five big choices, two across when there's room (a sixth when a link names a hidden one) */
   .picks > legend { font-size: 1rem; }
   .pick-grid { display: grid; gap: 10px 20px; margin-top: 4px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+  /* (five is an odd count: while all five others are hidden, the last answer runs the full row instead of sitting alone in half of it) */
+  .pick-grid:has(.pick[hidden] ~ .pick[hidden] ~ .pick[hidden] ~ .pick[hidden] ~ .pick[hidden]) .pick:last-child { grid-column: 1 / -1; }
   .pick {
     display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 16px;
-    border: 1px solid var(--hairline-strong); border-radius: 10px; background: #0e1a30; color: var(--ink);
+    border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--ink);
     font-weight: 500; cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out;
   }
-  .pick:hover { border-color: #46608f; }
-  .pick:has(input:checked) { border-color: var(--blue); background: rgba(59, 130, 246, 0.14); }
-  .pick:has(input:focus-visible) { outline: 2px solid transparent; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35); }
+  .pick > span { text-wrap: balance; } /* (a long answer that wraps breaks evenly instead of leaving one word alone) */
+  .pick:hover { border-color: var(--field-line-hover); }
+  .pick:has(input:checked) { border-color: var(--blue-line); background: rgb(var(--blue-rgb) / 0.14); }
+  .pick:has(input:focus-visible) { outline: 2px solid transparent; box-shadow: 0 0 0 3px rgb(var(--blue-rgb) / 0.35); }
   .pick input:focus-visible { outline: none; }
   .picks[data-invalid] .pick { border-color: var(--bad); }
-  .inq-about { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 6px 8px 6px 16px; border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: rgba(59, 130, 246, 0.08); }
+  .inq-about { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 6px 8px 6px 16px; border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: rgb(var(--blue-rgb) / 0.08); }
   .inq-about[hidden] { display: none; }
   .inq-about p { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; color: var(--body); line-height: 1.5; }
   .inq-about p .icon { margin-top: 0.15em; color: var(--cyan); flex: none; }
@@ -304,12 +322,12 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   .inq-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--link); font: inherit; font-size: 0.9375rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
   .inq-link:hover { color: var(--ink); }
   .inq-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
-  .tip-box { display: grid; gap: 2px; margin-top: 4px; padding: 10px 8px 4px 14px; border: 1px solid rgba(34, 211, 238, 0.35); border-radius: 8px; background: rgba(34, 211, 238, 0.08); }
+  .tip-box { display: grid; gap: 2px; margin-top: 4px; padding: 10px 8px 4px 14px; border: 1px solid rgb(var(--cyan-rgb) / 0.35); border-radius: 8px; background: rgb(var(--cyan-rgb) / 0.08); }
   .tip-box[hidden] { display: none; }
   .tip-box p { color: var(--body); font-size: 0.9375rem; overflow-wrap: anywhere; }
   .tip-box strong { color: var(--ink); }
   .tip-actions { display: flex; flex-wrap: wrap; gap: 0 8px; margin-left: -8px; }
-  .inq-more { border: 1px solid var(--hairline); border-radius: var(--r-md); background: rgba(14, 26, 48, 0.5); }
+  .inq-more { border: 1px solid var(--hairline); border-radius: var(--r-md); background: rgb(12 21 35 / 0.5); }
   .inq-more > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 52px; padding: 12px 16px; color: var(--ink); font-weight: 600; cursor: pointer; list-style: none; }
   .inq-more > summary::-webkit-details-marker { display: none; }
   .inq-more > summary .icon { color: var(--cyan); transition: transform 200ms var(--ease); }
@@ -376,13 +394,18 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     const picks = form.querySelector<HTMLElement>("#f-want")!;
     const radio = (value: string) => form.querySelector<HTMLInputElement>(`input[name="want"][value="${value}"]`);
     const chosen = () => form.querySelector<HTMLInputElement>('input[name="want"]:checked');
+    // (five answers show; the other five wait hidden and switched off until a link names one, which shows it: approvals 88)
+    const showPick = (r: HTMLInputElement | null) => {
+      if (r?.disabled) { r.disabled = false; r.closest("label")!.hidden = false; }
+      return r;
+    };
     const field = (name: string) => (name === "want" ? null : (form.elements.namedItem(name) as HTMLInputElement | null));
     const valueOf = (name: string) => (name === "want" ? chosen()?.value ?? "" : field(name)?.value ?? "");
     // (where focus goes for a field: the chosen answer, or the first one, for "What do you need?")
-    const focusOf = (name: string): HTMLElement | null => (name === "want" ? chosen() ?? form.querySelector<HTMLInputElement>('input[name="want"]') : field(name));
+    const focusOf = (name: string): HTMLElement | null => (name === "want" ? chosen() ?? form.querySelector<HTMLInputElement>('input[name="want"]:enabled') : field(name));
     form.noValidate = true; // (our own messages, next to each field)
 
-    // ?service=<id> from a "Request a proposal" link: named at the top, and its answer picked (only real ids).
+    // ?service=<id> from a service's "Get a Free Quote" link: named at the top, and its answer picked (only real ids).
     // ?services=<id>,<id> from the package estimator: the same for several, and the list is written into the project
     // box (only when it is empty), where the visitor can change it. Nothing is sent until they press the button.
     const services: Record<string, { name: string; price: string; want: string; was?: string }> = JSON.parse(root.dataset.services ?? "{}");
@@ -427,7 +450,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
         about.hidden = false;
         // (an estimator link always names its answer; this covers a code that arrives without one)
         const creative = radio(root.dataset.creativeWant ?? "");
-        if (creative && !chosen()) creative.checked = true;
+        if (creative && !chosen()) showPick(creative)!.checked = true;
       }).catch(() => { root.dataset.estimate = "unread"; /* (the file did not load: the form works as it does with no code) */ });
     }
     const want = params.get("want") ?? "";
@@ -439,7 +462,8 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     const levelAsked = params.get("level") ?? "";
     const level = /^[a-z]{1,20}$/.test(levelAsked) && Object.prototype.hasOwnProperty.call(levelNames, levelAsked) ? levelAsked : "";
     const pick = /^[a-z-]{1,20}$/.test(want) && radio(want) ? want : common || (level ? "new-website" : "");
-    if (pick && radio(pick)) radio(pick)!.checked = true;
+    if (pick && radio(pick)) showPick(radio(pick))!.checked = true;
+    showPick(chosen()); // (an answer the browser put back after Back is shown too, so what is sent is what is seen)
     // The website questions: shown (and sent) for a website answer, or after a level link; hidden and disabled otherwise.
     const web = form.querySelector<HTMLFieldSetElement>("[data-web]")!;
     // (a level link shows them until the visitor picks an answer of their own; from then on the answer decides)

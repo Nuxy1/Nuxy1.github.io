@@ -30,7 +30,7 @@ const body = (await Astro.slots.render("default")).replace(/<h([1-6])\b[^>]*>([\
 // A demo video's poster is the largest thing on screen; announcing it in the head lets the browser fetch it first.
 const poster = body.match(/<video[^>]*poster="([^"]+)"/)?.[1];
 ---
-<Base title={`${frontmatter.title} · Docs · Nuxy Automation`} description={frontmatter.description}>
+<Base title={`${frontmatter.title} · Nuxy Docs`} description={frontmatter.description}>
   {poster && <link slot="head" rel="preload" as="image" type="image/webp" href={poster} fetchpriority="high" />}
   <p class="doc-links"><a href="/docs/">All docs</a><a href={`https://github.com/Nuxy1/${frontmatter.repo}`}><Icon name="githubLogo" />Code on GitHub</a></p>
   <Fragment set:html={body} />
@@ -50,6 +50,6 @@ const poster = body.match(/<video[^>]*poster="([^"]+)"/)?.[1];
   .doc-links a { display: inline-flex; align-items: center; gap: 6px; }
   /* the relay demo video that scripts/sync-docs.mjs puts in place of the README's GIF */
   :global(.doc-video) { margin: 24px 0; }
-  :global(.doc-video video) { width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-md); background: #0d1117; }
+  :global(.doc-video video) { width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg-deep); }
   :global(.doc-video figcaption) { margin-top: 8px; color: var(--muted); font-size: 0.875rem; }
 </style>

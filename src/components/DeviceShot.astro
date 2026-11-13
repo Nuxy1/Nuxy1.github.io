@@ -36,7 +36,7 @@ const phoneSizes = "(min-width: 1024px) 140px, (min-width: 720px) 175px, 96px";
   .desk { border-radius: 12px; }
   .frame-bar { display: flex; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--hairline); background: var(--panel); }
   .frame-bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--hairline-strong); }
-  .phone { position: absolute; right: 0; bottom: 0; width: clamp(96px, 27%, 180px); border-radius: 18px; border-width: 3px; border-color: #26324a; }
+  .phone { position: absolute; right: 0; bottom: 0; width: clamp(96px, 27%, 180px); border-radius: 18px; border-width: 3px; border-color: var(--hairline); }
   /* kept clear of the phone, which overlaps the bottom-right corner (on a small screen it would cover the words) */
   figcaption { display: inline-flex; align-items: flex-start; gap: 6px; max-width: 70%; margin-top: 14px; color: var(--muted); font-size: 0.8125rem; }
   figcaption :global(.icon) { flex: none; margin-top: 0.2em; }

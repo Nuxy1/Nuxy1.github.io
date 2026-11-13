@@ -1,20 +1,26 @@
 ---
 name: Nuxy Automation
-description: Dark navy, one blue accent, Inter. Calm and plain-spoken, built for owners of small service businesses reading on a phone between jobs.
+description: Obsidian and navy layers, platinum text, one electric-blue accent with a little ice cyan, Inter, and the metallic NUXY logo. Calm and plain-spoken, built for owners of small service businesses reading on a phone between jobs.
 colors:
-  bg: "#0b1220"
-  bg-2: "#111c30"
-  panel: "#162238"
-  surface-strong: "#1c2a44"
-  ink: "#f8fafc"
-  body: "#cbd5e1"
-  muted: "#94a3b8"
-  hairline: "#233350"
-  hairline-soft: "#1a2741"
-  hairline-strong: "#33466b"
-  blue: "#3b82f6"
-  cyan: "#22d3ee"
-  accent-soft: "rgba(59,130,246,0.16)"
+  bg: "#080d17"
+  bg-2: "#101b2d"
+  panel: "#19273c"
+  surface-strong: "#213149"
+  bg-deep: "#060a12"
+  field: "#0c1523"
+  ink: "#e8eef6"
+  body: "#c7d2e1"
+  muted: "#a5b4c8"
+  placeholder: "#8696ad"
+  hairline: "#263a54"
+  hairline-soft: "#1c2b41"
+  hairline-strong: "#375070"
+  field-line: "#5f7697"
+  field-line-hover: "#829abb"
+  blue: "#2563eb"
+  blue-line: "#4f8af5"
+  cyan: "#43c7fa"
+  accent-soft: "rgba(37,99,235,0.16)"
   button: "#2563eb"
   button-hover: "#1d4ed8"
   on-accent: "#ffffff"
@@ -92,7 +98,7 @@ components:
     borderColor: "{colors.hairline}"
     rounded: "{rounded.lg}"
   chip:
-    backgroundColor: "rgba(34,211,238,0.1)"
+    backgroundColor: "rgba(67,199,250,0.1)"
     textColor: "{colors.cyan}"
     rounded: "{rounded.full}"
 ---
@@ -104,11 +110,14 @@ for using them. If the two ever disagree, `Base.astro` is what ships; fix this f
 
 ## Overview
 
-A dark navy site with one blue accent. It should read as a calm, competent small business, not a tech startup:
-plain words, real prices, real screenshots of real demos. The reader is a busy owner of a local service business,
+A dark site in the owner's palette (2026-11-13), chosen to sit under the metallic silver NUXY logo with its
+electric-blue ring: Obsidian for the page, Midnight Navy and Titanium Slate for sections and cards, Platinum White
+and Muted Silver for text, Electric Blue as the one accent and Ice Cyan for small labels. Roughly three quarters
+dark, a fifth neutral, and a few percent blue or cyan. It should read as a calm, competent small business, not a
+tech startup: plain words, real prices, real screenshots of real demos. The reader is a busy owner of a local service business,
 often on a phone, deciding in under a minute whether this is worth a message.
 
-What it is not: no robots or AI imagery, no glowing gradients, no heavy glass or 3D, no fake dashboards, no invented
+What it is not: no robots or AI imagery, no glowing gradients (one restrained glow exists: see Colors), no heavy glass or 3D, no fake dashboards, no invented
 numbers, logos or reviews. Decoration never stands in for evidence.
 
 One exception, from the owner's cinematic brief (2026-11-11), which asks for a more premium, cinematic first
@@ -129,12 +138,25 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
 
 ## Colors
 
-- **Navy layers:** `bg` for the page, `bg-2` for alternating sections, `panel` for cards, `surface-strong` for
-  raised parts inside a card. Edges are drawn with `hairline` lines rather than shadows.
-- **One accent:** blue. `button` (#2563eb) is the filled button colour, chosen over `blue` so white button text passes
-  AA. `link` is the lighter blue for text links on navy. `cyan` is used only for small labels (eyebrows, chips).
-- **Text:** `ink` for headings, `body` for paragraphs, `muted` for supporting text. All three pass WCAG AA on every
-  navy layer.
+- **The owner's palette (2026-11-13), by name:** Obsidian `bg` #080D17, Midnight Navy `bg-2` #101B2D, Titanium
+  Slate `panel` #19273C, Electric Blue `blue` #2563EB, Ice Cyan `cyan` #43C7FA, Platinum White `ink` #E8EEF6, Muted
+  Silver `muted` #A5B4C8, Subtle Borders `hairline` #263A54. The other tokens are steps derived from these.
+- **Dark layers:** `bg` for the page, `bg-2` for alternating sections, `panel` for cards, `surface-strong` for
+  raised parts inside a card, `bg-deep` for the footer and code blocks, `field` for form fields. Edges are drawn
+  with `hairline` lines rather than shadows.
+- **One accent:** Electric Blue. `button` is the same #2563eb (white text on it is 5.17:1; on `button-hover` 6.70:1).
+  `link` is the lighter blue for text links (6.09:1 or better on every layer). `cyan` is used only for small labels
+  (eyebrows, chips) and small highlights.
+- **Text:** `ink` for headings, `body` for paragraphs, `muted` for supporting text. Measured on the lightest layer
+  they sit on (`surface-strong`): 11.24, 8.58 and 6.23 to 1; on the page: 16.65, 12.71 and 9.22. `placeholder` is
+  4.36:1 on `surface-strong` and 5.00 or better on the layers fields really sit on.
+- **Edges that carry meaning** (a form control's outline, a chosen card): `field-line` and `blue-line`. `field-line`
+  is 3:1 or better on `field`, `panel` and `bg-2` (WCAG 1.4.11); `blue-line` is 3.93:1 or better on every layer.
+  `hairline` is decoration only (its strong step is 2.35:1 on the page) and never the only sign of a control or a
+  state.
+- **The one glow:** `--glow` (a 1px blue edge and a soft blue shadow below). It appears on a filled button while
+  hovered and on the one featured plan card of `/pricing/`. Nowhere else: no glowing text, no glow on panels, icons
+  or sections. Blue light inside the logo files is part of the logo and is not re-created in CSS.
 - **Status:** `ok`, `warn`, `bad` only for real states (sent, needs attention, failed), never decoration.
 - **Focus:** a visible `focus` ring on every interactive element; never removed.
 - The demo websites under `/example-sites/` and the salon inside `/demo/` are made-up businesses with their own palettes and fonts on
@@ -150,6 +172,34 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
 - Headings 650-700 weight with slight negative tracking; `text-wrap: balance` on headings.
 - Body 16px / 1.6. Paragraphs stay under about 70 characters wide.
 - Prices use tabular figures where they line up in tables.
+- Headings on Nuxy's own pages are in Title Case (approvals 85, 2026-11-13): small words (a, an, the, and, or, for,
+  to, of, in, on, with, from...) stay lower case unless first or last; a one-sentence heading has no full stop, a
+  heading of two sentences keeps both ("Build Smarter. Grow Faster."). The made-up demo businesses keep their own style.
+
+### Working type scale (as built, rem at a 16px root)
+
+| Step | Size | Used for |
+|---|---|---|
+| Display | `clamp(2.25rem, 1.3rem + 3.6vw, 3.75rem)` (36-60px), 700, -0.035em, line-height 1.06 | every page's h1, the home hero included |
+| Section | `clamp(1.75rem, 1.25rem + 1.9vw, 2.5rem)` (28-40px), 650, -0.03em | h2 section heads; feature blocks use `clamp(2rem, 1.4rem + 2.6vw, 3-3.25rem)` |
+| Sub-section | `clamp(1.5rem, 1.2rem + 1.2vw, 2rem)` and `1.5-1.75rem` | price figures, plan names, large card heads |
+| Card head | `1.25-1.375rem` | panel titles, step titles |
+| Lead / h3 | `1.1875rem` | `.lead` intro paragraphs and h3 |
+| h4 / large body | `1.0625-1.125rem` | h4, FAQ questions, button labels |
+| Body | `1rem` / 1.6 | paragraphs |
+| Small | `0.9375rem` | card body text, list items (the most used size) |
+| Smaller | `0.875rem`, `0.8125rem` | meta lines, notes, form hints, table cells |
+| Label | `0.75rem`, `0.6875rem` | eyebrows, chips, uppercase labels (never below 11px) |
+
+New text uses one of these steps; sizes outside them (a few 1.3125 and 1.625rem) are older one-offs, not a pattern.
+
+### Corner radii
+
+- Tokens in `Base.astro`: `--r-sm` 8px (inputs, small buttons), `--r-md` 12px (cards inside panels, tiles),
+  `--r-lg` 18px (panels: the main card surface), `--r-full` 999px (pills, chips, main buttons).
+- The one larger box is the closing call to action on the home page (`.final-box`, 24px), so it reads as the end of the page.
+- Small parts (progress bars, focus underlines, tags inside cards): 2-6px. Round icons and avatars: 50%.
+- Plain px values elsewhere (10, 14, 22px) are older one-offs; new work uses the tokens.
 
 ## Layout
 
@@ -167,7 +217,8 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
 
 | Page | Job |
 |---|---|
-| `/` | In this order: hero (what Nuxy does, two buttons, starting prices), the four main services, the automation demos, the goal picker, the package estimator, example work, the three ways to start, the five steps, why Nuxy, one final next step |
+| `/` | In this order: hero ("Build Smarter. Grow Faster.", two buttons, starting prices), what we do (two service categories), the four website levels, example work, the automation demos, how it works, the handover summary, why Nuxy, a short FAQ, one final next step with the callback link |
+| `/handover/` | How a finished website is handed over, for someone who has never owned one: the steps, what Nuxy does and what the client does, the two account arrangements, other companies' costs, care plans, asking for changes, leaving or moving later. Written from `src/data/handover.ts`, `services.ts` and `/policies/`. **New: publishing it needs the owner's yes.** It says nothing about a client portal: none is live (`handoverPortal = false` in `src/data/site.ts`, and a test fails the build if a page speaks of one) |
 | `/websites/` | Website building: own-it-outright vs optional monthly care, what you own, ownership promises |
 | `/get-a-website/` | Short landing page for businesses without a website; links to the demo websites |
 | `/automation/` | Lead response and follow-up, missed-call text-back, review requests and the other automations |
@@ -175,12 +226,12 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
 | `/website-security/` | Free website health consultation, repairs at a fixed written price, and security assessments only with the owner's written authorization |
 | `/web-design/` | The four website levels (Business, Signature, Immersive, Flagship): the level cards, the comparison tabs, the expectation matrix, the three-levels café, the five-question finder, add-ons, "Why does immersive cost more?", package boundaries, timelines and the levels FAQ |
 | `/business-websites/`, `/signature-websites/`, `/immersive-websites/` | One page per level (`LevelPage.astro`): who it suits, what's included, what's not, timeline and revisions, add-ons, the other levels. There is no Flagship page: Flagship is a written scope, reached from `/contact/?level=flagship` |
-| `/portfolio/` | "Our Work": the example websites and the online store, each for a made-up business and labelled so, on a computer and a phone |
+| `/portfolio/` | "Our Work", in three kinds kept apart: client projects (`#clients`, shown only when an entry passes every check in `case-studies.ts`: none today), concept demonstrations (`#concepts`: the example websites and the store, each for a made-up business and labelled so, plus the three video concepts), and interactive experiments (`#technical`: the open-source automations) |
 | `/solutions/` | Every service, grouped, with search and filters (all services visible without JavaScript) |
 | `/pricing/` | Published one-time prices, the monthly plans, bundle discount, FAQ |
 | `/creative-studio/` | AI Creative & Video Advertising: three kinds of video work with starting prices, what every video includes, the starting-price estimator, the three fictional concept demos (only once all three exist as real files), limits and FAQ. **Its prices are proposed: publishing the page needs the owner's written yes** |
 | `/about/` | How we work and what we won't do |
-| `/contact/` | The inquiry form (and `/contact/thanks/`) |
+| `/contact/` | The inquiry form (and `/contact/thanks/`), and under it the callback request form (`#callback`) |
 | `/demos/` | Index of the demos: the interactive lead demo, demo websites and technical write-ups |
 | `/examples/*` | One page per demo website: computer and phone view, what it shows, the services it demonstrates; the business is labelled made up |
 | `/example-sites/*` | Full demo websites for made-up businesses (noindex, labelled as demos) |
@@ -193,14 +244,18 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
 ## Components
 
 - **Buttons:** primary (filled blue) for the one main action in a view; secondary (outlined) for the alternative.
-  One primary per view where possible. `.small`, `.wide` and `.pill` are size and shape variants.
-- **Panel:** the card surface (`panel` background, hairline border, 18px radius). No shadow on navy except the
-  header and floating parts, which use `--shadow`.
+  One primary per view where possible. `.small`, `.wide` and `.pill` are size and shape variants. A filled button
+  takes `--glow` on hover; nothing else does, except the featured plan.
+- **Button wording:** "Get a Free Quote" is the main action everywhere. A page that sells one thing may name it
+  ("Get a Free Website Quote", "Get My Custom Quote", "Get My Free Automation Plan" on `/automation/`); the second
+  action is "Request a callback". Sentence case for links and secondary actions.
+- **Panel:** the card surface (`panel` background, hairline border, 18px radius). No shadow on the dark layers
+  except the header and floating parts, which use `--shadow`.
 - **Eyebrow and chip:** small cyan uppercase labels; chips for tags like "Popular" or "Add-on".
 - **FAQ:** native `<details>`; the plus icon turns 45 degrees when open.
-- **ServiceCard:** name, price, one-line outcome, who it suits, what you need, running costs, and an "Ask about
-  this" link that pre-selects the service in the form.
-- **Header (`Base.astro`):** Services (a dropdown of six links, `details.drop[data-drop]`), Pricing, Demos, Our
+- **ServiceCard:** name, price, one-line outcome, who it suits, what you need, running costs, and a "Get a Free
+  Quote" link that pre-selects the service in the form.
+- **Header (`Base.astro`):** Services (a dropdown of eight links, `details.drop[data-drop]`), Pricing, Demos, Our
   Work, About, and one button, "Get a Free Quote". On phones the same links sit in one menu
   (`details.menu[data-menu]`). Both are native `<details>`, so they open without JavaScript; the script only adds
   Escape, a click outside, closing after a link is chosen, and closing the dropdown when focus moves on. Services is marked current on every service page.
@@ -212,7 +267,16 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
   A link with `?services=<id>,<id>` (from the estimator) names those services at the top and writes them into the
   project box, only when the box is empty, where the visitor can change them. Ids that aren't in the catalogue are
   dropped, and nothing is sent until the visitor presses the button.
-- **PackageEstimator (`#package` on the home page):** tick services, see an estimated starting price, and carry
+- **Form controls:** fields sit on `field` with a `field-line` edge (lighter on hover, the focus ring on focus).
+  Radio buttons and checkboxes are drawn (20px, `appearance: none`) so their edge holds 3:1 on every layer; they
+  are still real inputs, so the keyboard and screen readers treat them as before.
+- **CallbackForm (`/contact/#callback`):** name, business, phone (required), email (optional), what the call is
+  about, the time of day preferred (a preference only: business days, Central time), an optional note, and one
+  unticked box: "I agree that Nuxy Automation may call or text me at this number about this request". It says it is
+  a request, not an appointment; it never shows, offers or promises a time. Reasons and times come from
+  `src/data/callback.ts`, the same lists as the inquiry service's. It posts to the same inquiry service as the quote
+  form, and the service must be deployed before the site (approvals item 49), or every callback is refused.
+- **PackageEstimator (`/pricing/#package`):** tick services, see an estimated starting price, and carry
   the choice to the quote form. It is not a quote and says so ("Estimated starting price. Final scope and price are
   confirmed in writing."). Names and prices come from `data/services.ts` (`estimable`); the sum is done by
   `data/estimate.ts`: 2 services 10% off, 3 or more 15% off, or a preset bundle at its bundle price, whichever is
@@ -229,7 +293,11 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
   Each screenshot comes in several widths (`shotWidths` in `src/data/demo-sites.ts`, with `srcset` and `sizes`), so a
   phone downloads a small file. `scripts/example-shots.mjs` remakes them from the demo pages.
 - **CaseStudy:** one real client project, from `src/data/case-studies.ts` (empty today). It renders nothing unless
-  the entry's `consent` records the client's written yes (who, when, to what). Fields: business, industry, location,
+  `publishable()` passes: the entry's `consent` records the client's written yes (who, when, to what) and four
+  checks are each written down (the project is complete, permission covers publishing, the screenshots are
+  approved, the details are accurate). A link to the live site needs a fifth, `checks.url`. Never in an entry: a
+  street address or anything the client keeps private. Candidates and what each still lacks:
+  `business/site-upgrade/case-study-candidates.md`. Fields: business, industry, location,
   the problem, the solution, what was built, screenshots, a before/after pair, results (each with the source of its
   number) and a quote (only the client's own words). Optional parts show only when filled in; nothing is ever made
   up. `tests/site.test.mjs` fails the build if an entry lacks consent, a result lacks its source, a picture lacks
@@ -239,8 +307,17 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
   is made up".
 - **Icon:** Phosphor icons (regular weight), inlined as SVG so they take the text colour and cost no request.
   Decorative icons are hidden from screen readers.
-- **Mark:** the Nuxy logo mark. Pass `label=""` where the words "Nuxy Automation" sit right beside it, so screen
-  readers skip it; otherwise it is announced by its label.
+- **Logo (`Logo.astro`):** the approved NUXY Automation logo as image files, made by `scripts/brand-assets.mjs`
+  from the masters in `business/brand/logo/` (see its README). Never redrawn in CSS or SVG, never swapped for an
+  icon. `full`: symbol, NUXY and AUTOMATION on a clear background, in the header (179px wide, 44px tall; 163px
+  under 560px) and the footer (228px). `dark`: the same with the tagline "INTELLIGENCE IN MOTION" on its own
+  #080D17, used once, above the closing section of `/about/`, where the page colour is the same so no edge shows.
+  `icon`: the N symbol alone, for the browser tab and app icons. Dark surfaces only: on white the silver letters
+  nearly disappear and no light version exists. The old vector mark (`Mark.astro`, `favicon.svg`) is retired.
+- **Share picture:** `public/og.jpg` (1200x630), made by `scripts/og-image.mjs` from the dark logo, the home
+  headline, the brand colours and Inter. Remake it when the headline changes, and look at it before committing.
+- **Small posters:** `public/media/demo-*-s.webp` are smaller copies of the demo posters for the places that show
+  them as small cards, so a phone doesn't download a full-size poster for a card.
 
 All prices, services and plans come from `src/data/services.ts`; components never type a Nuxy price.
 
@@ -320,7 +397,7 @@ the real address (local previews, tests and copies count nothing). Name new even
 is counted.
 
 Buttons counted since the conversion upgrade: `cta_header` and `cta_menu` (the header and phone-menu quote
-buttons), `cta_hero`, `cta_see_working`, `cta_services`, `cta_home_security`, `cta_portfolio`,
+buttons), `cta_hero`, `cta_services`, `cta_home_security`, `cta_portfolio`,
 `cta_pricing_preview`, `cta_tiers_quote`, `cta_final`, `cta_sticky` (home page), `cta_estimator` and
 `estimator_use` (the estimator: the button, and the first tick per page view), `cta_portfolio_quote` and
 `portfolio_demos` (`/portfolio/`). None carries what was ticked, typed or chosen: the estimator's choices travel
@@ -331,6 +408,16 @@ Counted since the Creative Studio brief: `cta_creative_quote`, `cta_creative_est
 `cta_creative_product_showcases` (the quote button under each kind of video work), `cta_creative_estimator` (the
 estimator's button), `creative_demo_play` and `cta_creative_similar` (the demo gallery), `cta_video_upsell` (the
 video block on `/websites/` and `/automation/`), `cta_home_creative` (the home page's line about video work), `cta_video_teasers` and `video_teaser_card` (the strip of three demo posters under the home page's service cards and on `/portfolio/`: its button and its cards).
+Counted since the site improvement brief (2026-11): `cta_explore_work` (the hero's second button, which replaced
+`cta_see_working`), `cta_cat_websites` and `cta_cat_automation` (the two service categories), `cta_levels_compare`
+(the website levels strip), `cta_handover` (the home page's handover section), `cta_final_callback` (the callback
+link in the final box), `cta_handover_quote`, `cta_handover_levels`, `cta_handover_care`, `cta_handover_final` and
+`cta_handover_callback` (the buttons of `/handover/`), `callback_started` (the first field of the callback form
+is touched; once per page view) and `callback_completed` (sent only after the inquiry service has confirmed that it
+stored the request: a button press is never counted as a lead). None carries a name, a number or anything typed.
+`case_study_live` is the “Visit the live website” button of a client case study (`CaseStudy.astro`). It exists
+only when a client entry passes `publishable()` and the client agreed to a link (`checks.url`); with no client
+entries today it is on no page.
 Counted since the website levels brief: `tier_viewed` (a level page opens; once per page view),
 `tier_selected` (a level's button, the finder's "Discuss My Project" and the portfolio's custom-project link),
 `tier_comparison_opened` (the first tab change in the comparison), `website_recommender_started` (the finder's

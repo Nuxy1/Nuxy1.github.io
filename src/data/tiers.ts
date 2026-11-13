@@ -119,7 +119,7 @@ export const levels: Level[] = [
   {
     id: "flagship",
     name: "Flagship",
-    promise: "Built around your idea",
+    promise: "Bespoke digital experiences",
     tagline: "A bespoke digital experience: configurators, multi-scene stories, custom 3D and systems behind them.",
     for: "Brands with a large launch, a product to configure, or an idea no package covers.",
     price: "Custom quote",

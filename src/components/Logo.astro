@@ -1,0 +1,39 @@
+---
+// The approved NUXY Automation logo, as image files made by scripts/brand-assets.mjs from the masters in
+// business/brand/logo. It is never redrawn in CSS or SVG. "full" = symbol, NUXY and AUTOMATION on a clear background
+// (dark surfaces only: the silver letters and the glow need a dark page behind them); "dark" = the same with the
+// tagline, on its own #080D17 panel (margin trimmed; place it on --bg, where the panel has no visible edge); "icon" = the N symbol alone.
+// The alt text is always written out ("Nuxy Automation" unless told otherwise). Inside a link that carries its own
+// aria-label the label is what a screen reader says, so the name is still heard once.
+interface Props {
+  variant?: "full" | "dark" | "icon";
+  class?: string;
+  alt?: string;
+  /** the width it is shown at, in CSS pixels: the browser picks the smallest file that is sharp at that width */
+  width?: number;
+  eager?: boolean;
+  /** a full `sizes` value when the shown width changes with the screen, e.g. "(max-width: 559px) 163px, 179px" */
+  sizes?: string;
+}
+const { variant = "full", class: className, alt = "Nuxy Automation", width, eager = false, sizes } = Astro.props;
+const kinds = {
+  full: { base: "nuxy-logo", sizes: [240, 360, 480, 540, 800], ratio: 295 / 1199, shown: 180 },
+  dark: { base: "nuxy-logo-dark-tight", sizes: [600, 1200], ratio: 387 / 1263, shown: 560 },
+  icon: { base: "nuxy-icon", sizes: [96, 192, 496], ratio: 1, shown: 48 },
+};
+const k = kinds[variant];
+const w = width ?? k.shown;
+const src = `/brand/${k.base}-${k.sizes[0]}.webp`;
+const srcset = k.sizes.map((s) => `/brand/${k.base}-${s}.webp ${s}w`).join(", ");
+---
+<img
+  class={className}
+  src={src}
+  srcset={srcset}
+  sizes={sizes ?? `${w}px`}
+  width={w}
+  height={Math.round(w * k.ratio)}
+  alt={alt}
+  loading={eager ? "eager" : "lazy"}
+  decoding="async"
+/>

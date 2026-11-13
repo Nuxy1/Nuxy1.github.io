@@ -1,14 +1,25 @@
 ---
 import Base from "../layouts/Base.astro";
-import { calService, calUrl } from "../data/site";
+import { calService, calUrl, callbackForm } from "../data/site";
 import { plans, planTerms } from "../data/services";
 
 const contact = "nuxy@nuxyautomation.com";
+
+// Structured data for search: what this page is, tied to the business entry in Base.astro.
+const pageData = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": "https://nuxyautomation.com/policies/",
+  url: "https://nuxyautomation.com/policies/",
+  name: "Nuxy Automation policies",
+  about: { "@id": "https://nuxyautomation.com/#business" },
+};
 ---
 <Base title="Policies · Nuxy Automation" description="Refunds, monthly plan cancellations, terms of service and privacy for Nuxy Automation.">
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(pageData)} />
   <h1>Policies</h1>
   <p class="lead">Plain-language terms for working with Nuxy Automation, a one-person business in Faribault, Minnesota. Questions: <a href={`mailto:${contact}`}>{contact}</a>.</p>
-  <p>Last updated November 11, 2026.</p>
+  <p>Last updated {callbackForm ? "November 13, 2026" : "November 11, 2026"}.</p>
 
   <h2 id="refunds">Refunds</h2>
   <ul>
@@ -19,15 +30,16 @@ const contact = "nuxy@nuxyautomation.com";
     <li>Refunds go back to the card or bank account you paid with, through Stripe, usually within 5-10 business days.</li>
   </ul>
 
-  <h2 id="cancel">Monthly plan cancellations</h2>
+  <h2 id="cancel">Monthly Plan Cancellations</h2>
   <p>Monthly plans are optional: {plans.map((p) => `${p.name} (${p.price})`).join(", ")}. What each one includes is on the <a href="/pricing/#plans">pricing page</a>.</p>
   <ul>
     {planTerms.map((t) => <li>{t}</li>)}
     <li>Plans are billed monthly in advance by Stripe. Cancel from the link in your receipt email or by emailing me, and you’re never charged again.</li>
     <li>Months already paid aren’t refunded part-way.</li>
+    <li>Planned time away is announced to plan clients in writing beforehand.</li>
   </ul>
 
-  <h2 id="terms">Terms of service</h2>
+  <h2 id="terms">Terms of Service</h2>
   <ul>
     <li><strong>The work:</strong> what you get is the written plan you agreed to by email. Anything outside it is quoted in writing before I do it.</li>
     <li><strong>Prices:</strong> fixed, in US dollars. Sales tax is added only where the law requires it. The published prices apply to work agreed from November 11, 2026; anything agreed before keeps the price and terms already agreed.</li>
@@ -48,6 +60,7 @@ const contact = "nuxy@nuxyautomation.com";
     <li><strong>Video work:</strong> the photos, logo and files you send for a video are used only to make it. To generate scenes, some of them are uploaded to the AI video service I use (Higgsfield), whose terms allow it to use what is made there to train its own models. Tell me if something must not be uploaded and I will work around it. A real person’s face or voice is used only with that person’s written permission.</li>
     <li><strong>The contact form:</strong> your answers go to my own server, which saves them and emails them to my inbox. It doesn’t keep your IP address. I use them only to reply about your project and never add you to a mailing list. If you tick “It’s OK to follow up”, I may write once or twice more about that request if you go quiet; if you don’t, I only reply to it. Requests are deleted after a year unless you become a client; messages flagged as spam are deleted after 30 days.</li>
     <li><strong>This website:</strong> no cookies and no advertising or tracking scripts. It counts visits anonymously: which page, which button (for example “started the demo”), the day, and the site you came from. Nothing you type, no IP address and nothing that identifies you. If your browser sends Do Not Track or Global Privacy Control, nothing is counted. The site is hosted by GitHub Pages, which keeps its own server logs.</li>
+    {callbackForm && <li><strong>Callback requests:</strong> if you ask for a callback on the contact page, your name, business, phone number, email (if you give one), what the call is about, the time of day you prefer and any note go to the same server and inbox as the contact form, and are kept and deleted the same way. You must tick that I may call or text you at that number; I use it only to call or text you about that request, never for marketing, and never share it. Asking for a callback doesn’t book a time.</li>}
     {calUrl && <li><strong>Booking a call:</strong> the booking page is run by {calService}. What you enter there (your name, email, the time you pick and any note) is kept by {calService} under its own privacy policy and sent to me so I can call you. It shows only the times I’m free, never what is in my calendar.</li>}
     <li><strong>Email:</strong> if I emailed you about your website and you reply “unsubscribe”, I never email you again.</li>
     <li><strong>Your requests:</strong> email me to see, correct or delete what I have about you.</li>

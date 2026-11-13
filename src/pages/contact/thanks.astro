@@ -2,17 +2,33 @@
 // Where the form lands when JavaScript is off: the server (agent src/inquiry.js) redirects here with ?ref= only
 // after the request is saved. The page is static, so it can't check the reference itself: it shows it only when it
 // has the right shape (with JavaScript on), and the wording says what the redirect means rather than promising anything.
+// A callback request lands on /contact/thanks/?ref=…#callback, which swaps the quote wording for the callback wording
+// (CSS :target, so it works without JavaScript): a request was received, and no call time has been set.
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
-import { inbox } from "../../data/site";
+import { callbackForm, inbox } from "../../data/site";
 ---
 <Base title="Request received · Nuxy Automation" description="Your request was received." noindex>
   <div class="thanks">
     <span class="badge"><Icon name="checkCircle" /></span>
-    <h1>Thanks, we got your request.</h1>
-    <p class="lead">If you were sent here after filling in our contact form, your message was received and saved. We reply within one business day with a written plan and a fixed price.</p>
+    <h1>Thanks, We Got Your Request</h1>
+    <div class="for-quote">
+      <p class="lead">If you were sent here after filling in our contact form, your message was received and saved. We reply within one business day with a written plan and a fixed price.</p>
+    </div>
+    {callbackForm && (
+      <div class="for-callback" id="callback">
+        <p class="lead">If you were sent here after asking for a callback, your request was received and saved. It is a request, not an appointment: no call time has been set yet. We’ll try to reach you by call or text at the number you gave, aiming for the time of day you chose.</p>
+      </div>
+    )}
     <p class="ref-line" hidden data-ref-line>Your reference: <strong data-ref></strong></p>
-    <p>Nothing is charged until you agree to a plan. If our reply doesn’t arrive, check your spam folder or email <a href={`mailto:${inbox}`}>{inbox}</a>.</p>
+    <div class="for-quote">
+      <p>Nothing is charged until you agree to a plan. If our reply doesn’t arrive, check your spam folder or email <a href={`mailto:${inbox}`}>{inbox}</a>.</p>
+    </div>
+    {callbackForm && (
+      <div class="for-callback">
+        <p>Need to add something? Email <a href={`mailto:${inbox}`}>{inbox}</a> with your reference.</p>
+      </div>
+    )}
     <p class="actions"><a class="button secondary" href="/"><Icon name="arrowRight" />Back to the homepage</a></p>
   </div>
 </Base>
@@ -23,6 +39,12 @@ import { inbox } from "../../data/site";
   .badge .icon { width: 30px; height: 30px; }
   .ref-line strong { font-family: var(--mono); color: var(--ink); }
   .actions { margin-top: 8px; }
+  .for-callback { display: none; }
+  .thanks:has(#callback:target) .for-callback { display: block; }
+  .thanks:has(#callback:target) .for-quote { display: none; }
+  /* A browser without :has() (Firefox before 121) can't tell which form sent the visitor here, so it shows both
+     wordings. Each one starts by saying who it is for, so neither promises the other's reply. */
+  @supports not selector(:has(*)) { .for-callback { display: block; } }
 </style>
 
 <script>

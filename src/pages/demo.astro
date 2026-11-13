@@ -10,11 +10,11 @@ const times = ["10:30", "1:00", "2:15", "4:45"];
 const price = (id: string) => serviceById[id].price;
 ---
 <Base title="Demo salon · Nuxy Automation" description="See online booking, reminders, missed-call text-back, instant replies and review requests working on a made-up salon.">
-  <h1>See it working</h1>
+  <h1>See It Working</h1>
   <p class="lead">{salon} is a made-up salon: no real business, people or phone numbers. This is what the services look like once they’re set up. The highlighted parts are filled in automatically for each client.</p>
 
   <section class="exhibit" aria-labelledby="ex-booking">
-    <h2 id="ex-booking">Online booking</h2>
+    <h2 id="ex-booking">Online Booking</h2>
     <p class="note">Before, clients had to call. After, they book themselves from the website, Google and Instagram. <a href="/solutions/#booking">{serviceById.booking.name}: {price("booking")}</a></p>
     <div class="switch">
       <input class="sr" type="radio" name="booking-view" id="view-before" checked />
@@ -60,7 +60,7 @@ const price = (id: string) => serviceById[id].price;
     </figure>
 
     <figure class="phone">
-      <h2 class="phone-title">Missed-call text-back</h2>
+      <h2 class="phone-title">Missed-Call Text-Back</h2>
       <ol class="thread">
         <li class="event">Missed call: <b class="fill">(507) 555-0188</b>, 11:42 AM</li>
         <li class="in">Sorry we missed your call! We’re with a client. Book online any time: <span class="link">juniperandrose.example/book</span></li>
@@ -70,7 +70,7 @@ const price = (id: string) => serviceById[id].price;
     </figure>
 
     <figure class="phone">
-      <h2 class="phone-title">Instant replies</h2>
+      <h2 class="phone-title">Instant Replies</h2>
       <ol class="thread">
         <li class="out">Do you have anything this Saturday?</li>
         <li class="in">Hi <b class="fill">Sam</b>, thanks for messaging {salon}! You can see every open time and book here: <span class="link">juniperandrose.example/book</span>. Jess will reply personally soon.</li>
@@ -81,7 +81,7 @@ const price = (id: string) => serviceById[id].price;
     </figure>
 
     <figure class="phone">
-      <h2 class="phone-title">Review requests</h2>
+      <h2 class="phone-title">Review Requests</h2>
       <ol class="thread">
         <li class="in">Thanks for coming in today, <b class="fill">Maya</b>! If you have a minute, a Google review helps a small salon a lot: <span class="link">juniperandrose.example/review</span></li>
         <li class="out">Done! Love the cut</li>
@@ -91,7 +91,7 @@ const price = (id: string) => serviceById[id].price;
   </section>
 
   <section class="close" aria-labelledby="ex-yours">
-    <h2 id="ex-yours">Want this for your business?</h2>
+    <h2 id="ex-yours">Want This for Your Business?</h2>
     <p>Everything above is built inside your own accounts, with the booking tool you already use where possible. Fixed prices, in writing, no calls needed.</p>
     <p class="actions"><a class="button" href="/contact/?want=automation" data-track="cta_demo_quote">Get a Free Quote</a> <a href="/solutions/">See all services and prices</a></p>
   </section>

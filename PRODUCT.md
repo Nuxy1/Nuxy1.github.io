@@ -105,6 +105,19 @@ inquiry, friendly follow-ups that stop when the customer replies, and an alert t
   when its file is listed there and really exists (`tests/creative.test.mjs`).
 - The inquiry form posts to Nuxy's own inquiry service (`inquiryUrl` in `src/data/site.ts`), which saves the
   message and emails it to the Nuxy inbox. If sending fails, the page says so and shows the email address.
+- **A callback is a request, not a booking** (`CallbackForm.astro` on `/contact/#callback`, site improvement brief
+  2026-11). The visitor leaves a name, business, phone number, what the call is about, a preferred time of day and
+  one unticked consent box to be called or texted about that request. The page and the notice email both say no
+  time is set. The site shows no appointment times and has no scheduler: one is offered only when a real,
+  configured calendar exists (`calUrl` in `src/data/site.ts`, empty today). The request goes to the same inquiry
+  service and lead store as the quote form; the service must be deployed before the site.
+- **No client portal is live** (`handoverPortal = false` in `src/data/site.ts`). The handover platform is being
+  drafted in the Command Center and no customer can sign in to anything today, so no page mentions a portal, a
+  login or an onboarding route; `tests/site.test.mjs` fails the build if one does while the flag is off.
+  `/handover/` explains the handover that exists today, from the published terms.
+- **Client case studies are gated** (`src/data/case-studies.ts`, empty today): an entry reaches a page only with the
+  client's written consent and four written checks; a live link needs a fifth. Candidates and what each lacks are
+  in `business/site-upgrade/case-study-candidates.md`. A client's street address is never in an entry.
 - Old one-page links (`/#booking`, `/#request`, ...) are redirected to their new pages; see DESIGN.md "Anchors and
   old links". Service ids are permanent.
 - The demonstration websites (`/example-sites/*`) are noindex and labelled as demos; `/demo/` is a Nuxy page whose
@@ -131,10 +144,16 @@ inquiry, friendly follow-ups that stop when the customer replies, and an alert t
 
 - Name: Nuxy Automation. The site speaks as "we", meaning the business; it never names or implies people who aren't
   part of it.
-- Logo: the Nuxy mark (`src/components/Mark.astro`, `public/favicon.svg`).
+- Logo: the metallic NUXY Automation logo the owner chose on 2026-11-13 (`src/components/Logo.astro`; files in
+  `public/brand/`, made by `scripts/brand-assets.mjs` from the masters and the untouched original in
+  `business/brand/logo/`). Image files only: never redrawn in CSS or SVG, never swapped for a generic icon. The clear-
+  background logo is for dark surfaces; a light-background version does not exist and would need the owner's approval.
 - Voice: plain, friendly, direct and honest; short sentences; no jargon or buzzwords. Explain the result before the
   tool.
-- Look: see DESIGN.md (dark navy, one blue accent, Inter).
+- Look: see DESIGN.md (the owner's palette of 2026-11-13: Obsidian, Midnight Navy and Titanium Slate layers,
+  Platinum and Muted Silver text, one Electric Blue accent with a little Ice Cyan, Inter).
+- Tagline: "Intelligence in Motion" is part of the logo's dark version. It is shown inside that image and in its
+  alt text, not typed as a headline.
 
 ## Evidence on Hand
 

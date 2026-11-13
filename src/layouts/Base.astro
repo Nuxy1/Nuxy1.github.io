@@ -1,7 +1,7 @@
 ---
 // Every page's frame: head tags, the design tokens (DESIGN.md), header, footer, old-link redirects and the
 // anonymous page counter. `wide` pages lay out their own sections; other pages get the reading column (.page).
-import Mark from "../components/Mark.astro";
+import Logo from "../components/Logo.astro";
 import Icon from "../components/Icon.astro";
 import MotionControl from "../components/MotionControl.astro";
 import "../styles/motion.css";
@@ -40,7 +40,7 @@ const serviceNav: [string, string][] = [
 ];
 const nav: [string, string][] = [
   ["Pricing", "/pricing/"],
-  ["Demos", "/demos/"],
+  ["Live Demos", "/demos/"],
   ["Our Work", "/portfolio/"],
   ["About", "/about/"],
 ];
@@ -50,7 +50,9 @@ const inServices = serviceNav.some(([, href]) => current(href)) || ["/get-a-webs
 // The old one-page site's anchors (outreach emails link to /#<service id>): sent on to where each now lives.
 const legacy: Record<string, string> = { request: "/contact/", services: "/solutions/", kinds: "/solutions/", plans: "/pricing/#plans", faq: "/pricing/#faq", work: "/demos/#technical", keep: "/about/#how-we-work", "reviews-from-clients": "/",
   // homepage sections that were renamed or moved in the conversion upgrade (2026-11)
-  "what-we-build": "/#what-we-do", why: "/#why-nuxy", ownership: "/websites/#ownership" };
+  "what-we-build": "/#what-we-do", why: "/#why-nuxy", "start-small": "/#website-levels", ownership: "/websites/#ownership",
+  // the goal picker and the price estimator moved to their own pages (approvals 87)
+  "what-to-automate": "/automation/#what-to-automate", package: "/pricing/#package" };
 for (const g of groups) {
   for (const s of g.items) legacy[s.id] = `/solutions/#${s.id}`;
   for (const old of g.legacy) legacy[old] = `/solutions/#${g.id}`;
@@ -67,7 +69,7 @@ const isHome = path === "/";
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex, nofollow" /> : <link rel="canonical" href={canonical} />}
-    <meta name="theme-color" content="#0B1220" />
+    <meta name="theme-color" content="#080D17" />
     <meta name="color-scheme" content="dark" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Nuxy Automation" />
@@ -79,7 +81,7 @@ const isHome = path === "/";
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin />
     {isHome && <script is:inline define:vars={{ legacy }}>
@@ -97,7 +99,7 @@ const isHome = path === "/";
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-head">
       <div class="wrap head-row">
-        <a class="brand" href="/" aria-label="Nuxy Automation, home"><Mark class="brand-mark" label="" /><span>Nuxy Automation</span></a>
+        <a class="brand" href="/" aria-label="Nuxy Automation, home"><Logo class="brand-logo" width={179} sizes="(max-width: 559px) 163px, 179px" eager /></a>
         <nav class="nav" aria-label="Main">
           <ul class="nav-list">
             <li>
@@ -139,7 +141,7 @@ const isHome = path === "/";
       <div class="wrap">
         <div class="foot-top">
           <div class="foot-brand">
-            <a class="brand" href="/"><Mark class="brand-mark" label="" /><span>Nuxy Automation</span></a>
+            <a class="brand" href="/" aria-label="Nuxy Automation, home"><Logo class="brand-logo foot-logo" width={228} /></a>
             <p>Websites, online stores and automations for small businesses, built in the tools you already use. Based in Faribault, Minnesota, working with southern Minnesota, the Twin Cities and remotely across the US.</p>
             <a class="foot-mail" href={`mailto:${inbox}`}><Icon name="envelopeSimple" />{inbox}</a>
           </div>
@@ -150,6 +152,7 @@ const isHome = path === "/";
                 <li><a href="/websites/">Business websites</a></li>
                 <li><a href="/web-design/">Website levels</a></li>
                 <li><a href="/websites/#redesign">Website redesign</a></li>
+                <li><a href="/handover/">How handover works</a></li>
                 <li><a href="/ecommerce/">E-commerce stores</a></li>
                 <li><a href="/automation/">Business automation</a></li>
                 <li><a href="/website-security/">Website security &amp; repairs</a></li>
@@ -168,10 +171,10 @@ const isHome = path === "/";
               </ul>
             </div>
             <div>
-              <h2>See the work</h2>
+              <h2>See the Work</h2>
               <ul>
                 <li><a href="/portfolio/">Portfolio</a></li>
-                <li><a href="/demos/">Interactive demos</a></li>
+                <li><a href="/demos/">Live demos</a></li>
                 <li><a href="/demos/#technical">Technical projects</a></li>
                 <li><a href="/docs/">Docs</a></li>
               </ul>
@@ -257,23 +260,35 @@ const isHome = path === "/";
 
   :root {
     color-scheme: dark;
-    /* brief palette */
-    --bg: #0b1220;
-    --bg-2: #111c30;
-    --panel: #162238;
-    --blue: #3b82f6;
-    --cyan: #22d3ee;
-    --ink: #f8fafc;
-    --muted: #94a3b8;
-    /* derived */
-    --body: #cbd5e1;
+    /* the brand palette (owner, 2026-11-13), matched to the metallic NUXY logo */
+    --bg: #080d17;            /* Obsidian: the page */
+    --bg-2: #101b2d;          /* Midnight Navy: alternating sections */
+    --panel: #19273c;         /* Titanium Slate: cards */
+    --blue: #2563eb;          /* Electric Blue: fills, glow, the one accent */
+    --cyan: #43c7fa;          /* Ice Cyan: small labels and highlights */
+    --ink: #e8eef6;           /* Platinum White: headings */
+    --muted: #a5b4c8;         /* Muted Silver: supporting text */
+    --hairline: #263a54;      /* Subtle Borders */
+    /* derived from the palette */
+    --body: #c7d2e1;
     --surface: var(--bg-2);
-    --surface-strong: #1c2a44;
-    --hairline: #233350;
-    --hairline-soft: #1a2741;
-    --hairline-strong: #33466b;
+    --surface-strong: #213149;
+    --bg-deep: #060a12;       /* footer and code blocks: one step under the page */
+    --hairline-soft: #1c2b41;
+    --hairline-strong: #375070;
+    --field: #0c1523;         /* form fields */
+    --field-line: #5f7697;    /* the edge of a form control: 3:1 or better on --field, --panel and --bg-2 (WCAG 1.4.11) */
+    --field-line-hover: #829abb;
+    --placeholder: #8696ad;
     --accent: var(--blue);
-    --accent-soft: rgba(59, 130, 246, 0.16);
+    --blue-line: #4f8af5;     /* Electric Blue lifted, for edges that must hold 3:1 on the dark layers */
+    --blue-rgb: 37 99 235;
+    --cyan-rgb: 67 199 250;
+    --silver-rgb: 165 180 200;
+    --bg-rgb: 8 13 23;
+    --ink-rgb: 232 238 246;
+    --accent-soft: rgb(var(--blue-rgb) / 0.16);
+    --glow: 0 0 0 1px rgb(var(--blue-rgb) / 0.4), 0 10px 36px -8px rgb(var(--blue-rgb) / 0.45); /* the only glow: primary actions and one featured card */
     --on-accent: #ffffff;
     --button: #2563eb;
     --button-hover: #1d4ed8;
@@ -282,7 +297,7 @@ const isHome = path === "/";
     --ok: #34d399;
     --warn: #fbbf24;
     --bad: #f87171;
-    --shadow: 0 1px 2px rgba(2, 6, 23, 0.5), 0 12px 32px rgba(2, 6, 23, 0.35);
+    --shadow: 0 1px 2px rgb(2 5 12 / 0.5), 0 12px 32px rgb(2 5 12 / 0.35);
     --r-sm: 8px;
     --r-md: 12px;
     --r-lg: 18px;
@@ -297,6 +312,8 @@ const isHome = path === "/";
   [hidden] { display: none !important; }
   html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: calc(var(--nav-h) + 16px); }
   @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  /* no double-tap zoom wait on anything a visitor taps; pinch zoom still works */
+  :where(a, button, summary, label, input, select, textarea) { touch-action: manipulation; }
   body {
     margin: 0; min-height: 100vh; display: flex; flex-direction: column;
     background: var(--bg); color: var(--body);
@@ -318,7 +335,7 @@ const isHome = path === "/";
   ul, ol { margin: 0; padding: 0; }
   button, input, select, textarea { font: inherit; color: inherit; }
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
-  ::selection { background: rgba(59, 130, 246, 0.4); color: #fff; }
+  ::selection { background: rgb(var(--blue-rgb) / 0.4); color: #fff; }
 
   .wrap { width: 100%; max-width: 1200px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
   .icon { width: 1.25em; height: 1.25em; flex: none; }
@@ -331,12 +348,13 @@ const isHome = path === "/";
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     min-height: 48px; padding: 0 22px; border: 1px solid transparent; border-radius: 10px;
     background: var(--button); color: #fff; font-weight: 600; font-size: 1rem; line-height: 1.2; text-align: center;
-    text-decoration: none; cursor: pointer; transition: background-color 160ms ease-out, border-color 160ms ease-out, transform 160ms var(--ease);
+    text-decoration: none; cursor: pointer; transition: background-color 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out, transform 160ms var(--ease);
   }
   .button:hover { background: var(--button-hover); color: #fff; }
+  .button:not(.secondary):hover { box-shadow: var(--glow); } /* the restrained glow: filled buttons under the pointer, and the one featured plan */
   .button:active { transform: translateY(1px); }
   .button.secondary { background: transparent; border-color: var(--hairline-strong); color: var(--ink); }
-  .button.secondary:hover { background: rgba(148, 163, 184, 0.08); border-color: #46608f; }
+  .button.secondary:hover { background: rgb(var(--silver-rgb) / 0.08); border-color: var(--field-line-hover); }
   .button.small { min-height: 44px; padding: 0 16px; font-size: 0.9375rem; }
   .button.wide { width: 100%; }
   .button.pill { border-radius: var(--r-full); }
@@ -354,7 +372,7 @@ const isHome = path === "/";
   .section-head p:not(.eyebrow) { margin-top: 14px; font-size: 1.125rem; color: var(--muted); }
   .eyebrow { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; color: var(--cyan); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .panel { background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--r-lg); }
-  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-full); background: rgba(34, 211, 238, 0.1); color: var(--cyan); font-size: 0.8125rem; font-weight: 600; line-height: 1.3; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-full); background: rgb(var(--cyan-rgb) / 0.1); color: var(--cyan); font-size: 0.8125rem; font-weight: 600; line-height: 1.3; }
   .chip.blue { background: var(--accent-soft); color: var(--link); }
   .chip.plain { background: var(--surface-strong); color: var(--body); }
   .ticks { display: grid; gap: 10px; list-style: none; }
@@ -378,7 +396,7 @@ const isHome = path === "/";
   .faq details p { padding: 0 0 20px; max-width: 70ch; color: var(--body); }
   @media (prefers-reduced-motion: reduce) { .faq summary .icon { transition: none; } }
 
-  .cta-band { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px; padding: clamp(24px, 4vw, 40px); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: var(--r-lg); background: rgba(37, 99, 235, 0.1); }
+  .cta-band { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px; padding: clamp(24px, 4vw, 40px); border: 1px solid rgb(var(--blue-rgb) / 0.4); border-radius: var(--r-lg); background: rgb(var(--blue-rgb) / 0.1); }
   .cta-band h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
   .cta-band p { margin-top: 8px; max-width: 60ch; color: var(--body); }
   .cta-actions { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -389,24 +407,27 @@ const isHome = path === "/";
   /* Header */
   .site-head {
     position: sticky; top: 0; z-index: 50; height: var(--nav-h);
-    background: rgba(11, 18, 32, 0.86); border-bottom: 1px solid var(--hairline-soft);
+    background: rgb(var(--bg-rgb) / 0.86); border-bottom: 1px solid var(--hairline-soft);
     backdrop-filter: saturate(140%) blur(12px);
   }
   .head-row { display: flex; align-items: center; gap: 16px; height: 100%; }
   .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 650; font-size: 1.0625rem; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
   .brand:hover { color: var(--ink); }
-  .brand-mark { width: 30px; height: 30px; }
+  /* (the logo file has 16 px of clear space around it for its glow: the negative margin lines the symbol up with the page edge) */
+  .brand-logo { display: block; width: auto; height: 44px; margin-left: -6px; }
+  .foot-logo { height: 56px; margin-left: -8px; }
+  @media (max-width: 559px) { .site-head .brand-logo { height: 40px; } }
   .nav { display: none; margin-left: auto; }
   .nav-list { display: flex; gap: 4px; list-style: none; }
   .nav-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--r-sm); color: var(--body); font-size: 0.9375rem; font-weight: 500; text-decoration: none; white-space: nowrap; transition: color var(--dur-1) ease, background-color var(--dur-1) ease; }
-  .nav-link:hover { color: var(--ink); background: rgba(148, 163, 184, 0.08); }
-  .nav-link[aria-current="page"], .nav-link.is-current { color: var(--ink); background: rgba(148, 163, 184, 0.1); }
+  .nav-link:hover { color: var(--ink); background: rgb(var(--silver-rgb) / 0.08); }
+  .nav-link[aria-current="page"], .nav-link.is-current { color: var(--ink); background: rgb(var(--silver-rgb) / 0.1); }
   /* Services: a short list under its button */
   .drop { position: relative; }
   .drop > summary { cursor: pointer; list-style: none; user-select: none; }
   .drop > summary::-webkit-details-marker { display: none; }
   .drop > summary .icon { width: 14px; height: 14px; transition: transform var(--dur-1) ease; }
-  .drop[open] > summary { color: var(--ink); background: rgba(148, 163, 184, 0.1); }
+  .drop[open] > summary { color: var(--ink); background: rgb(var(--silver-rgb) / 0.1); }
   .drop[open] > summary .icon { transform: rotate(180deg); }
   .drop-panel {
     position: absolute; top: calc(100% + 10px); left: 0; z-index: 60; display: grid; min-width: 272px; padding: 8px;
@@ -415,7 +436,7 @@ const isHome = path === "/";
   .drop[open] > .drop-panel { animation: drop-in var(--dur-1) var(--ease-out); }
   @keyframes drop-in { from { opacity: 0; transform: translateY(-4px); } }
   .drop-panel a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: var(--r-sm); color: var(--ink); font-size: 0.9375rem; font-weight: 500; text-decoration: none; white-space: nowrap; }
-  .drop-panel a:hover { background: rgba(148, 163, 184, 0.1); }
+  .drop-panel a:hover { background: rgb(var(--silver-rgb) / 0.1); }
   .drop-panel a[aria-current="page"] { color: var(--cyan); }
   .drop-panel li:last-child { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--hairline); }
   .head-cta { display: none; margin-left: auto; }
@@ -457,10 +478,10 @@ const isHome = path === "/";
   .page > .table-scroll {
     width: fit-content; max-width: 100%; margin-bottom: 16px; overflow-x: auto;
     background:
-      linear-gradient(to right, var(--bg) 40%, rgba(11, 18, 32, 0)) left / 32px 100% no-repeat local,
-      linear-gradient(to left, var(--bg) 40%, rgba(11, 18, 32, 0)) right / 32px 100% no-repeat local,
-      radial-gradient(farthest-side at 0 50%, rgba(148, 163, 184, 0.3), rgba(148, 163, 184, 0)) left / 12px 100% no-repeat scroll,
-      radial-gradient(farthest-side at 100% 50%, rgba(148, 163, 184, 0.3), rgba(148, 163, 184, 0)) right / 12px 100% no-repeat scroll;
+      linear-gradient(to right, var(--bg) 40%, rgb(var(--bg-rgb) / 0)) left / 32px 100% no-repeat local,
+      linear-gradient(to left, var(--bg) 40%, rgb(var(--bg-rgb) / 0)) right / 32px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgb(var(--silver-rgb) / 0.3), rgb(var(--silver-rgb) / 0)) left / 12px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgb(var(--silver-rgb) / 0.3), rgb(var(--silver-rgb) / 0)) right / 12px 100% no-repeat scroll;
   }
   .page > .table-scroll > table { width: auto; margin-bottom: 0; }
   .page ul, .page ol { padding-left: 1.3em; }
@@ -469,7 +490,7 @@ const isHome = path === "/";
   .lead { font-size: 1.1875rem; color: var(--body); }
   .page blockquote { margin-left: 0; padding: 4px 0 4px 18px; border-left: 3px solid var(--hairline-strong); color: var(--muted); }
   code { font-family: var(--mono); font-size: 0.875em; padding: 2px 6px; border-radius: 6px; background: var(--surface-strong); color: var(--ink); }
-  pre { overflow-x: auto; position: relative; padding: 16px 18px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: #0a1020; font-size: 0.875rem; line-height: 1.55; }
+  pre { overflow-x: auto; position: relative; padding: 16px 18px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg-deep); font-size: 0.875rem; line-height: 1.55; }
   pre code { padding: 0; background: none; font-size: inherit; }
   /* inline code that wraps keeps padding and rounded ends on every line; Doc.astro marks short code .whole and
      hyphenated words in longer code .nobr, so code never breaks at a hyphen */
@@ -481,7 +502,7 @@ const isHome = path === "/";
   th { color: var(--ink); font-weight: 600; }
 
   /* Footer */
-  .site-foot { margin-top: auto; padding: clamp(48px, 6vw, 72px) 0 28px; background: #09101d; border-top: 1px solid var(--hairline-soft); font-size: 0.9375rem; }
+  .site-foot { margin-top: auto; padding: clamp(48px, 6vw, 72px) 0 28px; background: var(--bg-deep); border-top: 1px solid var(--hairline-soft); font-size: 0.9375rem; }
   .foot-top { display: grid; gap: 40px; }
   .foot-brand p { max-width: 36ch; margin: 14px 0 16px; color: var(--muted); }
   .foot-mail { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }

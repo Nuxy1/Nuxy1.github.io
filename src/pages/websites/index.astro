@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // Website development (brief 2) with client ownership and the optional monthly plan (brief 3).
 // Prices are the PUBLISHED ones from data/services.ts and Website Care from data/services.ts plans. The proposed
 // website packages and care tiers live only in the private business/site-upgrade/proposals.md until the owner
@@ -6,6 +7,7 @@
 // Approval needed before deploy: the handover list (#ownership) and the "If you stop the monthly plan" steps are new
 // written commitments (business/site-upgrade/approvals.md).
 import Base from "../../layouts/Base.astro";
+import { arrangements, leaving } from "../../data/handover";
 import Icon from "../../components/Icon.astro";
 import ServiceCard from "../../components/ServiceCard.astro";
 import DemoSites from "../../components/DemoSites.astro";
@@ -20,6 +22,8 @@ const web = serviceById["new-website"];
 const starter = variantById["starter-website"];
 const fixes = serviceById["site-fixes"];
 const care = plans.find((p) => p.id === "care")!;
+// the two arrangements carry the same names here as on /handover/ (approvals 90)
+const [owned, managed] = arrangements;
 // a full rebuild is the published New website, offered to sites past saving (the contact link asks about new-website)
 const rebuild = { ...web, name: "Full rebuild", icon: "arrowsClockwise" as IconName, popular: false,
   fixes: "A site too old, slow or broken to repair",
@@ -53,15 +57,6 @@ const promises: { icon: IconName; title: string; text: string }[] = [
   { icon: "shieldCheck", title: "Never held hostage", text: "Stopping a monthly plan never takes your site down, locks you out or costs a release fee." },
 ];
 
-const leaving = [
-  "Tell us by email, or use the cancel link in your monthly receipt.",
-  "We confirm in writing when the plan ends: the end of the month you’ve already paid for.",
-  "We send you a copy of your site’s text, images and logo files, and notes on any settings we changed.",
-  "We check that you can sign in as the owner of the website, the domain and any connected tools.",
-  "You get short written notes: where everything runs, renewal dates, and who to contact for what.",
-  "We remove our access and tell you when it’s done.",
-  "Billing stops. You’re never charged again.",
-];
 
 const questions: [string, string][] = [
   ["Can I edit the website myself?", "Yes. It’s built in your own Squarespace or Wix account, which have simple editors. You get a short video showing how to change prices, hours and photos, and you can always ask us instead."],
@@ -99,7 +94,7 @@ const service = {
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="eyebrow">Website development</p>
-        <h1>Websites that make it easy to choose you.</h1>
+        <h1>Websites That Make It Easy to Choose You</h1>
         <p class="lead">We build fast, modern, mobile-friendly websites that help customers find your business, explore your services, and contact you.</p>
         <div class="hero-actions">
           <a class="button" href="/contact/?service=new-website" data-track="cta_web_quote">Get a Free Website Quote</a>
@@ -119,20 +114,20 @@ const service = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">New website</p>
-        <h2 id="new-h">Everything a customer looks for, on every screen</h2>
+        <h2 id="new-h">Everything a Customer Looks For, on Every Screen</h2>
         <p>{web.text}</p>
       </div>
       <div class="new-grid">
         <ul class="included" role="list">
           {included.map((i) => (
-            <li><Icon name={i.icon} /><div><h3>{i.title}</h3><p>{i.text}</p></div></li>
+            <li><Icon name={i.icon} /><div><h3>{titleCase(i.title)}</h3><p>{i.text}</p></div></li>
           ))}
         </ul>
         <aside class="price-panel panel" aria-labelledby="price-h">
           <p class="price-name" id="price-h">{web.name}</p>
           <p class="price"><span>{web.price}</span> one-time</p>
           <p class="price-sub">Half to start, half at handover, by a secure Stripe invoice. Nothing is charged until you agree to the written plan.</p>
-          <p class="price-alt"><strong>Just need one page?</strong> The {starter.name} is {starter.price}: {starter.text.charAt(0).toLowerCase() + starter.text.slice(1)} <a href={`/contact/?service=${starter.id}`} data-track="cta_web_starter">Ask about the {starter.name}</a></p>
+          <p class="price-alt"><strong>Just need one page?</strong> The {starter.name} is {starter.price}: {starter.text.charAt(0).toLowerCase() + starter.text.slice(1)} <a href={`/contact/?service=${starter.id}`} data-track="cta_web_starter">Get a free quote for the {starter.name}</a></p>
           <dl class="facts">
             <div><dt>Suits</dt><dd>{web.who}</dd></div>
             <div><dt>We need from you</dt><dd>{web.needs}</dd></div>
@@ -149,7 +144,7 @@ const service = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Redesign & modernization</p>
-        <h2 id="redesign-h">Already have a website?</h2>
+        <h2 id="redesign-h">Already Have a Website?</h2>
         <p>Keep what works and fix what doesn’t. If your site looks dated or breaks on a phone, quick fixes usually solve it on the site you already have. If it’s past saving, we rebuild it.</p>
       </div>
       <div class="grid-2 svc-pair">
@@ -164,7 +159,7 @@ const service = {
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Example websites</p>
-        <h2 id="examples-h">See what a Nuxy website looks like</h2>
+        <h2 id="examples-h">See What a Nuxy Website Looks Like</h2>
         <p>Three demonstration sites for made-up local businesses. Open any of them to see it on a computer and on a phone, buttons and forms included.</p>
       </div>
       <DemoSites only={["fernway-lawn", "lantern-row-barbers", "mossgate-cleaning"]} />
@@ -175,13 +170,14 @@ const service = {
     <div class="wrap">
       <div class="section-head center">
         <p class="eyebrow">Two ways to work with us</p>
-        <h2 id="ownership-h">Buy it outright, or let us look after it</h2>
+        <h2 id="ownership-h">Buy It Outright, or Let Us Look After It</h2>
         <p>Either way the website, the domain and the accounts are yours. The monthly plan is optional: most businesses only need the website.</p>
       </div>
       <div class="ways">
         <article class="way panel">
           <span class="way-icon"><Icon name="handshake" /></span>
-          <h3>Buy your website outright</h3>
+          <h3>{titleCase(owned.title)}</h3>
+          <p class="way-plain">{owned.plain}</p>
           <p class="way-price"><strong>{web.price}</strong> one-time · no monthly fee to us</p>
           <p>At handover:</p>
           <ol class="steps-list">
@@ -191,7 +187,8 @@ const service = {
         </article>
         <article class="way panel">
           <span class="way-icon"><Icon name="wrench" /></span>
-          <h3>Let Nuxy look after it</h3>
+          <h3>{titleCase(managed.title)}</h3>
+          <p class="way-plain">{managed.plain}</p>
           <p class="way-price"><strong>{care.price}</strong> · {care.name} · optional</p>
           <p>Everything in “buy it outright”, and then we keep watching it:</p>
           <ul class="ticks">
@@ -209,17 +206,17 @@ const service = {
       <div>
         <div class="section-head">
           <p class="eyebrow">Ownership</p>
-          <h2 id="own-h">You own it. Always.</h2>
+          <h2 id="own-h">You Own It. Always.</h2>
           <p>A website should never be something you rent from the person who built it.</p>
         </div>
         <ul class="promises" role="list">
           {promises.map((p) => (
-            <li><Icon name={p.icon} /><div><h3>{p.title}</h3><p>{p.text}</p></div></li>
+            <li><Icon name={p.icon} /><div><h3>{titleCase(p.title)}</h3><p>{p.text}</p></div></li>
           ))}
         </ul>
       </div>
       <div class="leave panel">
-        <h3>If you stop the monthly plan</h3>
+        <h3>If You Stop the Monthly Plan</h3>
         <ol class="leave-list">
           {leaving.map((t) => <li>{t}</li>)}
         </ol>
@@ -231,7 +228,7 @@ const service = {
     <div class="wrap faq-wrap">
       <div class="section-head">
         <p class="eyebrow">Questions</p>
-        <h2 id="faq-h">Website questions, answered</h2>
+        <h2 id="faq-h">Website Questions, Answered</h2>
       </div>
       <div class="faq">
         {questions.map(([q, a]) => (
@@ -250,7 +247,7 @@ const service = {
     <div class="wrap">
       <div class="cta-band">
         <div>
-          <h2>Get a free website quote</h2>
+          <h2>Get a Free Website Quote</h2>
           <p>Tell us about your business. Within one business day you’ll get a written plan with what we’d build, the price and the timeline. No call required.</p>
         </div>
         <div class="cta-actions">
@@ -307,6 +304,7 @@ const service = {
   .way { display: flex; flex-direction: column; gap: 12px; padding: clamp(22px, 3vw, 32px); }
   .way-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
   .way h3 { font-size: 1.375rem; }
+  .way .way-plain { margin-top: -6px; color: var(--ink); font-size: 1.0625rem; font-weight: 600; }
   .way-price { color: var(--body); }
   .way-price strong { color: var(--ink); font-size: 1.25rem; }
   .way p { color: var(--body); }

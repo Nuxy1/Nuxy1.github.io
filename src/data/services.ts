@@ -324,7 +324,7 @@ export const plans: Plan[] = [
   { id: "care", name: "Website Care", price: "$79/month", amount: "$79", who: "A website that should just keep working", kind: "website", points: ["Website checked every 5 minutes, 24/7", "Domain and security certificate renewal reminders", "A short monthly status summary", "Up to 30 minutes of small content changes a month", "First reply within 2 business days"] },
   { id: "automation-starter", name: "Automation Starter", price: "$149/month", amount: "$149", who: "Your first automation", kind: "automation", points: ["Up to 2 simple workflows monitored", "Failure alerts and troubleshooting", "Up to 30 minutes of small adjustments a month", "A basic monthly activity summary", "First reply within 2 business days"] },
   { id: "automation-growth", name: "Automation Growth", price: "$349/month", amount: "$349", who: "Several automations running", kind: "automation", recommended: true, points: ["Up to 5 agreed workflows monitored", "Errors troubleshot", "Up to 90 minutes of small changes a month", "Monthly activity and results report", "First reply within 1 business day"] },
-  { id: "automation-partner", name: "Automation Partner", price: "$799/month", amount: "$799", who: "Your automation team, on call", kind: "automation", points: ["Up to 10 agreed workflows monitored", "Up to 3 hours of small adjustments a month", "Priority: work on an issue starts the same business day (after 3 pm Central: the next business morning)", "A monthly performance review", "One extra small workflow each quarter, in a fixed scope agreed in writing"] },
+  { id: "automation-partner", name: "Automation Partner", price: "$799/month", amount: "$799", who: "Priority help for your automations", kind: "automation", points: ["Up to 10 agreed workflows monitored", "Up to 3 hours of small adjustments a month", "Priority: work on an issue starts the same business day (after 3 pm Central: the next business morning)", "A monthly performance review", "One extra small workflow each quarter, in a fixed scope agreed in writing"] },
 ];
 export const planById = Object.fromEntries(plans.map((p) => [p.id, p]));
 /** Retired ids, and the id that now answers their old links. Their old customers keep what they agreed. */
@@ -349,17 +349,20 @@ export const planNote = "Monitoring runs 24/7: websites are checked every 5 minu
 // single service can name a choice instead (/contact/?want=<id>). The inquiry service (src/inquiry.js) has the same
 // ids and labels, and a test fails when the two lists differ.
 export const wants: { id: string; label: string }[] = [
-  { id: "new-website", label: "New website" },
+  { id: "new-website", label: "Website" },
   { id: "redesign", label: "Website redesign" },
-  { id: "shopify", label: "Shopify store" },
-  { id: "automation", label: "AI automation" },
-  { id: "maintenance", label: "Website maintenance" },
+  { id: "shopify", label: "Online store" },
+  { id: "automation", label: "Automation" },
+  { id: "maintenance", label: "Care plan" },
   { id: "health-check", label: "Website health check" },
   { id: "repair", label: "Website repair" },
   { id: "security", label: "Security assessment" },
   { id: "creative", label: "Video & creative work" },
-  { id: "other", label: "Other" },
+  { id: "other", label: "Something else or not sure yet" },
 ];
+// The five the form shows (approvals 88). The other five stay accepted and keep their labels: a link that names one
+// (/contact/?want=repair, a service that maps to one) shows it as a sixth choice, so the exact topic still travels.
+export const wantsShown = ["new-website", "shopify", "automation", "maintenance", "other"];
 const wantFor: Record<string, string> = { "new-website": "new-website", "starter-website": "new-website", "site-fixes": "redesign", "online-shop": "shopify", "mini-store": "shopify", store: "shopify", care: "maintenance" };
 // (every automation group, the bundles and the automation plans are "AI automation"; the Google profile, online
 // ordering and gift cards fit none of the choices, so they are "Other" with the exact service kept beside it)
@@ -428,43 +431,6 @@ export const primary: Primary[] = [
     points: ["Built in your own accounts", "Nothing sent without your rules", "Every failure alerts us", "AI drafts, you approve"], price: `One-time setups from ${automationFrom}`, href: "/automation/", cta: "Automation services" },
   { id: "management", icon: "shieldCheck", title: "Optional Website Management", text: "After launch, we can keep your website watched and its renewals on track for a monthly fee. It’s never required.",
     points: ["Website checked every 5 minutes, 24/7", "Domain and security renewals watched", "Billed monthly, cancel any time", "Your website stays yours if you stop"], price: `${care.name}: ${care.price}, optional`, href: "/websites/#ownership", cta: "Website management" },
-];
-
-// The four services the homepage leads with (conversion brief, 2026-11): one outcome, one sentence, one starting price
-// and one link each. Every price is read from the catalogue above, and the wording stays inside what each service's
-// own card promises. (`primary` above is still used by /website-security/ and the tests.)
-export type Featured = { id: string; icon: IconName; title: string; outcome: string; text: string; price: string; note?: string; href: string; cta: string };
-const receptionist = serviceById["ai-receptionist"];
-const leadBundle = bundleById["lead-recovery"];
-export const featured: Featured[] = [
-  { id: "voice", icon: receptionist.icon, title: "AI Voice Receptionist", outcome: "Calls answered when you can’t pick up",
-    text: "Answers the calls you choose, takes the caller’s details, books into your calendar where your tool allows, and sends you a summary.",
-    price: `Setup ${receptionist.price} + ${receptionist.monthly}`, note: statusWords[receptionist.status], href: "/automation/#voice", cta: "See the AI receptionist" },
-  { id: "lead-recovery", icon: leadBundle.icon, title: "Lead Recovery Automation", outcome: "Inquiries and missed calls answered fast",
-    text: "An instant reply to every inquiry, a text back after a missed call, and follow-ups that stop when they answer.",
-    price: `From ${serviceById["missed-calls"].price} · both as a bundle ${leadBundle.price}`, href: "/automation/#lead-response", cta: "See lead recovery" },
-  { id: "websites", icon: "browser", title: "Business Websites", outcome: "Visitors turned into customers",
-    text: "A professional website built for phones first, with a clear way to call, book or ask for a quote.",
-    price: `From ${starterSite.price}, one-time`, href: "/websites/", cta: "See business websites" },
-  { id: "automation", icon: "lightning", title: "Business Automation", outcome: "Less admin, every week",
-    text: "Your apps connected and the repetitive work done for you: bookings, reminders, invoices and reports.",
-    price: `One-time setups from ${automationFrom}`, href: "/automation/", cta: "See automation services" },
-];
-
-// The homepage's three ways in (Starter, Growth, Custom). Prices are worked out from the catalogue: the cheapest
-// website and automation, the cheapest preset bundle, and the cheapest of the consultation and custom projects.
-const cheapest = (list: { price: string }[]) => money(Math.min(...list.map((s) => dollars(s.price))));
-const customItems = services.filter((s) => s.priceType === "custom" || s.status === "consult" || s.id === "integrations");
-export const tiers: { id: string; icon: IconName; name: string; who: string; price: string; priceNote: string; points: string[] }[] = [
-  { id: "starter", icon: "rocketLaunch", name: "Starter", who: "A small website or one simple automation.",
-    price: `From ${automationFrom}`, priceNote: "one-time",
-    points: [`One automation from ${automationFrom}`, `A one-page website from ${starterSite.price}`, "No monthly plan needed"] },
-  { id: "growth", icon: "chartLineUp", name: "Growth", who: "Several automations that work together.",
-    price: `From ${cheapest(bundles)}`, priceNote: "one-time, preset bundle",
-    points: [`Preset bundles from ${cheapest(bundles)}`, `Any 2 services ${bundle.two}% off, 3 or more ${bundle.three}% off`, `Optional monthly plan from ${starter.price}`] },
-  { id: "custom", icon: "plugsConnected", name: "Custom", who: "An AI receptionist, a CRM or advanced integrations.",
-    price: `From ${cheapest(customItems)}`, priceNote: "starting price, quoted in writing",
-    points: [`${receptionist.name}: setup ${receptionist.price} + ${receptionist.monthly}`,`${serviceById["integrations"].name} ${serviceById["integrations"].price}`, `CRM systems ${serviceById["crm-system"].price}`] },
 ];
 
 // What the homepage estimator may add up: the one-time services anyone can order today, with the smaller versions

@@ -18,7 +18,7 @@ A Discord bot for a streamer's community that runs the four things mods otherwis
 
 Built on discord.js v14. Settings live in `config.json` and are checked at start-up, so a typo fails immediately with a clear message, not hours later. Secrets go in `.env`.
 
-## Set up
+## Set Up
 
 1. **Create the bot.** In the [Discord Developer Portal](https://discord.com/developers/applications): New Application > Bot.
    - Switch on **Server Members Intent**.

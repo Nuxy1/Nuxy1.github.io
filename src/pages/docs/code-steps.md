@@ -17,7 +17,7 @@ No-code automations break on messy data: a phone typed five ways, a name in CAPS
 | [`money.cjs`](https://github.com/Nuxy1/automation-code-steps/blob/main/steps/money.cjs) | `$1,234.56`, `1.234,56 €`, `(45.00)`, `£3k` | `1234.56 USD`, `1234.56 EUR`, `-45.00`, `3000.00 GBP` |
 | [`line-items.cjs`](https://github.com/Nuxy1/automation-code-steps/blob/main/steps/line-items.cjs) | Shopify / WooCommerce / Stripe line items (JSON) | Zapier line-item lists (one sheet row per item), a one-cell summary, item count and subtotal |
 
-## Use one
+## Use One
 
 **Zapier:**
 1. Add a step: *Code by Zapier > Run JavaScript*.

@@ -35,7 +35,7 @@ const nodes: { icon: IconName; title: string; detail: string; time: string }[] =
 <style>
   .flow {
     margin: 0; padding: 20px; border: 1px solid var(--hairline); border-radius: var(--r-lg);
-    background: linear-gradient(180deg, #14203a 0%, var(--panel) 100%); box-shadow: var(--shadow);
+    background: linear-gradient(180deg, #152236 0%, var(--panel) 100%); box-shadow: var(--shadow);
   }
   .flow-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
   .flow-title { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
@@ -46,7 +46,7 @@ const nodes: { icon: IconName; title: string; detail: string; time: string }[] =
     position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;
     padding: 10px 12px 10px 0; border-radius: var(--r-md);
   }
-  .flow-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #0e1a30; border: 1px solid var(--hairline-strong); color: var(--link); }
+  .flow-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--field); border: 1px solid var(--hairline-strong); color: var(--link); }
   .flow-dot :global(.icon) { width: 19px; height: 19px; }
   .flow-node:last-child .flow-dot { background: var(--button); border-color: var(--button); color: #fff; }
   .flow-text { display: grid; min-width: 0; }
@@ -59,7 +59,7 @@ const nodes: { icon: IconName; title: string; detail: string; time: string }[] =
     .flow-node:last-child .flow-dot { animation: done 600ms var(--ease) both; animation-delay: 900ms; }
   }
   @keyframes node-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-  @keyframes done { from { background: #0e1a30; border-color: var(--hairline-strong); color: var(--link); } to { background: var(--button); border-color: var(--button); color: #fff; } }
+  @keyframes done { from { background: var(--field); border-color: var(--hairline-strong); color: var(--link); } to { background: var(--button); border-color: var(--button); color: #fff; } }
   @media (max-width: 380px) {
     .flow { padding: 16px; }
     .flow-node { grid-template-columns: 40px minmax(0, 1fr); }

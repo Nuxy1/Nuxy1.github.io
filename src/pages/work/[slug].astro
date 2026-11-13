@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // A case study for each working example: the problem, what was built, the messy cases it handles, the demo week as it
 // ran, and the numbers. The business is made up (said at the top); the code and the numbers are real.
 import Base from "../../layouts/Base.astro";
@@ -16,8 +17,8 @@ const others = examples.filter((x) => x.slug !== e.slug);
 <Base title={`${e.title} · Example · Nuxy Automation`} description={`${e.title}: what goes wrong, what was built and the real output of working, open-source code. The ${e.kind} is made up.`}>
   <!-- The video's poster is the largest thing on screen; announcing it in the head lets the browser fetch it first. -->
   <link slot="head" rel="preload" as="image" type="image/webp" href={`${base}/videos/${e.slug}-poster.webp`} fetchpriority="high" />
-  <p class="crumbs"><a href={`${base}/#work`}>Working examples</a><span aria-hidden="true">/</span>{e.tab}</p>
-  <h1>{e.title}</h1>
+  <p class="crumbs"><a href={`${base}/demos/#technical`}>Working examples</a><span aria-hidden="true">/</span>{e.tab}</p>
+  <h1>{titleCase(e.title)}</h1>
   <p class="made-up"><Icon name="sealCheck" /><span><strong>{e.who}</strong> is made up for this example. The code is real and open: <a href="https://github.com/Nuxy1/small-business-automations">read it or run it</a>.</span></p>
 
   <figure id="video" class="video">
@@ -25,16 +26,16 @@ const others = examples.filter((x) => x.slug !== e.slug);
     <figcaption id="video-note">The week below, in about a minute, with a voice-over (captions in the player). Every line and every email is the code’s real output.</figcaption>
   </figure>
 
-  <h2>The problem</h2>
+  <h2>The Problem</h2>
   <p class="lead">{e.problem}</p>
 
-  <h2>What it does</h2>
+  <h2>What It Does</h2>
   <ul class="ticks">{e.built.map((b) => <li><Icon name="check" />{b}</li>)}</ul>
 
-  <h2>The messy parts it handles</h2>
+  <h2>The Messy Parts It Handles</h2>
   <ul class="ticks">{e.messy.map((m) => <li><Icon name="check" />{m}</li>)}</ul>
 
-  <h2>The week, line by line</h2>
+  <h2>The Week, Line by Line</h2>
   <figure class="term">
     <p class="term-who">{e.who}</p>
     <ol class="term-lines">
@@ -45,15 +46,15 @@ const others = examples.filter((x) => x.slug !== e.slug);
   <ul class="stats">{e.numbers.map(([n, what]) => <li><strong>{n}</strong><span>{what}</span></li>)}</ul>
   <p class="speed"><Icon name="lightning" /><span><strong>Speed:</strong> {e.speed} on a desktop PC (<code>npm run bench</code>). Thousands of records take seconds, not hours.</span></p>
 
-  <h2>For your business</h2>
+  <h2>For Your Business</h2>
   <p>{e.fit}</p>
   <aside class="offer" aria-label={`Request ${e.service.name}`}>
     <div><p class="offer-name">{e.service.name}</p><p class="offer-price">{e.service.price}, fixed · 30-day launch watch included</p></div>
     <a class="button" href={ask(e.service)}>Request this</a>
-    <p class="alt">or in <a href={gmail(e.service)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(e.service)} target="_blank" rel="noopener">Outlook</a> · <a href={`${base}/#${e.service.id}`}>What’s included</a></p>
+    <p class="alt">or in <a href={gmail(e.service)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(e.service)} target="_blank" rel="noopener">Outlook</a> · <a href={`${base}/solutions/#${e.service.id}`}>What’s included</a></p>
   </aside>
 
-  <h2>More examples</h2>
+  <h2>More Examples</h2>
   <ul class="more">{others.map((o) => <li><a href={`${base}/work/${o.slug}/`}><strong>{o.title}</strong><span>{o.problem}</span></a></li>)}</ul>
 </Base>
 

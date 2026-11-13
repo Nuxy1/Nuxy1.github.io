@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // The interactive comparison: pick a level and see six meters on the Basic / Enhanced / Advanced / Bespoke scale
 // (data/tiers.ts `meters` and each level's `scores`). It is the ARIA tabs pattern (arrow keys, Home, End); the first
 // time a visitor changes tab it counts `tier_comparison_opened`. Without JavaScript all four panels are shown one
@@ -18,7 +19,7 @@ import { levels, meters } from "../../data/tiers";
     {levels.map((l) => (
       <section class="cmp-panel panel" id={`cmp-p-${l.id}`} data-level={l.id}>
         <header class="cmp-head">
-          <h3>{l.name} <span>{l.promise}</span></h3>
+          <h3>{l.name} <span>{titleCase(l.promise)}</span></h3>
           <p>{l.for}</p>
         </header>
         <dl class="cmp-meters">

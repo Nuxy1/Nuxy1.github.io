@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../lib/title-case";
 // "See Your Business Run on Autopilot": four short simulations of what the automations do, chosen by tabs (owner's
 // motion brief, 2026-11-11). Every business, person, number and time here is made up; no call is placed, no message
 // is sent and nothing is booked: it is a page script stepping through cards that are already on the page.
@@ -99,7 +100,7 @@ const demos: Demo[] = [
 // a demo the catalogue doesn't sell yet links to the quote form instead of a service that doesn't exist
 const linkFor = (d: Demo) => {
   const s = d.svc.map((id) => serviceById[id]).find(Boolean);
-  return s ? { href: `/solutions/#${s.id}`, text: `See ${s.name}`, price: s.price } : { href: `/contact/?want=${d.want}`, text: "Ask about this", price: "" };
+  return s ? { href: `/solutions/#${s.id}`, text: `See ${s.name}`, price: s.price } : { href: `/contact/?want=${d.want}`, text: "Get a Free Quote", price: "" };
 };
 const whoName = { caller: "Customer", auto: "Automatic", owner: "Owner" };
 const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true" focusable="false" `);
@@ -130,7 +131,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
             </div>
             <div class="ap-grid">
               <div class="ap-side">
-                <h3 class="ap-h" id={`ap-${d.id}-h`}>{d.tab}<span>{d.business}</span></h3>
+                <h3 class="ap-h" id={`ap-${d.id}-h`}>{titleCase(d.tab)}<span>{d.business}</span></h3>
                 <ol class="ap-steps">
                   {d.steps.map((s, i) => (
                     <li>
@@ -184,6 +185,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
         );
       })}
     </div>
+    <slot name="after" />
   </div>
 </section>
 
@@ -220,7 +222,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
         cur = Math.max(0, Math.min(total, k));
         for (const c of cards) {
           const f = +c.dataset.from!;
-          c.classList.toggle("later", f > cur);
+          c.classList.toggle("later", f > Math.max(cur, 1)); // at rest the first step is already filled in (approvals 89)
           c.classList.toggle("is-new", fresh && f === cur && moving());
         }
         caps.forEach((c) => (c.hidden = +c.dataset.at! !== cur));
@@ -242,6 +244,9 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
       };
       // in the window: keep the newest card inside it (its own scroll, never the page's); keys can scroll it once it has cards
       const follow = (smooth = true) => {
+        // Before the first press only the first step is shown and the window sits at its top: nothing to measure. Measuring here
+        // made the browser lay out the whole page during load, before the first paint (a 220 ms task on a phone).
+        if (cur === 0 && !started) { feed.removeAttribute("tabindex"); return; }
         const windowed = narrow.matches && feed.scrollHeight > feed.clientHeight + 1;
         if (windowed && cur > 0) feed.tabIndex = 0; else feed.removeAttribute("tabindex");
         if (!windowed) return;
@@ -333,10 +338,10 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
     background: none; color: var(--body); font-size: 0.9375rem; text-align: left; cursor: pointer;
   }
   .ap-step:disabled { cursor: default; }
-  .ap-step:not(:disabled):hover { background: rgba(148, 163, 184, 0.06); color: var(--ink); }
+  .ap-step:not(:disabled):hover { background: rgb(var(--silver-rgb) / 0.06); color: var(--ink); }
   .ap-num { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--hairline-strong); font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
   .ap-step.done .ap-num { border-color: transparent; background: var(--accent-soft); color: var(--link); }
-  .ap-step[aria-current="step"] { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.35); color: var(--ink); }
+  .ap-step[aria-current="step"] { background: rgb(var(--blue-rgb) / 0.1); border-color: rgb(var(--blue-rgb) / 0.35); color: var(--ink); }
   .ap-step[aria-current="step"] .ap-num { border-color: var(--button); background: var(--button); color: #fff; }
   .ap-demo:not(.ready) .ap-step[aria-current="step"] { background: none; border-color: transparent; color: var(--body); }
   .ap-demo:not(.ready) .ap-step[aria-current="step"] .ap-num { background: none; border-color: var(--hairline-strong); color: inherit; }
@@ -345,7 +350,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
   .ap-controls > .button { width: 100%; }
   .ap-ico-pause, [data-play][aria-pressed="true"] .ap-ico-play { display: none; }
   [data-play][aria-pressed="true"] .ap-ico-pause { display: inline-flex; }
-  .ap-ico-play, .ap-ico-pause { display: inline-flex; }
+  .ap-ico-play { display: inline-flex; }
   .ap-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .ap-row .button { padding: 0 6px; min-height: 44px; font-size: 0.875rem; }
   .ap-row .button:disabled { opacity: 0.45; cursor: default; }
@@ -365,7 +370,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
   .ap-feed { position: relative; display: grid; gap: 10px; list-style: none; }
   .ap-card { max-width: 34rem; padding: 12px 14px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel); font-size: 0.9375rem; color: var(--body); }
   .ap-card.caller { justify-self: start; border-color: var(--hairline-strong); }
-  .ap-card.auto { justify-self: end; border-color: rgba(34, 211, 238, 0.35); background: rgba(34, 211, 238, 0.06); }
+  .ap-card.auto { justify-self: end; border-color: rgb(var(--cyan-rgb) / 0.35); background: rgb(var(--cyan-rgb) / 0.06); }
   .ap-card.owner { justify-self: end; border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.07); }
   .ap-card-label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: var(--ink); font-size: 0.8125rem; font-weight: 650; }
   .ap-card-label :global(.icon) { width: 1.05em; height: 1.05em; color: var(--cyan); }

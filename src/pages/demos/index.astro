@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // Demos: the interactive lead demo (#try), the demo salon (/demo/), the example websites (#websites) and the
 // open-source automations behind the examples (#technical, where the old /#work link lands). Every business on this
 // page is made up and said to be; nothing here is a client result, and nothing is sent anywhere.
@@ -10,12 +11,23 @@ import { examples } from "../../data/examples";
 import { serviceById } from "../../data/services";
 
 const repo = "https://github.com/Nuxy1/small-business-automations";
+
+// Structured data for search: what this page is, tied to the business entry in Base.astro.
+const pageData = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "https://nuxyautomation.com/demos/",
+  url: "https://nuxyautomation.com/demos/",
+  name: "Demos and example work",
+  about: { "@id": "https://nuxyautomation.com/#business" },
+};
 ---
 <Base title="Demos & Example Work · Nuxy Automation" description="Try the lead follow-up demo, a demo salon with booking and reminders, example websites and the open-source code behind them. Every business shown is made up." wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(pageData)} />
   <section class="dm-hero">
     <div class="wrap">
       <p class="eyebrow">Demos</p>
-      <h1>See it working before you spend a dollar.</h1>
+      <h1>See It Working Before You Spend a Dollar</h1>
       <p class="lead">Every demo here uses a made-up business and sends nothing to anyone. They show how the services work; none of them is a client result.</p>
       <nav class="jump" aria-label="On this page">
         <a class="chip" href="#try"><Icon name="play" />Lead follow-up demo</a>
@@ -30,7 +42,7 @@ const repo = "https://github.com/Nuxy1/small-business-automations";
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Interactive demo</p>
-        <h2 id="try-h">One quote request, from first message to booked visit</h2>
+        <h2 id="try-h">One Quote Request, from First Message to Booked Visit</h2>
         <p>Step through what the customer sees and what the owner sees. Press Start, or pick any step.</p>
       </div>
       <LeadDemo />
@@ -44,7 +56,7 @@ const repo = "https://github.com/Nuxy1/small-business-automations";
         <span class="salon-icon"><Icon name="calendarCheck" /></span>
         <span class="salon-text">
           <span class="eyebrow">Demo salon</span>
-          <h2 id="salon-h">Booking, reminders and missed-call text-back on a made-up salon</h2>
+          <h2 id="salon-h">Booking, Reminders and Missed-Call Text-Back on a Made-Up Salon</h2>
           <span>See what a client sees when they book online, the reminder they get the day before, the text that goes out when a call is missed, and the review request after the visit.</span>
         </span>
         <span class="text-link" aria-hidden="true">Open the demo salon<Icon name="arrowRight" /></span>
@@ -56,7 +68,7 @@ const repo = "https://github.com/Nuxy1/small-business-automations";
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Example websites</p>
-        <h2 id="websites-h">What a Nuxy website looks like</h2>
+        <h2 id="websites-h">What a Nuxy Website Looks Like</h2>
         <p>Open any of them to switch between the desktop and phone view.</p>
       </div>
       <DemoSites />
@@ -68,13 +80,13 @@ const repo = "https://github.com/Nuxy1/small-business-automations";
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">For the technical details</p>
-        <h2 id="technical-h">Working automations, with the code</h2>
+        <h2 id="technical-h">Working Automations, with the Code</h2>
         <p>Four automations, published as open source with their own automated tests and plain-English docs. Each example page shows a made-up business’s week: what came in, what went out and how messy data was handled.</p>
       </div>
       <ul class="examples grid-2" role="list">
         {examples.map((e) => (
           <li class="example">
-            <h3><a href={`/work/${e.slug}/`}>{e.title}</a></h3>
+            <h3><a href={`/work/${e.slug}/`}>{titleCase(e.title)}</a></h3>
             <p>{e.problem}</p>
             <p class="example-meta"><Icon name="lightning" />{e.speed}, measured on a desktop PC</p>
             <p class="example-svc">Service: <a href={`/solutions/#${e.service.id}`}>{serviceById[e.service.id].name}</a>, {serviceById[e.service.id].price}</p>
@@ -93,7 +105,7 @@ const repo = "https://github.com/Nuxy1/small-business-automations";
     <div class="wrap">
       <div class="cta-band">
         <div>
-          <h2>Want this for your business?</h2>
+          <h2>Want This for Your Business?</h2>
           <p>Tell us what you’d like to fix. Within one business day you’ll get a written plan with the exact price. No call needed.</p>
         </div>
         <div class="cta-actions">
@@ -117,7 +129,7 @@ const repo = "https://github.com/Nuxy1/small-business-automations";
   .salon { display: grid; gap: 16px 24px; padding: clamp(22px, 3vw, 32px); border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); color: inherit; text-decoration: none; transition: border-color 160ms ease-out; }
   .salon:hover { color: inherit; border-color: var(--hairline-strong); }
   @media (min-width: 900px) { .salon { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; } }
-  .salon-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: rgba(34, 211, 238, 0.1); color: var(--cyan); }
+  .salon-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: rgb(var(--cyan-rgb) / 0.1); color: var(--cyan); }
   .salon-icon :global(.icon) { width: 26px; height: 26px; }
   .salon-text { display: grid; gap: 8px; color: var(--body); }
   .salon-text .eyebrow { margin: 0; }

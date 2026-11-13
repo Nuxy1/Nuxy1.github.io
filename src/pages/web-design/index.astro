@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // /web-design/: the website levels hub. Four levels (Business, Signature, Immersive, Flagship) with what each one is
 // for, the price, what it looks like (the same made-up café at three levels, then three concept projects), the
 // comparison meters, the expectation matrix, why immersive work costs more, the add-ons, where each level ends with
@@ -69,7 +70,7 @@ const ld = [
   <section class="wd-hero">
     <div class="wrap">
       <p class="eyebrow">Website levels</p>
-      <h1>Pick the website your business actually needs.</h1>
+      <h1>Pick the Website Your Business Actually Needs</h1>
       <p class="lead">Four levels, from a fast site that brings in calls to a launch people remember. Each one has a clear price, a timeline and a list of what it includes, so you can see what the money buys before we talk.</p>
       <div class="wd-actions">
         <a class="button" href="#finder">Find your level</a>
@@ -83,7 +84,7 @@ const ld = [
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Choose your experience</p>
-        <h2 id="levels-h">Four levels, each one a step up</h2>
+        <h2 id="levels-h">Four Levels, Each One a Step Up</h2>
         <p>Most local businesses do best with Business. The levels above it are for brands where the website itself has to persuade.</p>
       </div>
       <LevelRail />
@@ -94,11 +95,11 @@ const ld = [
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">What does this actually look like?</p>
-        <h2 id="preview-h">One café, three levels</h2>
+        <h2 id="preview-h">One Café, Three Levels</h2>
         <p>The same made-up coffee shop, built three ways. Switch between them to see what changes: the words stay, the motion and depth step up.</p>
       </div>
       <ThreeLevels />
-      <h3 class="wd-sub">Concept projects at each level</h3>
+      <h3 class="wd-sub">Concept Projects at Each Level</h3>
       <DemoSites only={["fernway-lawn", "lantern-row-barbers", "halvane-audio"]} level="h4" />
     </div>
   </section>
@@ -107,7 +108,7 @@ const ld = [
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Compare</p>
-        <h2 id="compare-h">How the levels compare</h2>
+        <h2 id="compare-h">How the Levels Compare</h2>
         <p>Six things that change from level to level, each on a four-step scale: Basic, Enhanced, Advanced, Bespoke.</p>
       </div>
       <LevelCompare />
@@ -118,7 +119,7 @@ const ld = [
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">What to expect</p>
-        <h2 id="expect-h">What each level includes</h2>
+        <h2 id="expect-h">What Each Level Includes</h2>
       </div>
       <LevelMatrix />
     </div>
@@ -128,12 +129,12 @@ const ld = [
     <div class="wrap wd-two">
       <div>
         <p class="eyebrow">Fair question</p>
-        <h2 id="cost-h">Why does an immersive website cost more?</h2>
+        <h2 id="cost-h">Why Does an Immersive Website Cost More?</h2>
         <p>It isn’t the same site with effects added. It is more work at every step, and every step is there to make it load fast and work for everyone.</p>
       </div>
       <ol class="wd-reasons" role="list">
         {costReasons.map((r, i) => (
-          <li><span class="wd-n">{String(i + 1).padStart(2, "0")}</span><div><h3>{r.title}</h3><p>{r.text}</p></div></li>
+          <li><span class="wd-n">{String(i + 1).padStart(2, "0")}</span><div><h3>{titleCase(r.title)}</h3><p>{r.text}</p></div></li>
         ))}
       </ol>
     </div>
@@ -143,7 +144,7 @@ const ld = [
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Add-ons</p>
-        <h2 id="add-h">Add one piece without moving up a level</h2>
+        <h2 id="add-h">Add One Piece Without Moving Up a Level</h2>
         <p>Each one says which levels it fits. Prices are starting points, confirmed in your written quote before anything starts.</p>
       </div>
       <ul class="wd-adds" role="list">
@@ -158,13 +159,13 @@ const ld = [
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Good to know</p>
-        <h2 id="scope-h">Timelines, revisions and where each level ends</h2>
+        <h2 id="scope-h">Timelines, Revisions and Where Each Level Ends</h2>
         <p>So the quote holds no surprises. Anything outside a level is available at another level or as an add-on.</p>
       </div>
       <div class="wd-scope">
         {levels.map((l) => (
           <article class="wd-scope-item" aria-labelledby={`sc-${l.id}`}>
-            <h3 id={`sc-${l.id}`}>{l.name}</h3>
+            <h3 id={`sc-${l.id}`}>{titleCase(l.name)}</h3>
             <dl>
               <div><dt>Timeline</dt><dd>{l.timeline}</dd></div>
               <div><dt>Revisions</dt><dd>{l.revisions}</dd></div>
@@ -181,13 +182,13 @@ const ld = [
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Works at every level</p>
-        <h2 id="auto-h">Add automation, so the website keeps working after hours</h2>
+        <h2 id="auto-h">Add Automation, So the Website Keeps Working After Hours</h2>
         <p>Any level can connect to the automations we build. Each one is priced on its own.</p>
       </div>
       <ul class="wd-flows" role="list">
         {flows.map((f) => (
           <li class="panel">
-            <h3>{f.title}</h3>
+            <h3>{titleCase(f.title)}</h3>
             <ol class="wd-steps" role="list">{f.steps.map((s) => <li>{s}</li>)}</ol>
             <p class="wd-flow-svc">{f.services.map((id, j) => (<>{j > 0 && " · "}<a href={where(id)}>{serviceById[id].name}</a>&nbsp;{serviceById[id].price}</>))}</p>
           </li>
@@ -201,7 +202,7 @@ const ld = [
     <div class="wrap wd-two">
       <div>
         <p class="eyebrow">Find your website level</p>
-        <h2 id="finder-h">Five quick questions</h2>
+        <h2 id="finder-h">Five Quick Questions</h2>
         <p>Answer five questions and we’ll suggest a level, with the reason. Nothing is sent until you choose to get in touch, and you can ask about any level you like.</p>
       </div>
       <Recommender />
@@ -210,7 +211,7 @@ const ld = [
 
   <section class="section" id="faq" aria-labelledby="faq-h">
     <div class="wrap faq-wrap">
-      <h2 id="faq-h">Questions about website levels</h2>
+      <h2 id="faq-h">Questions About Website Levels</h2>
       <div class="faq">
         {levelFaqs.map((f) => (
           <details>
@@ -226,7 +227,7 @@ const ld = [
     <div class="wrap">
       <div class="cta-band">
         <div>
-          <h2>Tell us about your project</h2>
+          <h2>Tell Us About Your Project</h2>
           <p>Within one business day you’ll get a written plan: the level we’d suggest, what we’d build, the price and the timeline. If a smaller level does the job, we’ll say so.</p>
         </div>
         <div class="cta-actions">

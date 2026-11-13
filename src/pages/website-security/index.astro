@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // Website security, health checks and repairs (brief 5: the headline, the supporting text, the four section names and
 // the three button labels are the brief's words). Offers come from data/services.ts `health`; the only prices shown are
 // published ones (quick fixes, Website Care) or "quoted in writing". Rules this page must keep, checked by
@@ -56,8 +57,22 @@ const faqs: [string, string][] = [
   ["Why do you need written authorization for a security assessment?", "Because testing a website’s security without the owner’s permission is not something we do, even with good intentions. The written scope protects you: it says who approved the work, what we may test, and what we must leave alone."],
   ["What does it cost?", `The health consultation is free. Small fixes start at ${fixes.price.replace("from ", "")}. Larger repairs and security assessments are quoted in writing after the free look, as a fixed price you approve before any work starts.`],
 ];
+
+// Structured data for search: what this page is, tied to the business entry in Base.astro.
+const pageData = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "https://nuxyautomation.com/website-security/#service",
+  name: "Website health checks, repairs and security assessments",
+  serviceType: "Website health check, repair and security assessment",
+  url: "https://nuxyautomation.com/website-security/",
+  description: "Free website health consultation, repairs at a fixed written price, and security assessments done only with the owner’s written authorization.",
+  provider: { "@id": "https://nuxyautomation.com/#business" },
+  areaServed: [{ "@type": "AdministrativeArea", name: "Southern Minnesota" }, { "@type": "Country", name: "United States" }],
+};
 ---
-<Base title="Website Security, Health Checks & Repairs · Nuxy Automation" description="Free website health consultation, repairs at a fixed written price, and security assessments done only with the owner’s written authorization." wide>
+<Base title="Website Security Checks & Repairs · Nuxy Automation" description="Free website health consultation, repairs at a fixed written price, and security assessments done only with the owner’s written authorization." wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(pageData)} />
   <div class="wrap ws">
   <section class="ws-hero cine-host">
     <CinematicLoop id="security" backdrop eager />
@@ -72,7 +87,7 @@ const faqs: [string, string][] = [
     </div>
     </div>
     <aside class="panel ws-first" aria-labelledby="ws-first-h">
-      <h2 id="ws-first-h">Before anything is tested or changed</h2>
+      <h2 id="ws-first-h">Before Anything Is Tested or Changed</h2>
       <ul role="list">
         <li><span class="ws-icon"><Icon name="eye" /></span><p><strong>A free look</strong>Only at what any visitor can see. Nothing is tested and nothing is changed.</p></li>
         <li><span class="ws-icon"><Icon name="lockSimple" /></span><p><strong>Your written yes</strong>Security testing and repairs start only after the website’s owner approves them in writing.</p></li>
@@ -82,7 +97,7 @@ const faqs: [string, string][] = [
   </section>
 
   <section class="ws-section" id="services" aria-labelledby="offers-h">
-    <h2 id="offers-h">Four ways we can help</h2>
+    <h2 id="offers-h">Four Ways We Can Help</h2>
     <p class="ws-sub">Start with the free look. Everything after it is optional, and priced in writing before it starts.</p>
     <div class="ws-offers">
       {health.map((o) => (
@@ -94,7 +109,7 @@ const faqs: [string, string][] = [
               <span>{o.priceNote}</span>
             </p>
           </div>
-          <h3>{o.name}</h3>
+          <h3>{titleCase(o.name)}</h3>
           <p>{o.text}</p>
           <ul class="ticks">
             {(o.id === "maintenance" ? carePoints : o.points).map((p) => <li><Icon name="check" />{p}</li>)}
@@ -109,19 +124,19 @@ const faqs: [string, string][] = [
   </section>
 
   <section class="ws-section" id="authorization" aria-labelledby="auth-h">
-    <h2 id="auth-h">What needs your written authorization</h2>
+    <h2 id="auth-h">What Needs Your Written Authorization</h2>
     <p class="ws-sub">A public website is not an invitation to test it. Here is exactly where the line is.</p>
     <div class="ws-lines">
       <div class="panel ws-line">
-        <h3><Icon name="eye" />Without authorization, we only</h3>
+        <h3><Icon name="eye" />Without Authorization, We Only</h3>
         <ul class="ticks">{open.map((t) => <li><Icon name="check" />{t}</li>)}</ul>
       </div>
       <div class="panel ws-line">
-        <h3><Icon name="lockSimple" />Only with your written authorization</h3>
+        <h3><Icon name="lockSimple" />Only with Your Written Authorization</h3>
         <ul class="ticks">{gated.map((t) => <li><Icon name="check" />{t}</li>)}</ul>
       </div>
       <div class="panel ws-line ws-never">
-        <h3><Icon name="x" />Never, even with authorization</h3>
+        <h3><Icon name="x" />Never, Even with Authorization</h3>
         <ul class="ticks">{never.map((t) => <li><Icon name="x" />{t}</li>)}</ul>
       </div>
     </div>
@@ -129,32 +144,32 @@ const faqs: [string, string][] = [
   </section>
 
   <section class="ws-section" aria-labelledby="flow-h">
-    <h2 id="flow-h">How it works</h2>
+    <h2 id="flow-h">How It Works</h2>
     <ol class="ws-flow" role="list">
       {flow.map((s, i) => (
-        <li><span class="ws-num" aria-hidden="true">{i + 1}</span><div><h3>{s.title}</h3><p>{s.text}</p></div></li>
+        <li><span class="ws-num" aria-hidden="true">{i + 1}</span><div><h3>{titleCase(s.title)}</h3><p>{s.text}</p></div></li>
       ))}
     </ol>
   </section>
 
   <section class="ws-section" aria-labelledby="limits-h">
-    <h2 id="limits-h">What we promise, and what we don’t</h2>
+    <h2 id="limits-h">What We Promise, and What We Don’t</h2>
     <ul class="ws-limits" role="list">
       {limits.map((l) => (
-        <li><Icon name={l.icon} /><div><h3>{l.title}</h3><p>{l.text}</p></div></li>
+        <li><Icon name={l.icon} /><div><h3>{titleCase(l.title)}</h3><p>{l.text}</p></div></li>
       ))}
     </ul>
   </section>
 
   <section class="ws-section" aria-labelledby="ws-faq-h">
-    <h2 id="ws-faq-h">Common questions</h2>
+    <h2 id="ws-faq-h">Common Questions</h2>
     <dl class="ws-faq">
       {faqs.map(([q, a]) => (<div><dt>{q}</dt><dd>{a}</dd></div>))}
     </dl>
   </section>
 
   <section class="ws-section ws-cta" aria-labelledby="ws-cta-h">
-    <h2 id="ws-cta-h">Start with a free look at your website</h2>
+    <h2 id="ws-cta-h">Start with a Free Look at Your Website</h2>
     <p>Tell us your website’s address and what worries you. Within one business day you’ll hear back from a person, with what we saw and what we’d do first. Nothing is tested, changed or charged until you agree in writing.</p>
     <div class="ws-actions">
       <a class="button" href={ask(check.want)} data-track="cta_ws_check">{check.cta}</a>

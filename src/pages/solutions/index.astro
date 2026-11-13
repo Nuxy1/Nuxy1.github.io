@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../../lib/title-case";
 // Every service, grouped, with search and a "kind of business" filter (brief 1, phase 6). All words, prices and ids
 // come from data/services.ts, so a change there shows up here, on the homepage and in the contact form.
 // - Each card keeps its service id as its anchor: outreach emails and old homepage links (/#follow-up, redirected
@@ -52,7 +53,7 @@ const examples = filterKinds.filter((k) => k.example);
   <section class="sol-hero">
     <div class="wrap">
       <p class="eyebrow">Services and prices</p>
-      <h1>Every service, with its price written down.</h1>
+      <h1>Every Service, with Its Price Written Down</h1>
       <p class="lead">{services.length} services for small businesses, each with a one-time price. Each shows what it fixes, what you get, what it needs from you, what other companies charge and whether a monthly plan fits. Pick what fits, or tell us the problem and we’ll suggest the smallest fix.</p>
       <ul class="sol-facts" role="list">
         <li><Icon name="sealCheck" />Price agreed in writing before you pay</li>
@@ -101,7 +102,7 @@ const examples = filterKinds.filter((k) => k.example);
           {/* old category anchors (/solutions/#save-time and the like, from before brief 4) land on the new category */}
           {g.legacy.filter((old) => !serviceById[old]).map((old) => <span id={old} class="old-anchor" />)}
           <div class="group-head">
-            <h2 id={`${g.id}-h`}>{g.title}</h2>
+            <h2 id={`${g.id}-h`}>{titleCase(g.title)}</h2>
             <p>{g.lead}</p>
           </div>
           <div class="grid-3 cards">
@@ -112,9 +113,9 @@ const examples = filterKinds.filter((k) => k.example);
 
       <div class="empty panel" data-empty hidden>
         <Icon name="magnifyingGlass" />
-        <h2>Nothing matches that yet</h2>
+        <h2>Nothing Matches That Yet</h2>
         <p>Try another word, or <button type="button" class="link-button" data-reset>show every service</button>. Or describe the problem in your own words and we’ll tell you what would fix it, with a price.</p>
-        <a class="button small" href="/contact/" data-track="cta_solutions_empty">Describe the problem</a>
+        <a class="button small" href="/contact/" data-track="cta_solutions_empty">Get a Free Quote</a>
       </div>
     </div>
   </section>
@@ -123,13 +124,13 @@ const examples = filterKinds.filter((k) => k.example);
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">By industry</p>
-        <h2 id="ind-h">What gets automated, business by business</h2>
+        <h2 id="ind-h">What Gets Automated, Business by Business</h2>
         <p>Examples of what we’d set up and why it helps. They describe how the services work, not results from a client.</p>
       </div>
       <ul class="industries" role="list">
         {examples.map((k) => (
           <li>
-            <h3><Icon name={k.icon} />{k.name}</h3>
+            <h3><Icon name={k.icon} />{titleCase(k.name)}</h3>
             <p>{k.example}</p>
             <p class="ind-start">Usually starts with: {k.start.map((id) => serviceById[id].name).join(", ")}{k.bundle && ` · ${bundleById[k.bundle].name}, ${bundleById[k.bundle].price}`}</p>
             <a class="text-link" href={`/solutions/?for=${k.id}`} data-track={`filter_${k.id}`}>Show services for {k.name.toLowerCase()}<Icon name="arrowRight" /></a>
@@ -142,19 +143,19 @@ const examples = filterKinds.filter((k) => k.example);
   <section class="section tight" aria-labelledby="more-h">
     <div class="wrap more-grid">
       <div>
-        <h2 id="more-h">Two or more? It costs less.</h2>
+        <h2 id="more-h">Two or More? It Costs Less.</h2>
         <p>{bundle.text} {" "}<a class="text-link" href="/pricing/#bundles">See the bundles<Icon name="arrowRight" /></a></p>
       </div>
       <div>
-        <h2>Want it looked after?</h2>
+        <h2>Want It Looked After?</h2>
         <p>Every service is a one-time price, and monthly plans are optional. They watch your website or automations after the 30-day launch watch and fix what breaks. {" "}<a class="text-link" href="/pricing/">Pricing and plans<Icon name="arrowRight" /></a></p>
       </div>
       <div id="website-security">
-        <h2>Website broken, or worried about security?</h2>
+        <h2>Website Broken, or Worried About Security?</h2>
         <p>A free website health consultation, repairs at a fixed written price, and security assessments done only with your written authorization. Larger repairs and assessments are quoted after a free look, so they aren’t in the price list above. {" "}<a class="text-link" href="/website-security/">Website security &amp; repairs<Icon name="arrowRight" /></a></p>
       </div>
       <div id="video-creative">
-        <h2>Need a video for your business?</h2>
+        <h2>Need a Video for Your Business?</h2>
         <p>Short video ads, moving menus and product showcases, made with AI video tools and finished by a person. Each one gets its own written quote, so they aren’t in the price list above. {" "}<a class="text-link" href="/creative-studio/">Video &amp; creative studio<Icon name="arrowRight" /></a></p>
       </div>
     </div>
@@ -164,7 +165,7 @@ const examples = filterKinds.filter((k) => k.example);
     <div class="wrap">
       <div class="cta-band">
         <div>
-          <h2>Not sure which one you need?</h2>
+          <h2>Not Sure Which One You Need?</h2>
           <p>Tell us what slows you down. Within one business day you’ll get a written plan with what we’d build and the price. No call needed, and nothing is charged until you agree.</p>
         </div>
         <div class="cta-actions">
@@ -195,12 +196,12 @@ const examples = filterKinds.filter((k) => k.example);
   .search { position: relative; }
   .search :global(.icon) { position: absolute; left: 14px; top: 50%; width: 20px; height: 20px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
   .search input {
-    width: 100%; min-height: 48px; padding: 11px 14px 11px 44px; border: 1px solid var(--hairline-strong); border-radius: 10px;
-    background: #0e1a30; color: var(--ink); font-size: 1rem; line-height: 1.4; transition: border-color 160ms ease-out;
+    width: 100%; min-height: 48px; padding: 11px 14px 11px 44px; border: 1px solid var(--field-line); border-radius: 10px;
+    background: var(--field); color: var(--ink); font-size: 1rem; line-height: 1.4; transition: border-color 160ms ease-out;
   }
   .search input::placeholder { color: var(--muted); }
-  .search input:hover { border-color: #46608f; }
-  .search input:focus { border-color: var(--blue); }
+  .search input:hover { border-color: var(--field-line-hover); }
+  .search input:focus { border-color: var(--blue-line); }
 
   .kinds { display: flex; flex-wrap: wrap; gap: 8px; }
   .kind { position: relative; }
@@ -211,8 +212,8 @@ const examples = filterKinds.filter((k) => k.example);
     transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out;
   }
   .kind span :global(.icon) { flex: none; width: 18px; height: 18px; color: var(--muted); }
-  .kind:hover span { border-color: #46608f; color: var(--ink); }
-  .kind input:checked + span { border-color: var(--blue); background: var(--accent-soft); color: var(--ink); }
+  .kind:hover span { border-color: var(--field-line-hover); color: var(--ink); }
+  .kind input:checked + span { border-color: var(--blue-line); background: var(--accent-soft); color: var(--ink); }
   .kind input:checked + span :global(.icon) { color: var(--link); }
   .kind input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
 

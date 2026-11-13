@@ -15,6 +15,12 @@ export const hitUrl: string = import.meta.env.PUBLIC_HIT_URL ?? "https://preview
 export const calUrl = "";
 // The length of that event type, as the contact page states it. Keep it equal to the event's length.
 export const calMinutes = 15;
+
+// The "Request a callback" form on /contact/ (components/CallbackForm.astro), with its line in the privacy policy and
+// its wording on /contact/thanks/. It needs the inquiry service with callback support (kind=callback, 2026-11-13):
+// deploy that service FIRST, then a site build with this on. An older service refuses every callback request (it asks
+// for an email and a project description), so the form would only ever show its "not sent" message.
+export const callbackForm = true;
 // The booking service's name for the privacy policy, from calUrl's address ("" while calUrl is empty).
 const calHost = calUrl ? new URL(calUrl).hostname.replace(/^www\./, "") : "";
 export const calService = ({ "cal.com": "Cal.com", "calendly.com": "Calendly" } as Record<string, string>)[calHost] ?? calHost;
@@ -29,5 +35,11 @@ export type Person = { name: string; role: string; bio: string; photo?: string }
 export const team: Person[] = [];
 
 // Real client case studies live in ./case-studies.ts (empty until a client agrees in writing to be named).
-export { caseStudies } from "./case-studies";
+export { caseStudies, publishable } from "./case-studies";
 export type { CaseStudyData, CaseShot } from "./case-studies";
+
+// The client handover portal (guided onboarding, approvals and launch steps a customer signs in to). It is being built
+// in the command center and is NOT live: no customer can sign in to anything today. While this is false the site says
+// nothing about a portal anywhere, and no sign-in or onboarding route is published. Turn it on only when the real
+// system is live for customers, and write the /handover/ portal section from real screens of it, with demo data.
+export const handoverPortal = false;

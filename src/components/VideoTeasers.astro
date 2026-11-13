@@ -1,4 +1,5 @@
 ---
+import { titleCase } from "../lib/title-case";
 // The three concept-demonstration videos, shown as small posters where a visitor looks first: under the home
 // page's service cards and on /portfolio/. Without this they were only on /creative-studio/, several screens
 // down, and a visitor who looked for them anywhere else did not find them.
@@ -10,6 +11,7 @@
 import Icon from "./Icon.astro";
 import { demos, demoLabel } from "../data/creative";
 import { demoOf, demosReady, clock } from "../data/cinematic";
+import type { DemoCut } from "../data/cinematic";
 
 interface Props { level?: 2 | 3; headingId?: string; title: string }
 const { level = 3, headingId = "video-teasers-h", title } = Astro.props;
@@ -20,13 +22,18 @@ const ready = demosReady(demos.map((d) => d.id));
 const href = "/creative-studio/#portfolio";
 // where the subject sits in a poster, for the narrow phone crop (the burger is right of centre, its menu type on the left)
 const subject: Record<string, "right"> = { "ember-oak": "right" };
+// A card shows the poster small (132 px wide on a phone, a third of the page on a computer), so the browser is offered
+// the small file too and takes the full poster only where the card is really that big. A 9:16 poster is drawn whole
+// inside the 16:9 box, so it is narrower still. Both pictures of a tall card ask for the same file: one request.
+const thumbs = (m: DemoCut) => (m.posterMobile ? `${m.posterMobile.src} ${m.width * 0.3125}w, ${m.poster.src} ${m.width * 0.75}w` : undefined);
+const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width ? "(min-width: 720px) 120px, 75px" : "(min-width: 720px) 360px, 132px");
 ---
 {ready && (
   <div class="vt reveal">
     <div class="vt-head">
       <div class="vt-intro">
         {level === 2 && <p class="eyebrow">Video work</p>}
-        <Heading id={headingId}>{title}</Heading>
+        <Heading id={headingId}>{titleCase(title)}</Heading>
         <slot name="intro"><p>A car advert, a moving menu board and a product showcase, each for a made-up brand. Made with AI video tools and finished by a person. Open one to watch it in the Creative Studio.</p></slot>
       </div>
       <a class="button secondary" href={href} data-track="cta_video_teasers">Watch the Videos<Icon name="arrowRight" /></a>
@@ -36,8 +43,8 @@ const subject: Record<string, "right"> = { "ember-oak": "right" };
         <li>
           <a class="panel vt-card" href={href} data-track="video_teaser_card">
             <div class:list={["vt-shot", { tall: m.height > m.width }, subject[d.id] && `at-${subject[d.id]}`]}>
-              {m.height > m.width && <img class="vt-back" src={m.poster.src} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" aria-hidden="true" />}
-              <img src={m.poster.src} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" />
+              {m.height > m.width && <img class="vt-back" src={m.poster.src} srcset={thumbs(m)} sizes={shown(m)} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" aria-hidden="true" />}
+              <img src={m.poster.src} srcset={thumbs(m)} sizes={shown(m)} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" />
               <span class="vt-play" aria-hidden="true"><Icon name="play" /></span>
               <span class="vt-time" aria-hidden="true">{clock(m.duration)}</span>
             </div>
@@ -92,8 +99,8 @@ const subject: Record<string, "right"> = { "ember-oak": "right" };
 
   .vt-body { display: grid; gap: 4px; padding: 12px 14px; }
   @media (min-width: 720px) { .vt-body { padding: 16px 20px 18px; } }
-  .vt-label { color: var(--cyan); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .vt-label { color: var(--cyan); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .vt-title { font-size: 1.0625rem; letter-spacing: 0.02em; }
   .vt-cat { color: var(--muted); font-size: 0.875rem; }
-  @media (min-width: 720px) { .vt-label { font-size: 0.75rem; } .vt-title { font-size: 1.1875rem; } }
+  @media (min-width: 720px) { .vt-title { font-size: 1.1875rem; } }
 </style>

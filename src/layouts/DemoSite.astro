@@ -47,7 +47,7 @@ Astro.csp?.insertStyleHash(`sha256-${createHash("sha256").update(optIn).digest("
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
     {fonts.map((f) => <link rel="preload" href={f} as="font" type="font/woff2" crossorigin />)}
   </head>
   <body class={bodyClass}>
@@ -70,7 +70,7 @@ Astro.csp?.insertStyleHash(`sha256-${createHash("sha256").update(optIn).digest("
             <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
           </button>
         </div>
-        <h2 id="nx-drawer-title">What this demo shows</h2>
+        <h2 id="nx-drawer-title">What This Demo Shows</h2>
         <p class="nx-lead"><strong>{demo.name}</strong> is a fictional business. Nuxy Automation built this site to show
           what a {demo.project.toLowerCase()} can do, working end to end.</p>
         <ul class="nx-caps" role="list">

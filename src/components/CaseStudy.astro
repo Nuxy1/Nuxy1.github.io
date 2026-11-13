@@ -1,37 +1,51 @@
 ---
-// One real client story from data/case-studies.ts `caseStudies`. Only add an entry with the client's written consent
-// (recorded in `consent`) and results the client can confirm; each result names where the number came from.
-// Renders nothing without consent, so a half-filled entry can't reach the page.
-// Optional parts (solution, screenshots, before/after, results, quote) appear only when the entry has them.
+// One real client story from data/case-studies.ts `caseStudies`. An entry is shown only when `publishable()` passes:
+// the client's written consent plus the four checks (finished, permission on file, pictures approved, text confirmed).
+// Renders nothing otherwise, so a half-checked entry can't reach a page.
+// Optional parts (location, solution, technologies, screenshots, before/after, video, live link, results, quote)
+// appear only when the entry has them. The live link also needs the client's yes to a link (checks.url).
 import Icon from "./Icon.astro";
-import type { CaseStudyData } from "../data/site";
+import { liveLink, publishable } from "../data/case-studies";
+import type { CaseStudyData } from "../data/case-studies";
 
 interface Props { study: CaseStudyData }
 const { study: c } = Astro.props;
-const ok = Boolean(c?.consent?.trim());
+const ok = publishable(c);
 const shots = c?.shots ?? [];
 const pair = c?.beforeAfter ? [{ label: "Before", ...c.beforeAfter.before }, { label: "After", ...c.beforeAfter.after }] : [];
+const results = c?.results ?? [];
+const link = ok ? liveLink(c) : undefined;
+const device = { desktop: "On a computer", mobile: "On a phone" } as const;
 ---
 {ok && (
-  <article class="case" id={`case-${c.slug}`}>
+  <article class="case" id={`case-${c.slug}`} aria-labelledby={`case-${c.slug}-h`}>
     <header class="case-head">
-      <p class="case-kind">Client project · {c.industry} · {c.location}</p>
-      <h3>{c.business}</h3>
+      <p class="case-kind">Client project · {c.projectType}</p>
+      <h3 id={`case-${c.slug}-h`}>{c.business}</h3>
+      <p class="case-meta">{c.industry}{c.location ? ` · ${c.location}` : ""}</p>
     </header>
     <div class="case-body">
       <div>
-        <h4>The problem</h4>
+        <h4>The Problem</h4>
         <p>{c.problem}</p>
         {c.solution && (
           <>
-            <h4 class="case-next">The solution</h4>
+            <h4 class="case-next">The Solution</h4>
             <p>{c.solution}</p>
           </>
         )}
+        <h4 class="case-next">Services Delivered</h4>
+        <ul class="case-list">{c.services.map((s) => <li>{s}</li>)}</ul>
       </div>
       <div>
-        <h4>What we built</h4>
+        <h4>What It Does</h4>
         <ul class="ticks">{c.built.map((b) => <li><Icon name="check" />{b}</li>)}</ul>
+        {c.tech && c.tech.length > 0 && (
+          <>
+            <h4 class="case-next">Built With</h4>
+            <p class="case-tech">{c.tech.join(" · ")}</p>
+          </>
+        )}
       </div>
     </div>
     {pair.length > 0 && (
@@ -47,16 +61,25 @@ const pair = c?.beforeAfter ? [{ label: "Before", ...c.beforeAfter.before }, { l
     {shots.length > 0 && (
       <div class="case-shots">
         {shots.map((s) => (
-          <figure>
+          <figure class:list={{ phone: s.device === "mobile" }}>
             <img src={s.src} alt={s.alt} width={s.width} height={s.height} loading="lazy" decoding="async" />
-            {s.caption && <figcaption>{s.caption}</figcaption>}
+            {(s.device || s.caption) && <figcaption>{[s.device && device[s.device], s.caption].filter(Boolean).join(": ")}</figcaption>}
           </figure>
         ))}
       </div>
     )}
-    {c.results.length > 0 && (
+    {c.video && (
+      <figure class="case-video">
+        <video controls playsinline preload="none" poster={c.video.poster} width={c.video.width} height={c.video.height} aria-label={c.video.label}>
+          <source src={c.video.src} />
+          {c.video.captions && <track kind="captions" src={c.video.captions} srclang="en" label="English" default />}
+        </video>
+        <figcaption>{c.video.label}</figcaption>
+      </figure>
+    )}
+    {results.length > 0 && (
       <dl class="case-results">
-        {c.results.map((r) => (
+        {results.map((r) => (
           <div>
             <dt>{r.label}</dt>
             <dd><span class="case-value">{r.value}</span><span class="case-source">Source: {r.source}</span></dd>
@@ -70,18 +93,27 @@ const pair = c?.beforeAfter ? [{ label: "Before", ...c.beforeAfter.before }, { l
         <footer>{c.quote.name}, {c.business}</footer>
       </blockquote>
     )}
+    {link && (
+      <p class="case-actions">
+        <a class="button secondary small" href={link} target="_blank" rel="noopener" data-track="case_study_live">Visit the live website<span class="sr-only"> of {c.business} (opens in a new tab)</span><Icon name="arrowUpRight" /></a>
+      </p>
+    )}
   </article>
 )}
 
 <style>
   .case { display: grid; gap: 20px; padding: 28px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
   .case-kind { color: var(--cyan); font-size: 0.8125rem; font-weight: 600; margin-bottom: 4px; }
+  .case-meta { margin-top: 4px; color: var(--muted); font-size: 0.9375rem; }
   .case-body { display: grid; gap: 20px; }
   .case h4 { margin-bottom: 8px; color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
   .case-next { margin-top: 16px; }
+  .case-list { display: grid; gap: 6px; margin: 0; padding-left: 1.1em; color: var(--body); }
+  .case-tech { color: var(--body); font-size: 0.9375rem; }
   .case-pair, .case-shots { display: grid; gap: 16px; }
   .case figure { display: grid; gap: 8px; margin: 0; align-content: start; }
-  .case figure img { display: block; width: 100%; height: auto; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg-2); }
+  .case figure img, .case-video video { display: block; width: 100%; height: auto; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg-2); }
+  .case figure.phone { max-width: 280px; }
   .case figcaption { color: var(--muted); font-size: 0.8125rem; }
   .case-pair figcaption { font-weight: 600; }
   .case-results { display: grid; gap: 12px; margin: 0; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
@@ -90,8 +122,9 @@ const pair = c?.beforeAfter ? [{ label: "Before", ...c.beforeAfter.before }, { l
   .case-results dd { display: grid; gap: 4px; margin: 4px 0 0; }
   .case-value { color: var(--ink); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   .case-source { color: var(--muted); font-size: 0.8125rem; }
-  .case-quote { margin: 0; padding-left: 16px; border-left: 3px solid var(--blue); }
+  .case-quote { margin: 0; padding-left: 16px; border-left: 3px solid var(--blue-line); }
   .case-quote p { color: var(--ink); font-size: 1.0625rem; }
   .case-quote footer { margin-top: 8px; color: var(--muted); font-size: 0.875rem; }
+  .case-actions { margin: 0; }
   @media (min-width: 760px) { .case-body, .case-pair { grid-template-columns: 1fr 1fr; } .case-shots { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
 </style>

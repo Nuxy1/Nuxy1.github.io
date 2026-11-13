@@ -15,6 +15,8 @@
 // Renders nothing at all (no box, no script) when the loop is not listed in data/cinematic-manifest.json.
 import { loopOf } from "../data/cinematic";
 
+// eager: the poster is in the first screen and is usually the biggest thing in it, so it is fetched ahead of the other
+// pictures (fetchpriority high); every other loop's poster is lazy and low.
 interface Props { id: string; mode?: "view" | "hover"; class?: string; /** the poster is in the first screen: load it with the page */ eager?: boolean; backdrop?: boolean }
 const { id, mode = "view", class: className, eager = false, backdrop = false } = Astro.props;
 const loop = loopOf(id);
@@ -23,7 +25,7 @@ const loop = loopOf(id);
   <div class:list={["cine", { backdrop }, className]} data-cine={mode} data-sources={JSON.stringify(loop.sources)} data-mobile={loop.mobile ? JSON.stringify(loop.mobile) : undefined} aria-hidden="true">
     <picture>
       {loop.posterMobile && <source media="(max-width: 640px)" srcset={loop.posterMobile.src} />}
-      <img src={loop.poster.src} alt="" width={loop.width} height={loop.height} loading={eager ? "eager" : "lazy"} decoding="async" fetchpriority={eager ? undefined : "low"} />
+      <img src={loop.poster.src} alt="" width={loop.width} height={loop.height} loading={eager ? "eager" : "lazy"} decoding="async" fetchpriority={eager ? "high" : "low"} />
     </picture>
     <video muted loop playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback width={loop.width} height={loop.height}></video>
   </div>

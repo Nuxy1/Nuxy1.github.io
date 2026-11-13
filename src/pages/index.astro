@@ -1,34 +1,74 @@
 ---
-// Homepage (conversion brief, 2026-11), in the order a visitor decides: what Nuxy does, the four services most
-// businesses start with, the automations working, a goal picker, a price estimate, example work, three ways to start,
-// the five steps, one trust band and one next step. Services and prices come from data/services.ts; nothing on this
-// page is a client result. Section ids avoid the old one-page anchors that Base.astro forwards (any service, plan or
-// bundle id, "services", "plans", "work", ...), or the forwarding script would send the visitor away.
+import { titleCase } from "../lib/title-case";
+// Homepage (website improvement brief, 2026-11), in the order a visitor decides: what Nuxy does in three categories,
+// the four website levels with their prices, the concept demonstrations, the automations working, the five steps,
+// handover in short, one trust band, the first questions and one next step. The goal picker and the price estimator
+// have their own pages (/automation/ and /pricing/) and are linked from under the demos; the full handover account is
+// on /handover/ (approvals 87, owner's yes 2026-11-13).
+// Services and prices come from data/services.ts and data/tiers.ts; nothing on this page is a client result. Section
+// ids avoid the old one-page anchors that Base.astro forwards (any service, plan or bundle id, "services", "plans",
+// "faq", "work", ...), or the forwarding script would send the visitor away.
 import Base from "../layouts/Base.astro";
 import Icon from "../components/Icon.astro";
 import AutomationCore from "../components/AutomationCore.astro";
 import CinematicLoop from "../components/CinematicLoop.astro";
 import AutopilotDemos from "../components/AutopilotDemos.astro";
-import AutomateSelector from "../components/AutomateSelector.astro";
-import PackageEstimator from "../components/PackageEstimator.astro";
 import DemoSites from "../components/DemoSites.astro";
 import CaseStudy from "../components/CaseStudy.astro";
 import VideoTeasers from "../components/VideoTeasers.astro";
+import LevelRail from "../components/levels/LevelRail.astro";
 import { demos as videoDemos } from "../data/creative";
 import { demosReady } from "../data/cinematic";
-import { levels } from "../data/tiers";
+import { steps, services, plans, health, faqs, areas, automationFrom, dollars, money, variantById } from "../data/services";
+import { callbackForm, inbox, caseStudies, publishable } from "../data/site";
+import { arrangements, handoverSteps } from "../data/handover";
+import type { IconName } from "../components/Icon.astro";
 
 // the home page links to the video portfolio only when all three demo videos have real, checked files
 const hasVideos = demosReady(videoDemos.map((d) => d.id));
-import { featured, tiers, steps, services, areas, automationFrom, dollars, money, variantById } from "../data/services";
-import { inbox, caseStudies } from "../data/site";
-import type { IconName } from "../components/Icon.astro";
+// a client project reaches the page only with written consent and its checks (data/case-studies.ts); none today
+const hasClients = caseStudies.some(publishable);
 
 // The cheapest and dearest one-time prices, for search engines' price range: read from the price list so it can't drift.
 const oneTime = services.flatMap((s) => [s, ...(s.variants ?? [])]).map((s) => dollars(s.price)).filter(Boolean);
-// The hero's price line: the smallest website and the smallest automation setup, from the price list. (Monthly plans
-// are optional on every one-time service, which is what "no required monthly contract" says.)
-const startPrices = [`Websites from ${variantById["starter-website"].price}`, `Automations from ${automationFrom}`, "No required monthly contract"];
+const websiteFrom = variantById["starter-website"].price;
+const care = plans[0];
+// The hero's price line: the smallest website and the smallest automation setup, from the price list, each a link to
+// where that price is explained. (Monthly plans are optional on every one-time service, which is what "no required
+// monthly contract" says.)
+const startPrices: { text: string; href?: string }[] = [
+  { text: `Websites from ${websiteFrom}`, href: "#website-levels" },
+  { text: `Automations from ${automationFrom}`, href: "/pricing/" },
+  { text: "No required monthly contract" },
+];
+
+// The three kinds of work. Every service in the catalogue sits under one of them, and each card's price is the
+// smallest published price in that kind. The security page is linked once on this page, from the third card.
+type Category = { icon: IconName; title: string; text: string; price: string; href: string; cta: string; track: string; more: [string, string][] };
+const categories: Category[] = [
+  { icon: "browser", title: "Websites & Digital Experiences",
+    text: "A website sized to your business, from a clear one-page site to a custom interactive experience. Also online stores, and redesigns of the site you already have.",
+    price: `Websites from ${websiteFrom}, one-time`, href: "/web-design/", cta: "Compare website levels", track: "cta_cat_websites",
+    more: [["Business websites", "/websites/"], ["Online stores", "/ecommerce/"], ["Website redesigns", "/websites/#redesign"]] },
+  { icon: "lightning", title: "AI & Business Automation",
+    text: "Every inquiry answered and followed up, calls picked up by an AI receptionist, bookings and reminders sent for you, and the tools you already use connected.",
+    price: `One-time setups from ${automationFrom}`, href: "/automation/", cta: "See automation services", track: "cta_cat_automation",
+    more: [["AI Voice Receptionist", "/automation/#voice"], ["Lead response and follow-up", "/automation/#lead-response"], ["Monthly automation plans", "/pricing/#plans"]] },
+  { icon: "shieldCheck", title: "Website Care & Security",
+    text: `A ${health[0].price.toLowerCase()} website health consultation, monthly care that keeps a website working, repairs when it doesn’t, and security assessments done only with the owner’s written authorization.`,
+    price: `${care.name} ${care.price}, optional`, href: "/website-security/", cta: "See care, repairs and security", track: "cta_home_security",
+    more: [["Website Care plan", `/pricing/#${care.id}`], ["How handover works", "/handover/"]] },
+];
+
+// Easy handover: three steps, each said only in words the published terms already use (data/services.ts `steps`,
+// /websites/#ownership and /policies/). Nothing here describes the client portal, which is not open to customers.
+// The first questions an owner asks, taken word for word from the price list's questions (/pricing/#faq has them all).
+const firstQuestions = ["Who owns what you build?", "Do I have to sign up for a monthly plan?", "What if something breaks after launch?", "How do I pay?", "Do we need to get on a call?", "Can you promise more customers or a top Google ranking?"];
+const homeFaqs = firstQuestions.map((q) => {
+  const found = faqs.find(([question]) => question === q);
+  if (!found) throw new Error(`home page: no published answer for “${q}” in data/services.ts`);
+  return found;
+});
 
 // The one trust band: each line is a published term (/policies/, /websites/#ownership), said once on this page.
 const trust: { icon: IconName; title: string; text: string }[] = [
@@ -71,41 +111,24 @@ const business = {
     })),
   },
 };
-// the early levels strip (website levels brief, 2026-11): three website levels with a page each, then automation
-const strip = [
-  ...levels.filter((l) => l.page).map((l) => ({ name: `${l.name} website`, promise: l.promise, href: l.page as string })),
-  { name: "Automation", promise: "Built to save time", href: "/automation/" },
-];
 ---
-<Base title="Nuxy Automation · Websites, Online Stores & Automation · Faribault, MN" wide>
+<Base title="Nuxy Automation · Websites, Automation & Website Care" wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(business)} />
 
   <section class="hero cine-host" data-hero>
     <CinematicLoop id="hero" backdrop eager />
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow">Websites, online stores & automation · Faribault, MN</p>
-        <h1><span>Stop Missing Leads.</span> <span>Save Time.</span> <span>Grow Your Business.</span></h1>
-        <p class="hero-lead">Nuxy builds websites, AI-powered automations, lead follow-up and customer messaging for small businesses. We set it up, connect the tools you already use, and keep it simple.</p>
+        <p class="eyebrow">Websites, automation & website care · Faribault, MN</p>
+        <h1><span>Build Smarter.</span> <span>Grow Faster.</span></h1>
+        <p class="hero-lead">Premium websites, intelligent automation and dependable digital systems, built around your business. Clear prices in writing, and everything set up in your own accounts.</p>
         <div class="hero-actions">
-          <a class="button" href="/contact/" data-track="cta_hero">Get My Free Automation Plan<Icon name="arrowRight" /></a>
-          <a class="button secondary" href="#autopilot" data-track="cta_see_working"><Icon name="play" />See It Working</a>
+          <a class="button" href="/contact/" data-track="cta_hero">Get a Free Quote<Icon name="arrowRight" /></a>
+          <a class="button secondary" href="#portfolio" data-track="cta_explore_work">Explore Our Work</a>
         </div>
-        <div class="hero-price-clip"><ul class="hero-price" aria-label="Starting prices">{startPrices.map((p) => <li>{p}</li>)}</ul></div>
+        <div class="hero-price-clip"><ul class="hero-price" aria-label="Starting prices">{startPrices.map((p) => <li>{p.href ? <a href={p.href}>{p.text}</a> : p.text}</li>)}</ul></div>
       </div>
       <AutomationCore />
-    </div>
-  </section>
-
-  <section class="levels-strip" aria-labelledby="ls-h">
-    <div class="wrap">
-      <h2 id="ls-h">Four ways we can help</h2>
-      <ul>
-        {strip.map((s) => (
-          <li><a href={s.href}><span class="ls-name">{s.name}</span><span class="ls-promise">{s.promise}</span><Icon name="arrowRight" /></a></li>
-        ))}
-      </ul>
-      <p><a class="text-link" href="/web-design/">Compare website levels and prices<Icon name="arrowRight" /></a></p>
     </div>
   </section>
 
@@ -114,22 +137,23 @@ const strip = [
       <div class="section-head">
         <p class="eyebrow">What we do</p>
         <h2 id="do-h">What Can Nuxy Do for Your Business?</h2>
-        <p>Four places most small businesses start, each with its starting price.</p>
+        <p>Three kinds of work, each with its starting price.</p>
       </div>
-      <div class="grid-4">
-        {featured.map((p) => (
-          <article class="prim reveal">
-            <span class="prim-icon"><Icon name={p.icon} /></span>
-            <p class="prim-outcome">{p.outcome}</p>
-            <h3>{p.title}</h3>
-            <p>{p.text}</p>
-            <p class="prim-price">{p.price}{p.note && <span class="prim-note">{p.note}</span>}</p>
-            <a class="text-link" href={p.href}>{p.cta}<Icon name="arrowRight" /></a>
+      <div class="grid-3">
+        {categories.map((c) => (
+          <article class="prim cat reveal">
+            <span class="prim-icon"><Icon name={c.icon} /></span>
+            <h3>{titleCase(c.title)}</h3>
+            <p>{c.text}</p>
+            <ul class="cat-more" role="list">
+              {c.more.map(([label, href]) => <li><a href={href}>{label}</a></li>)}
+            </ul>
+            <p class="prim-price">{c.price}</p>
+            <a class="text-link" href={c.href} data-track={c.track}>{c.cta}<Icon name="arrowRight" /></a>
           </article>
         ))}
       </div>
       <p class="more"><a class="text-link" href="/solutions/" data-track="cta_services">See all {services.length} services<Icon name="arrowRight" /></a></p>
-      <p class="note also-note"><Icon name="shieldCheck" /><span>Already have a website that’s broken, slow or showing a security warning? We also do <a href="/website-security/" data-track="cta_home_security">website health checks, repairs and authorized security assessments</a>, starting with a free look.</span></p>
       {!hasVideos && (
         <p class="note also-note"><Icon name="filmSlate" /><span>Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person.</span></p>
       )}
@@ -143,53 +167,47 @@ const strip = [
     </div>
   </section>
 
-  <AutopilotDemos />
-
-  <AutomateSelector />
-
-  <PackageEstimator />
+  <section class="section band" id="website-levels" aria-labelledby="levels-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Website levels and prices</p>
+        <h2 id="levels-h">Four Website Levels, From Simple to Bespoke</h2>
+        <p>Each level adds design, motion and engineering, and the price follows the work. Interactive 3D and scroll storytelling start at Immersive: they are not part of Business or Signature.</p>
+      </div>
+      <LevelRail compact />
+      <p class="more">
+        <a class="button" href="/web-design/" data-track="cta_levels_compare">Compare Website Levels<Icon name="arrowRight" /></a>
+        <a class="button secondary" href="/contact/" data-track="cta_tiers_quote">Get a Free Quote</a>
+        <a class="text-link" href="/pricing/" data-track="cta_pricing_preview">See all pricing<Icon name="arrowRight" /></a>
+      </p>
+    </div>
+  </section>
 
   <section class="section" id="portfolio" aria-labelledby="portfolio-h">
     <div class="wrap">
       <div class="web-head">
         <div class="section-head">
-          <p class="eyebrow">Our work</p>
-          <h2 id="portfolio-h">See What We Build, on a Computer and a Phone</h2>
-          <p>Example websites and an online store for made-up businesses, each labeled as a demonstration. Open one to try it at full size.</p>
+          <p class="eyebrow">Our work · concept demonstrations</p>
+          <h2 id="portfolio-h">{hasClients ? "Client Projects and Concept Demonstrations" : "Concept Demonstrations: Real Websites for Made-Up Businesses"}</h2>
+          <p>{hasClients
+            ? "The client projects come first and are shown with written permission. The concept demonstrations after them are websites and an online store for made-up businesses, built to show what Nuxy can build. Open one to try it at full size, on a computer or a phone."
+            : "None of them is a client project. They are websites and an online store built to show what Nuxy can build. Open one to try it at full size, on a computer or a phone."}</p>
         </div>
         <div class="web-actions">
           <a class="button secondary" href="/portfolio/" data-track="cta_portfolio">See the full portfolio<Icon name="arrowRight" /></a>
         </div>
       </div>
       <DemoSites />
-      {caseStudies.length > 0 && <div class="cases">{caseStudies.map((c) => <CaseStudy study={c} />)}</div>}
+      {hasClients && <div class="cases">{caseStudies.filter(publishable).map((c) => <CaseStudy study={c} />)}</div>}
     </div>
   </section>
 
-  <section class="section band" id="start-small" aria-labelledby="tiers-h">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Pricing</p>
-        <h2 id="tiers-h">Start Small. Upgrade When It Makes Sense.</h2>
-        <p>Three ways in, with today’s starting prices. Every price is one-time unless it says monthly.</p>
-      </div>
-      <div class="grid-3">
-        {tiers.map((t) => (
-          <article class="prim tier reveal">
-            <span class="prim-icon"><Icon name={t.icon} /></span>
-            <h3>{t.name}</h3>
-            <p>{t.who}</p>
-            <p class="tier-price">{t.price}<span class="prim-note">{t.priceNote}</span></p>
-            <ul class="ticks">{t.points.map((pt) => <li><Icon name="check" />{pt}</li>)}</ul>
-          </article>
-        ))}
-      </div>
-      <p class="more">
-        <a class="button" href="/pricing/" data-track="cta_pricing_preview">See All Pricing<Icon name="arrowRight" /></a>
-        <a class="button secondary" href="/contact/" data-track="cta_tiers_quote">Get a Free Quote</a>
-      </p>
-    </div>
-  </section>
+  <AutopilotDemos>
+    <ul class="tools" slot="after" role="list">
+      <li><a class="tool" href="/automation/#what-to-automate" data-track="cta_home_picker"><span class="tool-name">What Do You Want to Automate?</span><span class="tool-text">Pick a goal to see the best fits and their starting prices.</span><Icon name="arrowRight" /></a></li>
+      <li><a class="tool" href="/pricing/#package" data-track="cta_home_estimator"><span class="tool-name">Build Your Automation Package</span><span class="tool-text">Choose what your business needs and see an estimated starting price.</span><Icon name="arrowRight" /></a></li>
+    </ul>
+  </AutopilotDemos>
 
   <section class="section" id="how" aria-labelledby="how-h">
     <div class="wrap">
@@ -202,7 +220,7 @@ const strip = [
         {steps.map((s, i) => (
           <li class="step reveal">
             <span class="step-num" aria-hidden="true">{i + 1}</span>
-            <h3><span class="sr-only">Step {i + 1}: </span>{s.title}</h3>
+            <h3><span class="sr-only">Step {i + 1}: </span>{titleCase(s.title)}</h3>
             <p>{s.text}</p>
           </li>
         ))}
@@ -210,7 +228,29 @@ const strip = [
     </div>
   </section>
 
-  <section class="section band" id="why-nuxy" aria-labelledby="why-h">
+  <section class="section band" id="handover" aria-labelledby="handover-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Easy handover</p>
+        <h2 id="handover-h">Your Website. Your Control. None of the Technical Headaches.</h2>
+        <p>From getting your website online to connecting your business tools, Nuxy helps make the complicated parts simple. We guide you through the decisions that matter and handle the technical work covered by your project.</p>
+      </div>
+      <ol class="ho-steps">
+        {handoverSteps.map((s, i) => <li class="ho-step"><span class="ho-num" aria-hidden="true">{i + 1}</span>{s.title}</li>)}
+      </ol>
+      <dl class="ho-ways">
+        {arrangements.map((a) => (
+          <div class="ho-way">
+            <dt>{a.title}</dt>
+            <dd><span class="ho-tag">{a.tag}</span>{a.text}</dd>
+          </div>
+        ))}
+      </dl>
+      <p class="more"><a class="button secondary" href="/handover/" data-track="cta_handover">How Handover Works<Icon name="arrowRight" /></a></p>
+    </div>
+  </section>
+
+  <section class="section" id="why-nuxy" aria-labelledby="why-h">
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Why Nuxy</p>
@@ -220,28 +260,47 @@ const strip = [
         {trust.map((t) => (
           <li class="reveal">
             <Icon name={t.icon} />
-            <h3>{t.title}</h3>
+            <h3>{titleCase(t.title)}</h3>
             <p>{t.text}</p>
           </li>
         ))}
       </ul>
-      <p class="trust-foot"><Icon name="mapPin" /><span>Based in Faribault, Minnesota. We work with businesses in {areas.slice(0, -2).join(", ")}, {areas.at(-2)} and {areas.at(-1)}, and remotely anywhere in the US. <a href="/about/">About Nuxy</a> · <a href="/websites/#ownership">How ownership and handover work</a></span></p>
+      <p class="trust-foot"><Icon name="mapPin" /><span>Based in Faribault, Minnesota. We work with businesses in {areas.slice(0, -2).join(", ")}, {areas.at(-2)} and {areas.at(-1)}, and remotely anywhere in the US. <a href="/about/">About Nuxy</a> · <a href="/policies/">Our written policies</a></span></p>
+    </div>
+  </section>
+
+  <section class="section band" id="home-faq" aria-labelledby="home-faq-h">
+    <div class="wrap faq-wrap">
+      <div class="section-head">
+        <p class="eyebrow">Questions</p>
+        <h2 id="home-faq-h">What Owners Ask First</h2>
+      </div>
+      <div class="faq">
+        {homeFaqs.map(([q, a]) => (
+          <details>
+            <summary><span>{q}</span><Icon name="plus" /></summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
+      <p class="more"><a class="text-link" href="/pricing/#faq">All questions about prices and paying<Icon name="arrowRight" /></a></p>
     </div>
   </section>
 
   <section class="final" aria-labelledby="final-h" data-final>
     <div class="wrap"><div class="final-box">
-      <h2 id="final-h">Ready to Improve Your Business Online?</h2>
-      <p>Tell us about your business and what you need. You’ll get a written recommendation and a fixed price within one business day. No sales call is required.</p>
+      <h2 id="final-h">A Fixed Price in Writing Within One Business Day</h2>
+      <p>Tell us about your business and what you need. The price comes with a written recommendation, and no sales call is required.</p>
       <div class="final-actions">
-        <a class="button" href="/contact/" data-track="cta_final">Get My Free Automation Plan<Icon name="arrowRight" /></a>
+        <a class="button" href="/contact/" data-track="cta_final">Get a Free Quote<Icon name="arrowRight" /></a>
+        {callbackForm && <a class="final-mail" href="/contact/#callback" data-track="cta_final_callback"><Icon name="phone" />Request a callback</a>}
         <a class="final-mail" href={`mailto:${inbox}`}><Icon name="envelopeSimple" />{inbox}</a>
       </div>
     </div></div>
   </section>
 
   {/* Phones only, and only with the script: one quote button that comes in after the hero and steps aside wherever
-      the page already offers the next step (the estimator, the final box, the footer). Closing it lasts the visit. */}
+      the page already offers the next step (the final box, the footer). Closing it lasts the visit. */}
   <div class="sticky-cta" data-sticky hidden>
     <a class="button" href="/contact/" data-track="cta_sticky">Get a Free Quote<Icon name="arrowRight" /></a>
     <button type="button" class="sticky-x" data-sticky-close aria-label="Hide the quote button"><Icon name="x" /></button>
@@ -249,14 +308,14 @@ const strip = [
 </Base>
 
 <script>
-  // The phone quote button. No scroll listener: an observer says when the hero, the estimator, the final box or the
-  // footer is on screen, and the button shows only when none of them is.
+  // The phone quote button. No scroll listener: an observer says when the hero, the final box or the footer is on
+  // screen, and the button shows only when none of them is.
   const bar = document.querySelector<HTMLElement>("[data-sticky]");
   const KEY = "nuxy-quote-bar";
   let closed = false;
   try { closed = sessionStorage.getItem(KEY) === "off"; } catch {}
   if (bar && !closed && "IntersectionObserver" in window) {
-    const quiet = [...document.querySelectorAll("[data-hero], #package, [data-final], footer")];
+    const quiet = [...document.querySelectorAll("[data-hero], [data-final], footer")];
     const seen = new Set<Element>();
     const set = (on: boolean) => { bar.classList.toggle("is-on", on); bar.inert = !on; };
     const io = new IntersectionObserver((entries) => {
@@ -279,11 +338,12 @@ const strip = [
   .hero { position: relative; padding: clamp(48px, 8vw, 104px) 0 clamp(56px, 8vw, 96px); overflow: hidden; }
   .hero::before {
     content: ""; position: absolute; inset: -20% -10% auto; height: 80%; pointer-events: none;
-    background: radial-gradient(60% 60% at 70% 30%, rgba(59, 130, 246, 0.16), transparent 70%);
+    background: radial-gradient(60% 60% at 70% 30%, rgb(var(--blue-rgb) / 0.16), transparent 70%);
   }
   .hero-grid { position: relative; display: grid; gap: clamp(40px, 6vw, 64px); align-items: center; }
-  /* (each sentence on its own line on wide screens; the headline is a little smaller than other pages' so both fit) */
-  .hero h1 { font-size: clamp(2.25rem, 1.2rem + 3vw, 3.125rem); }
+  /* (two short sentences, each kept whole: side by side where they fit, one per line where they don't) */
+  /* the hero type token from DESIGN.md, to the letter */
+  .hero h1 { font-size: clamp(2.25rem, 1.3rem + 3.6vw, 3.75rem); line-height: 1.06; letter-spacing: -0.035em; }
   .hero h1 span { display: inline-block; }
   .hero-lead { max-width: 54ch; margin-top: 22px; font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem); color: var(--body); }
   .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
@@ -292,32 +352,10 @@ const strip = [
   .hero-price-clip { margin-top: 20px; overflow: hidden; }
   .hero-price { display: flex; flex-wrap: wrap; gap: 6px 0; margin: 0 0 0 -15px; list-style: none; color: var(--body); font-size: 0.875rem; font-weight: 500; }
   .hero-price li { padding: 0 12px 0 14px; border-left: 1px solid var(--hairline-strong); line-height: 1.3; }
+  .hero-price a { display: inline-block; padding-block: 6px; margin-block: -6px; color: inherit; text-decoration: underline; text-decoration-color: var(--hairline-strong); text-underline-offset: 3px; }
+  .hero-price a:hover { color: var(--ink); text-decoration-color: currentColor; }
   @media (min-width: 1024px) { .hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); } }
   @media (max-width: 479px) { .hero-actions .button { width: 100%; } }
-  @media (max-width: 359px) { .hero-actions .button { padding-inline: 12px; font-size: 0.9375rem; } } /* (the long label stays on one line at 320) */
-
-  /* the levels strip: text only, one hairline row under the hero (2x2 on tablets, a list on phones) */
-  .levels-strip { padding: 0 0 clamp(32px, 5vw, 56px); }
-  .levels-strip h2 { margin-bottom: 14px; color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
-  .levels-strip ul { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--hairline); }
-  .levels-strip li { border-bottom: 1px solid var(--hairline); }
-  .levels-strip li a { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 12px; min-height: 64px; padding: 12px 4px; color: var(--ink); text-decoration: none; }
-  .ls-name { font-weight: 650; }
-  .ls-promise { grid-row: 2; color: var(--body); font-size: 0.9375rem; }
-  .levels-strip li a :global(.icon) { grid-row: 1 / 3; grid-column: 2; width: 18px; height: 18px; color: var(--link); }
-  .levels-strip p { margin-top: 12px; }
-  @media (min-width: 640px) {
-    .levels-strip ul { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
-  }
-  @media (min-width: 1024px) {
-    .levels-strip ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .levels-strip li a :global(.icon) { transition: transform var(--dur-1) var(--ease-out); }
-    .levels-strip li a:hover .ls-name { color: var(--link); }
-    .levels-strip li a:hover :global(.icon) { transform: translateX(3px); }
-  }
-
 
   .prim { display: flex; flex-direction: column; gap: 12px; padding: 24px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
   .prim-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
@@ -336,9 +374,11 @@ const strip = [
     .prim .text-link :global(.icon) { transition: transform var(--dur-1) var(--ease-out); }
     .prim:hover .text-link :global(.icon) { transform: translateX(3px); }
   }
-  .tier { gap: 10px; }
-  .prim .tier-price { padding-block: 12px; border-block: 1px solid var(--hairline-soft); color: var(--ink); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
-  .tier-price .prim-note { letter-spacing: 0; }
+  /* a category card's smaller links: the pages inside that kind of work */
+  .cat h3 { font-size: 1.3125rem; }
+  .cat-more { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 2px 0 0; padding: 0; list-style: none; }
+  .cat-more a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--hairline); border-radius: 999px; color: var(--body); font-size: 0.875rem; font-weight: 500; text-decoration: none; }
+  .cat-more a:hover { border-color: var(--hairline-strong); color: var(--ink); }
   .more { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 32px; }
   .more .text-link { display: inline-flex; align-items: center; min-height: 44px; }
   @media (max-width: 479px) { .more .button { flex: 1 1 100%; } }
@@ -363,10 +403,33 @@ const strip = [
     .step p { grid-column: 3; padding-top: 8px; }
   }
 
+  /* under the demos: the goal picker and the price estimator have their own pages; two plain rows lead to them */
+  .tools { display: grid; margin-top: clamp(28px, 4vw, 40px); border-top: 1px solid var(--hairline); list-style: none; }
+  .tools > li { display: grid; } /* (both rows of a pair end on the same line when one text wraps) */
+  .tool { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; align-items: center; align-content: start; min-height: 44px; padding: 18px 0; border-bottom: 1px solid var(--hairline); color: var(--body); text-decoration: none; }
+  .tool-name { color: var(--ink); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
+  .tool-text { grid-column: 1; font-size: 0.9375rem; }
+  .tool :global(.icon) { grid-column: 2; grid-row: 1; width: 1.25rem; height: 1.25rem; color: var(--link); transition: transform 160ms var(--ease); }
+  .tool:hover .tool-name { text-decoration: underline; text-underline-offset: 4px; }
+  .tool:hover :global(.icon) { transform: translateX(3px); }
+  @media (min-width: 880px) { .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; } }
+
+  /* easy handover, in short: the three steps as one numbered row, then the two arrangements by name. What each step
+     covers, and the notes on contracts and platforms, are on /handover/ */
+  .ho-steps { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .ho-step { display: flex; align-items: center; gap: 12px; color: var(--ink); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
+  .ho-num { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--button); color: #fff; font-size: 0.9375rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  @media (min-width: 880px) { .ho-steps { grid-template-columns: repeat(3, auto); justify-content: start; gap: 48px; } }
+  .ho-ways { display: grid; gap: 24px 48px; margin: clamp(28px, 4vw, 40px) 0 0; padding-top: clamp(24px, 3vw, 32px); border-top: 1px solid var(--hairline); }
+  .ho-way dt { color: var(--ink); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
+  .ho-way dd { max-width: 62ch; margin: 6px 0 0; color: var(--body); font-size: 0.9375rem; }
+  .ho-tag { display: block; margin-bottom: 4px; color: var(--cyan); font-size: 0.875rem; font-weight: 600; }
+  @media (min-width: 720px) { .ho-ways { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
   /* one trust band: five short promises. One column on a phone, three then two from 720px, five across from 1100px */
   .trust { display: grid; gap: 14px; list-style: none; }
   .trust li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 2px 14px; align-content: start; padding: 18px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
-  .trust li > :global(.icon) { grid-row: span 2; width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: rgba(34, 211, 238, 0.1); color: var(--cyan); }
+  .trust li > :global(.icon) { grid-row: span 2; width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: rgb(var(--cyan-rgb) / 0.1); color: var(--cyan); }
   .trust h3 { font-size: 1.0625rem; }
   .trust p { grid-column: 2; color: var(--body); font-size: 0.9375rem; }
   @media (min-width: 720px) {
@@ -387,7 +450,7 @@ const strip = [
   .final-box {
     padding: clamp(40px, 6vw, 72px) clamp(20px, 5vw, 64px); text-align: center;
     border: 1px solid var(--hairline); border-radius: 24px;
-    background: radial-gradient(80% 120% at 50% 0%, rgba(59, 130, 246, 0.18), transparent 70%), var(--bg-2);
+    background: radial-gradient(80% 120% at 50% 0%, rgb(var(--blue-rgb) / 0.18), transparent 70%), var(--bg-2);
   }
   .final-box h2 { max-width: 22ch; margin-inline: auto; }
   .final-box > p { max-width: 60ch; margin: 18px auto 0; font-size: 1.0625rem; text-wrap: balance; }
@@ -403,6 +466,8 @@ const strip = [
       opacity: 0; visibility: hidden; transform: translateY(12px); transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2);
     }
     .sticky-cta.is-on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+    /* while the bar shows, a control reached by keyboard scrolls to rest above it, not under it */
+    :global(html:has(.sticky-cta.is-on)) { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
     .sticky-cta .button { flex: 1; }
     .sticky-x { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: var(--r-md); background: none; color: var(--muted); cursor: pointer; }
     .sticky-x:hover { color: var(--ink); }
