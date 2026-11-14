@@ -8,16 +8,24 @@ import { titleCase } from "../lib/title-case";
 // requested. Each card carries the "Fictional concept demonstration" label, so the label goes wherever the demo
 // does and a made-up brand is never shown as a client. No price is printed (creative prices are on
 // /creative-studio/ only). It renders nothing unless all three demos have real, checked files.
+// A demo that a shown client project takes the place of (`replaces` in data/case-studies.ts) is left out here; it stays
+// on /creative-studio/ and its files stay. The default intro names only the demos shown.
 import Icon from "./Icon.astro";
 import { demos, demoLabel } from "../data/creative";
 import { demoOf, demosReady, clock } from "../data/cinematic";
+import { replacedDemos } from "../data/case-studies";
 import type { DemoCut } from "../data/cinematic";
 
 interface Props { level?: 2 | 3; headingId?: string; title: string }
 const { level = 3, headingId = "video-teasers-h", title } = Astro.props;
 const Heading = `h${level}` as "h2" | "h3";
 const Title = `h${level + 1}` as "h3" | "h4";
-const items = demos.map((d) => ({ d, m: demoOf(d.id) }));
+const items = demos.filter((d) => !replacedDemos.has(d.id)).map((d) => ({ d, m: demoOf(d.id) }));
+// what each demo is, for the default intro: "A car advert, a moving menu board and a product showcase"
+const kind: Record<string, string> = { "vantage-motors": "a car advert", "ember-oak": "a moving menu board", "noctis-skin": "a product showcase" };
+const kinds = items.map(({ d }) => kind[d.id] ?? d.category.toLowerCase());
+const listed = kinds.length > 1 ? `${kinds.slice(0, -1).join(", ")} and ${kinds.at(-1)}` : (kinds[0] ?? "");
+const intro = `${listed.charAt(0).toUpperCase()}${listed.slice(1)}, each for a made-up brand. Made with AI video tools and finished by a person. Open one to watch it in the Creative Studio.`;
 const ready = demosReady(demos.map((d) => d.id));
 const href = "/creative-studio/#portfolio";
 // where the subject sits in a poster, for the narrow phone crop (the burger is right of centre, its menu type on the left)
@@ -34,11 +42,11 @@ const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width 
       <div class="vt-intro">
         {level === 2 && <p class="eyebrow">Video work</p>}
         <Heading id={headingId}>{titleCase(title)}</Heading>
-        <slot name="intro"><p>A car advert, a moving menu board and a product showcase, each for a made-up brand. Made with AI video tools and finished by a person. Open one to watch it in the Creative Studio.</p></slot>
+        <slot name="intro"><p>{intro}</p></slot>
       </div>
       <a class="button secondary" href={href} data-track="cta_video_teasers">Watch the Videos<Icon name="arrowRight" /></a>
     </div>
-    <ul class="vt-grid" role="list">
+    <ul class="vt-grid" role="list" style={`--vt-n: ${items.length}`}>
       {items.map(({ d, m }) => m && (
         <li>
           <a class="panel vt-card" href={href} data-track="video_teaser_card">
@@ -74,7 +82,7 @@ const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width 
   .vt-card:hover { border-color: var(--link); }
   .vt-card:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   @media (min-width: 720px) {
-    .vt-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    .vt-grid { grid-template-columns: repeat(var(--vt-n, 3), minmax(0, 1fr)); gap: 20px; }
     .vt-card { grid-template-columns: minmax(0, 1fr); align-items: start; align-content: start; }
   }
 

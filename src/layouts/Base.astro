@@ -193,7 +193,7 @@ const isHome = path === "/";
       // Astro builds this script and lists its hash in the page's security policy (astro.config.mjs), so the
       // browser runs it; a script typed straight into the page (is:inline) would be blocked unless it sits above
       // the policy in <head>, like the old-link redirect.
-      import { hitUrl } from "../data/site";
+      import { hitUrl } from "../data/hit";
 
       // The phone menu and the Services list: each closes on a link, a click outside or Escape (focus goes back to
       // its button), and the Services list also closes when the keyboard moves on past it.

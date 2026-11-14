@@ -2,6 +2,7 @@
 import type { APIRoute } from "astro";
 import { examples } from "../data/examples";
 import { demoSites } from "../data/demo-sites";
+import { caseStudies, publishable } from "../data/case-studies";
 
 // (pages marked noindex stay out: the thank-you page, the 404 page and the demonstration websites)
 const unlisted = ["/contact/thanks/", "/404/", "/example-sites/"];
@@ -11,6 +12,8 @@ const paths = Object.keys(import.meta.glob("./**/*.{astro,md}"))
   .filter((p) => !p.includes("[") && !unlisted.some((u) => p.startsWith(u)))
   .concat(examples.map((e) => `/work/${e.slug}/`))
   .concat(demoSites.map((d) => `/examples/${d.slug}/`))
+  // a client project page only once it is published (never a staged one: those are noindex and stage-build only)
+  .concat(caseStudies.filter((c) => publishable(c)).map((c) => `/portfolio/${c.slug}/`))
   .sort();
 
 export const GET: APIRoute = ({ site }) =>

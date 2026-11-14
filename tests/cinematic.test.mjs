@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import { serveDist } from "./serve-dist.mjs";
 import { check, quote, encode, priceText } from "../src/data/creative-estimate.ts";
 import { rules, types, demos, demoLabel, creativeWant, quoteParam } from "../src/data/creative.ts";
+import { caseStudies } from "../src/data/case-studies.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, "..", "dist");
@@ -88,7 +89,9 @@ test("the published build holds exactly the video files the manifest lists, each
     assert.equal(statSync(file).size, f.bytes, `${f.src} is the checked file`);
   }
   const media = join(dist, "media");
-  const there = existsSync(media) ? readdirSync(media).map((n) => `/media/${n}`).sort() : [];
+  // a published client project keeps its pictures in a folder of its own (/media/<client>/, checked by stage.test.mjs)
+  const clientDirs = new Set(caseStudies.flatMap((c) => [...(c.shots ?? []).map((s) => s.src), c.video?.src].filter(Boolean)).map((s) => s.split("/").slice(0, 3).join("/")));
+  const there = existsSync(media) ? readdirSync(media).map((n) => `/media/${n}`).filter((p) => !clientDirs.has(p)).sort() : [];
   assert.deepEqual(there, [...new Set(listed.map((f) => f.src))].sort(), "nothing else is in dist/media");
   // No demo is claimed until all three have real files: the portfolio and its player are then not on the page at all.
   const html = readFileSync(join(dist, "creative-studio", "index.html"), "utf8");

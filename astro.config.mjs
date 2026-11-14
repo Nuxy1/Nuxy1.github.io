@@ -1,5 +1,5 @@
 import { defineConfig } from "astro/config";
-import { cpSync } from "node:fs";
+import { cpSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 // Content Security Policy: GitHub Pages can't send headers, so Astro writes it as a <meta> tag on every page, with a
 // hash for each script and stylesheet it builds. A script that isn't Nuxy's own (one slipped into a page) doesn't
 // run. Beyond the site itself, the only address any page may talk to is the inquiry service (the form and the
-// anonymous counts; `inquiryUrl` and `hitUrl` in src/data/site.ts). If one of those moves to a new address, change it
+// anonymous counts; `inquiryUrl` in src/data/site.ts, `hitUrl` in src/data/hit.ts). If one of those moves to a new address, change it
 // here too, or the form and the counts are blocked (the contact-form test fails). Inline style="" attributes stay
 // allowed for the code colours on the docs pages; they can't run code.
 // Write page scripts as plain <script> blocks so Astro builds and hashes them. An `is:inline` script is blocked,
@@ -32,6 +32,24 @@ const fixture = FIXTURE ? {
     hooks: { "astro:build:done": ({ dir }) => cpSync(join(dirname(FIXTURE), "media"), join(fileURLToPath(dir), "media"), { recursive: true }) },
   }],
 } : {};
+
+// Stage build only (npm run build:stage): NUXY_STAGE=1 builds the site with the client case studies that still wait on
+// the client's written approval (stage/case-studies.ts, in place of the empty src/data/staged-case-studies.ts), and
+// their pictures and video (stage/media, copied into the build). It goes to dist-stage/, for review on this computer.
+// It never writes dist/, the only folder that is published; tests/stage.test.mjs checks that nothing staged is in dist/.
+const STAGE = process.env.NUXY_STAGE === "1";
+if (STAGE && FIXTURE) throw new Error("NUXY_STAGE and CINEMATIC_FIXTURE are separate test builds: set one at a time.");
+const here = dirname(fileURLToPath(import.meta.url));
+const stage = STAGE ? {
+  outDir: "./dist-stage",
+  vite: { resolve: { alias: [{ find: /^.*\/staged-case-studies(\.ts)?$/, replacement: join(here, "stage", "case-studies.ts").replace(/\\/g, "/") }] } },
+  integrations: [{
+    name: "nuxy-stage",
+    // stage/media holds the pictures of a staged project; it is absent while nothing is staged
+    hooks: { "astro:build:done": ({ dir }) => { if (existsSync(join(here, "stage", "media"))) cpSync(join(here, "stage", "media"), join(fileURLToPath(dir), "media"), { recursive: true }); } },
+  }],
+} : {};
+const build = STAGE ? stage : fixture;
 
 // One script file per page: Vite wraps every lazy import() in a small "preload" helper, and once two pages have a lazy
 // import (the quote form's estimate, the Halvane demo's 3D scene) that helper becomes a file of its own that /contact/
@@ -62,8 +80,8 @@ const inlineEmptyPreload = () => ({
 });
 
 export default defineConfig({
-  ...fixture,
-  vite: { ...(fixture.vite || {}), plugins: [inlineEmptyPreload()] },
+  ...build,
+  vite: { ...(build.vite || {}), plugins: [inlineEmptyPreload()] },
   site: "https://nuxyautomation.com",
   markdown: { shikiConfig: { theme: "github-dark-default" } },
   security: {

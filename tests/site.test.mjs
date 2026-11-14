@@ -48,7 +48,7 @@ const indexable = [...pages.keys()].filter((u) => !expectedNoindex.has(u));
 const legacy = JSON.parse(first(pages.get("/"), /const legacy = (\{[^;]*\});/));
 
 test("the build has every page, and the made-up data matches the pages", () => {
-  assert.equal(pages.size, 65, `pages: ${[...pages.keys()].join(" ")}`);
+  assert.equal(pages.size, 65 + caseStudies.length, `pages: ${[...pages.keys()].join(" ")}`);
   assert.ok(pages.has("/handover/"), "the handover page");
   for (const sub of ["quote", "services", "projects", "about", "contact"]) assert.ok(pages.has(`/example-sites/fernway-lawn/${sub}/`), `fernway ${sub}`);
   for (const sub of ["services", "barbers", "booking", "gallery", "contact"]) assert.ok(pages.has(`/example-sites/lantern-row-barbers/${sub}/`), `lantern ${sub}`);
@@ -336,7 +336,8 @@ test("pages load nothing from other sites, and every image has alt text", () => 
       ...all(html, /<link\b[^>]*rel="(?:stylesheet|preload|modulepreload|icon|apple-touch-icon|manifest)"[^>]*href="(https?:\/\/[^"]+)"/g),
     ].filter((src) => !src.startsWith(origin + "/"));
     assert.deepEqual(outside, [], `${u} loads from another site`);
-    for (const img of html.match(/<img\b[^>]*>/g) || []) assert.match(img, /\salt="/, `${u}: image without alt: ${img.slice(0, 80)}`);
+    // a decorative picture may carry a bare `alt` (Astro writes alt="" that way), the same as alt=""
+    for (const img of html.match(/<img\b[^>]*>/g) || []) assert.match(img, /\salt(="|[\s>/])/,`${u}: image without alt: ${img.slice(0, 80)}`);
   }
 });
 
@@ -471,6 +472,9 @@ test("a client case study is published only with recorded consent, sourced resul
     }
     assert.ok(home.includes(`id="case-${c.slug}"`), `${c.slug} is on the homepage`);
     assert.ok(pages.get("/portfolio/").includes(`id="case-${c.slug}"`), `${c.slug} is on /portfolio/`);
+    const own = pages.get(`/portfolio/${c.slug}/`);
+    assert.ok(own, `${c.slug} has its project page`);
+    assert.doesNotMatch(own, /noindex/, `${c.slug}: a published project page is indexable`);
   }
   // /portfolio/ says "every business on this page is made up" exactly while that is true
   assert.equal(/Every business on this page is made up/.test(decode(pages.get("/portfolio/"))), caseStudies.length === 0, "the portfolio's made-up note follows the data");
@@ -478,6 +482,15 @@ test("a client case study is published only with recorded consent, sourced resul
   const ids = new Set(caseStudies.map((c) => `case-${c.slug}`));
   for (const [url, html] of pages) {
     for (const m of html.matchAll(/<article class="case[^"]*" id="(case-[^"]+)"/g)) assert.ok(ids.has(m[1]), `${url}: ${m[1]} is not in caseStudies`);
-    if (!caseStudies.length) assert.doesNotMatch(decode(html.replace(/<script[\s\S]*?<\/script>/g, "")), /Client project ·/, `${url} shows a client project`);
+    if (!caseStudies.length) assert.doesNotMatch(decode(html.replace(/<script[\s\S]*?<\/script>/g, "")), /Client project ·|Real Client Website/, `${url} shows a client project`);
+    // the production build never carries a staged preview (stage/case-studies.ts reaches only the stage build)
+    assert.doesNotMatch(html, /Staged preview|data-staged/, `${url} carries a staged client preview`);
   }
+  // a project page exists exactly for each published entry, and the sitemap lists exactly those
+  const own = [...pages.keys()].filter((u) => /^\/portfolio\/[^/]+\/$/.test(u)).sort();
+  assert.deepEqual(own, caseStudies.map((c) => `/portfolio/${c.slug}/`).sort(), "a project page only for a published client project");
+  const map = readFileSync(join(dist, "sitemap.xml"), "utf8");
+  assert.deepEqual([...map.matchAll(/\/portfolio\/([^/<]+)\/</g)].map((m) => m[1]).sort(), caseStudies.map((c) => c.slug).sort(), "the sitemap lists published project pages only");
+  // the quote form's lead-source field exists only while a shown project has a lead source
+  assert.equal(/name="lead"/.test(pages.get("/contact/") ?? ""), caseStudies.some((c) => c.lead), "the quote form's lead field follows the data");
 });

@@ -227,6 +227,7 @@ New text uses one of these steps; sizes outside them (a few 1.3125 and 1.625rem)
 | `/web-design/` | The four website levels (Business, Signature, Immersive, Flagship): the level cards, the comparison tabs, the expectation matrix, the three-levels café, the five-question finder, add-ons, "Why does immersive cost more?", package boundaries, timelines and the levels FAQ |
 | `/business-websites/`, `/signature-websites/`, `/immersive-websites/` | One page per level (`LevelPage.astro`): who it suits, what's included, what's not, timeline and revisions, add-ons, the other levels. There is no Flagship page: Flagship is a written scope, reached from `/contact/?level=flagship` |
 | `/portfolio/` | "Our Work", in three kinds kept apart: client projects (`#clients`, shown only when an entry passes every check in `case-studies.ts`: none today), concept demonstrations (`#concepts`: the example websites and the store, each for a made-up business and labelled so, plus the three video concepts), and interactive experiments (`#technical`: the open-source automations) |
+| `/portfolio/<slug>/` | One client project (`[slug].astro`), built only for an entry that passes `publishable()`; Chrysfadezzz (CHRYS) is published there since 13 November 2026 (indexable, canonical, CreativeWork JSON-LD); the stage build (`npm run build:stage`, `stage/case-studies.ts`, empty now) adds any client still waiting on a yes, with a "Staged preview, not published" note, `noindex` and no JSON-LD. Hero: tags, name, summary, buttons, then on a phone the cover and the facts, all on one left edge; an "On this page" index of the sections (the `/handover/` pill pattern), with a "Back to the sections" link after the closing band; the seven sections the brief names; a Design Showcase (phone and computer frames from `CaseFrame.astro`, each a link to its full file, opened in a `<dialog>` viewer that always shows the whole picture, with caption, "3 of 8", arrows, keys and swipe; closing returns focus to the picture that opened it); a walkthrough video that loads nothing until played; the closing quote band with the entry's lead source |
 | `/solutions/` | Every service, grouped, with search and filters (all services visible without JavaScript) |
 | `/pricing/` | Published one-time prices, the monthly plans, bundle discount, FAQ |
 | `/creative-studio/` | AI Creative & Video Advertising: three kinds of video work with starting prices, what every video includes, the starting-price estimator, the three fictional concept demos (only once all three exist as real files), limits and FAQ. **Its prices are proposed: publishing the page needs the owner's written yes** |
@@ -415,6 +416,10 @@ link in the final box), `cta_handover_quote`, `cta_handover_levels`, `cta_handov
 `cta_handover_callback` (the buttons of `/handover/`), `callback_started` (the first field of the callback form
 is touched; once per page view) and `callback_completed` (sent only after the inquiry service has confirmed that it
 stored the request: a button press is never counted as a lead). None carries a name, a number or anything typed.
+A client project page counts `case_study_walkthrough` (its Watch the Walkthrough button), `cta_case_quote` and
+`cta_case_quote_end` (its two quote buttons), `cta_case_levels` (the website levels link), `case_study_contents` (Back to the sections) and
+`cta_case_portfolio`;
+the card counts `case_study_open` and `case_study_open_cover`.
 `case_study_live` is the “Visit the live website” button of a client case study (`CaseStudy.astro`). It exists
 only when a client entry passes `publishable()` and the client agreed to a link (`checks.url`); with no client
 entries today it is on no page.

@@ -16,15 +16,19 @@ import CaseStudy from "../../components/CaseStudy.astro";
 import VideoTeasers from "../../components/VideoTeasers.astro";
 import { demos } from "../../data/creative";
 import { demosReady } from "../../data/cinematic";
-import { caseStudies, publishable } from "../../data/case-studies";
+import { isStaged, replacedDemos, shownCases } from "../../data/case-studies";
 import { demoSites } from "../../data/demo-sites";
 import { examples } from "../../data/examples";
 import { serviceById } from "../../data/services";
 import { levelById } from "../../data/tiers";
 
 const repo = "https://github.com/Nuxy1/small-business-automations";
-// real client projects: only the ones that pass every check in data/case-studies.ts (CaseStudy renders nothing otherwise)
-const clients = caseStudies.filter((c) => publishable(c));
+// real client projects: the ones that pass every check in data/case-studies.ts, plus, in the stage build only, the ones
+// still waiting on the client's written approval (shownCases; CaseStudy marks those "Staged preview")
+const clients = shownCases;
+const anyStaged = clients.some((c) => isStaged(c));
+// the video demos listed: a demo that a client project replaces is left out (VideoTeasers does the same)
+const videos = demos.filter((d) => !replacedDemos.has(d.id)).length;
 // the video demos are listed here only when all three have real, checked files (the same rule as the gallery)
 const hasVideo = demosReady(demos.map((d) => d.id));
 const isStore = (project: string) => project === "E-commerce store";
@@ -73,7 +77,7 @@ const ld = [
 ];
 const count = (n: number, one: string, many: string) => `${["no", "one", "two", "three", "four", "five", "six"][n] ?? n} ${n === 1 ? one : many}`;
 ---
-<Base title="Portfolio: Concept Websites and a Store · Nuxy Automation" description="Concept websites and a store for made-up businesses, by website level: a landscaper, a barber, a cleaner, a candle shop and a speaker brand." wide>
+<Base title={clients.length === 0 ? "Portfolio: Concept Websites and a Store · Nuxy Automation" : "Portfolio: Client Work, Concept Websites and a Store · Nuxy Automation"} description={`${clients.length === 0 ? "" : `Real client work (${clients.map((c) => c.business).join(", ")}), plus `}${clients.length === 0 ? "Concept" : "concept"} websites and a store for made-up businesses${clients.length === 0 ? ", by website level" : ""}: a landscaper, a barber, a cleaner, a candle shop and a speaker brand.`} wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />
   <section class="pf-hero">
     <div class="wrap pf-grid">
@@ -84,17 +88,17 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
         {clients.length === 0 ? (
           <p class="made-up"><Icon name="info" /><span><strong>These are concept demonstrations, not client projects.</strong> Every business on this page is made up and labeled that way. There are no reviews or results here, because examples have none to show.</span></p>
         ) : (
-          <p class="made-up"><Icon name="info" /><span><strong>Client projects and examples are kept apart.</strong> The client projects are real and shown with each client's written permission. Every example business below them is made up and labeled that way.</span></p>
+          <p class="made-up"><Icon name="info" /><span><strong>Client projects and examples are kept apart.</strong> {anyStaged ? "The client projects are real businesses. This preview is published only once each client approves it in writing." : "The client projects are real and shown with each client's permission."} Every example business below them is made up and labeled that way.</span></p>
         )}
       </div>
       <nav class="jump" aria-labelledby="jump-h">
         <h2 id="jump-h" class="jump-h">On This Page</h2>
         <ul role="list">
-          {clients.length > 0 && <li><a href="#clients"><Icon name="sealCheck" /><span><strong>Client projects</strong><span>Real work, shown with permission</span></span></a></li>}
+          {clients.length > 0 && <li><a href="#clients"><Icon name="briefcase" /><span><strong>Client projects</strong><span>{anyStaged ? "Real work, staged for the client's approval" : "Real work, shown with permission"}</span></span></a></li>}
           {demoSites.map((d) => (
             <li data-tier={d.tier}><a href={`#${d.slug}`}><Icon name={d.icon} /><span><strong>{d.name}</strong><span>{d.project}</span></span></a></li>
           ))}
-          {hasVideo && <li><a href="#video"><Icon name="filmSlate" /><span><strong>Video concept demonstrations</strong><span>Three short videos for made-up brands</span></span></a></li>}
+          {hasVideo && <li><a href="#video"><Icon name="filmSlate" /><span><strong>Video concept demonstrations</strong><span>{count(videos, "short video", "short videos").replace(/^\w/,(c) => c.toUpperCase())} for made-up brands</span></span></a></li>}
           <li><a href="#technical"><Icon name="githubLogo" /><span><strong>Interactive experiments</strong><span>{count(examples.length, "working automation", "working automations").replace(/^\w/, (c) => c.toUpperCase())}</span></span></a></li>
         </ul>
       </nav>
@@ -105,9 +109,9 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
     <section class="section" id="clients" aria-labelledby="clients-h">
       <div class="wrap">
         <div class="section-head">
-          <p class="eyebrow">Client projects</p>
+          <p class="eyebrow">Real client projects</p>
           <h2 id="clients-h">Work for Real Businesses</h2>
-          <p>Each one is shown with the client's written permission.</p>
+          <p>{anyStaged ? "Real websites for real businesses. This is a staged preview: a project goes live here only once its client approves it in writing." : "Each one is shown with the client's permission."}</p>
         </div>
         <div class="clients">{clients.map((c) => <CaseStudy study={c} />)}</div>
       </div>

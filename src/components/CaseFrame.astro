@@ -1,0 +1,50 @@
+---
+// One picture of a real client project (data/case-studies.ts `shots`) in a device frame: a browser window (three dots
+// in a top bar, no address shown) for a computer shot, or a rounded phone for a phone shot. Used by CaseCover (the card
+// and the project page's top) and by the project page's Design Showcase. Without a `shot`, the frame holds whatever
+// is put inside it (the project page's walkthrough video, in a browser window).
+// `decorative`: the picture sits inside a figure that already names it (CaseCover), so its own alt text is left empty.
+// `zoom`: the picture links to its largest file, so it can be opened at full size (the showcase on the project page).
+import Icon from "./Icon.astro";
+import type { CaseShot } from "../data/case-studies";
+
+interface Props {
+  shot?: CaseShot;
+  /** without a shot: which frame to draw around the content */
+  device?: "desktop" | "mobile";
+  /** how wide the picture is drawn, for the browser to pick a file from `srcset` */
+  sizes?: string;
+  /** the first thing on screen: load at once and early */
+  eager?: boolean;
+  decorative?: boolean;
+  zoom?: boolean;
+  class?: string;
+}
+const { shot: s, device = s?.device ?? "desktop", sizes, eager = false, decorative = false, zoom = false, class: extra } = Astro.props;
+const phone = device === "mobile";
+// eager pictures decode with the page (no blank frame on first paint); the rest load and decode when near
+const load = eager ? { fetchpriority: "high" as const } : { loading: "lazy" as const, decoding: "async" as const };
+---
+<span class:list={["cf", phone ? "cf-phone" : "cf-desk", extra]}>
+  {!phone && <span class="cf-bar" aria-hidden="true"><i></i><i></i><i></i></span>}
+  {s && zoom && <a class="cf-zoom" href={s.src} data-caption={s.caption}><img src={s.src} srcset={s.srcset} sizes={s.srcset ? sizes : undefined} alt={s.alt} width={s.width} height={s.height} {...load} /><span class="cf-badge" aria-hidden="true"><Icon name="magnifyingGlass" /></span><span class="sr-only"> (open the full-size picture)</span></a>}
+  {s && !zoom && <img src={s.src} srcset={s.srcset} sizes={s.srcset ? sizes : undefined} alt={decorative ? "" : s.alt} width={s.width} height={s.height} {...load} />}
+  {!s && <slot />}
+</span>
+
+<style>
+  .cf { display: block; overflow: hidden; border: 1px solid var(--hairline-strong); background: var(--surface-strong); box-shadow: var(--shadow); }
+  .cf img, .cf :global(video) { display: block; width: 100%; height: auto; }
+  /* a picture that opens at full size: a magnifier badge says so on touch screens too, and a short fade at the
+     bottom edge hides a capture that stops mid-line (the full picture shows every pixel) */
+  .cf-zoom { position: relative; display: block; cursor: zoom-in; }
+  .cf-zoom::after { content: ""; position: absolute; inset: auto 0 0; height: 28px; background: linear-gradient(transparent, var(--surface-strong)); pointer-events: none; }
+  .cf-badge { position: absolute; right: 6px; bottom: 6px; z-index: 1; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); background: rgb(2 5 12 / 0.78); color: var(--ink); }
+  .cf-badge :global(.icon) { width: 16px; height: 16px; }
+  .cf-zoom:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+  .cf-desk { border-radius: var(--r-md); }
+  .cf-bar { display: flex; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--hairline); background: var(--panel); }
+  .cf-bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--hairline-strong); }
+  /* a phone: thick rim, rounder corners; the picture is the phone's whole screen */
+  .cf-phone { border: 3px solid var(--hairline-strong); border-radius: var(--r-lg); background: var(--bg); }
+</style>

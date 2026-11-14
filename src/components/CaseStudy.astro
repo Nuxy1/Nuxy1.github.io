@@ -1,130 +1,72 @@
 ---
-// One real client story from data/case-studies.ts `caseStudies`. An entry is shown only when `publishable()` passes:
-// the client's written consent plus the four checks (finished, permission on file, pictures approved, text confirmed).
-// Renders nothing otherwise, so a half-checked entry can't reach a page.
-// Optional parts (location, solution, technologies, screenshots, before/after, video, live link, results, quote)
-// appear only when the entry has them. The live link also needs the client's yes to a link (checks.url).
+// The card for one real client project (data/case-studies.ts), on the home page and /portfolio/, linking to its
+// project page (/portfolio/<slug>/). It is shown only when `publishable()` passes (the client's written consent plus
+// the four checks), or in the stage build for an entry that still waits on that approval (`isStaged`); then the card
+// says so. It renders nothing otherwise, so a half-checked entry can't reach a page.
+// The live link is shown only when the client agreed to a link as well (`liveLink`, checks.url). The card's category,
+// summary and highlights come from `card`; without one it falls back to the project type, the problem and `built`.
 import Icon from "./Icon.astro";
-import { liveLink, publishable } from "../data/case-studies";
+import CaseCover from "./CaseCover.astro";
+import { isStaged, liveLink, publishable } from "../data/case-studies";
 import type { CaseStudyData } from "../data/case-studies";
 
 interface Props { study: CaseStudyData }
 const { study: c } = Astro.props;
 const ok = publishable(c);
-const shots = c?.shots ?? [];
-const pair = c?.beforeAfter ? [{ label: "Before", ...c.beforeAfter.before }, { label: "After", ...c.beforeAfter.after }] : [];
-const results = c?.results ?? [];
+const staged = !ok && Boolean(c) && isStaged(c);
 const link = ok ? liveLink(c) : undefined;
-const device = { desktop: "On a computer", mobile: "On a phone" } as const;
+const h = `case-${c?.slug}-h`;
+const category = c?.card?.category ?? c?.projectType;
+const summary = c?.card?.description ?? c?.problem;
+const points = c?.card?.highlights ?? c?.built ?? [];
 ---
-{ok && (
-  <article class="case" id={`case-${c.slug}`} aria-labelledby={`case-${c.slug}-h`}>
-    <header class="case-head">
-      <p class="case-kind">Client project · {c.projectType}</p>
-      <h3 id={`case-${c.slug}-h`}>{c.business}</h3>
-      <p class="case-meta">{c.industry}{c.location ? ` · ${c.location}` : ""}</p>
-    </header>
-    <div class="case-body">
-      <div>
-        <h4>The Problem</h4>
-        <p>{c.problem}</p>
-        {c.solution && (
-          <>
-            <h4 class="case-next">The Solution</h4>
-            <p>{c.solution}</p>
-          </>
-        )}
-        <h4 class="case-next">Services Delivered</h4>
-        <ul class="case-list">{c.services.map((s) => <li>{s}</li>)}</ul>
-      </div>
-      <div>
-        <h4>What It Does</h4>
-        <ul class="ticks">{c.built.map((b) => <li><Icon name="check" />{b}</li>)}</ul>
-        {c.tech && c.tech.length > 0 && (
-          <>
-            <h4 class="case-next">Built With</h4>
-            <p class="case-tech">{c.tech.join(" · ")}</p>
-          </>
-        )}
+{(ok || staged) && (
+  <article class="case cs" id={`case-${c.slug}`} aria-labelledby={h} data-staged={staged ? "" : undefined}>
+    {/* the cover opens the project too, for a mouse or a tap; View Project is the one link keyboards and screen readers get */}
+    <a class="cs-cover" href={`/portfolio/${c.slug}/`} tabindex="-1" aria-hidden="true" data-track="case_study_open_cover"><CaseCover study={c} /></a>
+    <div class="cs-copy">
+      <p class="cs-tags">
+        <span class="cs-real"><Icon name="briefcase" />Real Client Website</span>
+        <span class="cs-cat">{category}</span>
+      </p>
+      <h3 id={h} translate="no">{c.business}</h3>
+      <p class="cs-meta">{c.industry}{c.location ? ` in ${c.location}` : ""}</p>
+      <p class="cs-desc">{summary}</p>
+      {points.length > 0 && <ul class="ticks cs-ticks" role="list">{points.map((p) => <li><Icon name="check" />{p}</li>)}</ul>}
+      {staged && <p class="cs-staged"><Icon name="lockSimple" /><span><strong>Staged preview, not published.</strong> It goes live only once the client approves the pictures and details in writing.</span></p>}
+      <div class="cs-actions">
+        <a class="button" href={`/portfolio/${c.slug}/`} data-track="case_study_open">View Project<span class="sr-only">: {c.business}</span><Icon name="arrowRight" /></a>
+        {link && <a class="button secondary" href={link} target="_blank" rel="noopener" data-track="case_study_live">Visit Live Website<span class="sr-only"> of {c.business} (opens in a new tab)</span><Icon name="arrowUpRight" /></a>}
       </div>
     </div>
-    {pair.length > 0 && (
-      <div class="case-pair">
-        {pair.map((s) => (
-          <figure>
-            <figcaption>{s.label}{s.caption ? `: ${s.caption}` : ""}</figcaption>
-            <img src={s.src} alt={s.alt} width={s.width} height={s.height} loading="lazy" decoding="async" />
-          </figure>
-        ))}
-      </div>
-    )}
-    {shots.length > 0 && (
-      <div class="case-shots">
-        {shots.map((s) => (
-          <figure class:list={{ phone: s.device === "mobile" }}>
-            <img src={s.src} alt={s.alt} width={s.width} height={s.height} loading="lazy" decoding="async" />
-            {(s.device || s.caption) && <figcaption>{[s.device && device[s.device], s.caption].filter(Boolean).join(": ")}</figcaption>}
-          </figure>
-        ))}
-      </div>
-    )}
-    {c.video && (
-      <figure class="case-video">
-        <video controls playsinline preload="none" poster={c.video.poster} width={c.video.width} height={c.video.height} aria-label={c.video.label}>
-          <source src={c.video.src} />
-          {c.video.captions && <track kind="captions" src={c.video.captions} srclang="en" label="English" default />}
-        </video>
-        <figcaption>{c.video.label}</figcaption>
-      </figure>
-    )}
-    {results.length > 0 && (
-      <dl class="case-results">
-        {results.map((r) => (
-          <div>
-            <dt>{r.label}</dt>
-            <dd><span class="case-value">{r.value}</span><span class="case-source">Source: {r.source}</span></dd>
-          </div>
-        ))}
-      </dl>
-    )}
-    {c.quote && (
-      <blockquote class="case-quote">
-        <p>“{c.quote.text}”</p>
-        <footer>{c.quote.name}, {c.business}</footer>
-      </blockquote>
-    )}
-    {link && (
-      <p class="case-actions">
-        <a class="button secondary small" href={link} target="_blank" rel="noopener" data-track="case_study_live">Visit the live website<span class="sr-only"> of {c.business} (opens in a new tab)</span><Icon name="arrowUpRight" /></a>
-      </p>
-    )}
   </article>
 )}
 
 <style>
-  .case { display: grid; gap: 20px; padding: 28px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
-  .case-kind { color: var(--cyan); font-size: 0.8125rem; font-weight: 600; margin-bottom: 4px; }
-  .case-meta { margin-top: 4px; color: var(--muted); font-size: 0.9375rem; }
-  .case-body { display: grid; gap: 20px; }
-  .case h4 { margin-bottom: 8px; color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-  .case-next { margin-top: 16px; }
-  .case-list { display: grid; gap: 6px; margin: 0; padding-left: 1.1em; color: var(--body); }
-  .case-tech { color: var(--body); font-size: 0.9375rem; }
-  .case-pair, .case-shots { display: grid; gap: 16px; }
-  .case figure { display: grid; gap: 8px; margin: 0; align-content: start; }
-  .case figure img, .case-video video { display: block; width: 100%; height: auto; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg-2); }
-  .case figure.phone { max-width: 280px; }
-  .case figcaption { color: var(--muted); font-size: 0.8125rem; }
-  .case-pair figcaption { font-weight: 600; }
-  .case-results { display: grid; gap: 12px; margin: 0; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-  .case-results > div { padding: 16px; border-radius: var(--r-md); background: var(--bg-2); }
-  .case-results dt { color: var(--muted); font-size: 0.875rem; }
-  .case-results dd { display: grid; gap: 4px; margin: 4px 0 0; }
-  .case-value { color: var(--ink); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .case-source { color: var(--muted); font-size: 0.8125rem; }
-  .case-quote { margin: 0; padding-left: 16px; border-left: 3px solid var(--blue-line); }
-  .case-quote p { color: var(--ink); font-size: 1.0625rem; }
-  .case-quote footer { margin-top: 8px; color: var(--muted); font-size: 0.875rem; }
-  .case-actions { margin: 0; }
-  @media (min-width: 760px) { .case-body, .case-pair { grid-template-columns: 1fr 1fr; } .case-shots { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
+  .cs {
+    position: relative; display: grid; gap: clamp(24px, 4vw, 48px); align-items: center; scroll-margin-top: 16px;
+    padding: clamp(20px, 4vw, 40px); border: 1px solid rgb(var(--blue-rgb) / 0.4); border-radius: var(--r-lg);
+    background: linear-gradient(160deg, var(--accent-soft), transparent 55%), var(--panel);
+    transition: border-color var(--dur-1) ease;
+  }
+  /* no shadow, glow or lift (DESIGN.md keeps the glow for a hovered filled button, and only the cover and the button
+     are links): the border brightens instead */
+  .cs:hover, .cs:focus-within { border-color: var(--blue-line); }
+  .cs-cover { display: block; color: inherit; }
+  @media (min-width: 960px) { .cs { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); } }
+
+  .cs-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .cs-real { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 10px; border: 1px solid var(--blue-line); border-radius: var(--r-full); background: var(--accent-soft); color: var(--ink); font-size: 0.8125rem; font-weight: 600; }
+  .cs-real :global(.icon) { color: var(--cyan); }
+  .cs-cat { color: var(--cyan); font-size: 0.875rem; font-weight: 600; }
+  .cs h3 { margin-top: 14px; font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem); }
+  .cs-meta { margin-top: 4px; color: var(--muted); font-size: 0.9375rem; }
+  .cs-desc { margin-top: 14px; max-width: 54ch; color: var(--body); }
+  .cs-ticks { display: grid; gap: 8px; margin-top: 18px; color: var(--body); font-size: 0.9375rem; }
+  /* a plain note, not a box inside the card */
+  .cs-staged { display: flex; gap: 8px; align-items: flex-start; margin-top: 18px; color: var(--body); font-size: 0.875rem; }
+  .cs-staged :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
+  .cs-staged strong { color: var(--ink); font-weight: 600; }
+  .cs-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  @media (max-width: 479px) { .cs-actions .button { width: 100%; } }
 </style>

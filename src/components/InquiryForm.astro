@@ -20,6 +20,10 @@ import { groups, plans, variants, bundles, retired, wants, wantsShown, wantOf } 
 import { ask } from "../lib/request";
 import { rules as creativeRules, creativeWant, quoteParam } from "../data/creative";
 import { formLevels, goals, levelById } from "../data/tiers";
+import { leadSources } from "../data/case-studies";
+// (where a visitor came from, when a client project's "Get a Free Quote" named it: ?from=<id>, sent as "lead". Only the
+// shown projects' ids are offered; with none the field isn't on the page at all. The inquiry service keeps the same list.)
+const hasLeads = Object.keys(leadSources).length > 0;
 // ?level=<id> from a website level's button (data/tiers.ts) picks that level, shows the website questions and names it
 // at the top; with no answer to "What do you need?" yet it picks "Website".
 const levelNames = Object.fromEntries([...formLevels.map((l) => [l.id, l.id === "unsure" ? "" : `the ${levelById[l.id as keyof typeof levelById].name} website level (${levelById[l.id as keyof typeof levelById].price.toLowerCase()})`])]);
@@ -32,7 +36,7 @@ const asked: Record<string, { name: string; price: string; want: string; was?: s
 const oldNames: Record<string, string> = { "automation-care": "Automation care" };
 for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], was: oldNames[id] ?? id };
 ---
-<div class="inq" data-inquiry data-services={JSON.stringify(asked)} data-creative={JSON.stringify(creativeRules)} data-creative-param={quoteParam} data-creative-want={creativeWant} data-levels={JSON.stringify(levelNames)}>
+<div class="inq" data-inquiry data-leads={hasLeads ? JSON.stringify(leadSources) : undefined} data-services={JSON.stringify(asked)} data-creative={JSON.stringify(creativeRules)} data-creative-param={quoteParam} data-creative-want={creativeWant} data-levels={JSON.stringify(levelNames)}>
   <form class="inq-form" aria-labelledby="contact-title" method="post" action={inquiryUrl} accept-charset="UTF-8" data-endpoint={inquiryUrl}>
     <p class="inq-legend">Required unless marked optional. Takes about two minutes.</p>
 
@@ -41,6 +45,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       <button class="inq-link" type="button" data-about-clear><span data-about-clear-label>Not this one</span><span class="sr-only" data-about-clear-more>: remove it from the request</span></button>
     </div>
     <input type="hidden" name="service" value="" />
+    {hasLeads && <input type="hidden" name="lead" value="" />}
 
     <fieldset class="field picks" id="f-want" aria-describedby="f-want-help f-want-err">
       <legend>What do you need?</legend>
@@ -454,6 +459,11 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       }).catch(() => { root.dataset.estimate = "unread"; /* (the file did not load: the form works as it does with no code) */ });
     }
     const want = params.get("want") ?? "";
+    // ?from=<id>: the lead source, only an id the page lists (it stays when the visitor changes what they ask about)
+    const leads: Record<string, string> = JSON.parse(root.dataset.leads ?? "{}");
+    const from = params.get("from") ?? "";
+    const leadInput = field("lead");
+    if (leadInput && /^[a-z0-9-]{1,40}$/.test(from) && Object.prototype.hasOwnProperty.call(leads, from)) leadInput.value = from;
     // (several services: the answer most of them belong to, the first one on a tie)
     const answers = ids.map((x) => services[x].want);
     const times = (w: string) => answers.filter((x) => x === w).length;

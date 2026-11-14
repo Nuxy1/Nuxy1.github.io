@@ -20,14 +20,20 @@ import LevelRail from "../components/levels/LevelRail.astro";
 import { demos as videoDemos } from "../data/creative";
 import { demosReady } from "../data/cinematic";
 import { steps, services, plans, health, faqs, areas, automationFrom, dollars, money, variantById } from "../data/services";
-import { callbackForm, inbox, caseStudies, publishable } from "../data/site";
+import { callbackForm, inbox, shownCases, isStaged, replacedDemos } from "../data/site";
 import { arrangements, handoverSteps } from "../data/handover";
 import type { IconName } from "../components/Icon.astro";
 
 // the home page links to the video portfolio only when all three demo videos have real, checked files
 const hasVideos = demosReady(videoDemos.map((d) => d.id));
-// a client project reaches the page only with written consent and its checks (data/case-studies.ts); none today
-const hasClients = caseStudies.some(publishable);
+// a client project reaches the page only with written consent and its checks (data/case-studies.ts): Chrysfadezzz since 13 Nov 2026. The
+// stage build also shows a project still waiting on that consent, marked "Staged preview" (shownCases, isStaged).
+const clients = shownCases;
+const hasClients = clients.length > 0;
+const anyStaged = clients.some((c) => isStaged(c));
+// the video demos shown: one that a client project replaces is left out (VideoTeasers does the same)
+const videoCount = videoDemos.filter((d) => !replacedDemos.has(d.id)).length;
+const videoWord = ["no", "one", "two", "three", "four", "five", "six"][videoCount] ?? String(videoCount);
 
 // The cheapest and dearest one-time prices, for search engines' price range: read from the price list so it can't drift.
 const oneTime = services.flatMap((s) => [s, ...(s.variants ?? [])]).map((s) => dollars(s.price)).filter(Boolean);
@@ -159,8 +165,8 @@ const business = {
       )}
       {hasVideos && (
         <div class="home-video">
-          <VideoTeasers level={3} headingId="home-video-h" title="We Also Make Video: Three Concept Demonstrations">
-            <p slot="intro">Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person. These three are for made-up brands: open one to watch it.</p>
+          <VideoTeasers level={3} headingId="home-video-h" title={`We Also Make Video: ${titleCase(videoWord)} Concept Demonstration${videoCount === 1 ? "" : "s"}`}>
+            <p slot="intro">Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person. {videoCount === 1 ? "This one is for a made-up brand: open it to watch it." : `These ${videoWord} are for made-up brands: open one to watch it.`}</p>
           </VideoTeasers>
         </div>
       )}
@@ -187,18 +193,19 @@ const business = {
     <div class="wrap">
       <div class="web-head">
         <div class="section-head">
-          <p class="eyebrow">Our work · concept demonstrations</p>
+          <p class="eyebrow">{hasClients ? "Our work · real clients and concept demonstrations" : "Our work · concept demonstrations"}</p>
           <h2 id="portfolio-h">{hasClients ? "Client Projects and Concept Demonstrations" : "Concept Demonstrations: Real Websites for Made-Up Businesses"}</h2>
           <p>{hasClients
-            ? "The client projects come first and are shown with written permission. The concept demonstrations after them are websites and an online store for made-up businesses, built to show what Nuxy can build. Open one to try it at full size, on a computer or a phone."
+            ? `The client projects come first: real businesses, ${anyStaged ? "published only once each client approves in writing" : "shown with their permission"}. The concept demonstrations after them are websites and an online store for made-up businesses, built to show what Nuxy can build. Open one to try it at full size, on a computer or a phone.`
             : "None of them is a client project. They are websites and an online store built to show what Nuxy can build. Open one to try it at full size, on a computer or a phone."}</p>
         </div>
         <div class="web-actions">
           <a class="button secondary" href="/portfolio/" data-track="cta_portfolio">See the full portfolio<Icon name="arrowRight" /></a>
         </div>
       </div>
+      {hasClients && <div class="cases">{clients.map((c) => <CaseStudy study={c} />)}</div>}
+      {hasClients && <p class="kind-label"><Icon name="info" /><span><strong>Concept demonstrations</strong> · made-up businesses, built to show what Nuxy can build</span></p>}
       <DemoSites />
-      {hasClients && <div class="cases">{caseStudies.filter(publishable).map((c) => <CaseStudy study={c} />)}</div>}
     </div>
   </section>
 
@@ -388,7 +395,11 @@ const business = {
   @media (max-width: 479px) { .web-actions .button { flex: 1 1 100%; } }
   .also-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; max-width: 80ch; }
   .also-note :global(.icon) { flex: none; margin-top: 0.2em; width: 1.05em; height: 1.05em; }
-  .cases { display: grid; gap: 20px; margin-top: 24px; }
+  .cases { display: grid; gap: 20px; margin-block: 24px clamp(32px, 4vw, 48px); }
+  /* with a client project above them, the concept demos get a label of their own so the two kinds never blur */
+  .kind-label { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 20px; padding-top: 20px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 0.9375rem; }
+  .kind-label strong { color: var(--ink); font-weight: 600; }
+  .kind-label :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
   .home-video { margin-top: clamp(32px, 4vw, 48px); }
 
   /* the five steps as numbered rows: number, title, then the text in its own column on wide screens */

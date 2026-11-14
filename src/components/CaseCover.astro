@@ -1,0 +1,37 @@
+---
+// The cover of a real client project: its first computer shot in a browser frame with its first phone shot beside it,
+// so client work is never shown less finished than made-up work. The phone stands next to the computer, not over it:
+// a real site keeps buttons at the right edge of its first screen, and an overlapping phone would hide them.
+// The figure names what it shows. On the card the two pictures are decorative (the whole cover is one link to the
+// project page). On the project page (`zoom`) each picture opens the full-size viewer like the showcase ones, so the
+// home page can be seen at full size too; then each picture carries its own description.
+// Used on the client card (CaseStudy) and at the top of the project page (/portfolio/<slug>/).
+import CaseFrame from "./CaseFrame.astro";
+import type { CaseStudyData } from "../data/case-studies";
+
+interface Props {
+  study: CaseStudyData;
+  /** the project page's top: the computer picture is the largest thing on screen, so it loads first */
+  eager?: boolean;
+  /** the project page: each picture opens the full-size viewer (never on the card, which is a link already) */
+  zoom?: boolean;
+}
+const { study: c, eager = false, zoom = false } = Astro.props;
+const desk = c.shots?.find((s) => s.device === "desktop");
+const phone = c.shots?.find((s) => s.device === "mobile");
+// How wide each frame is drawn (the card and the project page's top share one layout): the phone is 24% of the
+// column, 96px to 140px; the computer takes the rest, less the gap (about 460px at most).
+const deskSizes = "(min-width: 1200px) 460px, (min-width: 960px) 38vw, calc(100vw - 148px)";
+const phoneSizes = "(min-width: 600px) 140px, 96px";
+---
+{desk && (
+  <figure class:list={["cover", { solo: !phone }]} aria-label={`The ${c.business} website on a computer${phone ? " and a phone" : ""}`}>
+    <CaseFrame shot={desk} sizes={deskSizes} eager={eager} decorative={!zoom} zoom={zoom} class="cover-desk" />
+    {phone && <CaseFrame shot={phone} sizes={phoneSizes} eager={eager} decorative={!zoom} zoom={zoom} class="cover-phone" />}
+  </figure>
+)}
+
+<style>
+  .cover { display: grid; grid-template-columns: minmax(0, 1fr) clamp(96px, 24%, 140px); gap: clamp(12px, 3%, 20px); align-items: center; margin: 0; }
+  .cover.solo { grid-template-columns: minmax(0, 1fr); }
+</style>

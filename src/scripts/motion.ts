@@ -67,8 +67,10 @@ function setupReveals() {
   const els = [...document.querySelectorAll<HTMLElement>(".reveal")];
   if (!els.length || !("IntersectionObserver" in window) || !moving()) return;
   const fold = window.innerHeight;
-  const later = els.filter((el) => {
-    if (el.getBoundingClientRect().top < fold) { el.classList.add("in"); return false; }
+  // read every position first, then change classes: reading after each change would force a layout per element
+  const above = els.map((el) => el.getBoundingClientRect().top < fold);
+  const later = els.filter((el, i) => {
+    if (above[i]) { el.classList.add("in"); return false; }
     return true;
   });
   if (!later.length) return;

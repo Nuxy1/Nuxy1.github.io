@@ -6,8 +6,8 @@ export const inbox = "nuxy@nuxyautomation.com";
 // the private business repo). PUBLIC_INQUIRY_URL overrides it for local tests.
 export const inquiryUrl: string = import.meta.env.PUBLIC_INQUIRY_URL || "https://preview.nuxyautomation.com/inquiry";
 
-// Anonymous page counts (event + page + day; no cookies, no IP, no form contents). Empty string = off.
-export const hitUrl: string = import.meta.env.PUBLIC_HIT_URL ?? "https://preview.nuxyautomation.com/hit";
+// Anonymous page counts: the address lives in ./hit.ts (the browser script on every page imports it from there).
+export { hitUrl } from "./hit";
 
 // A Cal.com or Calendly booking page. Empty = the booking option is not shown anywhere. Set it only once the
 // calendar is configured with its own public event type (never the private calendar): see
@@ -34,8 +34,8 @@ export const shopifyPartner = false;
 export type Person = { name: string; role: string; bio: string; photo?: string };
 export const team: Person[] = [];
 
-// Real client case studies live in ./case-studies.ts (empty until a client agrees in writing to be named).
-export { caseStudies, publishable } from "./case-studies";
+// Real client case studies live in ./case-studies.ts (each one only with the client's consent and four checks).
+export { caseStudies, publishable, shownCases, isStaged, replacedDemos } from "./case-studies";
 export type { CaseStudyData, CaseShot } from "./case-studies";
 
 // The client handover portal (guided onboarding, approvals and launch steps a customer signs in to). It is being built

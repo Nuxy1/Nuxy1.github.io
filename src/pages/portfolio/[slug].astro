@@ -1,0 +1,523 @@
+---
+// The project page for one real client project (data/case-studies.ts), linked from its card (components/CaseStudy.astro)
+// on the home page and /portfolio/. A page exists only for a project the pages show (`shownCases`): one that passes
+// every publication check, or, in the stage build only, one still waiting on the client's written approval. A staged
+// page says so at the top, is kept out of search (noindex) and carries no structured data.
+// Sections follow the brief: Project Overview, The Challenge, The Solution, Features, Design Showcase, Technology and
+// Project Outcome. Each one appears only when the entry has it. There are no numbers, quotes or results here unless the
+// entry has them with a source (an outcome names no number it can't source).
+// The walkthrough video loads nothing until it is played (preload="none"; lazy, so the poster also waits until near).
+// "Get a Free Quote" opens the existing quote form with the project's lead source (?from=<lead id>, see `lead`).
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import CaseCover from "../../components/CaseCover.astro";
+import CaseFrame from "../../components/CaseFrame.astro";
+import { isStaged, liveLink, publishable, shownCases } from "../../data/case-studies";
+import type { CaseStudyData } from "../../data/case-studies";
+import { titleCase } from "../../lib/title-case";
+import { existsSync, statSync } from "node:fs";
+
+export function getStaticPaths() {
+  return shownCases.map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+interface Props { c: CaseStudyData }
+const { c } = Astro.props;
+const staged = !publishable(c) && isStaged(c);
+const link = staged ? undefined : liveLink(c);
+const category = c.card?.category ?? c.projectType;
+const summary = c.card?.description ?? c.problem;
+// the walkthrough download link gives the file's real size (a staged file is in stage/, a published one in public/)
+const videoFile = c.video && ["public", "stage"].map((d) => d + c.video!.src).find((p) => existsSync(p));
+const videoMB = videoFile ? Math.max(1, Math.round(statSync(videoFile).size / 1048576)) : undefined;
+const allDesks = (c.shots ?? []).filter((s) => s.device !== "mobile");
+const allPhones = (c.shots ?? []).filter((s) => s.device === "mobile");
+// The cover at the top already shows the first computer shot and the first phone shot (CaseCover), so the showcase
+// leaves both out when there are others to show.
+const desktops = allDesks.length > 1 ? allDesks.slice(1) : allDesks;
+const phones = allPhones.length > 1 ? allPhones.slice(1) : allPhones;
+// "Built" is plain text: a client project is not one of the catalogue's fixed-price products, so it links to none
+// (no level or price is claimed). The quote form opens on its generic "A new website" pick (data/callback.ts).
+const quote = `/contact/?want=new-website${c.lead ? `&from=${c.lead.id}` : ""}`;
+// "On this page": the page's own sections, in order, only those it has (same pattern as /handover/)
+const contents = ([
+  [Boolean(c.overview), "Project Overview", "#overview-h"],
+  [Boolean(c.problem), "The Challenge", "#challenge-h"],
+  [Boolean(c.solution), "The Solution", "#solution-h"],
+  [Boolean(c.features?.length), "Features", "#features-h"],
+  [desktops.length > 0 || phones.length > 0 || Boolean(c.video), "Design Showcase", "#showcase-h"],
+  [Boolean(c.tech?.length), "Technology", "#tech-h"],
+  [Boolean(c.outcome || c.results?.length || c.quote), "Project Outcome", "#outcome-h"],
+] as const).filter(([has]) => has).map(([, name, href]) => [name, href] as const);
+// How wide each showcase picture is drawn: the first computer shot spans the column (at most 1120px), the others
+// share it in two; a phone is a quarter of the column on a computer, half the screen on a phone.
+const leadSizes = "(min-width: 1200px) 1120px, calc(100vw - 48px)";
+const pairSizes = "(min-width: 1200px) 552px, (min-width: 760px) 46vw, calc(100vw - 48px)";
+const phoneSizes = "(min-width: 1200px) 268px, (min-width: 760px) 22vw, 45vw";
+const site = "https://nuxyautomation.com";
+const ld = staged ? [] : [
+  {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: `${c.business} website`,
+    url: `${site}/portfolio/${c.slug}/`,
+    description: summary,
+    creator: { "@id": `${site}/#business` },
+    ...(link ? { sameAs: link } : {}),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${site}/` },
+      { "@type": "ListItem", position: 2, name: "Our Work", item: `${site}/portfolio/` },
+      { "@type": "ListItem", position: 3, name: c.business, item: `${site}/portfolio/${c.slug}/` },
+    ],
+  },
+];
+---
+<Base title={`${c.business}: ${category} · Nuxy Automation`} description={summary} noindex={staged} wide>
+  {ld.length > 0 && <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />}
+
+  {staged && (
+    <div class="wrap">
+      <p class="staged" role="note"><Icon name="lockSimple" /><span><strong>Staged preview, not published.</strong> It goes live only once the client approves the pictures and details in writing.</span></p>
+    </div>
+  )}
+
+  <section class="cs-hero" aria-labelledby="cs-h">
+    <div class="wrap">
+      <nav class="crumbs" aria-label="Breadcrumbs">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li><a href="/portfolio/">Our Work</a></li>
+          <li><span aria-current="page" translate="no">{c.business}</span></li>
+        </ol>
+      </nav>
+      <div class="cs-grid">
+        <div class="cs-copy">
+          <p class="cs-tags"><span class="cs-real"><Icon name="briefcase" />Real Client Website</span><span class="cs-cat">{category}</span></p>
+          <h1 id="cs-h" translate="no">{c.business}</h1>
+          <p class="lead">{summary}</p>
+          <dl class="cs-facts">
+            <div><dt>Business</dt><dd>{c.industry}{c.location ? ` in ${c.location}` : ""}</dd></div>
+            <div><dt>Built</dt><dd class="cs-delivered">{c.services.map((sv) => <span>{sv}</span>)}</dd></div>
+          </dl>
+          <div class="cs-actions">
+            {c.video && <a class="button" href="#walkthrough" data-track="case_study_walkthrough"><Icon name="play" />Watch the Walkthrough</a>}
+            <a class:list={["button", { secondary: Boolean(c.video) }]} href={quote} data-track="cta_case_quote">Get a Free Quote</a>
+            {link && <a class="button secondary" href={link} target="_blank" rel="noopener" data-track="case_study_live">Visit Live Website<span class="sr-only"> (opens in a new tab)</span><Icon name="arrowUpRight" /></a>}
+          </div>
+        </div>
+        <CaseCover study={c} eager zoom />
+      </div>
+      {contents.length > 2 && (
+        <nav class="cs-toc" id="contents" aria-label="On this page">
+          <ul role="list">{contents.map(([name, href]) => <li><a href={href}>{name}</a></li>)}</ul>
+        </nav>
+      )}
+    </div>
+  </section>
+
+  {(c.overview || c.problem || c.solution) && (
+    <section class="section cs-story">
+      <div class="wrap">
+        {c.overview && (
+          <div class="cs-overview reveal">
+            <h2 id="overview-h">Project Overview</h2>
+            <p>{c.overview}</p>
+          </div>
+        )}
+        <div class="cs-pair">
+          <div class="cs-panel reveal">
+            <h2 id="challenge-h">The Challenge</h2>
+            <p>{c.problem}</p>
+          </div>
+          {c.solution && (
+            <div class="cs-panel is-solution reveal">
+              <h2 id="solution-h">The Solution</h2>
+              <p>{c.solution}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {c.features && c.features.length > 0 && (
+    <section class="section band" aria-labelledby="features-h">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2 id="features-h">Features</h2>
+        </div>
+        <ul class="cs-features" role="list">
+          {c.features.map((f) => (
+            <li class="reveal">
+              <h3><Icon name={f.icon ?? "check"} />{titleCase(f.title)}</h3>
+              <p>{f.text}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  {(desktops.length > 0 || phones.length > 0 || c.video) && (
+    <section class="section" aria-labelledby="showcase-h">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2 id="showcase-h">Design Showcase</h2>
+          <p>Screenshots of the real website, on a phone and on a computer. Select a picture to see it larger.</p>
+        </div>
+        <div class="cs-show">
+          {phones.length > 0 && (
+            <div>
+              <h3 class="cs-sub"><Icon name="deviceMobile" />On a Phone</h3>
+              <div class="cs-phones">
+                {phones.map((s) => (
+                  <figure class="reveal">
+                    <CaseFrame shot={s} sizes={phoneSizes} zoom />
+                    {s.caption && <figcaption>{s.caption}</figcaption>}
+                  </figure>
+                ))}
+              </div>
+            </div>
+          )}
+          {desktops.length > 0 && (
+            <div>
+              <h3 class="cs-sub"><Icon name="desktop" />On a Computer</h3>
+              <div class:list={["cs-desks", { odd: desktops.length % 2 === 1 }]}>
+                {desktops.map((s, i) => (
+                  <figure class="reveal">
+                    <CaseFrame shot={s} sizes={desktops.length % 2 === 1 && i === 0 ? leadSizes : pairSizes} zoom />
+                    {s.caption && <figcaption>{s.caption}</figcaption>}
+                  </figure>
+                ))}
+              </div>
+            </div>
+          )}
+          {c.video && (
+            <div class="cs-video reveal" id="walkthrough" tabindex="-1">
+              <h3 class="cs-sub"><Icon name="play" />Walkthrough</h3>
+              <figure>
+                <CaseFrame device="desktop">
+                  <video controls playsinline preload="none" loading="lazy" poster={c.video.poster} width={c.video.width} height={c.video.height} aria-label="Walkthrough video">
+                    <source src={c.video.src} type="video/mp4" />
+                    {c.video.captions && <track kind="captions" src={c.video.captions} srclang="en" label="English" default />}
+                    <a href={c.video.src} download>Download the walkthrough (MP4{videoMB ? `, ${videoMB} MB` : ""})</a>
+                  </video>
+                </CaseFrame>
+                <figcaption>
+                  <span>{c.video.label}</span>
+                  {c.video.note && <span class="cs-note"><Icon name="info" />{c.video.note}</span>}
+                </figcaption>
+              </figure>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* The full-size viewer. Without script (or <dialog>), each picture is a plain link to its largest file. */}
+      <dialog class="cs-viewer" aria-labelledby="cs-viewer-h" closedby="any" data-shot-viewer>
+        <div class="cs-viewer-head">
+          <h2 id="cs-viewer-h"><span data-cap>Full-size picture</span> <span class="cs-viewer-count" data-count></span></h2>
+          <div class="cs-viewer-tools">
+            <button class="cs-viewer-btn" type="button" data-step="-1" aria-label="Previous picture"><Icon name="caretLeft" /></button>
+            <button class="cs-viewer-btn" type="button" data-step="1" aria-label="Next picture"><Icon name="caretRight" /></button>
+            <button class="cs-viewer-btn" type="button" data-close aria-label="Close the picture" autofocus><Icon name="x" /></button>
+          </div>
+        </div>
+        <p class="cs-viewer-hint">Swipe sideways to see the whole page.</p>
+        <p class="cs-viewer-keys">Left and Right arrow keys step through the pictures. Esc closes.</p>
+        <div class="cs-viewer-pic" data-pic></div>
+        <p class="sr-only" aria-live="polite" data-live></p>
+      </dialog>
+      <script>
+        // "Watch the Walkthrough" scrolls to the video and starts it (it has no sound), instead of only jumping there
+        const walk = document.querySelector<HTMLVideoElement>("#walkthrough video");
+        document.querySelectorAll<HTMLAnchorElement>('a[href="#walkthrough"]').forEach((a) => a.addEventListener("click", () => { walk?.play().catch(() => {}); }));
+        // Opens a cover or showcase picture's largest file in the viewer instead of on its own, with its caption as the
+        // title and "3 of 8" beside it. Focus starts on Close. The arrow buttons, the Left and Right keys and (on a touch
+        // screen) a sideways swipe step through every picture; Escape, the close button or a
+        // click on the dimmed page closes it, and focus goes back to the picture last shown. On a narrow screen a computer
+        // shot is shown at full width in a strip that scrolls sideways and starts at the content, so it is really larger
+        // than on the page. A new-tab or modified click still opens the file itself.
+        const own = (src: string) => /^\/media\/[a-z0-9/-]+\.webp$/.test(src);
+        const narrow = window.matchMedia("(max-width: 759.98px)");
+        for (const dialog of document.querySelectorAll<HTMLDialogElement>("[data-shot-viewer]")) {
+          if (typeof dialog.showModal !== "function") continue;
+          const pic = dialog.querySelector<HTMLElement>("[data-pic]")!;
+          const cap = dialog.querySelector<HTMLElement>("[data-cap]")!;
+          const count = dialog.querySelector<HTMLElement>("[data-count]")!;
+          const live = dialog.querySelector<HTMLElement>("[data-live]")!;
+          const links = [...document.querySelectorAll<HTMLAnchorElement>("a.cf-zoom")].filter((l) => own(l.getAttribute("href") ?? "") && l.querySelector("img"));
+          if (links.length < 2) dialog.querySelectorAll<HTMLElement>("[data-step]").forEach((b) => (b.hidden = true));
+          let at = 0;
+          const show = (i: number) => {
+            at = (i + links.length) % links.length;
+            const link = links[at], from = link.querySelector("img")!;
+            const img = document.createElement("img");
+            // the picture already on the page shows at once; the full-size file replaces it as soon as it has loaded
+            img.src = from.currentSrc || from.src; img.alt = from.alt;
+            img.width = from.width; img.height = from.height;
+            pic.replaceChildren(img);
+            const full = link.getAttribute("href")!, big = new Image();
+            pic.setAttribute("aria-busy", "true");
+            big.onload = big.onerror = () => {
+              if (img.isConnected) { if (big.naturalWidth) img.src = full; pic.removeAttribute("aria-busy"); }
+            };
+            big.src = full;
+            cap.textContent = link.dataset.caption || link.closest("figure")?.querySelector("figcaption")?.textContent?.trim() || "Full-size picture";
+            count.textContent = links.length > 1 ? `${at + 1} of ${links.length}` : "";
+            const wide = from.width > from.height;
+            dialog.classList.toggle("tall", !wide);
+            // the sideways strip can be scrolled by keyboard too
+            const pans = wide && narrow.matches;
+            if (pans) { pic.tabIndex = 0; pic.setAttribute("role", "region"); pic.setAttribute("aria-label", "Picture, scrolls sideways"); }
+            else { pic.removeAttribute("tabindex"); pic.removeAttribute("role"); pic.removeAttribute("aria-label"); }
+            toContent();
+          };
+          // a sideways strip starts where the site's content column begins, about a tenth of the way across a
+          // computer shot, with a small gutter, instead of on the empty margin at its left edge
+          // (the dialog has to be open for the strip to have a width, so this runs again just after opening)
+          // the picture gets the screen height left after the title, the hints and the border, measured while open (the
+          // title can wrap to two lines and the hints differ by screen), so the whole picture is always in view
+          const fit = () => { if (dialog.open) dialog.style.setProperty("--chrome", `${dialog.offsetHeight - dialog.clientHeight + [...dialog.children].filter((el) => el !== pic && !el.hasAttribute("data-live")).reduce((h, el) => h + (el as HTMLElement).offsetHeight, 0)}px`); };
+          addEventListener("resize", fit);
+          const toContent = () => { fit(); pic.scrollLeft = Math.max(0, Math.min(pic.scrollWidth - pic.clientWidth, pic.scrollWidth * 0.1 - 16)); };
+          // closing returns focus to the picture that opened the viewer, not the last one stepped to
+          // (that one can be far down the page, and the page would jump to it)
+          let opener = 0;
+          links.forEach((link, i) => {
+            link.addEventListener("click", (e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+              e.preventDefault();
+              opener = i;
+              show(i);
+              live.textContent = "";
+              dialog.showModal();
+              toContent();
+            });
+          });
+          const step = (by: number) => { show(at + by); live.textContent = `${cap.textContent}, ${count.textContent}`; };
+          dialog.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((b) => b.addEventListener("click", () => step(Number(b.dataset.step))));
+          dialog.addEventListener("keydown", (e) => {
+            if (links.length < 2 || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+            // inside the sideways strip the arrow keys scroll the picture instead
+            if (e.target === pic && pic.scrollWidth > pic.clientWidth) return;
+            e.preventDefault();
+            step(e.key === "ArrowLeft" ? -1 : 1);
+          });
+          // on a touch screen a sideways swipe steps to the next or previous picture
+          // (not on the sideways strip, where a swipe scrolls the picture)
+          let x0 = 0, y0 = 0, tracking = false;
+          pic.addEventListener("pointerdown", (e) => { tracking = e.pointerType !== "mouse" && pic.scrollWidth <= pic.clientWidth; x0 = e.clientX; y0 = e.clientY; });
+          pic.addEventListener("pointerup", (e) => {
+            if (!tracking || links.length < 2) return;
+            tracking = false;
+            const dx = e.clientX - x0, dy = e.clientY - y0;
+            if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1);
+          });
+          pic.addEventListener("pointercancel", () => (tracking = false));
+          dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close());
+          // (where closedby isn't supported: a click on the dimmed page, which is the dialog element itself, closes it)
+          if (!("closedBy" in HTMLDialogElement.prototype)) dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+          dialog.addEventListener("close", () => {
+            pic.replaceChildren();
+            links[opener]?.focus();
+          });
+        }
+      </script>
+    </section>
+  )}
+
+  {((c.tech && c.tech.length > 0) || c.outcome || (c.results && c.results.length > 0) || c.quote) && (
+    <section class="section band" aria-labelledby={[c.tech && c.tech.length > 0 && "tech-h", (c.outcome || (c.results && c.results.length > 0) || c.quote) && "outcome-h"].filter(Boolean).join(" ")}>
+      <div class="wrap cs-close">
+        {c.tech && c.tech.length > 0 && (
+          <div class="reveal">
+            <h2 id="tech-h">Technology</h2>
+            {c.techNote && <p>{c.techNote}</p>}
+            <ul class="cs-chips" role="list">{c.tech.map((t) => <li>{t}</li>)}</ul>
+          </div>
+        )}
+        {(c.outcome || (c.results && c.results.length > 0) || c.quote) && (
+          <div class="reveal">
+            <h2 id="outcome-h">Project Outcome</h2>
+            {c.outcome && <p>{c.outcome}</p>}
+            {c.results && c.results.length > 0 && (
+              <dl class="cs-results">
+                {c.results.map((r) => (
+                  <div><dt>{r.label}</dt><dd><span class="cs-value">{r.value}</span><span class="cs-source">Source: {r.source}</span></dd></div>
+                ))}
+              </dl>
+            )}
+            {c.quote && (
+              <blockquote class="cs-quote">
+                <p>“{c.quote.text}”</p>
+                <footer>{c.quote.name}, {c.business}</footer>
+              </blockquote>
+            )}
+          </div>
+        )}
+      </div>
+      {/* the section index sits only at the top of a long page: one way back to it from the end */}
+      {contents.length > 2 && <div class="wrap"><a class="cs-back" href="#contents" data-track="case_study_contents">Back to the sections<Icon name="arrowUp" /></a></div>}
+    </section>
+  )}
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <div>
+          <h2>{titleCase("Want a website built for your business?")}</h2>
+          <p>From booking systems to custom business websites, NUXY builds digital experiences around the way your business operates.</p>
+          <a class="cs-levels" href="/web-design/" data-track="cta_case_levels">Compare website levels and prices<Icon name="arrowRight" /></a>
+        </div>
+        <div class="cta-actions">
+          <a class="button" href={quote} data-track="cta_case_quote_end">Get a Free Quote</a>
+          <a class="button secondary" href="/portfolio/" data-track="cta_case_portfolio">See the full portfolio<Icon name="arrowRight" /></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .staged { display: flex; gap: 10px; align-items: flex-start; margin-top: 20px; padding: 12px 16px; border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: var(--panel); color: var(--body); font-size: 0.9375rem; }
+  .staged :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
+  .staged strong { color: var(--ink); }
+
+  .cs-hero { padding-block: clamp(24px, 4vw, 48px) clamp(24px, 4vw, 56px); }
+  .crumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0 0 clamp(20px, 3vw, 32px); padding: 0; list-style: none; color: var(--muted); font-size: 0.875rem; }
+  .crumbs li + li::before { content: "/" / ""; margin-right: 8px; color: var(--muted); }
+  .crumbs a { display: inline-block; padding-block: 4px; color: var(--link); }
+  /* on a touch screen each crumb link is a 44px target without moving the line */
+  @media (pointer: coarse) { .crumbs a { padding: 11px 4px; margin: -7px -4px; } }
+  .crumbs [aria-current="page"] { color: var(--ink); font-weight: 600; }
+  .cs-grid { display: grid; gap: clamp(32px, 5vw, 56px); align-items: center; }
+  @media (min-width: 960px) { .cs-grid { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); } }
+  /* Phones and tablets read the name, summary and buttons first, then see the cover, then the facts. The copy box
+     dissolves into the grid's column so the cover can sit between its parts; every part spaces itself with margin-top. */
+  @media (max-width: 959.98px) {
+    /* stretch, not the grid's centre: as a column every part starts on the same left edge */
+    .cs-grid { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+    .cs-copy { display: contents; }
+    .cs-copy > .cs-actions { order: 1; }
+    .cs-grid > :global(.cover) { order: 2; margin-top: 32px; }
+    .cs-copy > .cs-facts { order: 3; margin-top: 28px; }
+  }
+  /* the same section index as /handover/ (.hd-toc) */
+  .cs-toc { margin-top: clamp(28px, 4vw, 44px); padding-top: 20px; border-top: 1px solid var(--hairline-soft); }
+  /* on phones and tablets the facts just above already end on a line, so the index does not draw a second one */
+  @media (max-width: 959.98px) { .cs-toc { padding-top: 0; border-top: 0; } }
+  .cs-toc ul { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0; padding: 0; list-style: none; }
+  .cs-toc a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid var(--hairline); border-radius: var(--r-full); color: var(--body); font-size: 0.9375rem; font-weight: 500; text-decoration: none; transition: border-color 160ms ease-out, color 160ms ease-out; }
+  .cs-toc a:hover { border-color: var(--blue-line); color: var(--ink); }
+  .cs-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .cs-real { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 10px; border: 1px solid var(--blue-line); border-radius: var(--r-full); background: var(--accent-soft); color: var(--ink); font-size: 0.8125rem; font-weight: 600; }
+  .cs-real :global(.icon) { color: var(--cyan); }
+  .cs-cat { color: var(--cyan); font-size: 0.875rem; font-weight: 600; }
+  .cs-hero h1 { margin-top: 14px; font-size: clamp(2.25rem, 1.3rem + 3.6vw, 3.75rem); }
+  .cs-hero .lead { margin-top: 16px; max-width: 52ch; }
+  .cs-facts { display: grid; gap: 10px; margin: 24px 0 0; padding-block: 14px; border-block: 1px solid var(--hairline); }
+  .cs-facts div { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 12px; }
+  .cs-facts dt { color: var(--muted); font-size: 0.875rem; font-weight: 600; }
+  .cs-facts dd { margin: 0; color: var(--ink); font-size: 0.9375rem; }
+  .cs-delivered { display: grid; gap: 4px; }
+  .cs-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  @media (max-width: 479px) { .cs-actions .button { width: 100%; } }
+
+  /* the hero already ends with its own padding: the story starts closer under it */
+  .cs-story.section { padding-top: clamp(24px, 4vw, 48px); }
+  .cs-story .wrap { display: grid; gap: clamp(32px, 5vw, 56px); }
+  .cs-overview { max-width: 68ch; }
+  .cs-overview p { margin-top: 14px; color: var(--body); font-size: 1.125rem; }
+  .cs-pair { display: grid; gap: 20px; }
+  @media (min-width: 760px) { .cs-pair { grid-template-columns: 1fr 1fr; } }
+  .cs-panel { padding: clamp(20px, 3vw, 32px); border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
+  .cs-panel.is-solution { border-color: rgb(var(--blue-rgb) / 0.4); background: linear-gradient(160deg, var(--accent-soft), transparent 60%), var(--panel); }
+  /* inside a card the heading steps down one size; every other h2 on the page uses the site's section size */
+  .cs-panel h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
+  .cs-panel p { margin-top: 12px; color: var(--body); font-size: 1rem; }
+
+  /* an open list, not boxes: a hairline above each feature, the icon beside its heading */
+  .cs-features { display: grid; gap: 28px clamp(24px, 4vw, 48px); margin: 0; padding: 0; list-style: none; }
+  @media (min-width: 640px) { .cs-features { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1000px) { .cs-features { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .cs-features li { display: grid; align-content: start; gap: 8px; padding-top: 18px; border-top: 1px solid var(--hairline-strong); }
+  .cs-features h3 { display: flex; align-items: center; gap: 10px; font-size: 1.0625rem; }
+  .cs-features h3 :global(.icon) { flex: none; width: 1.375rem; height: 1.375rem; color: var(--cyan); }
+  .cs-features p { max-width: 42ch; color: var(--body); font-size: 0.9375rem; }
+
+  .cs-show { display: grid; gap: clamp(40px, 5vw, 56px); }
+  /* the showcase's three parts are h3s like the feature names, so they look like them (not small kickers) */
+  .cs-sub { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font-size: 1.0625rem; }
+  .cs-sub :global(.icon) { flex: none; width: 1.375rem; height: 1.375rem; color: var(--cyan); }
+  figure { display: grid; gap: 10px; margin: 0; align-content: start; }
+  figcaption { color: var(--muted); font-size: 0.875rem; }
+  .cs-desks { display: grid; gap: 24px; }
+  @media (min-width: 760px) { .cs-desks { grid-template-columns: 1fr 1fr; } .cs-desks.odd figure:first-child { grid-column: 1 / -1; } }
+  .cs-phones { display: grid; gap: 20px 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 760px) { .cs-phones { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .cs-video { scroll-margin-top: 16px; }
+  .cs-video video::cue { font-size: 0.8em; background: rgb(2 5 12 / 0.8); }
+  .cs-video:focus { outline: none; }
+  /* The frame clips anything outside it, so the video's own focus ring sits just inside the edge. */
+  .cs-video video:focus-visible { outline-offset: -3px; }
+  .cs-video figcaption { display: grid; gap: 8px; }
+  .cs-note { display: flex; gap: 8px; align-items: flex-start; color: var(--body); }
+  .cs-note :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
+  .cs-levels { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 10px; color: var(--link); font-weight: 600; }
+
+  /* the full-size viewer: the picture as large as the screen allows, its caption as the title */
+  .cs-viewer { width: min(100vw - 24px, 1240px); max-width: none; max-height: calc(100dvh - 24px); margin: auto; padding: 0; overflow: auto; border: 1px solid var(--hairline-strong); border-radius: var(--r-lg); background: var(--bg-2); color: var(--body); }
+  .cs-viewer.tall { width: min(100vw - 24px, 520px); }
+  .cs-viewer:modal { overscroll-behavior: contain; }
+  .cs-viewer::backdrop { overflow: hidden; overscroll-behavior: contain; background: rgb(2 5 12 / 0.82); }
+  .cs-viewer-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 10px 10px clamp(14px, 2.5vw, 20px); }
+  .cs-viewer-head h2 { font-size: 1.0625rem; letter-spacing: 0.01em; }
+  .cs-viewer-count { color: var(--muted); font-size: 0.875rem; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cs-viewer-tools { display: flex; flex: none; gap: 6px; }
+  .cs-viewer-btn { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--hairline); border-radius: 12px; background: transparent; color: var(--ink); cursor: pointer; }
+  .cs-viewer-btn:hover { border-color: var(--hairline-strong); }
+  .cs-viewer-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .cs-viewer-btn :global(.icon) { width: 20px; height: 20px; }
+  .cs-viewer-hint, .cs-viewer-keys { display: none; padding: 0 clamp(14px, 2.5vw, 20px) 8px; color: var(--muted); font-size: 0.875rem; }
+  /* the keyboard hint only where there is a keyboard and a mouse */
+  @media (hover: hover) and (pointer: fine) { .cs-viewer-keys { display: block; } }
+  .cs-viewer-pic :global(img) { display: block; width: auto; height: auto; max-width: 100%; max-height: calc(100dvh - 24px - var(--chrome, 120px)); margin-inline: auto; }
+  .cs-viewer-pic:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+  /* a picture that doesn't scroll sideways keeps the sideways swipe for stepping; scrolling up and down and pinch zoom
+     still work (the narrow-screen strip below gives the sideways pan back to scrolling) */
+  .cs-viewer-pic { touch-action: pan-y pinch-zoom; }
+  /* on a narrow screen a computer shot is drawn at a readable width in a strip that scrolls sideways */
+  @media (max-width: 759.98px) {
+    /* a smaller title on a phone, the count under it; the caption may take three lines so the longest one is whole */
+    .cs-viewer-head h2 { display: grid; gap: 2px; font-size: 0.9375rem; }
+    .cs-viewer-head h2 [data-cap] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+    .cs-viewer-count { font-size: 0.8125rem; }
+    .cs-viewer:not(.tall) .cs-viewer-hint { display: block; }
+    .cs-viewer:not(.tall) .cs-viewer-pic { overflow-x: auto; overscroll-behavior-x: contain; touch-action: auto; }
+    .cs-viewer:not(.tall) .cs-viewer-pic :global(img) { width: 1100px; max-width: none; max-height: none; margin: 0; }
+  }
+
+  .cs-close { display: grid; gap: clamp(32px, 5vw, 56px); }
+  @media (min-width: 900px) { .cs-close { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } }
+  .cs-close p { margin-top: 14px; max-width: 54ch; color: var(--body); }
+  /* plain labels, not pills, so they don't read as buttons */
+  .cs-chips { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 16px 0 0; padding: 0; list-style: none; }
+  /* a small dot before each name, so two names on one line never read as one */
+  .cs-chips li { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 0.9375rem; }
+  .cs-chips li::before { content: ""; flex: none; width: 5px; height: 5px; border-radius: 50%; background: var(--cyan); }
+  .cs-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: clamp(20px, 3vw, 32px); color: var(--link); font-size: 0.9375rem; font-weight: 500; }
+  .cs-back :global(.icon) { width: 1em; height: 1em; }
+  .cs-results { display: grid; gap: 12px; margin: 16px 0 0; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .cs-results > div { padding: 16px; border-radius: var(--r-md); background: var(--panel); }
+  .cs-results dt { color: var(--muted); font-size: 0.875rem; }
+  .cs-results dd { display: grid; gap: 4px; margin: 4px 0 0; }
+  .cs-value { color: var(--ink); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cs-source { color: var(--muted); font-size: 0.8125rem; }
+  .cs-quote { margin: 16px 0 0; padding-left: 16px; border-left: 1px solid var(--hairline-strong); }
+  .cs-quote p { color: var(--ink); font-size: 1.0625rem; }
+  .cs-quote footer { margin-top: 8px; color: var(--muted); font-size: 0.875rem; }
+</style>

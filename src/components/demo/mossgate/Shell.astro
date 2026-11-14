@@ -218,7 +218,8 @@ const dock = current !== "estimate" && current !== "book";
     const io = new IntersectionObserver((entries) => {
       for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
     }, { rootMargin: "0px 0px -8% 0px" });
-    for (const el of els) { if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in"); else io.observe(el); }
+    const above = els.map((el) => el.getBoundingClientRect().top < innerHeight); // read all, then write
+    els.forEach((el, i) => { if (above[i]) el.classList.add("in"); else io.observe(el); });
   } else els.forEach((el) => el.classList.add("in"));
   const menu = document.querySelector<HTMLDetailsElement>(".mg-menu");
   menu?.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) menu.open = false; });

@@ -4,6 +4,7 @@ dist/
 *.log
 tests/visual/out/
 dist-fixture
+dist-stage
 tests/fixtures/cinematic
 # video masters: large, kept outside git (assets/cinematic/README.md)
 assets/cinematic/*
