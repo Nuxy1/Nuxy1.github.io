@@ -24,8 +24,8 @@ const mp4 = (sources: { src: string; type: string }[]) => (sources.find((s) => s
       {items.map(({ d, m }) => m && (
         <li class="panel cg-card reveal">
           <a class:list={["cg-play", { tall: m.height > m.width }]} href={mp4(m.sources)} data-demo={JSON.stringify({ title: d.title, poster: m.poster.src, sources: m.sources, width: m.width, height: m.height, captions: m.captions?.src, vertical: m.vertical && { poster: m.vertical.poster.src, sources: m.vertical.sources, width: m.vertical.width, height: m.vertical.height }, similar: similar(d.request) })} data-track="creative_demo_play">
-            {m.height > m.width && <img class="cg-back" src={m.poster.src} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" aria-hidden="true" />}
-            <img src={m.poster.src} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" />
+            {m.height > m.width && <img class="cg-back" src={m.poster.src} alt="" width={m.poster.width ?? Math.round(m.width * 0.75)} height={m.poster.height ?? Math.round(m.height * 0.75)} loading="lazy" decoding="async" aria-hidden="true" />}
+            <img src={m.poster.src} alt="" width={m.poster.width ?? Math.round(m.width * 0.75)} height={m.poster.height ?? Math.round(m.height * 0.75)} loading="lazy" decoding="async" />
             <span class="cg-button" aria-hidden="true"><Icon name="play" /></span>
             <span class="cg-time" aria-hidden="true">{clock(m.duration)}</span>
             <span class="sr-only">Play {d.title}: {Math.round(m.duration)}-second {d.category.toLowerCase()} concept{m.audio ? ", with sound" : ""}</span>

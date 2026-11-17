@@ -13,6 +13,7 @@ import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { staged } from "../stage/case-studies.ts";
 import { caseStudies, liveLink } from "../src/data/case-studies.ts";
+import { demos } from "../src/data/creative.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const out = join(here, "..", "dist-stage");
@@ -26,6 +27,11 @@ const walk = (d) =>
 const urlOf = (root, f) => "/" + relative(root, f).split(sep).join("/").replace(/(^|\/)index\.html$/, "$1");
 const read = (root) => new Map(walk(root).map((f) => [urlOf(root, f), readFileSync(f, "utf8")]));
 const text = (html) => html.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " ");
+const replacedDemoName = (id) => {
+  const demo = demos.find((d) => d.id === id);
+  assert.ok(demo, `${id} is a known replacement demo`);
+  return new RegExp(demo.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+};
 
 // [project, build folder, staged?]: published projects are checked in dist/, staged ones in dist-stage/
 const projects = [
@@ -82,7 +88,7 @@ test("every client project has its project page with the seven sections, its car
     assert.ok(home.indexOf(`id="case-${c.slug}"`) < home.indexOf('data-track="example_open"'), "/: the client card comes before the concept demos");
     // the demo the project replaces is gone from the video teasers (its files stay, on /creative-studio/)
     if (c.replaces) {
-      const name = new RegExp(c.replaces.replace(/-/g, "[- ]"), "i");
+      const name = replacedDemoName(c.replaces);
       for (const url of ["/", "/portfolio/"]) assert.doesNotMatch(text(pages.get(url)), name, `${url}: ${c.replaces} is replaced`);
       assert.match(text(pages.get("/creative-studio/")), name, `/creative-studio/: ${c.replaces} is kept there`);
     }
@@ -150,6 +156,6 @@ test("the production build carries none of the staged work", { skip: !haveDist &
     }
     for (const s of c.shots ?? []) assert.ok(!existsSync(join(dist, s.src)), `${s.src} is not in dist/`);
     if (c.video) assert.ok(!existsSync(join(dist, c.video.src)), `${c.video.src} is not in dist/`);
-    if (c.replaces) assert.match(pages.get("/"), new RegExp(c.replaces.replace(/-/g, "[- ]"), "i"), `${c.replaces} is still shown in dist/ until the client approves`);
+    if (c.replaces) assert.match(pages.get("/"), replacedDemoName(c.replaces), `${c.replaces} is still shown in dist/ until the client approves`);
   }
 });

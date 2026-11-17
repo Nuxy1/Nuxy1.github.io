@@ -143,13 +143,15 @@ export const limits: { icon: IconName; title: string; text: string }[] = [
 export type CreativeDemo = { id: string; title: string; category: string; offer: string; line: string; text: string; /** the estimator code "Request Similar Project" opens the quote form with */ request: string };
 export const demoLabel = "Fictional concept demonstration";
 export const demoNote = "These three brands are made up. They are concept demonstrations made by Nuxy to show the kind of work on offer, not work done for clients.";
+// Keep the established slot IDs: the Chrysfadezzz case study replaces the third teaser on the home and portfolio
+// pages. The Creative Studio still shows all three films. Media filenames change with each campaign to avoid caches.
 export const demos: CreativeDemo[] = [
-  { id: "vantage-motors", title: "VANTAGE MOTORS", category: "Video advertisement", offer: "video-ads", line: "ENGINEERED TO STAND APART.",
-    text: "A launch spot for a made-up car maker: slow light across the bodywork, one line of text, and a clean end card.", request: "ad~1~15~9x16.16x9~standard~2~" },
-  { id: "ember-oak", title: "EMBER & OAK", category: "Digital menu", offer: "motion-graphics", line: "CRAFTED FOR THE CRAVING.",
-    text: "A moving menu board for a made-up burger kitchen: three dishes, each with its name and price set in type.", request: "motion~1~30~16x9~standard~2~" },
-  { id: "noctis-skin", title: "NOCTIS SKIN", category: "Product showcase", offer: "product-showcases", line: "REFINE YOUR RITUAL.",
-    text: "A close look at a made-up night serum: glass, light and liquid, with no claims about what it does.", request: "showcase~1~15~9x16~standard~2~" },
+  { id: "vantage-motors", title: "VANTAGE — THE LINE", category: "Supercar advertisement", offer: "video-ads", line: "PURE INTENT.",
+    text: "A silver supercar crosses a band of sunlight. Sculpted concrete, controlled road movement and an original score give this 20-second concept its pace.", request: "ad~1~30~16x9~advanced~2~" },
+  { id: "ember-oak", title: "HUSH STAYS", category: "Luxury stay advertisement", offer: "video-ads", line: "The world can wait.",
+    text: "A quiet lakeside pavilion, morning coffee and timber chairs by the water. A 15-second hospitality concept built around the feeling of getting away.", request: "ad~1~15~16x9~advanced~2~" },
+  { id: "noctis-skin", title: "VELUNE NO. 04", category: "Fragrance showcase", offer: "product-showcases", line: "Before the first word.",
+    text: "Amber fragrance, heavy glass and warm limestone. A 15-second product film that moves from intimate texture to a composed bottle portrait.", request: "showcase~1~15~16x9~advanced~2~" },
 ];
 
 // ---- How a project runs ----

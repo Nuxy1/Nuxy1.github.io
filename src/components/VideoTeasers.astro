@@ -21,19 +21,17 @@ const { level = 3, headingId = "video-teasers-h", title } = Astro.props;
 const Heading = `h${level}` as "h2" | "h3";
 const Title = `h${level + 1}` as "h3" | "h4";
 const items = demos.filter((d) => !replacedDemos.has(d.id)).map((d) => ({ d, m: demoOf(d.id) }));
-// what each demo is, for the default intro: "A car advert, a moving menu board and a product showcase"
-const kind: Record<string, string> = { "vantage-motors": "a car advert", "ember-oak": "a moving menu board", "noctis-skin": "a product showcase" };
+// What each current campaign is; IDs remain stable when the films in those slots are replaced.
+const kind: Record<string, string> = { "vantage-motors": "a supercar advert", "ember-oak": "a luxury stay advert", "noctis-skin": "a fragrance showcase" };
 const kinds = items.map(({ d }) => kind[d.id] ?? d.category.toLowerCase());
 const listed = kinds.length > 1 ? `${kinds.slice(0, -1).join(", ")} and ${kinds.at(-1)}` : (kinds[0] ?? "");
 const intro = `${listed.charAt(0).toUpperCase()}${listed.slice(1)}, each for a made-up brand. Made with AI video tools and finished by a person. Open one to watch it in the Creative Studio.`;
 const ready = demosReady(demos.map((d) => d.id));
 const href = "/creative-studio/#portfolio";
-// where the subject sits in a poster, for the narrow phone crop (the burger is right of centre, its menu type on the left)
-const subject: Record<string, "right"> = { "ember-oak": "right" };
 // A card shows the poster small (132 px wide on a phone, a third of the page on a computer), so the browser is offered
 // the small file too and takes the full poster only where the card is really that big. A 9:16 poster is drawn whole
 // inside the 16:9 box, so it is narrower still. Both pictures of a tall card ask for the same file: one request.
-const thumbs = (m: DemoCut) => (m.posterMobile ? `${m.posterMobile.src} ${m.width * 0.3125}w, ${m.poster.src} ${m.width * 0.75}w` : undefined);
+const thumbs = (m: DemoCut) => (m.posterMobile ? `${m.posterMobile.src} ${m.posterMobile.width ?? Math.round(m.width * 0.3125)}w, ${m.poster.src} ${m.poster.width ?? Math.round(m.width * 0.75)}w` : undefined);
 const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width ? "(min-width: 720px) 120px, 75px" : "(min-width: 720px) 360px, 132px");
 ---
 {ready && (
@@ -50,9 +48,9 @@ const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width 
       {items.map(({ d, m }) => m && (
         <li>
           <a class="panel vt-card" href={href} data-track="video_teaser_card">
-            <div class:list={["vt-shot", { tall: m.height > m.width }, subject[d.id] && `at-${subject[d.id]}`]}>
-              {m.height > m.width && <img class="vt-back" src={m.poster.src} srcset={thumbs(m)} sizes={shown(m)} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" aria-hidden="true" />}
-              <img src={m.poster.src} srcset={thumbs(m)} sizes={shown(m)} alt="" width={m.width * 0.75} height={m.height * 0.75} loading="lazy" decoding="async" />
+            <div class:list={["vt-shot", { tall: m.height > m.width }]}>
+              {m.height > m.width && <img class="vt-back" src={m.poster.src} srcset={thumbs(m)} sizes={shown(m)} alt="" width={m.poster.width ?? Math.round(m.width * 0.75)} height={m.poster.height ?? Math.round(m.height * 0.75)} loading="lazy" decoding="async" aria-hidden="true" />}
+              <img src={m.poster.src} srcset={thumbs(m)} sizes={shown(m)} alt="" width={m.poster.width ?? Math.round(m.width * 0.75)} height={m.poster.height ?? Math.round(m.height * 0.75)} loading="lazy" decoding="async" />
               <span class="vt-play" aria-hidden="true"><Icon name="play" /></span>
               <span class="vt-time" aria-hidden="true">{clock(m.duration)}</span>
             </div>
@@ -89,9 +87,6 @@ const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width 
   /* (on a phone the picture fills its narrow column at the row's height; a 16:9 box there would be wider than the column and cover the words) */
   .vt-shot { position: relative; align-self: stretch; min-height: 92px; overflow: hidden; background: #060b16; }
   @media (min-width: 720px) { .vt-shot { min-height: 0; aspect-ratio: 16 / 9; } }
-  @media (max-width: 719px) { .vt-shot.at-right img { object-position: 100% 50%; } }
-  /* (the narrow crop would leave the last letters of the menu type at the left edge: a short fade into the poster's own dark covers them) */
-  @media (max-width: 719px) { .vt-shot.at-right::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 36px; background: linear-gradient(90deg, #060b16 30%, transparent); } }
   .vt-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   /* (a 9:16 demo keeps its whole frame; the same poster, blurred, fills the sides: one file, one request) */
   .vt-shot.tall img { object-fit: contain; }

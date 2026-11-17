@@ -148,88 +148,79 @@
   },
   "demos": {
     "ember-oak": {
-      "width": 1280,
-      "height": 720,
-      "duration": 18,
+      "width": 1920,
+      "height": 1080,
+      "duration": 15.0,
       "audio": true,
       "poster": {
-        "src": "/media/demo-ember-oak.webp",
-        "bytes": 37652
+        "src": "/media/ad-hush-stays.webp",
+        "bytes": 49540,
+        "width": 960,
+        "height": 540
       },
       "posterMobile": {
-        "src": "/media/demo-ember-oak-s.webp",
-        "bytes": 10758
+        "src": "/media/ad-hush-stays-s.webp",
+        "bytes": 10402,
+        "width": 400,
+        "height": 225
       },
       "sources": [
         {
-          "src": "/media/demo-ember-oak.mp4",
-          "bytes": 2237675,
+          "src": "/media/ad-hush-stays.mp4",
+          "bytes": 6291002,
           "type": "video/mp4"
         }
       ]
     },
     "noctis-skin": {
-      "width": 720,
-      "height": 1280,
-      "duration": 15,
+      "width": 1920,
+      "height": 1080,
+      "duration": 15.0,
       "audio": true,
       "poster": {
-        "src": "/media/demo-noctis-skin.webp",
-        "bytes": 15392
+        "src": "/media/ad-velune-no-04.webp",
+        "bytes": 32044,
+        "width": 960,
+        "height": 540
       },
       "posterMobile": {
-        "src": "/media/demo-noctis-skin-s.webp",
-        "bytes": 4922
+        "src": "/media/ad-velune-no-04-s.webp",
+        "bytes": 5974,
+        "width": 400,
+        "height": 225
       },
       "sources": [
         {
-          "src": "/media/demo-noctis-skin.mp4",
-          "bytes": 1487829,
+          "src": "/media/ad-velune-no-04.mp4",
+          "bytes": 6499104,
           "type": "video/mp4"
         }
       ]
     },
     "vantage-motors": {
-      "width": 1280,
-      "height": 720,
-      "duration": 15,
+      "width": 1920,
+      "height": 1080,
+      "duration": 20.0,
       "audio": true,
       "poster": {
-        "src": "/media/demo-vantage-motors.webp",
-        "bytes": 43128
+        "src": "/media/ad-vantage-the-line.webp",
+        "bytes": 35980,
+        "width": 960,
+        "height": 540
       },
       "posterMobile": {
-        "src": "/media/demo-vantage-motors-s.webp",
-        "bytes": 11694
+        "src": "/media/ad-vantage-the-line-s.webp",
+        "bytes": 7352,
+        "width": 400,
+        "height": 225
       },
       "sources": [
         {
-          "src": "/media/demo-vantage-motors.mp4",
-          "bytes": 2151224,
+          "src": "/media/ad-vantage-the-line.mp4",
+          "bytes": 9705158,
           "type": "video/mp4"
         }
-      ],
-      "vertical": {
-        "width": 720,
-        "height": 1280,
-        "duration": 15,
-        "audio": true,
-        "poster": {
-          "src": "/media/demo-vantage-motors-v.webp",
-          "bytes": 26904
-        },
-        "posterMobile": {
-          "src": "/media/demo-vantage-motors-v-s.webp",
-          "bytes": 7608
-        },
-        "sources": [
-          {
-            "src": "/media/demo-vantage-motors-v.mp4",
-            "bytes": 1529175,
-            "type": "video/mp4"
-          }
-        ]
-      }
+      ]
     }
   }
 }
