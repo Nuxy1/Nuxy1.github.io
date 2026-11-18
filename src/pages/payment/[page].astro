@@ -1,0 +1,59 @@
+---
+// Where Stripe Checkout sends a client back after a handover fee: the setup fee or the care plan that Command Center
+// asked the inquiry service for (agent src/billing/handover.js success_url / cancel_url). Always built: handover
+// billing does not depend on the site's own plan checkout (data/billing.ts), whose pages under /billing/ are built
+// only when that is on. Outside /billing/ on purpose, so a server route for the service's /billing/ paths never
+// catches these. Coming back proves nothing: only the signed webhook records a payment, so "thanks" never says "paid".
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import { inbox } from "../../data/site";
+
+export function getStaticPaths() {
+  return [{ params: { page: "thanks" } }, { params: { page: "cancelled" } }];
+}
+
+const { page } = Astro.params as { page: "thanks" | "cancelled" };
+const thanks = page === "thanks";
+---
+<Base title={thanks ? "Confirming your payment · Nuxy Automation" : "Payment not finished · Nuxy Automation"} description={thanks ? "Your payment finished at Stripe and is being confirmed." : "You left the payment page; nothing was charged."} noindex>
+  <div class="back">
+    <span class="badge"><Icon name={thanks ? "clock" : "arrowCounterClockwise"} /></span>
+    {thanks ? (
+      <>
+        <h1>Thanks, We’re Confirming Your Payment</h1>
+        <p class="lead">Stripe sent you back to us, which means the payment finished on their side.</p>
+        <h2 class="next-h">What happens next</h2>
+        <ol class="next" role="list">
+          <li><span class="n" aria-hidden="true">1</span><span>Stripe confirms the payment to us, usually within a minute.</span></li>
+          <li><span class="n" aria-hidden="true">2</span><span>Your website handover with NUXY then shows it as paid.</span></li>
+          <li><span class="n" aria-hidden="true">3</span><span>Nothing else is needed from you for this payment. Your next handover step is where you left it.</span></li>
+        </ol>
+      </>
+    ) : (
+      <>
+        <h1>Payment Not Finished</h1>
+        <p class="lead">You left Stripe’s page before paying, so nothing was charged.</p>
+        <p>The payment link NUXY sent you works for 24 hours from when it was made: open it again to finish. After that, ask us for a new one.</p>
+      </>
+    )}
+    <p>{thanks ? "Still not showing as paid after an hour? Email" : "Questions? Email"} <a class="mail" href={`mailto:${inbox}`}>{inbox}</a>.</p>
+    <p class="actions">
+      <a class="button secondary" href="/"><Icon name="arrowLeft" />Back to the homepage</a>
+    </p>
+  </div>
+</Base>
+
+<style>
+  .back { display: grid; gap: 18px; justify-items: start; max-width: 720px; padding-block: clamp(24px, 6vw, 64px); }
+  .badge { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: rgb(var(--blue-rgb) / 0.14); color: var(--ink); }
+  /* Icon.astro injects the svg with set:html, out of reach of scoped selectors. */
+  .badge > :global(.icon) { width: 30px; height: 30px; }
+  .next-h { margin-top: 6px; font-size: 1.125rem; }
+  .next { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; max-width: 62ch; }
+  .next li { display: flex; gap: 12px; align-items: flex-start; color: var(--body); }
+  .next .n { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 50%; border: 1px solid var(--blue-line); color: var(--ink); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+  .next li > span:last-child { padding-top: 2px; }
+  .actions { margin-top: 8px; }
+  /* The email link is the way back to a person: vertical padding gives it a tall tap area without moving the line. */
+  .mail { padding-block: 12px; }
+</style>

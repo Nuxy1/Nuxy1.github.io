@@ -41,15 +41,17 @@ const ldJson = (html) => all(html, /<script type="application\/ld\+json">([\s\S]
 
 // Every page of the made-up businesses' websites (a demo can have sub-pages, like /example-sites/fernway-lawn/quote/)
 const demoUrls = [...pages.keys()].filter((u) => u.startsWith("/example-sites/"));
-// Pages kept out of search on purpose: the 404, the after-sending page, and the made-up businesses' full websites.
-const expectedNoindex = new Set(["/404.html", "/contact/thanks/", ...demoUrls]);
+// Pages kept out of search on purpose: the 404, the after-sending page, the pages Stripe returns a client to,
+// and the made-up businesses' full websites.
+const expectedNoindex = new Set(["/404.html", "/contact/thanks/", "/payment/thanks/", "/payment/cancelled/", ...demoUrls]);
 const indexable = [...pages.keys()].filter((u) => !expectedNoindex.has(u));
 // Old one-page anchors (/#booking...) and where the home page sends them (Base.astro)
 const legacy = JSON.parse(first(pages.get("/"), /const legacy = (\{[^;]*\});/));
 
 test("the build has every page, and the made-up data matches the pages", () => {
-  assert.equal(pages.size, 65 + caseStudies.length, `pages: ${[...pages.keys()].join(" ")}`);
+  assert.equal(pages.size, 67 + caseStudies.length, `pages: ${[...pages.keys()].join(" ")}`);
   assert.ok(pages.has("/handover/"), "the handover page");
+  for (const p of ["/payment/thanks/", "/payment/cancelled/"]) assert.ok(pages.has(p), `the Stripe return page ${p}`);
   for (const sub of ["quote", "services", "projects", "about", "contact"]) assert.ok(pages.has(`/example-sites/fernway-lawn/${sub}/`), `fernway ${sub}`);
   for (const sub of ["services", "barbers", "booking", "gallery", "contact"]) assert.ok(pages.has(`/example-sites/lantern-row-barbers/${sub}/`), `lantern ${sub}`);
   for (const sub of ["estimate", "checklist", "book", "about"]) assert.ok(pages.has(`/example-sites/mossgate-cleaning/${sub}/`), `mossgate ${sub}`);
