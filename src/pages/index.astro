@@ -176,7 +176,7 @@ const business = {
       <div class="section-head">
         <p class="eyebrow">Website levels and prices</p>
         <h2 id="levels-h">Four Website Levels, From Simple to Bespoke</h2>
-        <p>Each level adds design, motion and engineering, and the price follows the work. Interactive 3D and scroll storytelling start at Immersive: they are not part of Business or Signature.</p>
+        <p>Each level adds design, motion and engineering, and the price follows the work. Interactive 3D and scroll storytelling (a page that unfolds scene by scene as you scroll) start at Immersive: they are not part of Business or Signature.</p>
       </div>
       <LevelRail compact />
       <p class="more">
@@ -210,7 +210,7 @@ const business = {
           </li>
         ))}
       </ul>
-      <p class="trust-foot"><Icon name="mapPin" /><span>Based in Faribault, Minnesota. We work with businesses in {areas.slice(0, -2).join(", ")}, {areas.at(-2)} and {areas.at(-1)}, and remotely anywhere in the US. <a href="/about/">About Nuxy</a> · <a href="/policies/">Our written policies</a> · <a href="/pricing/#faq">Questions about prices and paying</a></span></p>
+      <p class="trust-foot"><Icon name="mapPin" /><span>Based in Faribault, Minnesota. We work with businesses in {areas.slice(0, -2).join(", ")}, {areas.at(-2)} and {areas.at(-1)}, and remotely anywhere in the US. <a href="/about/">About Nuxy</a> · <a href="/policies/">Our written policies</a></span></p>
     </div>
   </section>
 
@@ -295,6 +295,10 @@ const business = {
        is empty studio), so the object starts after the copy column at every width from 1200 up */
     .hero { --hh: clamp(600px, calc(100svh - 72px), 660px); --copy-end: calc(max(40px, 50% - 560px) + 36rem); display: grid; align-items: center; min-height: var(--hh); }
     .hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, var(--bg) 0, var(--bg) var(--copy-end), transparent calc(var(--copy-end) + 96px)); }
+    /* (critique round 13: the straight 96px ramp met the studio grey as a visible column edge at 1440) an eased ramp over
+       176px, starting 64px before the copy column ends: the last letters still sit on 76% page colour or more. The line
+       above stays for a browser without color-mix. */
+    .hero::before { background: linear-gradient(90deg, var(--bg) 0, var(--bg) calc(var(--copy-end) - 64px), color-mix(in srgb, var(--bg) 96%, transparent) calc(var(--copy-end) - 42px), color-mix(in srgb, var(--bg) 84%, transparent) calc(var(--copy-end) - 20px), color-mix(in srgb, var(--bg) 68%, transparent) calc(var(--copy-end) + 2px), color-mix(in srgb, var(--bg) 50%, transparent) calc(var(--copy-end) + 24px), color-mix(in srgb, var(--bg) 32%, transparent) calc(var(--copy-end) + 46px), color-mix(in srgb, var(--bg) 16%, transparent) calc(var(--copy-end) + 68px), color-mix(in srgb, var(--bg) 4%, transparent) calc(var(--copy-end) + 90px), transparent calc(var(--copy-end) + 112px)); }
     .hero :global(.cine.backdrop) {
       inset: 0 calc(var(--hh) * 16 / 9 * -0.07) auto auto; width: calc(var(--hh) * 16 / 9); height: var(--hh);
       -webkit-mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 72%, transparent), linear-gradient(90deg, transparent, #000 20%);
@@ -351,15 +355,20 @@ const business = {
   .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
   /* three short facts with a rule between them; the list is pulled left by one item's padding and clipped, so a
      line never starts with a rule */
-  .hero-price-clip { margin-top: 20px; overflow: hidden; }
+  /* (critique round 15: with no room in the clip box its edges cut each 30px link to an 18px target) 6px above and
+     below, taken back from the margins so nothing moves */
+  .hero-price-clip { margin: 14px 0 -6px; padding-block: 6px; overflow: hidden; }
   .hero-price { display: flex; flex-wrap: wrap; gap: 6px 0; margin: 0 0 0 -15px; list-style: none; color: var(--body); font-size: 0.875rem; font-weight: 500; }
   .hero-price li { padding: 0 12px 0 14px; border-left: 1px solid var(--hairline-strong); line-height: 1.3; }
   .hero-price a { display: inline-block; padding-block: 6px; margin-block: -6px; color: inherit; text-decoration: underline; text-decoration-color: var(--hairline-strong); text-underline-offset: 3px; }
   .hero-price a:hover { color: var(--ink); text-decoration-color: currentColor; }
   /* (critique 11-17, round 9: each price link was a 30px target) on a touch screen each is 44px tall without moving the
-     line; the clip box gets room above and below so its edges don't cut the taller targets */
+     line. (round 15 measured only 32-39px of it reachable: the clip box's 8px of room and the 6px gap to the next row
+     cut it) the clip box gets the full 13px above and below, taken back from its margins, and a second row sits 14px
+     down so it no longer covers the link above it */
   @media (pointer: coarse) {
-    .hero-price-clip { margin-top: 12px; padding-block: 8px; }
+    .hero-price-clip { margin: 7px 0 -5px; padding-block: 13px; }
+    .hero-price { row-gap: 14px; }
     .hero-price a { padding-block: 13px; margin-block: -13px; }
   }
   @media (max-width: 479px) { .hero-actions .button { width: 100%; } }
@@ -385,6 +394,12 @@ const business = {
   }
   /* a category card's smaller links: the pages inside that kind of work */
   .cat h3 { font-size: 1.25rem; }
+  /* (critique round 16) three across, a title on two lines pushed its card's text and price below the other two:
+     the cards share their rows, so heads, text, prices and links line up across the row */
+  @media (min-width: 1024px) {
+    #what-we-do .grid-3 { grid-template-rows: repeat(4, auto); }
+    .cat { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 12px; }
+  }
   .more { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 32px; }
   .more .text-link { display: inline-flex; align-items: center; min-height: 44px; }
   @media (max-width: 479px) { .more .button { flex: 1 1 100%; } }

@@ -22,7 +22,9 @@ const quick = ["How do I pay?", "Are there costs from other companies?", "What i
 
 const next = [
   ["We read it", "A person reads every request. There is no sales sequence to sit through."],
-  ["You get a written plan and price", "Within one business day: what we’d build, what it costs, what we’d need from you and how long it takes."],
+  // (critique round 12: on a phone the starting prices sat in the side column, after the Send button) the step before
+  // the first field names them, from the same data as the side column
+  ["You get a written plan and price", `Within one business day: what we’d build, what it costs (websites from ${websiteFrom}, automations from ${automationFrom}), what we’d need from you and how long it takes.`],
   ["You decide", "Nothing is charged and no work starts until you agree to the plan. If it isn’t a fit, we’ll say so."],
 ];
 
@@ -41,9 +43,9 @@ const pageData = {
   <section class="section contact">
     <div class="wrap contact-grid">
       <div class="contact-main">
-        <p class="eyebrow">Free quote</p>
+        <p class="eyebrow" data-way-eyebrow>Free quote</p>
         <h1 id="contact-title">Tell Us What You Need</h1>
-        <p class="lead">A new website, an online store, an automation or care for the site you have. Tell us about it, and we’ll reply in writing.</p>
+        <p class="lead">A new website, an online store, an automation or care for the site you have. Tell us about it, and <span data-way-reply>we’ll reply in writing</span>.</p>
         <!-- (site audit 2026-11-21, critique: on a phone the callback came after the whole quote form, and the aside
         offered it a second time; now both ways are named here, before the first field)
         (owner decision 2026-11-21: one form at a time) With JavaScript the two links become tabs and only the chosen
@@ -51,7 +53,7 @@ const pageData = {
         typed in it when the visitor switches. Without JavaScript both forms show, one below the other, and the links jump. -->
         {callbackForm && (
           <ul class="ways" aria-label="Two ways to start" data-ways>
-            <li><a href="#quote-form" id="way-quote" data-way="quote"><Icon name="pencilSimple" /><span><strong>Write it down</strong> A few short questions, just below</span></a></li>
+            <li><a href="#quote-form" id="way-quote" data-way="quote"><Icon name="pencilSimple" /><span><strong>Write it down</strong> A short form; we reply in writing</span></a></li>
             <li><a href="#callback" id="way-callback" data-way="callback"><Icon name="phone" /><span><strong>Request a callback</strong> Leave your number; we call or text</span></a></li>
           </ul>
         )}
@@ -66,6 +68,9 @@ const pageData = {
                 <li><span class="num" aria-hidden="true">{i + 1}</span><div><h3>{titleCase(title)}</h3><p>{text}</p></div></li>
               ))}
             </ol>
+            <!-- (critique round 13: below 1024px the questions about paying come after the form and its Send button; this
+            points to them first. From 1024px they sit beside the form.) -->
+            <p class="steps-more">Questions about paying or other costs? <a class="glue" href="#prices-h">See the answers below the form</a></p>
           </section>
           <div class="panel form-panel" id="quote-form">
             <InquiryForm />
@@ -84,7 +89,7 @@ const pageData = {
       </div>
 
       <aside class="contact-aside" aria-label="About your request">
-        <div class="aside-block">
+        <div class="aside-block aside-email">
           <h2>Prefer Email?</h2>
           <p>Write to <a href={ask()}>{inbox}</a>. If nothing opens when you click, use <a href={gmail()} target="_blank" rel="noopener">Gmail</a> or <a href={outlook()} target="_blank" rel="noopener">Outlook</a> in your browser.</p>
         </div>
@@ -110,7 +115,7 @@ const pageData = {
         <!-- (critique round 7) last, so on a computer it can stay beside the long form (see .aside-follow); the answers
              share a name, so opening one closes the other and the block always fits the screen -->
         <div class="aside-block aside-follow">
-          <h2>Prices and Paying</h2>
+          <h2 id="prices-h">Prices and Paying</h2>
           <p>Websites from {websiteFrom}, one-time. Automations from {automationFrom}. The exact price is in your written plan.</p>
           <div class="faq aside-faq">
             {quick.map(([q, a]) => (
@@ -135,6 +140,8 @@ const pageData = {
   if (list) {
     const tabs = [...list.querySelectorAll<HTMLAnchorElement>("[data-way]")];
     const panelOf = (t: HTMLElement) => document.querySelector<HTMLElement>(`[data-way-panel="${t.dataset.way}"]`)!;
+    const eyebrow = document.querySelector<HTMLElement>("[data-way-eyebrow]");
+    const reply = document.querySelector<HTMLElement>("[data-way-reply]");
     list.setAttribute("role", "tablist");
     list.dataset.tabs = "";
     for (const li of list.children) li.setAttribute("role", "presentation");
@@ -153,6 +160,11 @@ const pageData = {
         panelOf(x).hidden = !on;
       }
       if (focus) t.focus();
+      // (critique round 16) the label above the heading and the intro's promise named the quote while the callback
+      // form was open; both now follow the chosen form
+      const call = t.dataset.way === "callback";
+      if (eyebrow) eyebrow.textContent = call ? "Free callback" : "Free quote";
+      if (reply) reply.textContent = call ? "we’ll call or text you back" : "we’ll reply in writing";
       // the address says which form is open, so a reload or a shared link opens the same one; no jump
       history.replaceState(history.state, "", t.dataset.way === "callback" ? "#callback" : location.pathname + location.search);
     };
@@ -191,7 +203,9 @@ const pageData = {
   .contact .lead { margin-top: 16px; max-width: 60ch; color: var(--muted); }
   .form-panel { margin-top: clamp(28px, 4vw, 40px); padding: clamp(20px, 4vw, 36px); scroll-margin-top: 16px; }
   .ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px; margin: 24px 0 0; padding: 0; list-style: none; }
-  .ways a { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; align-items: start; min-height: 44px; padding: 14px 16px; border: 1px solid var(--hairline); border-radius: var(--r-md); color: var(--muted); text-decoration: none; font-size: 0.875rem; line-height: 1.45; transition: border-color 160ms ease-out, background-color 160ms ease-out; }
+  /* the two choices stay the same height side by side when one line wraps (round 12 check) */
+  .ways li { display: flex; }
+  .ways a { flex: 1; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; align-items: start; min-height: 44px; padding: 14px 16px; border: 1px solid var(--hairline); border-radius: var(--r-md); color: var(--muted); text-decoration: none; font-size: 0.875rem; line-height: 1.45; transition: border-color 160ms ease-out, background-color 160ms ease-out; }
   .ways a:hover { border-color: var(--accent); background: var(--accent-soft); }
   .ways strong { display: block; color: var(--ink); font-size: 1rem; font-weight: 600; }
   .ways :global(.icon) { width: 22px; height: 22px; margin-top: 1px; color: var(--link); }
@@ -217,21 +231,25 @@ const pageData = {
   .aside-block p { color: var(--body); font-size: 0.9375rem; line-height: 1.6; overflow-wrap: anywhere; }
   .aside-block .button { justify-self: start; }
   .aside-faq { margin-top: 0; }
+  /* (critique round 13) once a request is sent, its confirmation names the email address for anything to add, so the
+     side column no longer offers it a second time. Whole rule global: the panels are in the form components. */
+  :global(.contact-grid:has([data-done]:not([hidden]), [data-cb-done]:not([hidden])) .aside-email) { display: none; }
+  .steps-more { margin-top: 16px; color: var(--muted); font-size: 0.875rem; }
+  .steps-more a { color: var(--link); }
+  @media (min-width: 1024px) { .steps-more { display: none; } }
   .aside-faq summary { padding: 12px 0; font-size: 0.9375rem; }
   .aside-faq details p { padding-bottom: 14px; }
-  /* the three steps: stacked on a phone. (critique round 7: three columns left each step about 190px wide, five or six
-     lines tall) From 640px each step is one row, its heading on the left and its text beside it. */
+  /* the three steps, one under the other. (critique round 7: three columns left each step about 190px wide, five or six
+     lines tall) (critique round 14: from 640px the titles sat in a 152px column beside their text, wrapping to two
+     lines, and read as a table; flagged in rounds 11, 13 and 14) Each title now sits above its text at every width, as
+     on the home page and /get-a-website/. */
   .steps { margin-top: clamp(28px, 3vw, 36px); padding-top: 18px; border-top: 1px solid var(--hairline); }
   .steps h2 { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .next { display: grid; gap: 14px; margin: 14px 0 0; padding: 0; list-style: none; }
-  @media (min-width: 640px) {
-    .next { gap: 16px; }
-    /* (critique round 8) the title column fits the longest step title on two lines (121px), not 208px of air */
-    .next li > div { display: grid; grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr); gap: 4px 24px; }
-    .next li > div p { margin-top: 0; }
-  }
+  @media (min-width: 640px) { .next { gap: 16px; } .next p { max-width: 64ch; } }
   .next li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; }
-  .num { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--link); font-size: 0.8125rem; font-weight: 650; }
+  /* (critique round 14) the site's numbered circle (home handover, /get-a-website/), a size smaller for these short steps */
+  .num { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--button); color: #fff; font-size: 0.8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   .next h3 { font-size: 0.9375rem; font-weight: 600; line-height: 1.35; }
   .next p { margin-top: 4px; color: var(--muted); font-size: 0.875rem; line-height: 1.5; }
   .ticks.small { font-size: 0.9375rem; }

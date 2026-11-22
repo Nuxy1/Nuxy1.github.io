@@ -10,7 +10,7 @@ import { crumbs } from "../../lib/crumbs";
 import { noWidow } from "../../lib/no-widow";
 import Icon from "../../components/Icon.astro";
 import { demoSites, listedServices, type DemoSite } from "../../data/demo-sites";
-import { serviceById } from "../../data/services";
+import { serviceById, variantById } from "../../data/services";
 import { levelById } from "../../data/tiers";
 
 export function getStaticPaths() {
@@ -54,9 +54,13 @@ const addOnNote = store
 // (site audit 2026-11-21, critique round 2) the level, its price and what it is built in sit under the title, so nobody
 // reads the preview before knowing which level it is
 const headPrice = business && store ? serviceById["online-shop"].price : level.price;
+// (critique round 15: on a phone the line broke as "…shop; the / exact price…") two sentences, each kept whole on its
+// own line when the two don't fit side by side
 const built = business
-  ? `Built in your own ${store ? "Shopify or Square Online" : "Squarespace or Wix"} account`
-  : store ? "A custom-designed shop, priced in a written quote" : "Designed and coded for one business, priced in a written quote";
+  ? [`Built in your own ${store ? "Shopify or Square Online" : "Squarespace or Wix"} account`]
+  : [store ? "A custom-designed shop." : "Designed and coded for one business.", "The exact price is in your written plan."];
+// (critique round 14) below the Online shop, the Mini Online Store is the smallest store on offer (/ecommerce/)
+const mini = store && !business ? variantById["mini-store"] : undefined;
 ---
 <Base title={store ? `${kindTitle} Example · Nuxy Automation` : `${kindTitle} Website Example · Nuxy Automation`} description={`Demo ${store ? "store" : "website"} for a made-up ${d.summary.replace(/^A /, "").replace(/\.$/, "")}, on a computer and a phone.`} wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(crumbs([["Our Work", "/portfolio/"], [d.name, `/examples/${d.slug}/`]]))} />
@@ -64,11 +68,11 @@ const built = business
     <p class="crumbs"><a class="tap" href="/portfolio/">Our Work</a><span aria-hidden="true">/</span>{d.name}</p>
     <header class="ex-head">
       <div>
-        <p class="eyebrow">{d.kind} · <span class="glue">concept demonstration</span></p>
+        <p class="eyebrow">{d.kind}<span class="ex-sep"> ·</span> <span class="glue">concept demo</span></p>
         <h1>{d.name}</h1>
         <p class="lead">{d.summary}</p>
-        <p class="ex-level"><a class="ex-tier" href={level.page}>{level.name} level<span aria-hidden="true">·</span>{headPrice}</a><span>{built}</span></p>
-        {smaller && <p class="ex-smaller">Smaller budget? Our <a href={smaller.href}>{smaller.name}</a> is {smaller.price}: {smaller.text}.</p>}
+        <p class="ex-level"><a class="ex-tier" href={level.page}>{level.name} level<span aria-hidden="true">·</span>{headPrice}</a><span>{built.map((b, i) => <>{i > 0 && " "}<span class="ex-built">{b}</span></>)}</span></p>
+        {smaller && <p class="ex-smaller">Smaller budget? Our <a href={smaller.href}>{smaller.name}</a> is {smaller.price}: {smaller.text}{mini ? <>, or the {mini.name} is {mini.price} for up to 5 products</> : ""}.</p>}
       </div>
     </header>
     <p class="made-up"><Icon name="info" /><span><strong>Concept project created by Nuxy Automation to demonstrate our capabilities.</strong> {d.name} is a made-up business, not a client. This example shows the layout, features and finish we aim for. Forms on it send nothing{store ? ", and its checkout is a demo that never asks for a card, so nothing can be bought" : ""}.</span></p>
@@ -86,6 +90,7 @@ const built = business
         <div class="bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="url">{host}</span></div>
         <div class="screen" data-screen>
           <iframe src={src} title={`${d.name}, demonstration ${store ? "store" : "website"}`} width="1280" height="800"></iframe>
+          <button type="button" class="shield" data-shield hidden><span>Tap to try the {store ? "store" : "site"}</span></button>
         </div>
       </div>
     </div>
@@ -156,13 +161,21 @@ const built = business
   .crumbs a { color: var(--link); }
   .ex-head { margin-top: 20px; }
   /* (critique round 9) the site's eyebrow is a flex row, which set "Landscaping company ·" and the unbreakable
-     "concept demonstration" side by side, 334px wide at 320; as plain text the second part moves to its own line */
+     label beside it ("concept demonstration" then, "concept demo" since round 14) side by side, 334px wide at 320; as
+     plain text the second part moves to its own line */
   .ex-head .eyebrow { display: block; }
+  /* (critique round 13: on a phone the break came after the "·", which hung at the end of the first line; there the two
+     parts now stand as two lines with no dot) */
+  @media (max-width: 479px) { .ex-head .eyebrow .ex-sep { display: none; } .ex-head .eyebrow .glue { display: block; } }
   .ex-head h1 { margin-top: 6px; }
   .ex-head .lead { margin-top: 14px; max-width: 60ch; }
   .ex-level { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; color: var(--muted); font-size: 0.9375rem; }
   .ex-tier { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 2px 12px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); color: var(--ink); font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: border-color 150ms var(--ease); }
   .ex-tier:hover { border-color: var(--link); }
+  /* (critique round 13: beside the chip on a phone the line about who it suits wrapped in a short column; below about
+     24 characters of room it takes its own full line) */
+  .ex-level > span { flex: 1 1 24ch; text-wrap: balance; }
+  .ex-built { display: inline-block; }
   .ex-smaller { margin-top: 10px; max-width: 64ch; color: var(--muted); font-size: 0.9375rem; }
   .ex-smaller a { color: var(--link); }
   .made-up { display: flex; align-items: flex-start; gap: 10px; margin-top: 20px; max-width: 72ch; padding: 12px 16px; border-radius: var(--r-md); background: var(--accent-soft); color: var(--body); font-size: 0.9375rem; }
@@ -197,6 +210,14 @@ const built = business
   .stage[data-mode="phone"] .screen { border-radius: 34px; background: #05080f; }
   .stage[data-mode="phone"] .screen::before { content: ""; position: absolute; top: 7px; left: calc(50% - 30px); width: 60px; height: 8px; border-radius: 4px; background: #1f2a3d; }
   .stage.fitted[data-mode="phone"] .screen iframe { top: 22px; }
+  /* (critique round 16) on a touch screen a swipe that started on the preview scrolled the demo, not the page, and the
+     preview fills most of a phone's width. Until it is tapped, a clear layer over it lets the page scroll past; it
+     comes back once the preview has left the screen (script below) */
+  .shield { position: absolute; inset: 0; z-index: 1; display: flex; align-items: flex-end; justify-content: center; padding: 0 12px 18px; border: 0; background: transparent; cursor: pointer; }
+  .shield[hidden] { display: none; }
+  .shield span { padding: 10px 18px; border: 1px solid rgb(255 255 255 / 0.18); border-radius: var(--r-full); background: rgb(5 8 15 / 0.86); box-shadow: 0 4px 16px rgb(0 0 0 / 0.28); color: #fff; font-size: 0.9375rem; font-weight: 600; }
+  .shield:focus-visible { outline: none; }
+  .shield:focus-visible span { outline: 2px solid var(--focus); outline-offset: 3px; }
   .stage-note { margin-top: 12px; text-align: center; }
 
   .case { margin-top: clamp(48px, 6vw, 72px); display: grid; gap: 24px; }
@@ -277,5 +298,15 @@ const built = business
     });
     new ResizeObserver(fit).observe(stage);
     set(mode);
+    // touch screens: the layer over the preview (see .shield) until a tap hands it over
+    const shield = screen.querySelector<HTMLButtonElement>("[data-shield]");
+    if (shield && window.matchMedia("(pointer: coarse)").matches) {
+      shield.hidden = false;
+      shield.addEventListener("click", () => {
+        shield.hidden = true;
+        frame.focus({ preventScroll: true });
+      });
+      new IntersectionObserver(([e]) => { if (!e.isIntersecting) shield.hidden = false; }).observe(stage);
+    }
   }
 </script>

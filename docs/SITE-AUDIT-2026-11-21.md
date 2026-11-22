@@ -1,9 +1,11 @@
 # Site audit and redesign, 2026-11-21
 
-**Nothing in this document is deployed, pushed or committed.** The work is unstaged edits in the worktree
-`C:\Users\power\Freelance-redesign` (this folder, `portfolio/site`), branch `site-redesign-2026-11`, HEAD `5ec629f`, with
-the peer branch `higgsfield-visuals-2026-11` merged and staged. Decisions for the owner: `business/site-upgrade/approvals.md`
-rows 102 to 121. "Live" below means https://nuxyautomation.com/ as it was on 2026-11-21.
+**Nothing in this document is deployed or merged.** The work is in the worktree `C:\Users\power\Freelance-redesign`
+(this folder, `portfolio/site`), branch `site-redesign-2026-11`. Fixes 1-106 are committed and pushed with the owner's
+approval (`d4323ea` merges the peer branch `higgsfield-visuals-2026-11`, then `c4cb69f`, `b32ea8e`, `29f6ed6`). Fixes
+107 onward are uncommitted edits on top of `29f6ed6`; committing or pushing them needs the owner's new yes. Decisions
+for the owner: `business/site-upgrade/approvals.md` rows 102 to 121. "Live" below means https://nuxyautomation.com/ as
+it was on 2026-11-21.
 
 ## How to review (L)
 
@@ -310,20 +312,173 @@ After the push (2026-11-22):
     already allows attribute styles. Outside this audit, `media/fiverr/video/landing` pins `astro` at exactly 7.4.2
     and carries the same moderate finding; it is a separate project, left for the owner to decide.
 
+After critique round 12 (2026-11-22, not committed yet):
+
+107. `/contact/` callback form: "What is the call about?" used plain radios while the quote form's "What do you need?"
+    uses big choice cards. It now uses the same cards: a red outline on the group after an empty Send, and the arrow
+    keys move the choice. The two forms now ask "what is it about" the same way.
+108. `/contact/` "Write it down" choice: the subtitle said "A few short questions, just below", which was wrong while
+    the callback form showed. It now reads "A short form; we reply in writing". The two choices stay the same height
+    side by side when one line wraps.
+109. `/contact/` on a phone: the starting prices sat in the side column, after the Send button. Step 2 of "What Happens
+    Next" now names them ("websites from $499, automations from $149"), read from the same data as the side column.
+    No amount changed.
+110. A "Popular" chip on five service cards had nothing behind it: there are no published request counts. It is
+    removed from `ServiceCard.astro` and from the data (`popular` in `services.ts` and on `/websites/`). The owner
+    can bring it back once real request counts support it.
+111. `/websites/` "If You Stop the Monthly Plan" cards: a "+" turned into a "×" when the card opened, which read as a
+    close button. The cards now use the caret that turns over, as `/portfolio/`'s "Project details" do.
+112. Home autopilot demos: before Start, a tall empty band sat between the first card and the "How it ends" preview,
+    and it read as broken. A quiet divider centred in that band now says how many steps play there ("3 steps in
+    between"), shown only when the band is tall enough to hold it. The script that measures the band now also watches
+    the first card: on a phone that card grows by a line once the web font loads, and before this the band was
+    measured one line too tall. The same watch fixes a latent case where the preview could be hidden by mistake.
+113. `/portfolio/` on a phone: with the level filter hidden there, the first line under the intro was "There is no
+    Flagship example here…", which read as an apology before any example. On a phone that line now closes the list,
+    after the last example. A computer keeps it beside the filter.
+
+After critique round 13 (2026-11-22, not committed yet):
+
+114. Home hero loop: it now fades into the page on its left edge as well (a wider edge ramp), checked at 1280, 1440
+    and 1920.
+115. Example pages on a phone: the eyebrow and level line no longer break at the "·". (This round's record said every
+    demo label now read "concept demo"; only some did. Fix 126 finished it.)
+116. Quote form: email and phone come straight after the name, before the optional fields.
+117. Both forms' failure panels offer "Try again" (the same answers, sent again), "Email it instead" (the answers in
+    the message) and "Change my answers".
+118. Both success panels say how to correct a detail: reply to our email.
+119. "Your Request Was Not Sent" and "Your Callback Request Was Not Sent" are in Title Case, like every other heading.
+120. "Secure https" reads in plain words.
+121. `/contact/` below 1024px: a line above the form, "Questions about paying or other costs? See the answers below the
+    form", links to the answers. Step 2 of "What Happens Next" names the starting prices (fix 109) and step 3 says
+    nothing is charged until the visitor agrees. The answers themselves stay after the form. (This round's record said
+    they moved above the form; they did not.)
+122. "Prefer Email?" hides once a form is sent.
+123. Not changed: the callback form's best-time question keeps compact radios. It is a short single choice; the cards
+    are for the main choice.
+124. Not changed: no level filter on a phone (deliberate since round 12); a phone gets the list in order, each with
+    "Project details".
+125. Home levels intro: "scroll storytelling" is explained in plain words on first use.
+
+After critique round 14 (2026-11-22, not committed yet):
+
+126. Every demo label reads "concept demo": the example pages' eyebrow and the cards on `/portfolio/` and `/ecommerce/`.
+127. `/portfolio/` demo actions match the cards elsewhere: one button, "Open the Demo Site" or "Open the Demo Store",
+    and "Computer & Phone View" as a text link.
+128. The numbered step circles share one style: filled in the button colour, 32px on `/get-a-website/` and 28px on
+    `/contact/`.
+129. `/websites/` shows the real client project first, before the three demos, and its intro says so. (Round 12's
+    entry above called its place an owner decision; it was not. The level and price chip on that card still needs
+    the client's consent.)
+130. Both success panels end with "See Our Work While You Wait", so a sent form is no longer a dead end.
+131. `/get-a-website/` opens its examples on Mossgate, the one its hero does not show.
+132. `/contact/` "What Happens Next" stacks each title above its text at every width; at 1440 the titles no longer
+    wrap in a narrow column.
+133. The Signature and Immersive example pages say the exact price is in the written plan, next to the "From" price,
+    so a starting price never reads as a final one.
+134. The Quillfern example page names the $699 Mini Online Store (up to 5 products) beside the $1,200 online shop.
+    Amounts unchanged.
+135. `/portfolio/` on a phone: the section index is a two-column list with every section in view at 320, 390 and 600;
+    full names wrap where needed, with "Co." kept with the word before it.
+136. `/websites/` on a phone: the section index uses the same two-column list (6 links, each 48px tall, the whole list
+    in view), hidden from 640px.
+
+After critique round 15 (2026-11-22, not committed yet):
+
+137. The Signature and Immersive example pages give "A custom-designed shop." (or "Designed and coded for one
+    business.") and "The exact price is in your written plan." as two whole sentences; on a phone each keeps to its
+    own line (it broke as "…shop; the / exact price…").
+138. Home hero price links: the clip box cut each 30px link to an 18px target. It now has 6px of room above and below,
+    taken back from its margins, so the full 30px takes a click and nothing moves.
+139. `/portfolio/` cards: the features follow the summary, and the facts plus the optional services fold under one
+    "Project details" line after them (open on a computer). A closed phone card has five actions instead of about six
+    links and buttons spread through it.
+140. `/get-a-website/` at 1024 and wider: the quote block follows "It's Yours, Not Rented" 56px below (it was 138px,
+    the steps column's height spread into the gap) and ends level with the steps.
+141. The docs pages mark "Our Work" in the header, the section that shows the automations they document.
+142. `/portfolio/` "Interactive demos" reads "Try the Live Demos", like the header.
+143. `/websites/` at 1024 and wider: the real client card spans the row like the three demos under it (it filled half
+    the row), its picture about one demo wide.
+144. Home hero price links on a touch screen: drawn 44px tall, but only 32-39px took a tap (the clip box and the next
+    row cut them). Now all 44px do, measured at 390 and 820 with touch emulation; the text does not move.
+
+After critique round 16 (2026-11-22, not committed yet):
+
+145. `/contact/`: the eyebrow names the open form ("Free quote" / "Free callback"); it said "Free quote" over the
+    callback form.
+146. Home: the trust line repeated the prices FAQ link that ends the page; it now links the written policies.
+147. Home "What We Do" at 1024 and wider: a two-line title pushed one card's text and price below the other two. The
+    cards now share their rows (subgrid), so titles, text, prices and links line up.
+148. Quote form error summary: 4px between the links (it was 10px above and below each, so five links took 230px);
+    each link is still 34px tall.
+149. Example pages on a touch screen: the live preview in the phone frame filled most of the screen and could catch
+    a thumb scroll. A "Tap to try the store" (or "site") layer now covers it, so the page scrolls past; a tap hands
+    the preview over, and scrolling it out of view puts the layer back. Not shown with a mouse.
+150. `/contact/`: the intro's promise follows the open form too ("we'll reply in writing" / "we'll call or text you
+    back"). Found in the capture that checked 145.
+151. DESIGN.md: the four h1s on `/about/`, `/demos/`, `/pricing/` and `/solutions/` use a size the type scale did not
+    name; it is now "Display S". The pages are unchanged.
+
+Checked and not a defect:
+- Round 16: the phone `/portfolio/` card boundary has a 10px gap between the kind label and the level chip, and the
+  next card starts 48px lower with its picture; the header quote button is outlined on `/contact/` as the current
+  page; the `/portfolio/` hero names all five examples while the home strip shows a selection.
+- Round 15: the contact aside does follow the form (`.aside-follow`, sticky at 96px); the level chip on the example
+  pages is a link to the level page; the home Flagship eyebrow wraps at 1440 because "Bespoke Digital Experiences" is
+  the approved name and its column is about 40px short of one line.
+- Round 12 called the quote form's "Yes, fix it / No, it's right" typo links small thumb targets. They are already
+  44px tall (`.inq-link` in `InquiryForm.astro`).
+- The "dead band" under the `/websites/` hero at 1440: measured, it is 115px from the hero's last element to the next
+  section. That is less than every other section gap on the page (about 230-260px) and close to the home page's.
+  The pause button standing alone at the right makes it look bigger. The layout is unchanged.
+- `/get-a-website/` sections have no eyebrows: the ad landing page is one offer read top to bottom, so it follows
+  the case-study rule (a plain h2). DESIGN.md now says so, and it no longer names "Popular" as a chip.
+- Demo-card actions (round 12): a full example on `/portfolio/` had two equal buttons, while the short cards on
+  `/websites/` and `/get-a-website/` had one button and a text link. Round 14 read the two patterns as inconsistent;
+  fix 127 gave `/portfolio/` the one-button pattern too.
+
 ## Critique trend
 
 Impeccable critique of the 7 key pages (home, portfolio, get-a-website, websites, one example, contact, one docs
 guide), two fresh assessors each round on Opus and Sonnet; the lower of the two scores is stored, never rounded up.
-Stored scores in order: 29, 31, 31, 31.5, 32, 31, 31, 31, 32, 31 (round 11, 2026-11-21). Records in
+Stored scores in order: 29, 31, 31, 31.5, 32, 31, 31, 31, 32, 31 (round 11, 2026-11-21), 32 (round 12,
+2026-11-22: A 32, B 32), 32 (round 13: A 32, B 33), 31 (round 14: A 31, B 33), 33 (round 15: A 35, B 33), 33 (round 16: A 33, B 33). Records in
 `.impeccable/critique/` (local, not committed).
 
-The score sits at 31-32/40, under the owner's 35 minimum. In the last rounds each heuristic scored 3 still names at
+Round 15 is the first round with one assessor at 35. The stored score is 33/40, still under the owner's 35 minimum.
+Before it the score sat at 31-32/40. In the last rounds each heuristic scored 3 still names at
 least one item that needs an owner decision, so fixes inside this task's scope remove single findings without moving
 a heuristic. The decisions that would lift it: one name for Website Care and plain headings in `handover.ts`
 (approvals 116 and 90; heuristics 2 and 4), the "Live Demos" nav label (row 91; heuristic 4), a shorter `/websites/`
 with one ownership block (heuristic 8), and a saved form draft with privacy wording (heuristic 3). One form at a time
 on `/contact/` (heuristics 5 and 7) was decided by the owner and built after round 11 (fix 105); the owner kept both
 forms' fields, so the quote form's phone field stays. Until the rest are decided the score is capped at about 32/40.
+
+Round 12 (both assessors 32) added four owner decisions:
+- A typical range for the third-party costs (the Squarespace or Wix plan and the domain) next to the $499/$900
+  prices, so a visitor can total a quote (heuristics 6 and 10). The site now says only "we tell you the exact cost
+  first"; a range needs real figures from the owner.
+- A level and price chip on the real client card (Chrysfadezzz), like the one every concept demo carries
+  (heuristic 4). This needs the client's consent. (Round 12 also kept that card after the level demos on
+  `/websites/`; that was not an owner decision, and fix 129 put the real client first.)
+- Making "Business name" optional on the quote form (heuristic 5). The inquiry service requires it, so this is a
+  server change.
+- Defaulting the "one-time / management / both" question to "Not sure yet" (heuristic 5). This changes what a quote
+  request records by default.
+
+Fixes 107-113 cover the rest of round 12's findings inside this task's scope.
+
+Round 15's owner items (assessor B's 3s on heuristics 3, 6 and 10 name them): the quote form's labels differ from
+the names the inquiry service records (a server change, `src/inquiry.js` and its parity test); a saved form draft
+(privacy wording); tap-to-call (needs a public phone number); and the $149 automations and $150 quick-fix figures
+shown side by side. Fixes 137-144 cover the rest of round 15's findings inside this task's scope.
+
+Round 16 (both assessors 33) named the same owner items and one more: assessor A's only P1 is the real client card
+with no level or price chip (client consent, already listed under round 12). Its other P2s are the plan-card titles
+(approval 90) and long phone pages, which include a peer item: "Features" repeats "What a Project Like This Would
+Include" on the example pages (`src/data/demo-sites.ts` text, owned by the demo session). Fixes 145-151 cover the
+rest. With these decisions open, heuristics 2, 3, 4, 5, 7 and 8 stay at 3 for at least one assessor, which holds the
+score at about 33/40.
 
 ## Verification
 
@@ -339,8 +494,14 @@ All runs below are on the local build (`dist/`), one test file or browser job at
 | Fix 105 in the browser (390 and 1440, local build) | quote form first, callback hidden; a click or the arrow keys switch, the address shows `#callback`, typed values survive; `/contact/#callback` lands with both choices 16px under the header and the first callback field on screen; reduced motion lands the same; without JavaScript both forms show; 0 page errors |
 | Fix 99 and 102 in the browser, every send blocked (0 requests left the page) | empty Send at 390: "5 answers need fixing." takes focus, links read "What do you need?", "Your name", "Business name", "Email", "Tell us about your project"; too-long answer: "Your project description is too long (3000 characters at most)." |
 | Page sweep: 36 Nuxy pages × 5 widths, each scrolled so the fade-ins finish | round 11: 0 console errors, 0 failed requests, 0 sideways overflow, 0 axe hits (earlier runs had 1 axe hit on `/demo/`, a timing artifact: a chat bubble captured mid fade-in). Round 12 (after 104-105): 0 failed requests, 0 overflow, 0 axe hits, and 1 page error at 390 on `/examples/mossgate-cleaning/`, thrown by the peer's Mossgate demo (see "Not done") |
-| Round 13, after fix 106 (Astro 7.4.7): build, types, tests | `astro build` clean (68 HTML files; the two CSP warnings also printed by 7.4.2), `tsc` 0 errors, the flag-on billing build rebuilt outside the repo; all 14 test files 223/223 with the same per-file counts as round 12 and every visual golden unchanged; `npm audit` 0 |
-| Round 13 in the browser and on `dist/` | sweep (36 pages × 5 widths): 0 console or page errors, 0 failed requests, 0 overflow, 1 axe hit on `/demo/` at 1440, the known mid-fade chat bubble: re-run three times, 0 contrast hits once the bubbles settle (opacity 0 to 0.95 when axe first ran). Links, SEO and prices as in rounds 11-12. Lighthouse mobile on `/contact/`, `/docs/small-business-automations/`, `/websites/`: 100 in all four categories, LCP within 10 ms of round 11, CLS 0 |
+| After fix 106 (Astro 7.4.7): build, types, tests | `astro build` clean (68 HTML files; the two CSP warnings also printed by 7.4.2), `tsc` 0 errors, the flag-on billing build rebuilt outside the repo; all 14 test files 223/223 with the same per-file counts as round 12 and every visual golden unchanged; `npm audit` 0 |
+| Fix 106 in the browser and on `dist/` | sweep (36 pages × 5 widths): 0 console or page errors, 0 failed requests, 0 overflow, 1 axe hit on `/demo/` at 1440, the known mid-fade chat bubble: re-run three times, 0 contrast hits once the bubbles settle (opacity 0 to 0.95 when axe first ran). Links, SEO and prices as in rounds 11-12. Lighthouse mobile on `/contact/`, `/docs/small-business-automations/`, `/websites/`: 100 in all four categories, LCP within 10 ms of round 11, CLS 0 |
+| After fixes 107-113 (critique round 12): build, types, tests | `astro build` exit 0, `tsc` 0 errors; all 14 test files 223/223, each run on its own after the last edit: billing 18, cinematic 21, contact-form 28, creative 21, demos 6, estimate 7, levels 16, pages 34, pricing 14, quillfern 5, security-txt 2, site 22, stage 4, visual 25. The two contact goldens were replaced after their diffs were reviewed: only the "Write it down" subtitle, the step-2 prices and the equal-height choices changed. Every other golden is unchanged |
+| Fixes 107-113 in the browser and on `dist/` | sweep (36 pages × 5 widths): 0 console or page errors, 0 failed requests, 0 overflow, 1 axe hit on `/demo/` at 1440 (the same mid-fade chat bubble; re-check 0 across 3 runs). Fix 113 measured at 390: the Flagship line sits 48px under the last example and the first example follows the intro; at 1440 it stays beside the filter. Links: only the example sites' in-page anchors (peer files). SEO: only the noindex pages listed. Prices: 3 hits, all other products (Creative Studio "Business package" $1,499 a month, "Business CRM & Automation System from $2,500", and the Mini Online Store's $699 line) |
+| After fixes 114-125 (critique round 13): build, types, tests, browser | build and `tsc` clean; all 14 test files 224/224, each run on its own: billing 18, cinematic 21, contact-form 29 (28 in round 12; the suite now includes "when the server fails, the callback form says NOT sent, tries again on request, and keeps the answers", fix 117), creative 21, demos 6, estimate 7, levels 16, pages 34, pricing 14, quillfern 5, security-txt 2, site 22, stage 4, visual 25. Sweep (36 pages × 5 widths): 0 console errors, 0 failed requests, 0 overflow, 0 axe hits. Security check 8/8. Links, SEO and prices clean apart from the peer example-site anchors and the price check's known other products. Captures in the redesign folder's `screenshots/r13-fixes` |
+| After fixes 126-136 (critique round 14): build, tests, browser | build clean; all 14 test files 224/224 with the same per-file counts (`site.test.mjs` now asserts "Open the Demo Site/Store"). Sweep (36 pages × 5 widths, the fade-ins settled): 0 console errors, 0 failed requests, 0 overflow, 0 axe hits. The contact-390, contact-1440 and portfolio-390 goldens were replaced after their diffs were reviewed; every other golden is unchanged. The phone indexes measured at 320, 390 and 600 (every link in view, none off-screen, 0 page overflow) and hidden at 640. Captures in `screenshots/r14-fixes` |
+| After fixes 137-144 (critique round 15): build, tests, browser | build clean; all 14 test files 224/224 with the same per-file counts, and pages, site and visual again after fix 144 (34, 22, 25). Sweep (36 pages × 5 widths, the fade-ins settled): 0 console errors, 0 failed requests, 0 overflow, 0 axe hits. No visual golden changed. Measured: hero price links 30px clickable at 390 and 1440, 44px tappable at 390 and 820 with touch emulation; the `/get-a-website/` quote block 56px under "It's Yours" at 1440; the `/websites/` client card 1120px wide, the same as the demo grid; the docs header marks "Our Work". Captures in `screenshots/r15-fixes` |
+| After fixes 145-151 (critique round 16): build, tests, browser | build clean; all 14 test files 226/226, each run on its own after the last edit: billing 18, cinematic 21, contact-form 29 (the tab test now checks the eyebrow and the intro on each form), creative 21, demos 6, estimate 7, levels 16, pages 36 (new: the What We Do rows line up at 1440; the touch layer shows at 390 with touch, hands over on a tap and returns after scrolling away, and stays hidden with a mouse), pricing 14, quillfern 5, security-txt 2, site 22, stage 4, visual 25. Sweep on the final build (36 pages × 5 widths): 0 console errors, 0 failed requests, 0 overflow, 0 axe hits. No visual golden changed. Measured: the tap layer's label 175x46 at 390; the error summary 246px tall with 34px links. Captures in `screenshots/r16-fixes` |
 | Internal links across `dist/` (5,266 checked, round 11) | none broken outside the example sites; inside them, demo buttons use `#call`, `#email`, `#text`, `#rooms`, `#warranty`, `#directions` and `#review` as on-page demo actions (peer's files, not edited) |
 | Prices on Nuxy pages vs `src/data` (round 11, 40 pages, all seven names checked) | all match. Starter $499 (4 pages), Signature $3,500 (12), Immersive $6,000 (5), online shop $1,200 (4), Mini Online Store $699 (`/pricing/`). The Business level card reads "$499 – $900" on 10 pages (round 12, after fix 104; the owner's decision on row 121, which the peer's merged commit `e9ab3e0` had changed to "From $499"), with the note "One page $499, a site of up to 4 pages $900"; amounts unchanged. Other "Business" prices are other products: the $1,499 video-ad "Business package" (`creative.ts`, owner-approved) and the "Business CRM & Automation System from $2,500". Flagship shows no fixed price. `$149` on `/pricing/` and `/policies/` is the published automation starting price, not a Starter price |
 | SEO metadata (after fix 103: 68 HTML files, 36 in the sitemap) | every Nuxy page has a title, description and canonical, and no indexed page has a long title (`/automation/` was 62 characters, now 50). Example sites and payment pages are `noindex` |
@@ -368,6 +529,18 @@ on the same build (home 95-98, pricing 94-98 across rounds), so treat the mobile
 
 - **Deploy and merge to master:** the owner's step (approval 102). The owner approved committing and pushing this
   branch on 2026-11-21, and nothing more. Merge order with `higgsfield-visuals-2026-11`: approval 103.
+  2026-11-22: on the owner's order to the demo session, that session pushed master `f0f9fca` (from `93b3e44`). It
+  merges `demo-redesign-2026-11` at `3993ee6`, which merges this branch's pushed `29f6ed6` unchanged with the demos
+  at `5f5bdea`. Its only conflicts were six portfolio preview goldens (`/websites/`, `/get-a-website/` and
+  `/ecommerce/` at 390 and 1440), replaced with merged captures. It reports 227 tests run with 0 failures and
+  security-check `--strict` passing, and nothing deployed. This session did not take part in that merge. Fixes
+  107-144 are not on master: they are uncommitted here and wait on a new owner yes to push. When they go up, this
+  branch's goldens win for the pages it changed.
+  The peer branch `demo-redesign-2026-11` (worktree `C:\Users\power\Freelance-demo-redesign`, uncommitted) owns
+  `src/layouts/DemoSite.astro` and the demo pages. On this branch the demos' fixed "Built by Nuxy" pill covers the
+  corner of Quillfern's hero note at 1280x800 (round 14). The peer's version fixes it on all four demos (a 44px mark,
+  shown only from 1400px, hidden on the first screen; 159 appearances measured, 0 within 6px of text). When the two
+  branches meet, keep the peer's `DemoSite.astro` and demo files: if this branch's copy wins, the overlap returns.
 - **GitHub "Security checks" on the pushed branch:** the run did not start because of a billing block on the GitHub
   account ("recent account payments have failed or your spending limit needs to be increased"), the owner's step.
   The same command (`node tools/security-check.mjs --strict --skip=semgrep`) run locally passed 8 of 8, Gitleaks
@@ -384,9 +557,17 @@ on the same build (home 95-98, pricing 94-98 across rounds), so treat the mobile
   peer session; Lantern Row beside the real barber is approval 118.
 - **Production forms:** never submitted; form tests run against a local stand-in.
 - **`/websites/` repeats ownership points that `/handover/` explains:** left; trimming it is a content call, not a fix.
-- **Design score 31/40, under the 35 minimum:** the decisions that cap it are listed under "Critique trend" above.
-- **Left from round 11 on purpose:** the contact "What Happens Next" title column, the datalist arrow, the docs JSON
-  wrapping mid-token at 390, "NOT" in capitals in the fail panel, the Fernway picture shown twice on `/get-a-website/` at
-  390; the example pages' "Technology" and "Performance" rows are the peer's text.
+- **Design score 33/40 (round 16: A 33, B 33; round 15: A 35, B 33), under the 35 minimum:** the decisions that cap it are listed under
+  "Critique trend" above.
+- **Left from round 12 on purpose:**
+  - the two-line home eyebrow at 390 ("Faribault, MN" on its own line reads as the place);
+  - `/websites/` feature headings that balance onto two lines in the narrow two-column grid;
+  - the docs log block, which runs wider than the prose column at 1440 so its columns line up;
+  - the Concept Films' audience: a content call.
+- **Left from round 11 on purpose:** the datalist arrow, the docs JSON wrapping mid-token at 390, "NOT" in capitals in
+  the fail panel (the inquiry service's message), the Fernway picture in both the `/get-a-website/` hero and its
+  examples (only two Business demos exist; since fix 131 the examples open on Mossgate); the example pages'
+  "Technology" and "Performance" rows are the peer's text. The contact "What Happens Next" title column was changed
+  in round 14 (fix 132).
 - **Tooling:** the Bash tool in this Claude session failed on every call (a harness error), so checks ran through
   PowerShell and Node, and the critique assessors read prepared screenshots and detector output.

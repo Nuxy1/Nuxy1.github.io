@@ -47,7 +47,6 @@ export type Service = {
   /** costs paid to other companies, not to Nuxy */
   costs: string;
   variants?: Variant[];
-  popular?: boolean;
   addon?: boolean;
 };
 
@@ -63,7 +62,7 @@ export const groups: Group[] = [
     lead: "A site that works on phones and shows up on Google, and a store in your own account, with the extras that keep orders moving.",
     legacy: ["web", "website", "ecommerce"],
     items: [
-      S({ id: "new-website", icon: "globeSimple", name: "New website", price: "$900", priceType: "fixed", status: "active", manage: "website", fits: "all", popular: true,
+      S({ id: "new-website", icon: "globeSimple", name: "New website", price: "$900", priceType: "fixed", status: "active", manage: "website", fits: "all",
         fixes: "No website, or one too old to fix",
         text: "Up to 4 pages, built for phones: your services and prices, hours, map and a Book, Quote or Order button, on your own domain. Built in your own Squarespace or Wix account, so you can edit it and it stays yours.",
         who: "Businesses with no website, or one too old or broken to fix.",
@@ -71,12 +70,12 @@ export const groups: Group[] = [
         costs: "The Squarespace or Wix plan and your domain, paid to them directly.",
         variants: [V({ id: "starter-website", name: "Starter Website", price: "$499", priceType: "fixed",
           text: "One phone-friendly landing page from the words, photos and logo you send: a contact or inquiry form, basic search and Google setup, tested on phones and handed over. No extra pages and no custom back end." })] }),
-      S({ id: "site-fixes", icon: "wrench", name: "Website quick fixes", price: "from $150", priceType: "from", status: "active", manage: "website", fits: "all", popular: true,
+      S({ id: "site-fixes", icon: "wrench", name: "Website quick fixes", price: "from $150", priceType: "from", status: "active", manage: "website", fits: "all",
         fixes: "A site that looks broken on a phone",
-        text: "Secure https, a phone-friendly page setup, a booking or quote button and a contact form that works: on the site you already have.",
+        text: "A secure connection (https), a phone-friendly page setup, a booking or quote button and a contact form that works: on the site you already have.",
         who: "Businesses whose site works but looks dated or breaks on phones.",
         needs: "Invited access to your current website.",
-        costs: "Usually none. Secure https is free on most hosts." }),
+        costs: "Usually none. A secure connection (https) is free on most hosts." }),
       S({ id: "google-profile", icon: "mapTrifold", name: "Google profile setup", price: "$199", priceType: "fixed", status: "active", manage: "none", fits: "all",
         fixes: "A business Google barely shows",
         text: "Your Google Business Profile claimed or created, with categories, hours, services, your photos and your website and booking links. We walk you through Google’s own verification.",
@@ -117,7 +116,7 @@ export const groups: Group[] = [
     lead: "Answer every inquiry fast, catch the calls you miss, and get the reviews your work has earned.",
     legacy: ["automation", "customers", "get-customers"],
     items: [
-      S({ id: "follow-up", icon: "chatCircleText", name: "Lead response & follow-up", price: "$399", priceType: "fixed", status: "active", manage: "automation", fits: "all", popular: true,
+      S({ id: "follow-up", icon: "chatCircleText", name: "Lead response & follow-up", price: "$399", priceType: "fixed", status: "active", manage: "automation", fits: "all",
         fixes: "Messages that wait hours for an answer",
         text: "Every website form, email, Facebook or Instagram inquiry gets an instant reply and an alert to you or your staff, then 2 friendly follow-ups that stop as soon as they answer. A contact form added if your site has none.",
         who: "Any business that gets inquiries while it’s busy: trades, cleaners, contractors, salons, offices.",
@@ -143,7 +142,7 @@ export const groups: Group[] = [
         who: "Contractors, agencies and offices with steady inquiries and a calendar to fill.",
         needs: "Invited access to your forms, inbox and calendar, your rules for a good fit, and an AI account in your name.",
         costs: "AI usage, billed by the AI company to your own account; sometimes a form or automation tool’s plan. Named in your written plan first." }),
-      S({ id: "reviews", icon: "star", name: "Review requests", price: "$149", priceType: "fixed", status: "active", manage: "automation", fits: "all", popular: true,
+      S({ id: "reviews", icon: "star", name: "Review requests", price: "$149", priceType: "fixed", status: "active", manage: "automation", fits: "all",
         fixes: "Happy customers who never leave a review",
         text: "After each finished job, visit or order, every customer gets the same short thank-you with your Google review link: no screening for happy customers, no rewards for reviews. Sent at a sensible time, never twice to the same visit, and anyone who opts out never gets another.",
         who: "Any business with a Google profile and finished jobs or visits.",
@@ -163,7 +162,7 @@ export const groups: Group[] = [
     lead: "Make booking easy, cut no-shows, and stop playing phone tag over times.",
     legacy: [],
     items: [
-      S({ id: "booking", icon: "calendarCheck", name: "Online booking & reminders", price: "$349", priceType: "fixed", status: "active", manage: "automation", fits: "appointments office", popular: true,
+      S({ id: "booking", icon: "calendarCheck", name: "Online booking & reminders", price: "$349", priceType: "fixed", status: "active", manage: "automation", fits: "appointments office",
         fixes: "Calls you miss while you’re with a customer",
         text: "A Book now button on your website, Google profile and Instagram, connected to the booking tool you already use (or a free one), with text and email reminders that cut no-shows and a reschedule link where your tool supports it.",
         who: "Appointment businesses: barbers, salons, groomers, studios, consultants.",

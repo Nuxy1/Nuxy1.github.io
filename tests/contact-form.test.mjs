@@ -173,8 +173,11 @@ test("a real request is saved, shows its reference, and the page count carries n
   await page.check("[name=contact][value=email]");
   await page.check("[name=scope][value=both]");
   await page.check("#f-consent");
+  assert.equal(await page.isVisible(".aside-email"), true);
   await page.click("[data-submit]");
   await panel(page, "done").waitFor({ state: "visible" });
+  // (critique round 13) the confirmation names the address for anything to add, so the side column stops offering it
+  assert.equal(await page.isHidden(".aside-email"), true);
   const ref = await page.textContent("[data-ref]");
   assert.match(ref, REF);
   assert.equal(await page.textContent("[data-email]"), v.email);
@@ -407,7 +410,7 @@ test("sending twice gives the same reference (the server's duplicate guard)", as
 });
 
 test("when the server fails, the page says NOT sent and offers the answers as an email", async () => {
-  const { page, context } = await open("/contact/?service=quotes", {
+  const { page, context, sent } = await open("/contact/?service=quotes", {
     answer: (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ ok: false, message: "Your message was NOT saved because of a problem on our side." }) }),
   });
   const v = await fill(page, { need: "Line one\nLine two of what I need.", type: "Plumbing" });
@@ -427,10 +430,21 @@ test("when the server fails, the page says NOT sent and offers the answers as an
   // (the choices read as the customer saw them, not as codes)
   for (const value of [`What I need: ${wantLabel(v.want)}`, v.name, v.business, v.email, "Type of business: Plumbing", "When: As soon as possible", "Budget: Under $500", "Best way to reach me: Either", "Line one\nLine two"]) assert.ok(body.includes(value), value);
   assert.ok(!body.includes("lt500") && !body.includes("asap"), body);
-  // back to the form with everything still filled in
+  // (critique round 13) "Try again" sends the same answers once more (here it fails again, so the panel comes back) ...
+  const tries = sent.inquiry.length;
   await page.click("[data-retry]");
+  await panel(page, "fail").waitFor({ state: "visible" });
+  assert.equal(sent.inquiry.length, tries + 1);
+  const again = new URLSearchParams(sent.inquiry.at(-1));
+  assert.equal(again.get("business"), v.business);
+  assert.equal(again.get("need"), new URLSearchParams(sent.inquiry[tries - 1]).get("need"));
+  // ... and "Change my answers" goes back to the form with everything still filled in, sending nothing
+  await page.click("[data-edit]");
+  assert.equal(await panel(page, "fail").isHidden(), true);
   assert.equal(await page.inputValue("[name=business]"), v.business);
   assert.equal(await page.isEnabled("[data-submit]"), true);
+  assert.equal(await page.evaluate(() => document.activeElement?.hasAttribute("data-submit")), true);
+  assert.equal(sent.inquiry.length, tries + 1);
   await context.close();
 });
 
@@ -617,16 +631,18 @@ test("one form at a time: the quote form first, the callback form on its tab or 
     list: document.querySelector("[data-ways]").getAttribute("role"),
     tabs: [...document.querySelectorAll("[data-way]")].map((a) => [a.getAttribute("role"), a.getAttribute("aria-selected"), a.tabIndex, a.getAttribute("aria-controls")]),
     quote: !document.querySelector("#quote-panel").hidden, callback: !document.querySelector("#callback").hidden,
-    hash: location.hash, focus: document.activeElement?.id ?? "" }));
+    hash: location.hash, focus: document.activeElement?.id ?? "",
+    // (critique round 16: the label and the intro's promise name the open form)
+    eyebrow: `${document.querySelector("[data-way-eyebrow]").textContent} / ${document.querySelector("[data-way-reply]").textContent}` }));
   const tabs = (q, c) => [["tab", q ? "true" : "false", q ? 0 : -1, "quote-panel"], ["tab", c ? "true" : "false", c ? 0 : -1, "callback"]];
-  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(true, false), quote: true, callback: false, hash: "", focus: "" });
+  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(true, false), quote: true, callback: false, hash: "", focus: "", eyebrow: "Free quote / we’ll reply in writing" });
   await page.fill("#f-name", "Kept Name");
   await page.click("#way-callback");
-  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(false, true), quote: false, callback: true, hash: "#callback", focus: "way-callback" });
+  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(false, true), quote: false, callback: true, hash: "#callback", focus: "way-callback", eyebrow: "Free callback / we’ll call or text you back" });
   await page.fill("#cb-name", "Also Kept");
   await page.focus("#way-callback"); // back on the tabs, as a keyboard user would be (Shift+Tab out of the form)
   await page.keyboard.press("ArrowLeft");
-  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(true, false), quote: true, callback: false, hash: "", focus: "way-quote" });
+  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(true, false), quote: true, callback: false, hash: "", focus: "way-quote", eyebrow: "Free quote / we’ll reply in writing" });
   assert.equal(await page.inputValue("#f-name"), "Kept Name");
   await page.keyboard.press("End");
   assert.equal((await state()).callback, true);
@@ -689,8 +705,40 @@ test("a callback request is saved as one, and the success message promises no ti
   assert.match(done, /not an appointment: no call time has been set/);
   assert.doesNotMatch(done, /scheduled|booked|confirmed|reserved/i);
   assert.match(done, /\(507\) 555-0142/);
+  assert.equal(await page.isHidden(".aside-email"), true);
   const events = sent.hit.map((b) => new URLSearchParams(b).get("e"));
   if (events.length) assert.ok(events.includes("callback_completed") && !events.includes("contact_completed"), events.join());
+  await context.close();
+});
+
+// (critique round 13) the callback form's failure panel offers the same three ways out as the quote form's
+test("when the server fails, the callback form says NOT sent, tries again on request, and keeps the answers", async (t) => {
+  const { page, context, sent } = await open("/contact/#callback", {
+    answer: (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ ok: false, message: "Your message was NOT saved because of a problem on our side." }) }),
+  });
+  if (!(await page.locator("[data-callback]").count())) { await context.close(); return t.skip("callbackForm is off"); }
+  const v = await fillCallback(page);
+  await page.check("#cb-consent");
+  await page.click("[data-cb-submit]");
+  await page.locator("[data-cb-fail]").waitFor({ state: "visible" });
+  assert.match(await page.textContent("[data-cb-fail] h3"), /Not Sent/);
+  assert.match(await page.textContent("[data-cb-fail-text]"), /NOT saved/);
+  assert.equal(await page.isHidden("[data-cb-done]"), true);
+  const mail = new URL(await page.getAttribute("[data-cb-mailto]", "href"));
+  assert.equal(mail.protocol, "mailto:");
+  assert.ok(mail.searchParams.get("body").includes(v.phone), mail.searchParams.get("body"));
+  const tries = sent.inquiry.length;
+  await page.click("[data-cb-retry]");
+  await page.locator("[data-cb-fail]").waitFor({ state: "visible" });
+  assert.equal(sent.inquiry.length, tries + 1);
+  assert.equal(new URLSearchParams(sent.inquiry.at(-1)).get("phone"), new URLSearchParams(sent.inquiry[tries - 1]).get("phone"));
+  await page.click("[data-cb-edit]");
+  assert.equal(await page.isHidden("[data-cb-fail]"), true);
+  assert.equal(await page.inputValue('[data-callback] [name="business"]'), v.business);
+  assert.equal(await page.isEnabled("[data-cb-submit]"), true);
+  assert.equal(await page.evaluate(() => document.activeElement?.hasAttribute("data-cb-submit")), true);
+  assert.equal(sent.inquiry.length, tries + 1);
+  assert.equal(await page.isVisible(".aside-email"), true); // (nothing was sent, so the email address stays offered)
   await context.close();
 });
 

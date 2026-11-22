@@ -28,7 +28,8 @@ const care = plans.find((p) => p.id === "care")!;
 // words from data/case-studies.ts, linked to its case study; a staged one never shows here
 const client = shownCases.find((c) => !isStaged(c));
 // (critique round 11: the one line read as a footnote) it is now a small panel with the project's own home-page picture,
-// still after the made-up examples and labelled apart from them, and still only the study's own words
+// labelled apart from the made-up examples, and still only the study's own words. (critique round 14) It comes before
+// them, real work first, as on the home page and /portfolio/ (docs/design-brief-2026-11.md).
 const clientShot = client?.shots?.find((s) => s.device === "desktop");
 const clientWork = client ? `${client.services[0]}${client.services.length > 1 ? ` with ${client.services.slice(1).join(" and ").toLowerCase()}` : ""}.` : "";
 // (critique round 10: the page is about 13,700px on a phone) the "On This Page" chips, phones only
@@ -38,7 +39,7 @@ const [owned, managed] = arrangements;
 // a full rebuild is the published New website, offered to sites past saving (the contact link asks about new-website).
 // It leaves out New website's one-page Starter variant: the price panel above already offers it, and the card printed
 // the same Starter paragraph a second time (site audit 2026-11-21, finding 8).
-const rebuild = { ...web, variants: undefined, name: "Full rebuild", icon: "arrowsClockwise" as IconName, popular: false,
+const rebuild = { ...web, variants: undefined, name: "Full rebuild", icon: "arrowsClockwise" as IconName,
   fixes: "A site too old, slow or broken to repair",
   text: "The same as a new website: up to 4 phone-friendly pages in your own Squarespace or Wix account, with your current domain connected to it, so your web address doesn’t change.",
   who: "Sites that would cost more to patch than to replace.",
@@ -78,7 +79,7 @@ const questions: [string, string][] = [
   ["What will I pay other companies?", `${web.costs} We tell you the exact current price of the plan your site needs in the written plan, before you sign up for anything.`],
   ["Can you promise more customers or a top Google ranking?", faq("Can you promise more customers or a top Google ranking?")],
   ["How long does it take?", "Your written plan gives the timeline before you agree to anything. The biggest factor is usually how quickly the photos, prices and text come together, and we help with that."],
-  ["I already have a website. Do I need a new one?", `Often not. Quick fixes (${fixes.price}) cover secure https, a phone-friendly layout, a booking or quote button and a working form on the site you already have. If it’s past saving, a new website is ${web.price}.`],
+  ["I already have a website. Do I need a new one?", `Often not. Quick fixes (${fixes.price}) cover a secure connection (https), a phone-friendly layout, a booking or quote button and a working form on the site you already have. If it’s past saving, a new website is ${web.price}.`],
   ["How do I pay?", faq("How do I pay?")],
 ];
 
@@ -184,12 +185,11 @@ const service = {
       <div class="section-head">
         <p class="eyebrow">Example websites</p>
         <h2 id="examples-h">See What a Nuxy Website Looks Like</h2>
-        <p>Three demonstration sites for made-up local businesses. Open any of them to see it on a computer and on a phone, buttons and forms included.</p>
+        <p>{client ? "A real client website first, then three demonstration sites for made-up local businesses." : "Three demonstration sites for made-up local businesses."} Open any demo to see it on a computer and on a phone, buttons and forms included.</p>
       </div>
-      <DemoSites only={["fernway-lawn", "lantern-row-barbers", "mossgate-cleaning"]} />
       {client && (
         <article class="client-proof" aria-labelledby="client-proof-h">
-          {clientShot && <img class="client-shot" src={clientShot.src} srcset={clientShot.srcset} sizes="(min-width: 640px) 288px, calc(100vw - 32px)" width={clientShot.width} height={clientShot.height} alt="" loading="lazy" decoding="async" />}
+          {clientShot && <img class="client-shot" src={clientShot.src} srcset={clientShot.srcset} sizes="(min-width: 1024px) 360px, (min-width: 640px) 288px, calc(100vw - 32px)" width={clientShot.width} height={clientShot.height} alt="" loading="lazy" decoding="async" />}
           <div class="client-copy">
             <span class="client-real"><Icon name="briefcase" />Real Client Website</span>
             <h3 id="client-proof-h">{client.business}</h3>
@@ -199,6 +199,7 @@ const service = {
           </div>
         </article>
       )}
+      <DemoSites only={["fernway-lawn", "lantern-row-barbers", "mossgate-cleaning"]} />
     </div>
   </section>
 
@@ -253,7 +254,7 @@ const service = {
            sits under the promises, and stay open beside them on a computer (the script at the end). Open in the HTML,
            so without JavaScript every width shows them as before. -->
       <details class="leave panel" open data-open-wide>
-        <summary><h3>If You Stop the Monthly Plan</h3><Icon name="plus" /></summary>
+        <summary><h3>If You Stop the Monthly Plan</h3><Icon name="caretDown" /></summary>
         <ol class="leave-list">
           {leaving.map((t) => <li>{t}</li>)}
         </ol>
@@ -359,7 +360,7 @@ const service = {
 
   .svc-pair { align-items: stretch; }
   .more-line { margin-top: 24px; color: var(--body); }
-  .client-proof { display: grid; gap: 18px; max-width: 46rem; margin-top: 32px; padding: 16px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
+  .client-proof { display: grid; gap: 18px; max-width: 46rem; margin-bottom: clamp(32px, 4vw, 48px); padding: 16px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
   .client-shot { width: 100%; height: auto; aspect-ratio: 16 / 10; border: 1px solid var(--hairline-strong); border-radius: 10px; object-fit: cover; object-position: top; }
   .client-copy { display: grid; justify-items: start; align-content: center; gap: 6px; }
   .client-copy h3 { margin-top: 6px; font-size: 1.25rem; }
@@ -371,16 +372,23 @@ const service = {
   @media (min-width: 640px) {
     .client-proof { grid-template-columns: 288px minmax(0, 1fr); gap: 24px; }
   }
-  /* (critique round 10) phones only: "On This Page" as one row of chips that scrolls sideways, as on /portfolio/; the
-     right edge fades so the row says it scrolls, and the end padding lets the last chip clear the fade */
+  /* (critique round 15: at 1440 the card filled half the width above the three demos and read as left over) on a
+     computer it spans the row like the demos under it, its picture about one demo wide */
+  @media (min-width: 1024px) {
+    .client-proof { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 32px; }
+    .client-copy h3 { font-size: 1.5rem; }
+  }
+  /* (critique round 10) phones only: "On This Page". (critique round 14: as one row of chips scrolling sideways it
+     showed two and a half of its six at 390px, the third cut mid-word) it is the same hairline list in two columns as on
+     /portfolio/, every section in view at once */
   .jump { display: none; }
   @media (max-width: 639px) {
     .jump { display: block; padding-top: 8px; }
     .jump-h { margin: 0; color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; line-height: 1.4; text-transform: uppercase; }
-    .jump ul { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; margin: 10px -16px 0; padding: 2px 48px 4px 16px; list-style: none; mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); scroll-snap-type: x proximity; scroll-padding-inline: 16px; }
-    .jump li { flex: none; margin: 0; scroll-snap-align: start; }
-    .jump a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); color: var(--ink); font-size: 0.9375rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
-    .jump a:hover { border-color: var(--link); }
+    .jump ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; margin: 10px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--hairline); }
+    .jump li { display: grid; margin: 0; border-bottom: 1px solid var(--hairline); }
+    .jump a { display: flex; align-items: center; min-height: 48px; padding: 6px 0; color: var(--ink); font-size: 0.9375rem; font-weight: 600; line-height: 1.3; text-decoration: none; }
+    .jump a:hover { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
   }
 
   /* (critique round 7: a short card beside a tall one read as unfinished) the two cards are one height; each keeps its
@@ -414,7 +422,9 @@ const service = {
   .leave > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; cursor: pointer; list-style: none; }
   .leave > summary::-webkit-details-marker { display: none; }
   .leave > summary :global(.icon) { flex: none; color: var(--muted); transition: transform 200ms var(--ease); }
-  .leave[open] > summary :global(.icon) { transform: rotate(45deg); }
+  /* (critique round 12: a "+" turned to "×" in the corner of an open card read as a close button) the card's caret, as
+     on /portfolio/'s "Project details", turns over when it opens */
+  .leave[open] > summary :global(.icon) { transform: rotate(180deg); }
   .leave > summary:hover :global(.icon) { color: var(--ink); }
   .leave .leave-list { margin-top: 16px; }
   @media (prefers-reduced-motion: reduce) { .leave > summary :global(.icon) { transition: none; } }

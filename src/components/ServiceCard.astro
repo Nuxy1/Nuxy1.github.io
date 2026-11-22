@@ -24,7 +24,6 @@ const variants = s.variants ?? [];
     <span class="svc-icon"><Icon name={s.icon} /></span>
     <span class="svc-tags">
       {s.status !== "active" && <span class="chip blue">{statusWords[s.status]}</span>}
-      {s.popular && <span class="chip">Popular</span>}
       {s.addon && <span class="chip plain">Add-on</span>}
     </span>
   </div>

@@ -217,7 +217,8 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
 
 | Step | Size | Used for |
 |---|---|---|
-| Display | `clamp(2.25rem, 1.3rem + 3.6vw, 3.75rem)` (36-60px), 700, -0.035em, line-height 1.06 | every page's h1, the home hero included |
+| Display | `clamp(2.25rem, 1.3rem + 3.6vw, 3.75rem)` (36-60px), 700, -0.035em, line-height 1.06 | every page's h1, the home hero included, except the four below |
+| Display S | `clamp(2.125rem, 1.5rem + 2.6vw, 3.25rem)` (34-52px) | the h1 of `/about/`, `/demos/`, `/pricing/` and `/solutions/`, the pages with the longest headlines (40-60 characters); set before the 2026-11 redesign and kept, 2px smaller than Display on a phone and 8px smaller at the top (critique round 16 found the size undocumented) |
 | Section | `clamp(1.75rem, 1.25rem + 1.9vw, 2.5rem)` (28-40px), 650, -0.03em | h2 section heads; feature blocks use `clamp(2rem, 1.4rem + 2.6vw, 3-3.25rem)` |
 | Sub-section | `clamp(1.5rem, 1.2rem + 1.2vw, 2rem)` and `1.5-1.75rem` | price figures, plan names, large card heads |
 | Card head | `1.25-1.375rem` | panel titles, step titles |
@@ -244,6 +245,8 @@ New text uses one of these steps; sizes outside them (a few 1.3125 and 1.625rem)
 - Sections breathe: `.section` padding 64-112px; `.section-head` holds the eyebrow, h2 and one-line intro.
   Exception: a case study (`/portfolio/<slug>/`, `/work/<slug>/`) is read top to bottom like an article, so its
   sections carry a plain h2 with no eyebrow; the eyebrow is for pages a visitor scans (home, services, portfolio index).
+  The ad landing page `/get-a-website/` is the same case: one offer read top to bottom, so only its hero carries an
+  eyebrow and its short sections use a plain h2.
 - Built phone first and checked at 320, 375, 390, 768, 1024, 1440 and 1920px wide, with no sideways scroll at any width.
 - The header is 64px tall on every page at every width. Below 900px its links fold into the phone menu; from 900px
   they sit in a row with the Services dropdown; the "Get a Free Quote" button shows from 768px.
@@ -291,7 +294,8 @@ New text uses one of these steps; sizes outside them (a few 1.3125 and 1.625rem)
   action is "Request a callback". Sentence case for links and secondary actions.
 - **Panel:** the card surface (`panel` background, hairline border, 18px radius). No shadow on the dark layers
   except the header and floating parts, which use `--shadow`.
-- **Eyebrow and chip:** small cyan uppercase labels; chips for tags like "Popular" or "Add-on".
+- **Eyebrow and chip:** small cyan uppercase labels; chips for factual tags like "Add-on". No "Popular" or other
+  social-proof chip unless real request counts back it (removed 2026-11-22, audit fix 110).
 - **FAQ:** native `<details>`; the plus icon turns 45 degrees when open.
 - **ServiceCard:** name, price, one-line outcome, who it suits, what you need, running costs, and a "Get a Free
   Quote" link that pre-selects the service in the form.

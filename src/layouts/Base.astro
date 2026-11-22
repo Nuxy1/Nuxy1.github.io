@@ -47,7 +47,8 @@ const nav: [string, string][] = [
 const current = (href: string) => (href === "/" ? path === "/" : !href.includes("#") && path.startsWith(href));
 // (critique round 6: on a demo's computer and phone view nothing in the menu was marked) a page that belongs to a
 // section without sitting under its address marks that section's item as "true" (the item for its own page stays "page")
-const within: Record<string, string[]> = { "/portfolio/": ["/examples/", "/work/"] };
+// (critique round 15: the developer docs marked nothing) they document the automations shown under Our Work
+const within: Record<string, string[]> = { "/portfolio/": ["/examples/", "/work/", "/docs/"] };
 const mark = (href: string) => (current(href) ? "page" : (within[href] ?? []).some((p) => path.startsWith(p)) ? "true" : undefined);
 const inServices = serviceNav.some(([, href]) => current(href)) || ["/get-a-website/", "/business-websites/", "/signature-websites/", "/immersive-websites/"].some((p) => path.startsWith(p));
 

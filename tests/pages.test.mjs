@@ -262,6 +262,43 @@ test("example viewer: computer and phone buttons resize the demo, and phones sta
     await page.setViewportSize({ width: 390, height: 800 });
     await go(page, `/examples/${slug}/`);
     assert.equal(await pressed("phone"), "true", "phone view first on a phone");
+    assert.equal(await page.locator("[data-shield]").isVisible(), false, "a mouse gets no tap layer");
+  } finally {
+    await tab.context.close();
+  }
+});
+
+test("home: the three What We Do cards line up their text, prices and links across the row (critique round 16)", async () => {
+  const tab = await open({ width: 1440, height: 900 });
+  const { page } = tab;
+  try {
+    await go(page, "/");
+    const tops = await page.evaluate(() => ["p:not(.prim-price)", ".prim-price", ".text-link"].map((sel) =>
+      [...document.querySelectorAll("#what-we-do .cat")].map((c) => Math.round(c.querySelector(sel).getBoundingClientRect().top))));
+    for (const [i, row] of tops.entries()) assert.equal(new Set(row).size, 1, `part ${i} starts at one height: ${row}`);
+  } finally {
+    await tab.context.close();
+  }
+});
+
+test("example viewer: on a touch screen the page scrolls past the preview until a tap hands it over (critique round 16)", async () => {
+  const tab = await open({ width: 390, height: 844, hasTouch: true });
+  const { page } = tab;
+  try {
+    await go(page, `/examples/${demoSites[0].slug}/`);
+    const shield = page.locator("[data-shield]");
+    assert.ok(await shield.isVisible(), "the layer is over the preview");
+    const covers = await page.evaluate(() => {
+      const a = document.querySelector("[data-screen]").getBoundingClientRect(), b = document.querySelector("[data-shield]").getBoundingClientRect();
+      return [a.left, a.top, a.width, a.height].every((v, i) => Math.abs(v - [b.left, b.top, b.width, b.height][i]) < 1);
+    });
+    assert.ok(covers, "and covers the whole screen of the phone frame");
+    await shield.tap();
+    assert.equal(await shield.isVisible(), false, "a tap hands the preview over");
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(300);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await shield.waitFor({ state: "visible", timeout: 2000 });
   } finally {
     await tab.context.close();
   }

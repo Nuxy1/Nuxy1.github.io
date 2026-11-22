@@ -70,7 +70,7 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
           {d.shows.map((s) => <li><Icon name="check" />{s}</li>)}
         </ul>
         <p class="demo-acts">
-          <a class="demo-act demo-live" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the Demo Site<span class="sr-only">: {d.name}</span><Icon name="arrowUpRight" /></a>
+          <a class="demo-act demo-live" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the Demo {d.project === "E-commerce store" ? "Store" : "Site"}<span class="sr-only">: {d.name}</span><Icon name="arrowUpRight" /></a>
           <a class="demo-act demo-view" href={`/examples/${d.slug}/`} data-track="example_open">Computer &amp; Phone View<span class="sr-only">: {d.name}</span></a>
         </p>
       </div>

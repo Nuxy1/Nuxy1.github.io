@@ -42,12 +42,16 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
       </div>
     </div>
 
-    <fieldset class="field radios" id="cb-reason" aria-describedby="cb-reason-err">
+    <!-- (site audit 2026-11-21, critique round 12) the form's main question takes the quote form's big choices, so the
+    two forms on /contact/ ask "what is it about" the same way; its message sits above them, as in the quote form -->
+    <fieldset class="field picks" id="cb-reason" aria-describedby="cb-reason-err">
       <legend>What is the call about?</legend>
-      {callbackReasons.map((r) => (
-        <label><input type="radio" name="reason" value={r.id} required /> {r.label}</label>
-      ))}
       <p class="err" id="cb-reason-err" data-cb-err="reason" data-l="About" data-missing="Choose what the call is about." hidden></p>
+      <div class="pick-grid">
+        {callbackReasons.map((r) => (
+          <label class="pick"><input type="radio" name="reason" value={r.id} required /><span>{r.label}</span></label>
+        ))}
+      </div>
     </fieldset>
 
     <fieldset class="field radios" id="cb-window" aria-describedby="cb-window-help cb-window-err">
@@ -91,16 +95,21 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
     <p>Your reference is <strong class="cb-ref" data-cb-ref></strong>. This is a request, not an appointment: no call time has been set yet.</p>
     <p>We’ll try to reach you at <strong data-cb-phone></strong> by call or text, aiming for the time of day you chose (<span data-cb-window></span>, {callbackWindowNote}).</p>
     <p class="note">Need to add something? Email <a href={`mailto:${inbox}`}>{inbox}</a> with your reference.</p>
+    <!-- (critique round 14) the same way on as the quote form's success panel -->
+    <a class="text-link cb-onward" href="/portfolio/" data-track="done_portfolio">See Our Work While You Wait<Icon name="arrowRight" /></a>
   </div>
 
   <div class="cb-fail" tabindex="-1" role="alert" hidden data-cb-fail>
     <span class="cb-badge bad"><Icon name="warningCircle" /></span>
-    <h3>Your Callback Request Was NOT Sent</h3>
+    <!-- (critique round 13: Title Case like every heading; "Try again" sends the same answers again, the server's
+      duplicate guard keeping it to one request, and changing them first is the quieter third choice) -->
+    <h3>Your Callback Request Was Not Sent</h3>
     <p data-cb-fail-text>Something went wrong on our side.</p>
     <p>Your answers are still in the form. You can try again, or send them as an email: it opens with everything filled in.</p>
     <div class="cb-fail-actions">
-      <a class="button" href={`mailto:${inbox}?subject=${encodeURIComponent("Callback request")}`} data-cb-mailto><Icon name="envelopeSimple" />Email it instead</a>
-      <button class="button secondary" type="button" data-cb-retry><Icon name="arrowCounterClockwise" />Back to the form</button>
+      <button class="button" type="button" data-cb-retry><Icon name="arrowCounterClockwise" />Try again</button>
+      <a class="button secondary" href={`mailto:${inbox}?subject=${encodeURIComponent("Callback request")}`} data-cb-mailto><Icon name="envelopeSimple" />Email it instead</a>
+      <button class="cb-edit" type="button" data-cb-edit>Change my answers</button>
     </div>
     <!-- (critique round 9: the email button does nothing on a computer with no email app) -->
     <p class="note">If nothing opens, write to <span class="glue">{inbox}</span> with your name and number.</p>
@@ -135,9 +144,23 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
      sit in even columns: what the call is about one per line, the times of day two per line where both fit */
   @media (max-width: 479px) {
     fieldset.radios { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr)); column-gap: 16px; }
-    #cb-reason { grid-template-columns: minmax(0, 1fr); }
     .radios .err, .radios .help { grid-column: 1 / -1; }
   }
+  /* "What is the call about?": the same big choices as the quote form's "What do you need?" (InquiryForm.astro) */
+  .picks > legend { font-size: 1rem; }
+  .pick-grid { display: grid; gap: 10px 20px; margin-top: 4px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+  .pick {
+    display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 16px;
+    border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--ink);
+    font-weight: 500; cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out;
+  }
+  .pick > span { text-wrap: balance; }
+  .pick:hover { border-color: var(--field-line-hover); }
+  .pick:has(input:checked) { border-color: var(--blue-line); background: rgb(var(--blue-rgb) / 0.14); }
+  .pick:has(input:focus-visible) { outline: 2px solid transparent; box-shadow: 0 0 0 3px rgb(var(--blue-rgb) / 0.35); }
+  .pick input:focus-visible { outline: none; }
+  .picks[data-invalid] .pick-grid { border-radius: 10px; outline: 1px solid var(--bad); outline-offset: 8px; }
+  @media (prefers-reduced-motion: reduce) { .pick { transition: none; } }
   /* Radios and checkboxes drawn in the palette (the native ones come out warm grey on a dark page). Still real inputs:
      keyboard, form posting and screen readers are unchanged, and forced-colors mode gets the native control back. */
   .field input[type="radio"], .field input[type="checkbox"] {
@@ -163,6 +186,7 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
   .cb-actions .button[aria-busy="true"] { opacity: 0.8; cursor: progress; }
   .cb-alt { color: var(--muted); font-size: 0.9375rem; }
   .cb-done, .cb-fail { display: grid; gap: 14px; justify-items: start; outline: none; scroll-margin-top: 16px; }
+  .cb-onward { min-height: 44px; }
   .cb-done p, .cb-fail p { overflow-wrap: anywhere; }
   .cb-done h3, .cb-fail h3 { font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.5rem); }
   .cb-badge { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; }
@@ -172,7 +196,10 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
   .cb-ref { font-family: var(--mono); letter-spacing: 0.02em; }
   .note { color: var(--muted); }
   .cb-fail-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
-  @media (max-width: 479px) { .cb-actions .button, .cb-fail-actions .button { width: 100%; } }
+  .cb-edit { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--link); font: inherit; font-size: 0.9375rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .cb-edit:hover { color: var(--ink); }
+  .cb-edit:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+  @media (max-width: 479px) { .cb-actions .button, .cb-fail-actions .button { width: 100%; } .cb-edit { margin-inline-start: -8px; } }
 </style>
 
 <script>
@@ -247,11 +274,13 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
       q<HTMLAnchorElement>("[data-cb-mailto]").href = `mailto:${root.dataset.inbox}?subject=Callback%20request&body=${encodeURIComponent(body)}`;
       reveal(fail);
     };
-    q("[data-cb-retry]").addEventListener("click", () => {
+    const back = () => {
       fail.hidden = true;
       form.hidden = false;
       button.focus();
-    });
+    };
+    q("[data-cb-retry]").addEventListener("click", () => { back(); button.click(); });
+    q("[data-cb-edit]").addEventListener("click", back);
     const busy = (on: boolean) => {
       button.disabled = on;
       button.setAttribute("aria-busy", String(on));

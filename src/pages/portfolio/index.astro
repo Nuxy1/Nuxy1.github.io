@@ -1,5 +1,6 @@
 ---
 import { titleCase } from "../../lib/title-case";
+import { noWidow } from "../../lib/no-widow";
 // Portfolio: the example websites and the example store (data/demo-sites.ts), each with its industry, project type,
 // features, the services it shows, a computer-and-phone picture, the viewer (/examples/<slug>/) and the demo itself.
 // The automation code examples sit in their own section further down, so design work and technical work never mix.
@@ -105,7 +106,7 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
         <ul role="list">
           {clients.length > 0 && <li><a href="#clients"><Icon name="briefcase" /><span><strong>Client Projects</strong><span>{anyStaged ? "Real work, staged for the client's approval" : "Real work, shown with permission"}</span></span></a></li>}
           {demoSites.map((d) => (
-            <li data-tier={d.tier}><a href={`#${d.slug}`}><Icon name={d.icon} /><span><strong>{d.name}</strong><span>{d.project}</span></span></a></li>
+            <li data-tier={d.tier}><a href={`#${d.slug}`}><Icon name={d.icon} /><span><strong>{noWidow(d.name)}</strong><span>{d.project}</span></span></a></li>
           ))}
           {hasVideo && <li><a href="#video"><Icon name="filmSlate" /><span><strong>Concept Films</strong><span>{count(videos, "concept film", "concept films").replace(/^\w/,(c) => c.toUpperCase())}</span></span></a></li>}
           <li><a href="#technical"><Icon name="githubLogo" /><span><strong>Open-Source Automations</strong><span>{count(examples.length, "working automation", "working automations").replace(/^\w/, (c) => c.toUpperCase())}</span></span></a></li>
@@ -149,24 +150,27 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
             <div class="case-copy">
               {/* (site audit 2026-11-21, critique round 3) the level chip carries the level's price, so it is read before the
                   features; the facts below drop "Industry", which repeated this line word for word */}
-              <p class="case-kind"><Icon name={d.icon} />{d.kind} · concept demonstration<a class="case-tier tap" href={levelById[d.tier].page}><span class="case-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps[levelById[d.tier].complexity] }}></i>)}</span>{levelById[d.tier].name}<span class="case-price">{d.tier === "business" && store ? serviceById["online-shop"].price : levelById[d.tier].price}</span></a></p>
+              <p class="case-kind"><Icon name={d.icon} />{d.kind} · concept demo<a class="case-tier tap" href={levelById[d.tier].page}><span class="case-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps[levelById[d.tier].complexity] }}></i>)}</span>{levelById[d.tier].name}<span class="case-price">{d.tier === "business" && store ? serviceById["online-shop"].price : levelById[d.tier].price}</span></a></p>
               <h3 id={`${d.slug}-h`}>{d.name}</h3>
               <p class="case-sum">{d.summary}</p>
+              <h4 class="case-h3">Features</h4>
+              <ul class="ticks case-ticks">{d.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
+              {/* (critique round 15: a phone card carried about six links and buttons) the facts and the optional services
+                  it shows fold under one "Project details" line after the features; a computer shows them open */}
               <details class="case-more"><summary>Project details<Icon name="caretDown" /></summary><dl class="case-facts">
                 <div><dt>Project</dt><dd>{d.project}</dd></div>
                 <div><dt>Level</dt><dd><a class="tap" href={levelById[d.tier].page}>{levelById[d.tier].name}</a> · {levelById[d.tier].complexity.toLowerCase()}{"\u00a0"}complexity</dd></div>
                 <div><dt>Your version</dt><dd>{version(d)}</dd></div>
-              </dl></details>
-              <h4 class="case-h3">Features</h4>
-              <ul class="ticks case-ticks">{d.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
+              </dl>
               <p class="case-svc">Optional services it shows, each priced on its own: {listedServices(d).map((id, j) => (
                 <>{j > 0 && ", "}<a href={where(id)}>{serviceById[id].name}</a> ({svcPrice(id)})</>
               ))}</p>
               {store && d.tier !== "business" && <p class="case-svc">Need something simpler? An <a href={where("online-shop")}>online shop</a> in your own Square Online or Shopify account is {serviceById["online-shop"].price}.</p>}
+              </details>
               {store && <p class="case-note"><Icon name="lockSimple" /><span>Its cart and checkout work as a demo, but no card is ever asked for: nothing can be bought.</span></p>}
               <div class="case-actions">
-                <a class="button secondary" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the Demo {store ? "Store" : "Site"}</a>
-                <a class="button secondary" href={`/examples/${d.slug}/`} data-track="example_open">Computer &amp; Phone View</a>
+                <a class="button secondary" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the Demo {store ? "Store" : "Site"}<Icon name="arrowUpRight" /></a>
+                <a class="text-link case-view" href={`/examples/${d.slug}/`} data-track="example_open">Computer &amp; Phone View<Icon name="arrowRight" /></a>
               </div>
               <p class="case-back"><a href="#jump-h">Back to the list<Icon name="arrowUp" /></a></p>
             </div>
@@ -202,7 +206,7 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
       </ul>
       <div class="tech-links">
         <a class="button secondary" href={repo} rel="noopener" data-track="github_open"><Icon name="githubLogo" />The code on GitHub<Icon name="arrowUpRight" /></a>
-        <a class="button secondary" href="/demos/" data-track="portfolio_demos"><Icon name="play" />Interactive demos</a>
+        <a class="button secondary" href="/demos/" data-track="portfolio_demos"><Icon name="play" />Try the Live Demos</a>
       </div>
     </div>
   </section>
@@ -249,18 +253,18 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
   .jump a > span { display: grid; }
   .jump strong { font-size: 0.9375rem; font-weight: 600; }
   .jump strong + span { color: var(--muted); font-size: 0.8125rem; }
-  /* On a phone the index is the names alone: each section repeats its own description, and the list stays one screen. */
-  /* (2026-11-17) on a phone the index is one row of chips that scrolls sideways, so the work starts about a screen
-     sooner; the page itself never scrolls sideways */
+  /* On a phone the index is the names alone (each section repeats its own description). (critique round 14: the 11-17
+     phone index was one row of chips scrolling sideways, and at 390px it showed one and a half of its eight chips, the
+     second cut mid-name; flagged in rounds 11 and 14) it is the same hairline list in two columns: every section in view
+     at once, full names wrapping to a second line where needed, about 160px taller than the chip row and half the
+     height of a one-column list */
   @media (max-width: 639px) {
     .jump strong + span { display: none; }
-    .jump ul { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; margin-inline: -16px; padding: 2px 48px 4px 16px; border-top: 0; }
-    /* (critique 11-17) the row ran off the screen's edge with nothing to say it scrolls: the right edge fades, and the
-       end padding lets the last chip scroll clear of the fade */
-    .jump ul { mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); scroll-snap-type: x proximity; scroll-padding-inline: 16px; }
-    .jump li { flex: none; border-bottom: 0; scroll-snap-align: start; }
-    .jump a { min-height: 44px; padding: 0 14px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); white-space: nowrap; }
+    .jump ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+    .jump li { display: grid; }
+    .jump a { gap: 8px; min-height: 48px; padding: 6px 0; }
     .jump a :global(.icon) { width: 18px; height: 18px; }
+    .jump strong { font-size: 0.875rem; line-height: 1.3; }
   }
 
   /* (critique 11-17, round 9) two sections' padding stacked into a 227px gap between the client card and the concepts:
@@ -289,10 +293,13 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
   .case h3 { margin-top: 8px; font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
   .case-sum { margin-top: 12px; color: var(--body); max-width: 56ch; }
   .case-facts { display: grid; gap: 10px; padding-block: 14px; border-block: 1px solid var(--hairline); }
-  /* (site audit 2026-11-21, critique round 4) on a phone each concept's facts fold under one "Project details" line, so
-     the concepts read as a picture and its features instead of a spec table each. A computer shows the facts open with
-     no toggle; a browser without ::details-content shows the toggle there too, so the facts are always reachable. */
+  /* (site audit 2026-11-21, critique round 4; round 15 moved it after the features and put the optional services in it)
+     on a phone each concept's facts and services fold under one "Project details" line, so the concepts read as a
+     picture and its features instead of a spec table each. A computer shows them open with no toggle; a browser without
+     ::details-content shows the toggle there too, so they are always reachable. */
   .case-more { margin-top: 20px; }
+  .case-more[open] > .case-svc:last-child { padding-bottom: 14px; border-bottom: 1px solid var(--hairline); }
+  @supports selector(::details-content) { @media (min-width: 640px) { .case-more > .case-svc:last-child { padding-bottom: 0; border-bottom: 0; } } }
   .case-more > summary { display: flex; align-items: center; gap: 8px; min-height: 48px; border-top: 1px solid var(--hairline); color: var(--ink); font-size: 0.9375rem; font-weight: 600; cursor: pointer; list-style: none; }
   .case-more:not([open]) > summary { border-bottom: 1px solid var(--hairline); }
   .case-more > summary::-webkit-details-marker { display: none; }
@@ -314,9 +321,9 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
     .case-back :global(.icon) { width: 1em; height: 1em; }
     /* the chips above index the page, so a phone skips the level filter and keeps the Flagship line */
     .pf-tools .pf-filter, .pf-tools [data-pf-count] { display: none; }
-    /* (critique round 5) with the filter gone the Flagship line is all that is left, and it sat 80px under the intro
-       (the head's margin plus the list's gap): it now follows the intro as its last line, 40px down */
-    .pf-tools:not([hidden]) { margin-top: calc(var(--case-gap) * -1 + 8px); }
+    /* (critique round 12) with the filter gone the Flagship line was the first thing under the intro and read as an
+       apology before any example; it now closes the list, after the last example */
+    .pf-tools { order: 1; }
   }
   .case-facts div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 12px; }
   .case-facts dt { color: var(--muted); font-size: 0.875rem; font-weight: 600; }
@@ -346,11 +353,15 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
   /* (site audit 2026-11-21, critique round 4) the chosen level is a lighter chip with a doubled blue edge, not the
      filled blue that marks the next step everywhere else */
   .pf-filter button[aria-pressed="true"] { border-color: var(--blue-line); background: var(--surface-strong); color: var(--ink); box-shadow: inset 0 0 0 1px var(--blue-line); }
-  /* (critique 11-17) the filter belongs to the list under it: half the section gap, not the full one */
-  .pf-tools:not([hidden]) + .case { margin-top: calc(var(--case-gap) / -2); }
+  /* (critique 11-17) the filter belongs to the list under it: half the section gap, not the full one (a computer
+     only; a phone moves the Flagship line to the end of the list, above) */
+  @media (min-width: 640px) { .pf-tools:not([hidden]) + .case { margin-top: calc(var(--case-gap) / -2); } }
   .pf-flag { margin: 0; color: var(--muted); font-size: 0.9375rem; }
   .pf-flag a { color: var(--link); }
-  .case-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  /* (critique round 14) one button and one text link, the same weights as the short demo cards (DemoSites.astro):
+     the demo itself is the main action, the computer-and-phone view the second */
+  .case-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; margin-top: 24px; }
+  .case-view { min-height: 44px; color: var(--link); }
   @media (max-width: 479px) { .case-actions .button { width: 100%; } }
 
   .tech { margin: 0; padding: 0; list-style: none; }

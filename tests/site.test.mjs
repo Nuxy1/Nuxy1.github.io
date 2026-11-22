@@ -66,12 +66,14 @@ test("the build has every page, and the made-up data matches the pages", () => {
 });
 
 // (critique 11-17) "View Project" is the real client case study's button only; demo cards say what each link opens
-test("every demo card offers two links, Open the Demo Site and Computer & Phone View, each named for its demo and pointing at a real page", () => {
+// (critique round 14) a store demo's link says Store, as on /portfolio/
+test("every demo card offers two links, Open the Demo Site (Store for a shop) and Computer & Phone View, each named for its demo and pointing at a real page", () => {
   for (const u of ["/demos/"]) { // the one page that shows all four default demos (Halvane, the Immersive concept, is left out of default lists)
     const html = pages.get(u);
     for (const d of demoSites.filter((x) => x.tier !== "immersive")) {
-      const live = html.match(new RegExp(`<a class="demo-act demo-live"[^>]*href="/example-sites/${d.slug}/"[^>]*>Open the Demo Site<span class="sr-only"[^>]*>: ([^<]+)<`));
-      assert.ok(live, `${u} Open the Demo Site for ${d.slug}`);
+      const word = d.project === "E-commerce store" ? "Store" : "Site";
+      const live = html.match(new RegExp(`<a class="demo-act demo-live"[^>]*href="/example-sites/${d.slug}/"[^>]*>Open the Demo ${word}<span class="sr-only"[^>]*>: ([^<]+)<`));
+      assert.ok(live, `${u} Open the Demo ${word} for ${d.slug}`);
       assert.match(html, new RegExp(`href="/examples/${d.slug}/"[^>]*>Computer &amp; Phone View<span class="sr-only"`), `${u} Computer & Phone View for ${d.slug}`);
       assert.doesNotMatch(html, new RegExp(`href="/examples/${d.slug}/"[^>]*>View Project<`), `${u}: View Project is kept for client case studies`);
       assert.doesNotMatch(html, new RegExp(`<a class="demo-act[^>]*href="/examples/${d.slug}/#features"`), `${u} has no third card link for ${d.slug} (approvals 91)`);

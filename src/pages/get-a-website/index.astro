@@ -86,8 +86,9 @@ const pageData = {
     <h2 id="ex-h">Example Websites</h2>
     <p class="lp-sub">Two Business websites, the kind this page prices. Open one to see it on a computer and on a phone, or <a href="/web-design/">compare the bigger website levels</a>.</p>
     {/* only the Business demos: this page prices the Business website, and Signature or Immersive examples here would set
-        the wrong expectation of what that price buys (site audit 2026-11-21, findings 1 and 10) */}
-    <DemoSites level="h3" only={["fernway-lawn", "mossgate-cleaning"]} />
+        the wrong expectation of what that price buys (site audit 2026-11-21, findings 1 and 10). (critique round 14) Mossgate
+        first: the hero already shows Fernway, so the section opens on the one the visitor has not seen yet */}
+    <DemoSites level="h3" only={["mossgate-cleaning", "fernway-lawn"]} />
   </section>
 
   </div>
@@ -165,15 +166,20 @@ const pageData = {
   @media (min-width: 1200px) { .offer-list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
   .how { display: grid; gap: 22px; margin: 28px 0 0; padding: 0; list-style: none; }
-  .num { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--link); font-weight: 650; }
+  /* (critique round 14) the same numbered circle as the home page's handover steps (.ho-num in pages/index.astro) */
+  .num { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--button); color: #fff; font-size: 0.9375rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 
   .lp-own p, .lp-cta p { margin-top: 12px; max-width: 68ch; color: var(--body); }
   .lp-cta { padding-bottom: clamp(64px, 8vw, 96px); }
   /* (critique round 5) on a wide screen the page's close no longer runs down one narrow column with the right half
      empty: the five steps on the left, what you own and the quote button beside them */
   @media (min-width: 1024px) {
-    .lp-close { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: clamp(48px, 6vw, 96px); align-items: start; }
+    /* (critique round 15: the tall steps column spread its extra height into the gap above the quote block, about 140px)
+       the first row fits "It's Yours", the second takes the rest, and the quote block follows it at a section's
+       inner spacing */
+    .lp-close { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: clamp(48px, 6vw, 96px); align-items: start; }
     .lp-close > section { max-width: none; }
+    .lp-close > .lp-cta { margin-top: clamp(40px, 4vw, 56px); }
     .lp-close > .lp-how { grid-row: span 2; padding-bottom: clamp(64px, 8vw, 96px); }
   }
 </style>

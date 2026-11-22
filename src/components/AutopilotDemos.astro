@@ -187,8 +187,12 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
                     ends, the real last card, labelled as a preview. It goes once a step plays, and the steps in between stay
                     hidden until then (approvals 89). Start Demo beside the steps stays the only control (critique round 10:
                     two Start buttons competed). Hidden from screen readers: the step list already reads every step. */}
-                {(() => { const end = d.cards.reduce((a, c) => (c.step >= a.step ? c : a)); return (
+                {/* (critique round 12: at rest a tall empty band sat between the first card and the preview) a quiet
+                    divider in that band says how many steps play there, as a chat app marks the messages it folds away.
+                    The script shows it only when the band is tall enough to hold it. */}
+                {(() => { const end = d.cards.reduce((a, c) => (c.step >= a.step ? c : a)); const between = end.step - d.cards[0].step - 1; return (
                   <div class="ap-end" aria-hidden="true">
+                    {between > 0 && <p class="ap-between"><span>{between} {between === 1 ? "step" : "steps"} in between</span></p>}
                     <p class="ap-end-label"><Icon name="play" /><span>How it ends<span class="ap-end-more">. Start Demo plays every step.</span></span></p>
                     <div class={`ap-card ${end.who}`}>
                       <p class="ap-card-label"><Icon name={end.icon} /><span>{end.label}</span><span class="ap-who">{whoName[end.who]}</span></p>
@@ -309,9 +313,16 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
       const fitEnd = () => {
         if (!end || cur !== 0) return;
         const e = end.getBoundingClientRect(), first = cards[0].getBoundingClientRect();
-        if (e.height) root.classList.toggle("end-off", e.top < first.bottom + 16);
+        if (!e.height) return;
+        const gap = e.top - first.bottom;
+        root.classList.toggle("end-off", gap < 16);
+        // the band between them, for the "steps in between" divider centred in it
+        root.style.setProperty("--ap-gap", `${Math.round(gap)}px`);
+        root.classList.toggle("has-gap", gap >= 56);
       };
-      if (end && "ResizeObserver" in window) new ResizeObserver(fitEnd).observe(feed);
+      // (round 12 check: on a phone the first card gained a line after the web font loaded, inside a window whose size
+      // never changes, so the band was measured one line too tall) the first card is watched as well as the window
+      if (end && "ResizeObserver" in window) { const ro = new ResizeObserver(fitEnd); ro.observe(feed); ro.observe(cards[0]); }
       steps.forEach((b) => { b.disabled = false; b.addEventListener("click", () => { begin(); stop(); show(+b.dataset.go!); bring(); }); });
 
       root.querySelector<HTMLElement>("[data-controls]")!.hidden = false;
@@ -472,6 +483,13 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
   .ap-demo.end-off .ap-end { visibility: hidden; }
   .ap-end-label { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--muted); font-size: 0.875rem; }
   .ap-end-label :global(.icon) { flex: none; width: 1.05em; height: 1.05em; color: var(--cyan); }
+  /* the divider sits in the middle of the band above the preview (--ap-gap, measured by the script) */
+  .ap-between {
+    display: none; position: absolute; left: 0; right: 0; bottom: calc(100% + var(--ap-gap, 0px) / 2); transform: translateY(50%);
+    align-items: center; gap: 12px; margin: 0; color: var(--muted); font-size: 0.8125rem; font-weight: 500; white-space: nowrap;
+  }
+  .ap-between::before, .ap-between::after { content: ""; flex: 1; border-top: 1px dashed var(--hairline-strong); }
+  .ap-demo.has-gap .ap-between { display: flex; }
   @media (max-width: 479px) {
     .ap-tabs { width: 100%; }
     .ap-tab { flex: 1 1 calc(50% - 6px); padding: 0 10px; font-size: 0.875rem; }
