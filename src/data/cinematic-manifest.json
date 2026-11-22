@@ -64,30 +64,38 @@
     "hero": {
       "width": 1280,
       "height": 720,
-      "duration": 8.04,
+      "duration": 5.54,
       "audio": false,
       "poster": {
         "src": "/media/loop-hero.webp",
-        "bytes": 53036
-      },
-      "posterMobile": {
-        "src": "/media/loop-hero-m.webp",
-        "bytes": 20122
+        "bytes": 13172
       },
       "sources": [
         {
+          "src": "/media/loop-hero.webm",
+          "bytes": 58960,
+          "type": "video/webm"
+        },
+        {
           "src": "/media/loop-hero.mp4",
-          "bytes": 736894,
+          "bytes": 92084,
           "type": "video/mp4"
         }
       ],
-      "mobile": [
-        {
-          "src": "/media/loop-hero-m.mp4",
-          "bytes": 233815,
-          "type": "video/mp4"
+      "posterMobile": {
+        "src": "/media/loop-hero-m.webp",
+        "bytes": 29934,
+        "width": 1280,
+        "height": 1100,
+        "phone": {
+          "src": "/media/loop-hero-m-880.webp",
+          "bytes": 16086,
+          "width": 880,
+          "height": 756
         }
-      ]
+      },
+      "mobile": [],
+      "stillBelow": 1200
     },
     "security": {
       "width": 1280,
@@ -150,7 +158,7 @@
     "ember-oak": {
       "width": 1920,
       "height": 1080,
-      "duration": 15.0,
+      "duration": 15,
       "audio": true,
       "poster": {
         "src": "/media/ad-hush-stays.webp",
@@ -175,7 +183,7 @@
     "noctis-skin": {
       "width": 1920,
       "height": 1080,
-      "duration": 15.0,
+      "duration": 15,
       "audio": true,
       "poster": {
         "src": "/media/ad-velune-no-04.webp",
@@ -200,7 +208,7 @@
     "vantage-motors": {
       "width": 1920,
       "height": 1080,
-      "duration": 20.0,
+      "duration": 20,
       "audio": true,
       "poster": {
         "src": "/media/ad-vantage-the-line.webp",

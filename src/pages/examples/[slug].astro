@@ -6,20 +6,27 @@
 // Below the frame sits the case study (website levels brief): the level the concept shows, its objective, design
 // direction, technology, automation, performance and phone notes, and what a real project like it would include.
 import Base from "../../layouts/Base.astro";
+import { crumbs } from "../../lib/crumbs";
+import { noWidow } from "../../lib/no-widow";
 import Icon from "../../components/Icon.astro";
-import { demoSites, type DemoSite } from "../../data/demo-sites";
+import { demoSites, listedServices, type DemoSite } from "../../data/demo-sites";
 import { serviceById } from "../../data/services";
 import { levelById } from "../../data/tiers";
 
 export function getStaticPaths() {
-  return demoSites.map((demo, i) => ({ params: { slug: demo.slug }, props: { demo, i } }));
+  return demoSites.map((demo) => ({ params: { slug: demo.slug }, props: { demo } }));
 }
-const { demo: d, i } = Astro.props as { demo: DemoSite; i: number };
-const prev = demoSites[(i + demoSites.length - 1) % demoSites.length];
-const next = demoSites[(i + 1) % demoSites.length];
+const { demo: d } = Astro.props as { demo: DemoSite };
+// (site audit 2026-11-21, critique round 3) Previous and Next walk the examples in the portfolio's order, level by level,
+// not the data file's, so they match the page that lists them
+const levels = ["business", "signature", "immersive", "flagship"];
+const walk = [...demoSites].sort((a, b) => levels.indexOf(a.tier) - levels.indexOf(b.tier));
+const at = walk.findIndex((x) => x.slug === d.slug);
+const prev = walk[(at + walk.length - 1) % walk.length];
+const next = walk[(at + 1) % walk.length];
 const src = `/example-sites/${d.slug}/`;
 const host = `${d.slug.split("-")[0]}.example`;
-const services = d.services.map((id) => serviceById[id]);
+const services = listedServices(d).map((id) => serviceById[id]);
 const where = (id: string) => (id === "new-website" ? "/websites/#new-website" : id === "online-shop" ? "/ecommerce/" : `/solutions/#${id}`);
 // The candle shop is a store, not a website: its title, platform note and quote link say so.
 const store = d.project === "E-commerce store";
@@ -27,18 +34,41 @@ const kindTitle = d.kind.replace(/\b\w/g, (c) => c.toUpperCase());
 const level = levelById[d.tier];
 const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 }[level.complexity];
 // a Business example keeps the plain website quote; Signature and Immersive examples start that level's conversation
-const cta = store || d.tier === "business"
+// (site audit 2026-11-21, finding 1: the Signature candle shop sent its quote to the $1,200 Online shop service, a theme
+// set up in a builder, so the form opened on the wrong price. A store above Business asks for a store at its level.)
+const business = d.tier === "business";
+const cta = business
   ? { href: store ? "/contact/?service=online-shop" : "/contact/?service=new-website", text: store ? "Get a Free Store Quote" : "Get a Free Website Quote" }
-  : { href: level.href, text: level.cta };
+  : { href: store ? `/contact/?want=shopify&level=${d.tier}` : level.href, text: store ? "Get a Free Store Quote" : level.cta };
+// Above Business: what the level price buys, and how it differs from the smaller service on the same subject, in the
+// site's own words for each (data/tiers.ts, /ecommerce/, /websites/).
+// (site audit 2026-11-21, critique round 4: five price figures on the candle shop and no single answer) the level price
+// is the one answer under the title; the smaller service on the same subject is one "smaller budget" line beside it,
+// and the automations further down are labelled optional, each priced on its own.
+const smaller = business ? null : store
+  ? { href: "/ecommerce/", name: "Online shop", price: serviceById["online-shop"].price, text: "a clean theme set up with your logo, colors and photos" }
+  : { href: "/websites/#new-website", name: "New website", price: serviceById["new-website"].price, text: "up to 4 pages, built in your own Squarespace or Wix account" };
+const addOnNote = store
+  ? "Each is optional and priced on its own. The Shopify plan and any apps are billed to you directly."
+  : "Each is optional, priced on its own, and can be added to any level.";
+// (site audit 2026-11-21, critique round 2) the level, its price and what it is built in sit under the title, so nobody
+// reads the preview before knowing which level it is
+const headPrice = business && store ? serviceById["online-shop"].price : level.price;
+const built = business
+  ? `Built in your own ${store ? "Shopify or Square Online" : "Squarespace or Wix"} account`
+  : store ? "A custom-designed shop, priced in a written quote" : "Designed and coded for one business, priced in a written quote";
 ---
 <Base title={store ? `${kindTitle} Example · Nuxy Automation` : `${kindTitle} Website Example · Nuxy Automation`} description={`Demo ${store ? "store" : "website"} for a made-up ${d.summary.replace(/^A /, "").replace(/\.$/, "")}, on a computer and a phone.`} wide>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(crumbs([["Our Work", "/portfolio/"], [d.name, `/examples/${d.slug}/`]]))} />
   <div class="wrap ex">
-    <p class="crumbs"><a href="/portfolio/">Portfolio</a><span aria-hidden="true">/</span>{d.name}</p>
+    <p class="crumbs"><a class="tap" href="/portfolio/">Our Work</a><span aria-hidden="true">/</span>{d.name}</p>
     <header class="ex-head">
       <div>
-        <p class="eyebrow">{d.kind} · demonstration</p>
+        <p class="eyebrow">{d.kind} · <span class="glue">concept demonstration</span></p>
         <h1>{d.name}</h1>
         <p class="lead">{d.summary}</p>
+        <p class="ex-level"><a class="ex-tier" href={level.page}>{level.name} level<span aria-hidden="true">·</span>{headPrice}</a><span>{built}</span></p>
+        {smaller && <p class="ex-smaller">Smaller budget? Our <a href={smaller.href}>{smaller.name}</a> is {smaller.price}: {smaller.text}.</p>}
       </div>
     </header>
     <p class="made-up"><Icon name="info" /><span><strong>Concept project created by Nuxy Automation to demonstrate our capabilities.</strong> {d.name} is a made-up business, not a client. This example shows the layout, features and finish we aim for. Forms on it send nothing{store ? ", and its checkout is a demo that never asks for a card, so nothing can be bought" : ""}.</span></p>
@@ -63,15 +93,15 @@ const cta = store || d.tier === "business"
 
     <section class="case" aria-labelledby="case-h">
       <div class="case-head">
-        <p class="eyebrow">Concept project · <a href={level.page}>{level.name} level</a></p>
-        <h2 id="case-h">The case study</h2>
+        <p class="eyebrow">Made-up business · <a class="tap" href={level.page}>{level.name} level</a></p>
+        <h2 id="case-h">Concept Walkthrough</h2>
         <p class="case-complex"><span class="case-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps }}></i>)}</span>{level.complexity} complexity</p>
       </div>
       <dl class="case-facts">
         <div><dt>Project</dt><dd>{d.project}</dd></div>
         <div><dt>Industry</dt><dd>{d.kind}</dd></div>
-        <div><dt>Level</dt><dd><a href={level.page}>{level.name}</a> · {level.price}</dd></div>
-        <div><dt>Objective</dt><dd>{d.objective}</dd></div>
+        <div><dt>Level</dt><dd><a class="tap" href={level.page}>{level.name}</a></dd></div>
+        <div><dt>Objective</dt><dd>{noWidow(d.objective)}</dd></div>
         <div><dt>Design direction</dt><dd>{d.direction}</dd></div>
         <div><dt>Technology</dt><dd>{d.technology}</dd></div>
         <div><dt>Automation</dt><dd>{d.automation}</dd></div>
@@ -79,8 +109,8 @@ const cta = store || d.tier === "business"
         <div><dt>Mobile</dt><dd>{d.mobile}</dd></div>
       </dl>
       <div class="case-inc panel">
-        <h3>What a project like this would include</h3>
-        <ul class="ticks">{d.includes.map((x) => <li><Icon name="check" />{x}</li>)}</ul>
+        <h3>What a Project Like This Would Include</h3>
+        <ul class="ticks">{d.includes.map((x) => <li><Icon name="check" />{noWidow(x)}</li>)}</ul>
         <p class="note">Your written plan sets the exact pages, features, price and timeline for your own project.</p>
       </div>
     </section>
@@ -91,23 +121,23 @@ const cta = store || d.tier === "business"
         <ul class="ticks">{d.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
       </section>
       <section aria-labelledby="svc-h">
-        <h2 id="svc-h">Services it demonstrates</h2>
+        <h2 id="svc-h">{business ? "Services It Demonstrates" : "Optional Automations It Shows"}</h2>
         <ul class="svc-list" role="list">
           {services.map((s) => (
             <li><a href={where(s.id)}><Icon name={s.icon} /><span>{s.name}</span><span class="svc-price">{s.price}</span></a></li>
           ))}
         </ul>
-        <p class="note">{store
-          ? "Your own store is built in your own Shopify or Square Online account, so the details follow what your store platform can do."
-          : d.tier === "business"
-            ? "A Business website is built in your own Squarespace or Wix account, so the details follow what your website builder can do."
-            : "Every level can add automation; each one is priced on its own and named in your written plan."}</p>
+        <p class="note">{!business
+          ? addOnNote
+          : store
+            ? "Your own store is built in your own Shopify or Square Online account, so the details follow what your store platform can do."
+            : "A Business website is built in your own Squarespace or Wix account, so the details follow what your website builder can do."}</p>
       </section>
     </div>
 
     <section class="ex-cta panel" aria-labelledby="cta-h">
       <div>
-        <h2 id="cta-h">Want {store ? "a store" : "a website"} like this?</h2>
+        <h2 id="cta-h">Want {store ? "a Store" : "a Website"} Like This?</h2>
         <p>Tell us about your business. Within one business day you’ll get a written plan and a fixed price, with nothing charged until you agree.</p>
       </div>
       <a class="button" href={cta.href} data-track="cta_example_quote">{cta.text}</a>
@@ -125,8 +155,16 @@ const cta = store || d.tier === "business"
   .crumbs { display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 0.875rem; }
   .crumbs a { color: var(--link); }
   .ex-head { margin-top: 20px; }
+  /* (critique round 9) the site's eyebrow is a flex row, which set "Landscaping company ·" and the unbreakable
+     "concept demonstration" side by side, 334px wide at 320; as plain text the second part moves to its own line */
+  .ex-head .eyebrow { display: block; }
   .ex-head h1 { margin-top: 6px; }
   .ex-head .lead { margin-top: 14px; max-width: 60ch; }
+  .ex-level { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; color: var(--muted); font-size: 0.9375rem; }
+  .ex-tier { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 2px 12px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); color: var(--ink); font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: border-color 150ms var(--ease); }
+  .ex-tier:hover { border-color: var(--link); }
+  .ex-smaller { margin-top: 10px; max-width: 64ch; color: var(--muted); font-size: 0.9375rem; }
+  .ex-smaller a { color: var(--link); }
   .made-up { display: flex; align-items: flex-start; gap: 10px; margin-top: 20px; max-width: 72ch; padding: 12px 16px; border-radius: var(--r-md); background: var(--accent-soft); color: var(--body); font-size: 0.9375rem; }
   .made-up :global(.icon) { flex: none; margin-top: 0.2em; color: var(--link); }
   .made-up strong { color: var(--ink); }
@@ -136,7 +174,9 @@ const cta = store || d.tier === "business"
   .toggle[hidden] { display: none; }
   .toggle button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: var(--r-full); background: transparent; color: var(--body); font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: background 150ms var(--ease), color 150ms var(--ease); }
   .toggle button:hover { color: var(--ink); }
-  .toggle button[aria-pressed="true"] { background: var(--button); color: #fff; }
+  /* (site audit 2026-11-21, critique round 4) a chosen view is a lighter layer with a blue edge, not the filled blue
+     that marks the next step everywhere else */
+  .toggle button[aria-pressed="true"] { background: var(--surface-strong); color: var(--ink); box-shadow: inset 0 0 0 1px var(--blue-line); }
   .toolbar .text-link { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; }
 
   .stage { display: flex; justify-content: center; margin-top: 16px; }
@@ -152,7 +192,11 @@ const cta = store || d.tier === "business"
   .stage.fitted .screen iframe { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
   .stage[data-mode="phone"] .device { width: auto; padding: 12px; border-radius: 46px; background: #05080f; box-shadow: var(--shadow), inset 0 0 0 2px #1f2a3d; }
   .stage[data-mode="phone"] .bar { display: none; }
-  .stage[data-mode="phone"] .screen { border-radius: 34px; }
+  /* (critique round 5) a status-bar strip above the page, as on a real phone: the rounded corners used to cut into the
+     demo's own top line ("Demo by Nuxy Automation"), so the page now starts below the curve. fit() adds those 22px to the height. */
+  .stage[data-mode="phone"] .screen { border-radius: 34px; background: #05080f; }
+  .stage[data-mode="phone"] .screen::before { content: ""; position: absolute; top: 7px; left: calc(50% - 30px); width: 60px; height: 8px; border-radius: 4px; background: #1f2a3d; }
+  .stage.fitted[data-mode="phone"] .screen iframe { top: 22px; }
   .stage-note { margin-top: 12px; text-align: center; }
 
   .case { margin-top: clamp(48px, 6vw, 72px); display: grid; gap: 24px; }
@@ -208,13 +252,16 @@ const cta = store || d.tier === "business"
     const fit = () => {
       const [w, h] = sizes[mode];
       const room = stage.clientWidth - (mode === "phone" ? 26 : 2); // the bezel (12px a side) or the 1px border
-      // a phone also has to fit the window's height, so the whole screen is visible at once
-      const scale = Math.min(1, room / w, mode === "phone" ? Math.max(0.5, (window.innerHeight - 140) / h) : 1);
+      // a phone also has to fit the window's height, so the whole screen is visible at once. On a phone-sized window it
+      // stays near two thirds of the height, leaving room beside it: a swipe on the demo scrolls the demo, and at 0.9 it
+      // filled the screen and caught every swipe (site audit 2026-11-21, critique round 1)
+      const high = window.innerWidth < 720 ? window.innerHeight * 0.62 : window.innerHeight - 140;
+      const scale = Math.min(1, room / w, mode === "phone" ? Math.max(0.5, high / h) : 1);
       frame.style.width = `${w}px`;
       frame.style.height = `${h}px`;
       frame.style.transform = `scale(${scale})`;
       screen.style.width = `${Math.floor(w * scale)}px`;
-      screen.style.height = `${Math.floor(h * scale)}px`;
+      screen.style.height = `${Math.floor(h * scale) + (mode === "phone" ? 22 : 0)}px`; // + the phone's status-bar strip
     };
     const set = (next: Mode) => {
       mode = next;

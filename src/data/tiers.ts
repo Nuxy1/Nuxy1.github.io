@@ -62,6 +62,8 @@ export const levels: Level[] = [
     promise: "Built to convert",
     tagline: "A clear, fast website that turns visitors into calls, bookings and quote requests.",
     for: "Local and service businesses that need to look professional, be found and make it easy to get in touch.",
+    // Both live prices, not "From $499": the owner's decision of 2026-11-21 (business/site-upgrade/approvals.md row 121),
+    // so nobody reads $499 as the price of the 4-page site. The other levels keep "From $X".
     price: `${starter} – ${site}`,
     priceNote: `One page ${starter}, a site of up to 4 pages ${site}. Larger sites are quoted in writing.`,
     from: 499,
@@ -71,7 +73,7 @@ export const levels: Level[] = [
     complexity: "Lower",
     timeline: "About 1–2 weeks after we have your words and photos",
     revisions: "One round of changes within 14 days of handover",
-    cta: "Start My Website",
+    cta: "Get a Free Quote",
     href: "/contact/?level=business",
     page: "/business-websites/",
     budget: "500-1000",
@@ -91,7 +93,7 @@ export const levels: Level[] = [
     complexity: "Moderate",
     timeline: "About 3–5 weeks",
     revisions: "Two rounds on the design direction and one on the finished build",
-    cta: "Create My Brand Experience",
+    cta: "Get a Free Quote",
     href: "/contact/?level=signature",
     page: "/signature-websites/",
     budget: "3000-6000",
@@ -102,7 +104,7 @@ export const levels: Level[] = [
     promise: "Built to be remembered",
     tagline: "An interactive experience with scroll storytelling and, where it suits the idea, real-time 3D.",
     for: "Product launches, premium brands and venues where the first impression is the whole pitch.",
-    price: "Starting at $6,000",
+    price: "From $6,000",
     priceNote: "Custom quoted. The final price depends on the creative direction, the scenes and the 3D work involved.",
     from: 6000,
     built: "Custom-coded, with WebGL and Three.js where the idea calls for it, and a lighter version for slower devices.",
@@ -111,7 +113,7 @@ export const levels: Level[] = [
     complexity: "High",
     timeline: "About 6–10 weeks, set in the written plan",
     revisions: "Two rounds on the creative direction and two on the build",
-    cta: "Build an Immersive Experience",
+    cta: "Get a Free Quote",
     href: "/contact/?level=immersive",
     page: "/immersive-websites/",
     budget: "6000-12000",
@@ -131,7 +133,7 @@ export const levels: Level[] = [
     complexity: "Bespoke",
     timeline: "Planned with you, often 10 weeks or more",
     revisions: "Set in the written plan for each stage",
-    cta: "Discuss a Custom Project",
+    cta: "Get a Free Quote",
     href: "/contact/?level=flagship",
     budget: "gt12000",
   },
@@ -197,17 +199,18 @@ export const costReasons: { title: string; text: string }[] = [
   { title: "More testing", text: "We check it on phones, tablets and computers, with a keyboard and with motion turned off." },
 ];
 
-/** The FAQ on /web-design/ (and a short set on each level page). */
-export const levelFaqs: { q: string; a: string; on?: LevelId[] }[] = [
-  { q: "Which website level is right for my business?", a: "Most local businesses do best with Business: it brings in calls and bookings. Signature fits when you need to stand out, and Immersive when the first impression is the product. The website level finder below suggests one in five questions, and we’ll tell you honestly if a smaller level does the job." },
-  { q: "Can I start with Business and upgrade later?", a: "Yes. Many clients start with Business to get results now and move up when it makes sense. A move to Signature or Immersive is a new custom-coded build, and we reuse your words, photos and what we learned.", on: ["business", "signature"] },
-  { q: "Does every Immersive website use 3D?", a: "No. Immersive means the site is built as an experience. Real-time 3D is used only where it serves the idea. Some immersive sites use layered scenes, video or scroll storytelling instead.", on: ["immersive"] },
-  { q: "Will animations slow my website down?", a: "They shouldn’t. Motion is light by default, steps down on slower devices, and stops if your visitor has asked their device to reduce motion. We aim for Google’s Core Web Vitals targets on every level.", on: ["business", "signature", "immersive"] },
+/** The website-level questions: `hub` marks the six /web-design/ shows (its table and sections answer the rest),
+ *  `on` the short set each level page shows. */
+export const levelFaqs: { q: string; a: string; on?: LevelId[]; hub?: true }[] = [
+  { q: "Which website level is right for my business?", a: "Most local businesses do best with Business: it brings in calls and bookings. Signature fits when you need to stand out, and Immersive when the first impression is the product. The website level finder below suggests one in five questions, and we’ll tell you honestly if a smaller level does the job.", hub: true },
+  { q: "Can I start with Business and upgrade later?", a: "Yes. Many clients start with Business to get results now and move up when it makes sense. A move to Signature or Immersive is a new custom-coded build, and we reuse your words, photos and what we learned.", on: ["business", "signature"], hub: true },
+  { q: "Does every Immersive website use 3D?", a: "No. Immersive means the site is built as an experience. Real-time 3D is used only where it serves the idea. Some immersive sites use layered scenes, video or scroll storytelling instead.", on: ["immersive"], hub: true },
+  { q: "Will animations slow my website down?", a: "They shouldn’t. Motion is light by default, steps down on slower devices, and stops if your visitor has asked their device to reduce motion. We aim for Google’s Core Web Vitals targets on every level.", on: ["business", "signature", "immersive"], hub: true },
   { q: "Will my website work on phones?", a: "Yes. Every level is designed phone first and tested at phone, tablet and computer sizes. Immersive scenes get a lighter version on phones.", on: ["business", "signature", "immersive"] },
-  { q: "Can I edit the website myself?", a: "A Business site is built in your own Squarespace or Wix, so you edit it like any page there. Signature and Immersive sites are custom code: we can make the parts you change most editable, or make the changes for you on a care plan.", on: ["business", "signature"] },
+  { q: "Can I edit the website myself?", a: "A Business site is built in your own Squarespace or Wix, so you edit it like any page there. Signature and Immersive sites are custom code: we can make the parts you change most editable, or make the changes for you on a care plan.", on: ["business", "signature"], hub: true },
   { q: "How long does a website take?", a: "About 1–2 weeks for Business, 3–5 weeks for Signature and 6–10 weeks for Immersive, once we have your words and photos. Flagship projects are planned with you. The written plan gives your dates." },
   { q: "How many revisions are included?", a: "Business includes one round of changes within 14 days of handover. Signature includes two rounds on the design and one on the build, Immersive two on the direction and two on the build. More rounds are quoted before they start." },
-  { q: "Do I own my website?", a: "Yes. The domain, the accounts and, on Signature and above, the code are yours. A monthly plan is always optional.", on: ["business", "signature", "immersive"] },
+  { q: "Do I own my website?", a: "Yes. The domain, the accounts and, on Signature and above, the code are yours. A monthly plan is always optional.", on: ["business", "signature", "immersive"], hub: true },
   { q: "Can you add automation to my website?", a: "Yes, at any level: an instant reply to every inquiry, a CRM, owner alerts, booking reminders or estimate follow-ups. Automations are priced on their own.", on: ["business", "signature", "immersive"] },
   { q: "Why is there such a big jump in price between levels?", a: "Each level is a different kind of build. Business is designed in your website builder. Signature and Immersive are custom-coded from scratch, with design direction, motion, 3D and a lighter version for slow devices. That takes more time and more testing." },
 ];
@@ -230,7 +233,7 @@ export type { Question, Recommendation } from "./level-finder";
 /** The form's "Website level" answers (the inquiry service's LEVELS: change both together). */
 export const formLevels: { id: LevelId | "unsure"; label: string }[] = [
   // (short, so a closed select shows the whole answer on a 320-pixel phone: "Signature (from $3,500)")
-  ...levels.map((l) => ({ id: l.id, label: `${l.name} (${l.price.replace(/^Starting at /, "From ").toLowerCase()})` })),
+  ...levels.map((l) => ({ id: l.id, label: `${l.name} (${l.price.toLowerCase()})` })),
   { id: "unsure", label: "I’m not sure yet" },
 ];
 /** The form's "Main goal" answers (the inquiry service's GOALS: change both together). Short for the same reason. */

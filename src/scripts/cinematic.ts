@@ -9,6 +9,7 @@ const loops = [...document.querySelectorAll<HTMLElement>("[data-cine]")];
 const videoOf = (el: HTMLElement) => el.querySelector("video")!;
 const dead = new WeakSet<HTMLElement>(); // (a loop whose file failed: the poster stays, it is not tried again)
 const seen = new Map<HTMLElement, number>(); // how much of each "view" loop is on screen, 0..1
+const held = new WeakSet<HTMLElement>(); // loops the visitor paused with the button: they stay paused on this page
 let wanted: HTMLElement | null = null; // the hovered or focused "hover" loop, which wins over the ones in view
 let ready = false;
 let now: HTMLElement | null = null;
@@ -19,7 +20,8 @@ const allowed = () => ready && root.hasAttribute("data-ambient") && !document.hi
 function attach(el: HTMLElement) {
   const video = videoOf(el);
   if (video.childElementCount) return;
-  const small = el.dataset.mobile && matchMedia("(max-width: 640px)").matches;
+  // (data-small: the width the component chose; an empty phone list there means a still, so nothing is attached)
+  const small = el.dataset.mobile && matchMedia(el.dataset.small || "(max-width: 640px)").matches;
   let list: Source[] = [];
   try { list = JSON.parse((small ? el.dataset.mobile : el.dataset.sources) ?? "[]"); } catch { /* no sources: the poster stays */ }
   for (const s of list) {
@@ -42,6 +44,8 @@ function stop(el: HTMLElement) {
   if (el.dataset.cine === "hover") { el.classList.remove("on"); if (video.readyState) video.currentTime = 0; }
 }
 
+const stillNow = (el: HTMLElement) => el.dataset.mobile === "[]" && matchMedia(el.dataset.small || "(max-width: 640px)").matches;
+
 function choose() {
   let next: HTMLElement | null = null;
   if (allowed()) {
@@ -50,10 +54,12 @@ function choose() {
       let best = 0.35; // (a loop plays once about a third of it is on screen)
       for (const [el, ratio] of seen) if (ratio > best) { best = ratio; next = el; }
     }
-    if (next && dead.has(next)) next = null;
+    if (next && (dead.has(next) || held.has(next))) next = null;
+    // (a loop that is a still at this width, even when a wider window attached its video earlier)
+    if (next && stillNow(next)) next = null;
   }
   if (next === now) return;
-  if (now) stop(now);
+  if (now) { stop(now); if (stillNow(now)) now.classList.remove("on"); }
   now = next;
   if (!next) return;
   attach(next);
@@ -81,7 +87,26 @@ if (loops.length) {
     host.addEventListener("focusin", on);
     host.addEventListener("focusout", (e) => { if (!host.contains(e.relatedTarget as Node | null)) off(); });
   }
+  // The pause button (CinematicLoop.astro, the element right after a "view" loop). It shows while the video plays and
+  // while the visitor holds it paused; a paused loop keeps its current frame and is not restarted by scrolling.
+  for (const el of loops) {
+    const button = el.nextElementSibling;
+    if (!(button instanceof HTMLButtonElement) || !button.hasAttribute("data-cine-toggle")) continue;
+    const video = videoOf(el);
+    const sync = () => { button.hidden = video.paused && !held.has(el); };
+    video.addEventListener("play", sync);
+    video.addEventListener("pause", sync);
+    button.addEventListener("click", () => {
+      const pause = !held.has(el);
+      if (pause) { held.add(el); if (now === el) { stop(el); now = null; } } else held.delete(el);
+      button.setAttribute("aria-pressed", String(pause));
+      choose();
+      sync();
+    });
+  }
   document.addEventListener("nuxy:motion", choose);
+  // (a window narrowed past a still's width stops its video; widened again, the video comes back)
+  for (const small of new Set(loops.map((el) => el.dataset.mobile === "[]" ? el.dataset.small : "").filter(Boolean))) matchMedia(small!).addEventListener("change", choose);
   document.addEventListener("visibilitychange", choose);
   document.addEventListener("nuxy:player", choose); // (CreativeGallery.astro: its player opened or closed)
   // Start only after the page itself has finished loading and the browser is idle: the video never competes with it.

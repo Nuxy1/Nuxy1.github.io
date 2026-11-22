@@ -66,8 +66,17 @@ async function open(path, { js = true, answer, width = 1280, height = 900 } = {}
     const kind = url.pathname === "/hit" ? "hit" : "inquiry";
     sent[kind].push(req.postData() ?? "");
     if (kind === "inquiry" && answer) return answer(route);
-    const res = await route.fetch({ url: api + url.pathname + url.search, maxRedirects: 0, headers: { ...req.headers(), "x-forwarded-for": "203.0.113.7" } });
-    await route.fulfill({ response: res });
+    // (a page-count beacon can still be on its way when a test closes its page: the reply then has nowhere to go, which
+    // is fine, so only a failure while the page is still open counts. While context.close() runs, the pages can still
+    // read as open while the fetched reply is already disposed, so Playwright's own teardown errors count as closed too.)
+    try {
+      const res = await route.fetch({ url: api + url.pathname + url.search, maxRedirects: 0, headers: { ...req.headers(), "x-forwarded-for": "203.0.113.7" } });
+      await route.fulfill({ response: res });
+    } catch (error) {
+      if (!context.pages().some((p) => !p.isClosed())) return;
+      if (/has been disposed|has been closed|Target closed/i.test(String(error?.message))) return;
+      throw error;
+    }
   });
   const page = await context.newPage();
   // The site scrolls smoothly (Base.astro), so under CPU load Playwright's own scroll before a click or check can keep
@@ -111,7 +120,7 @@ test("the form is labelled, and nothing on the page errors", async () => {
   await context.close();
 });
 
-test("empty submit shows an error on each required field, focuses the first, and sends nothing", async () => {
+test("empty submit shows an error on each required field, focuses a count with a link to each, and sends nothing", async () => {
   const { page, context, sent } = await open("/contact/");
   await page.click("[data-submit]");
   // ("What do you need?" is one group of choices: its error sits on the group, and focus goes to its first choice)
@@ -125,7 +134,17 @@ test("empty submit shows an error on each required field, focuses the first, and
   // (follow-ups need a yes: the box is never ticked for them, and leaving it unticked is fine)
   assert.equal(await page.isChecked("#f-consent"), false);
   assert.equal(await page.isHidden("#f-consent-err"), true);
+  // (critique round 11) five missing answers: focus goes to a count at the top of the form, one link per question in
+  // form order, each named as the form asks it; a link takes focus to its question (the group's first choice)
+  assert.equal(await page.evaluate(() => document.activeElement?.hasAttribute("data-errs")), true);
+  assert.equal(await page.textContent("[data-errs] p"), "5 answers need fixing.");
+  assert.equal(await page.textContent("[data-status]"), "5 answers need fixing.");
+  assert.deepEqual(await page.$$eval("[data-errs] a", (as) => as.map((a) => a.textContent)), ["What do you need?", "Your name", "Business name", "Email", "Tell us about your project"]);
+  assert.match(await page.textContent("#f-need-err"), /Tell us a little about your project/);
+  await page.click("[data-errs] a >> nth=0");
   assert.equal(await page.evaluate(() => [document.activeElement?.getAttribute("name"), document.activeElement?.value]).then((a) => a.join(" ")), `want ${wants[0].id}`);
+  await page.click("[data-errs] a >> nth=3");
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("name")), "email");
   assert.equal(sent.inquiry.length, 0);
   // a bad email and a too-short message get their own messages, and fixing clears them as you type
   await fill(page, { email: "owner@example", need: "hi" });
@@ -161,6 +180,13 @@ test("a real request is saved, shows its reference, and the page count carries n
   assert.equal(await page.textContent("[data-email]"), v.email);
   assert.equal(await page.evaluate(() => document.activeElement?.hasAttribute("data-done")), true);
   assert.equal(await page.isHidden("form"), true);
+  // (critique round 5) a copy of what was sent stays on the page, folded, as text: only the answers that travelled
+  assert.equal(await page.textContent(".inq-sent > summary"), "What You Sent");
+  const copy = await page.$$eval("[data-sent] > div", (rows) => rows.map((r) => [r.querySelector("dt").textContent, r.querySelector("dd").textContent]));
+  assert.deepEqual(copy.find(([l]) => l === "Business name"), ["Business name", v.business]);
+  assert.deepEqual(copy.find(([l]) => l === "Phone"), ["Phone", "507-555-0134"]);
+  assert.deepEqual(copy.find(([l]) => l === "Service"), ["Service", services.find((s) => s.id === "booking").name]);
+  assert.equal(copy.some(([l]) => l === "Website level"), false, "a website question that wasn't sent isn't in the copy");
   const saved = store.find(ref);
   assert.equal(saved.business, v.business);
   assert.equal(saved.service, "booking");
@@ -181,6 +207,22 @@ test("a real request is saved, shows its reference, and the page count carries n
     assert.ok(!body.includes("example") && !body.includes("Test"), body);
   }
   assert.ok(!logs.join("\n").includes(v.email), "no email address in the server log");
+  await context.close();
+});
+
+test("choosing Phone as the best way to reach you asks for a number, and choosing Email clears it (critique round 5)", async () => {
+  const { page, context, sent } = await open("/contact/");
+  await fill(page);
+  await page.click(".inq-more > summary");
+  await page.check("[name=contact][value=phone]");
+  await page.click("[data-submit]");
+  assert.equal(await page.getAttribute("[name=phone]", "aria-invalid"), "true");
+  assert.match(await page.textContent("#f-phone-err"), /phone number so we can call you/);
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("name")), "phone", "focus goes to the phone field");
+  assert.equal(sent.inquiry.length, 0, "nothing is sent");
+  await page.check("[name=contact][value=email]");
+  assert.equal(await page.isHidden("#f-phone-err"), true);
+  assert.equal(await page.getAttribute("[name=phone]", "aria-invalid"), "false");
   await context.close();
 });
 
@@ -479,18 +521,24 @@ test("a website level link picks the level and shows the website questions; othe
   // (an answer that isn't about a website hides the questions, and a website answer brings them back)
   await page.check("[name=want][value=automation]");
   assert.equal(await page.isHidden("[data-web]"), true);
+  // (the build-or-management question stays for automation, and goes, not sent, for a monthly plan: site audit 2026-11-21)
+  assert.equal(await page.isVisible("[data-scope]"), true);
+  await page.check("[name=want][value=maintenance]");
+  assert.equal(await page.isHidden("[data-scope]"), true);
+  assert.equal(await page.$eval("[data-scope]", (f) => f.disabled), true);
   assert.equal(await page.$eval("[data-web]", (f) => f.disabled), true);
   await page.check("[name=want][value=shopify]"); // (a website answer the form offers: approvals 88)
   assert.equal(await page.isVisible("[data-web]"), true);
   assert.equal(await page.inputValue("[name=level]"), "signature", "the answer is kept while hidden");
+  assert.equal(await page.isVisible("[data-scope]"), true, "a store build can be one-time or managed");
   await page.waitForTimeout(2600);
   const v = await fill(page, { want: "", email: "levels@example.com" });
   await page.selectOption("[name=goal]", "standout");
-  await page.fill("[name=features]", "Online booking\n3D product view");
+  assert.equal(await page.$("[name=features]"), null, "the project description asks for features now (site audit 2026-11-21)");
   await page.click("[data-submit]");
   await panel(page, "done").waitFor({ state: "visible" });
   const saved = store.find(await page.textContent("[data-ref]"));
-  assert.deepEqual([saved.want, saved.level, saved.goal, saved.features, saved.business], ["shopify", "signature", "standout", "Online booking\n3D product view", v.business]);
+  assert.deepEqual([saved.want, saved.level, saved.goal, saved.business], ["shopify", "signature", "standout", v.business]);
   // (the counts: one contact_started however much is typed, a contact_completed after the reference shows, no answers)
   await page.waitForTimeout(300);
   const events = sent.hit.map((b) => new URLSearchParams(b).get("e"));
@@ -561,9 +609,52 @@ const fillCallback = async (page, values = {}) => {
   return v;
 };
 
+// (owner decision 2026-11-21: one form at a time) with JavaScript the two ways above the forms are tabs
+test("one form at a time: the quote form first, the callback form on its tab or its link, and typing survives a switch", async (t) => {
+  const { page, context, sent, errors } = await open("/contact/");
+  if (!(await page.locator("[data-callback]").count())) { await context.close(); return t.skip("callbackForm is off"); }
+  const state = () => page.evaluate(() => ({
+    list: document.querySelector("[data-ways]").getAttribute("role"),
+    tabs: [...document.querySelectorAll("[data-way]")].map((a) => [a.getAttribute("role"), a.getAttribute("aria-selected"), a.tabIndex, a.getAttribute("aria-controls")]),
+    quote: !document.querySelector("#quote-panel").hidden, callback: !document.querySelector("#callback").hidden,
+    hash: location.hash, focus: document.activeElement?.id ?? "" }));
+  const tabs = (q, c) => [["tab", q ? "true" : "false", q ? 0 : -1, "quote-panel"], ["tab", c ? "true" : "false", c ? 0 : -1, "callback"]];
+  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(true, false), quote: true, callback: false, hash: "", focus: "" });
+  await page.fill("#f-name", "Kept Name");
+  await page.click("#way-callback");
+  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(false, true), quote: false, callback: true, hash: "#callback", focus: "way-callback" });
+  await page.fill("#cb-name", "Also Kept");
+  await page.focus("#way-callback"); // back on the tabs, as a keyboard user would be (Shift+Tab out of the form)
+  await page.keyboard.press("ArrowLeft");
+  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(true, false), quote: true, callback: false, hash: "", focus: "way-quote" });
+  assert.equal(await page.inputValue("#f-name"), "Kept Name");
+  await page.keyboard.press("End");
+  assert.equal((await state()).callback, true);
+  assert.equal(await page.inputValue("#cb-name"), "Also Kept");
+  assert.equal(await page.evaluate(() => document.querySelectorAll("[role=tab][tabindex='0']").length), 1, "one tab stop");
+  assert.equal(sent.inquiry.length, 0);
+  assert.deepEqual(errors, []);
+  await context.close();
+  // a link to /contact/#callback opens the callback form with both choices in view, at phone and computer widths
+  for (const [width, height] of [[390, 844], [1440, 900]]) {
+    const deep = await open("/contact/#callback", { width, height });
+    await deep.page.waitForTimeout(300);
+    const s = await deep.page.evaluate(() => ({ quote: !document.querySelector("#quote-panel").hidden, callback: !document.querySelector("#callback").hidden,
+      top: Math.round(document.querySelector("[data-ways]").getBoundingClientRect().top), form: document.querySelector("#cb-name").getBoundingClientRect().top < innerHeight }));
+    assert.deepEqual([s.quote, s.callback, s.form], [false, true, true], `${width}px`);
+    assert.ok(s.top >= 0 && s.top <= 120, `${width}px: the choices start ${s.top}px down`);
+    assert.deepEqual(deep.errors, []);
+    await deep.context.close();
+  }
+  // without JavaScript both forms show, one below the other, and the two ways are plain links
+  const nojs = await open("/contact/", { js: false });
+  assert.deepEqual([await nojs.page.isVisible("#f-name"), await nojs.page.isVisible("#cb-name"), await nojs.page.locator("[role=tab]").count()], [true, true, 0]);
+  await nojs.context.close();
+});
+
 test("the callback form offers the server's choices, needs a ticked yes and a phone, and its email is optional", async (t) => {
   const { CALLBACK_REASONS, CALLBACK_WINDOWS } = await import(pathToFileURL(agent).href);
-  const { page, context, sent, errors } = await open("/contact/");
+  const { page, context, sent, errors } = await open("/contact/#callback");
   if (!(await page.locator("[data-callback]").count())) { await context.close(); return t.skip("callbackForm is off in data/site.ts"); }
   const options = (name) => page.locator(`[data-callback] [name=${name}]`).evaluateAll((r) => Object.fromEntries(r.map((x) => [x.value, x.closest("label").textContent.trim()])));
   assert.deepEqual(await options("reason"), CALLBACK_REASONS);
@@ -583,7 +674,7 @@ test("the callback form offers the server's choices, needs a ticked yes and a ph
 });
 
 test("a callback request is saved as one, and the success message promises no time", async (t) => {
-  const { page, context, sent } = await open("/contact/");
+  const { page, context, sent } = await open("/contact/#callback");
   if (!(await page.locator("[data-callback]").count())) { await context.close(); return t.skip("callbackForm is off"); }
   await page.waitForTimeout(2600); // (a form sent in under 2.5 seconds is held as spam)
   const v = await fillCallback(page);

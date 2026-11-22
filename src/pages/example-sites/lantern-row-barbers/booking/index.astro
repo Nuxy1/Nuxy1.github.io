@@ -3,26 +3,32 @@
 // available), day, time, details, review; ends with "Demo appointment created." and what a real build would do next.
 // Links can pick ahead: ?service=fade, ?barber=marcus|any, ?day=0 (the board day) and ?time=2:30 (the board's times).
 // The days come from the visitor's own clock, so the script labels them; without JavaScript every step shows at once
-// with the shop's standard times. Below it, the cancellation list (#waitlist), also a demo that keeps nothing.
+// with the shop's standard times. Below it, the cancellation list (#waitlist) behind a closed disclosure, also a demo
+// that keeps nothing.
 import Shell from "../../../../components/demo/lantern/Shell.astro";
 import DemoComplete from "../../../../components/demo/DemoComplete.astro";
-import { services, barbers, slots, slotLabel, hours } from "../../../../data/demos/lantern";
+import { services, barbers, slots, slotLabel, hours, bookingRules } from "../../../../data/demos/lantern";
+import { usd } from "../../../../lib/demo/money";
 
 const steps = ["Cut", "Barber", "Day", "Time", "Details", "Review"];
+const numerals = ["I", "II", "III", "IV", "V", "VI"];
 const flow = [
-  { title: "Calendar booking", text: "The time goes into the shop's booking calendar and is blocked for that barber, so nobody else can take it." },
+  { title: "Calendar booking", text: "The time goes into the shop’s booking calendar and is blocked for that barber, so nobody else can take it." },
   { title: "Confirmation text", text: "A text confirms the cut, the barber and the time, with a link to move or cancel." },
   { title: "Reminder", text: "A reminder goes out the day before, which cuts no-shows." },
   { title: "Review request", text: "After the visit, a short thank-you asks for a review." },
   { title: "Cancellation list", text: "If anyone cancels, the freed time is offered to the cancellation list first." },
 ];
 const openDays = hours.filter((h) => h.open).map((h) => h.day);
+// "Tuesday to Saturday" when the open days run together in the week, else the plain list
+const openAt = hours.flatMap((h, i) => (h.open ? [i] : []));
+const openText = openDays.length > 2 && openAt.every((n, k) => k === 0 || n === openAt[k - 1] + 1)
+  ? `${openDays[0]} to ${openDays.at(-1)}` : openDays.join(" and ");
 ---
 <Shell title="Book a chair" current="booking" description="Try the Lantern Row demonstration booking: pick a cut, a barber or first available, a day and an open time. Nothing is reserved or sent.">
   <section class="lr-section lr-b-sec">
     <div class="lr-wrap">
       <div class="lr-head">
-        <p class="lr-kicker">Book a chair</p>
         <h1 id="b-h">Book in under a minute.</h1>
         <p class="lr-lead">Pick a cut, a barber and an open time. You pay in the shop.</p>
         <p class="lr-demo-note">Demonstration booking: nothing is reserved, and nothing you type is sent or kept.</p>
@@ -31,10 +37,10 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
       <div class="lr-b" data-b-wrap>
         <form class="lr-b-form" method="dialog" data-lr-book aria-labelledby="b-h">
           <ol class="lr-b-prog" data-progress role="list" aria-label="Steps">
-            {steps.map((s, i) => <li><button type="button"><span aria-hidden="true">{i + 1}</span>{s}</button></li>)}
+            {steps.map((s, i) => <li><button type="button"><span aria-hidden="true">{numerals[i]}</span>{s}<small data-answer></small></button></li>)}
           </ol>
           <p class="sr-only" data-step-status aria-live="polite"></p>
-          <p class="lr-b-mini" data-b-mini aria-hidden="true"></p>
+          <p class="lr-b-mini" aria-hidden="true"><span data-b-mini></span><span class="lr-b-mini-next" data-b-mini-next></span></p>
 
           <fieldset class="lr-b-step" data-step aria-labelledby="b1-h">
             <h2 id="b1-h" data-step-title>Which cut?</h2>
@@ -42,31 +48,32 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
             <div class="lr-b-grid lr-b-svc">
               {services.map((s, i) => (
                 <label class="lr-pick">
-                  <input type="radio" name="service" value={s.id} required checked={i === 0} data-error="Pick a cut." />
-                  <span><span class="lr-b-row"><strong>{s.name}</strong><em>${s.price}</em></span><small>{s.note} · about {s.mins} min</small></span>
+                  <input type="radio" name="service" value={s.id} required checked={i === 0} data-error="Choose a cut to continue." />
+                  <span><span class="lr-b-row"><strong>{s.name}</strong><em>{usd(s.price)}</em></span><small>{s.note}. About {s.mins} minutes.</small></span>
                 </label>
               ))}
             </div>
             <p class="lr-err" id="b-err-1" data-step-error role="alert"></p>
-            <div class="lr-b-nav"><button class="lr-btn" type="button" data-next>Continue</button></div>
+            <div class="lr-b-nav"><button class="lr-btn lr-btn-ox" type="button" data-next>Continue</button></div>
           </fieldset>
 
           <fieldset class="lr-b-step" data-step aria-labelledby="b2-h">
             <h2 id="b2-h" data-step-title>Who would you like?</h2>
+            <p class="lr-b-sub" data-b-cut-sub></p>
             <div class="lr-b-grid lr-b-barbers">
               <label class="lr-pick">
-                <input type="radio" name="barber" value="any" required checked data-error="Pick a barber, or “First available”." />
+                <input type="radio" name="barber" value="any" required checked data-error="Choose a barber, or “First available”, to continue." />
                 <span><strong>First available</strong><small>Every open time across all three chairs</small></span>
               </label>
               {barbers.map((b) => (
                 <label class="lr-pick" style={`--tone:${b.tone}`}>
                   <input type="radio" name="barber" value={b.id} />
-                  <span><span class="lr-b-row"><strong>{b.name}</strong><i class="lr-b-mono" aria-hidden="true">{b.name[0]}</i></span><small>Chair {b.chair} · {b.known}</small></span>
+                  <span><span class="lr-b-row"><strong>{b.name}</strong><i class="lr-b-mono" aria-hidden="true">{b.name[0]}</i></span><small>Chair {b.chair}, {b.known.toLowerCase()}</small><small class="lr-b-open" data-barber-open hidden></small></span>
                 </label>
               ))}
             </div>
             <p class="lr-err" id="b-err-2" data-step-error role="alert"></p>
-            <div class="lr-b-nav"><button class="lr-btn lr-btn-line" type="button" data-back>Back</button><button class="lr-btn" type="button" data-next>Continue</button></div>
+            <div class="lr-b-nav"><button class="lr-btn lr-btn-line" type="button" data-back>Back</button><button class="lr-btn lr-btn-ox" type="button" data-next>Continue</button></div>
           </fieldset>
 
           <fieldset class="lr-b-step" data-step aria-labelledby="b3-h">
@@ -74,15 +81,15 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
             <div class="lr-b-grid lr-b-days">
               {Array.from({ length: 6 }, (_, i) => (
                 <label class="lr-pick">
-                  <input type="radio" name="day" value={String(i)} required data-error="Pick a day." />
+                  <input type="radio" name="day" value={String(i)} required data-error="Choose a day to continue." />
                   <span><strong data-day-name>{i === 0 ? "First open day" : `Open day ${i + 1}`}</strong><small><span data-day-date></span> <span class="lr-b-count" data-day-count></span></small></span>
                 </label>
               ))}
             </div>
-            <p class="lr-b-full" data-b-full hidden><span data-b-full-text></span> <a href="#waitlist" data-wl-link>Join the cancellation list</a></p>
-            <p class="lr-fine">Open {openDays.join(", ")}. Demonstration calendar: the open times follow a fixed pattern.</p>
+            <p class="lr-b-full" data-b-full hidden><span data-b-full-text></span> <button class="lr-b-jump" type="button" data-b-jump></button>, or <a href="#waitlist" data-wl-link>join the cancellation list</a>.</p>
+            <p class="lr-fine">Open {openText}. Demonstration calendar: the open times follow a fixed pattern.</p>
             <p class="lr-err" id="b-err-3" data-step-error role="alert"></p>
-            <div class="lr-b-nav"><button class="lr-btn lr-btn-line" type="button" data-back>Back</button><button class="lr-btn" type="button" data-next>Continue</button></div>
+            <div class="lr-b-nav"><button class="lr-btn lr-btn-line" type="button" data-back>Back</button><button class="lr-btn lr-btn-ox" type="button" data-next>Continue</button></div>
           </fieldset>
 
           <fieldset class="lr-b-step" data-step aria-labelledby="b4-h">
@@ -90,34 +97,37 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
             <p class="lr-b-sub" data-b-time-sub></p>
             <div class="lr-b-grid lr-b-times" data-b-times>
               {slots.map((t) => (
-                <label class="lr-pick"><input type="radio" name="time" value={t} required /><span><strong>{slotLabel(t)}</strong></span></label>
+                <label class="lr-pick"><input type="radio" name="time" value={t} required data-error="Choose a time to continue." /><span><strong>{slotLabel(t)}</strong></span></label>
               ))}
             </div>
             <p class="lr-b-full" data-b-none hidden>No open chairs that day. <a href="#waitlist" data-wl-link>Join the cancellation list</a> or go back and pick another day.</p>
             <p class="lr-err" id="b-err-4" data-step-error role="alert"></p>
-            <div class="lr-b-nav"><button class="lr-btn lr-btn-line" type="button" data-back>Back</button><button class="lr-btn" type="button" data-next>Continue</button></div>
+            <div class="lr-b-nav"><button class="lr-btn lr-btn-line" type="button" data-back>Back</button><button class="lr-btn lr-btn-ox" type="button" data-next>Continue</button></div>
           </fieldset>
 
           <fieldset class="lr-b-step" data-step aria-labelledby="b5-h">
             <h2 id="b5-h" data-step-title>Your details</h2>
             <div class="lr-fields">
-              <label class="lr-field"><span>First name</span><input name="name" required autocomplete="given-name" maxlength="40" data-error="Add a first name, or press “Use sample details”." /></label>
-              <label class="lr-field"><span>Mobile number</span><input name="mobile" type="tel" inputmode="tel" required autocomplete="tel-national" maxlength="20" placeholder="(507) 555-0100" data-error="Add a 10-digit mobile number, or press “Use sample details”." /><small>For the confirmation text. In this demo nothing is sent.</small></label>
+              <label class="lr-field"><span>First name</span><input name="name" required autocomplete="given-name" maxlength="40" data-error="Enter your first name to continue, or press “Use sample details”." /></label>
+              <label class="lr-field"><span>Mobile number</span><input name="mobile" type="tel" inputmode="tel" required autocomplete="tel-national" maxlength="20" placeholder="(507) 555-0100…" data-error="Enter a mobile number with 10 digits, like 507 555 0100, or press “Use sample details”." /><small>For the confirmation text. In this demo nothing is sent.</small></label>
             </div>
             <p class="lr-err" id="b-err-5" data-step-error role="alert"></p>
             <div class="lr-b-nav">
               <button class="lr-btn lr-btn-line" type="button" data-back>Back</button>
               <button class="lr-btn lr-btn-line" type="button" data-b-sample>Use sample details</button>
-              <button class="lr-btn" type="button" data-next>Review</button>
+              <button class="lr-btn lr-btn-ox" type="button" data-next>Review</button>
             </div>
           </fieldset>
 
           <fieldset class="lr-b-step" data-step aria-labelledby="b6-h">
-            <h2 id="b6-h" data-step-title>Check and confirm</h2>
-            <dl class="lr-b-review" data-b-review></dl>
-            <p class="lr-fine">Pay in the shop. Free to move or cancel up to two hours before.</p>
+            <h2 id="b6-h" data-step-title>Before we hold the chair</h2>
+            <div class="lr-b-review" data-b-review></div>
+            <h3 class="lr-b-rules-h" id="b-rules-h">House rules</h3>
+            <dl class="lr-b-rules" aria-labelledby="b-rules-h">
+              {bookingRules.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+            </dl>
             <p class="lr-err" id="b-err-6" data-step-error role="alert"></p>
-            <div class="lr-b-nav"><button class="lr-btn lr-btn-line" type="button" data-back>Back</button><button class="lr-btn" type="submit">Confirm demo booking</button></div>
+            <div class="lr-b-nav"><button class="lr-btn lr-btn-line" type="button" data-back>Back</button><button class="lr-btn lr-btn-ox" type="submit">Confirm demo booking</button></div>
           </fieldset>
         </form>
 
@@ -130,35 +140,40 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
               <div><dt>Day</dt><dd data-b-sum="day">Not picked</dd></div>
               <div><dt>Time</dt><dd data-b-sum="time">Not picked</dd></div>
             </dl>
-            <p class="lr-b-price"><span>Pay in the shop</span><strong data-b-sum="price">${services[0].price}</strong></p>
-            <p class="lr-b-disclaim">Demonstration booking: nothing is reserved.</p>
+            <p class="lr-b-price"><span>Pay in the shop</span><strong data-b-sum="price">{usd(services[0].price)}</strong></p>
+            {/* what is left, rewritten only when a step opens (not live: the step status already speaks) */}
+            <p class="lr-b-next" data-b-next></p>
           </div>
         </aside>
       </div>
 
-      <DemoComplete id="b-done" heading="Demo appointment created." lead="Nothing was reserved, saved or sent. Your name and number were cleared from the page." flow={flow} restart="Book another" />
+      <DemoComplete id="b-done" variant="card" issuer="Lantern Row Barbers" docTitle="Appointment card" dated={false} heading="Demo appointment created." lead="Nothing was reserved, saved or sent. Your name and number were cleared from the page." docFoot="A demonstration card. The chair was not held and no text went out." flow={flow} again="Same cut and barber, new day" againClass="lr-btn lr-btn-ox" restart="Start a new booking" restartClass="lr-btn" />
     </div>
   </section>
 
-  <section class="lr-section lr-rule lr-wl" id="waitlist" aria-labelledby="wl-h">
+  {/* the cancellation list is an offer for when the book is full, not a second form: a short note and a closed
+       disclosure. #waitlist (the footer, the board, the fully booked notes) lands on it and the script opens it;
+       without JavaScript the link lands on the same note and its button, which opens natively */}
+  <section class="lr-rule lr-wl" aria-labelledby="wl-h">
     <div class="lr-wrap lr-wl-in">
-      <div class="lr-head">
-        <p class="lr-kicker">Fully booked?</p>
-        <h2 id="wl-h">Join cancellation list</h2>
-        <p class="lr-lead">Tell us who and when. When a matching chair frees up, the list gets a text, first come first served.</p>
-        <p class="lr-demo-note">Demonstration form: nothing is saved or sent.</p>
+      <div class="lr-wl-intro">
+        <h2 id="wl-h">Fully booked on your day?</h2>
+        <p>Leave your name on the cancellation list. When a matching chair frees up, the list gets a text, first come first served.</p>
       </div>
-      <div>
-        <form class="lr-wl-form" method="dialog" data-demo-form="wl-sent" aria-labelledby="wl-h">
-          <div class="lr-fields">
-            <label class="lr-field"><span>First name</span><input name="wl-name" required autocomplete="given-name" maxlength="40" /></label>
-            <label class="lr-field"><span>Mobile number</span><input name="wl-mobile" type="tel" inputmode="tel" required autocomplete="tel-national" maxlength="20" placeholder="(507) 555-0100" /></label>
+      <details class="lr-wl-more" id="waitlist" data-wl>
+        <summary class="lr-btn lr-btn-line" id="wl-sum">Join the cancellation list<span class="lr-wl-sign" aria-hidden="true"></span></summary>
+        <div class="lr-wl-body">
+        <form class="lr-wl-form" method="dialog" data-demo-form="wl-sent" aria-labelledby="wl-sum">
+          <div class="lr-fields" data-step>
+            <label class="lr-field"><span>First name</span><input name="wl-name" required autocomplete="given-name" maxlength="40" data-error="Enter your first name to join the list." /></label>
+            <label class="lr-field"><span>Mobile number</span><input name="wl-mobile" type="tel" inputmode="tel" required autocomplete="tel-national" maxlength="20" placeholder="(507) 555-0100…" data-error="Enter a mobile number for the text, like 507 555 0100." /></label>
             <label class="lr-field lr-field-wide"><span>Barber</span>
               <select name="wl-barber" data-wl-barber>
                 <option value="any">Any barber</option>
                 {barbers.map((b) => <option value={b.id}>{b.name}</option>)}
               </select>
             </label>
+            <p class="lr-err lr-field-wide" id="wl-err" data-step-error role="alert"></p>
           </div>
           <fieldset class="lr-wl-set">
             <legend>Days that work</legend>
@@ -172,15 +187,15 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
               {["Any time", "Morning", "Afternoon"].map((t, i) => <label class="lr-pick"><input type="radio" name="wl-when" value={t} checked={i === 0} /><span>{t}</span></label>)}
             </div>
           </fieldset>
-          <button class="lr-btn" type="submit">Join the list</button>
+          <button class="lr-btn lr-btn-ox" type="submit">Join the list</button>
         </form>
         <div class="lr-wl-sent" id="wl-sent" hidden tabindex="-1" role="status">
-          <p class="lr-label">Demo only</p>
-          <h3>You're on the list, in this demo.</h3>
+          <h3>You’re on the list, in this demo.</h3>
           <p>Nothing was saved or sent, and the form has been cleared. On a real build, a cancellation that matches your barber, days and time would text you a link to take the chair.</p>
           <button class="lr-btn lr-btn-line lr-btn-sm" type="button" data-demo-again>Add another</button>
         </div>
-      </div>
+        </div>
+      </details>
     </div>
   </section>
 </Shell>
@@ -191,23 +206,39 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
   @media (min-width: 1024px) { .lr-b { grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; } }
   .lr-b-form { container: bform / inline-size; display: grid; gap: 22px; padding: clamp(20px, 4vw, 40px); background: var(--lr-panel); border: 1px solid var(--lr-line-soft); border-top: 2px solid var(--lr-brass); }
 
+  /* the steps as chapters: one step language, the Bodoni roman numeral, set over each step's name in the site's Sofia
+     face. A rule above each chapter turns brass once it is answered and thickens to brass-2 on the open one. Every
+     future label keeps full contrast (no dimming) */
   .lr-b-prog { display: none; }
-  .lr-b-form.is-stepped .lr-b-prog { display: flex; gap: 4px; margin: -4px -4px 0; padding: 4px; }
-  .lr-b-prog li { flex: 1 0 auto; }
-  .lr-b-prog button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-bottom: 2px solid var(--lr-line); background: transparent; color: var(--lr-mute); font: inherit; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; cursor: pointer; }
-  .lr-b-prog button span { font-family: "Bodoni Moda", Georgia, serif; font-size: 1rem; letter-spacing: 0; text-transform: none; }
+  .lr-b-form.is-stepped .lr-b-prog { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .lr-b-prog li { position: relative; flex: 1 1 auto; min-width: 0; }
+  .lr-b-prog li::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: var(--lr-line); transition: background-color 200ms var(--lr-ease); }
+  .lr-b-prog li.done::before, .lr-b-prog li:has(> button > [data-answer]:not(:empty))::before { background: var(--lr-brass); }
+  .lr-b-prog li[aria-current]::before { height: 2px; background: var(--lr-brass-2); }
+  .lr-b-prog button { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 3px; align-content: start; justify-items: start; width: 100%; min-height: 60px; padding: 10px 4px 6px 0; border: 0; background: none; color: var(--lr-mute); font-family: "Sofia XC", "Arial Narrow", sans-serif; font-weight: 700; font-size: 1.125rem; letter-spacing: 0.03em; line-height: 1.1; text-align: start; white-space: nowrap; cursor: pointer; transition: color 200ms var(--lr-ease); }
+  .lr-b-prog button > span { grid-row: 1; font-family: "Bodoni Moda", Georgia, serif; font-weight: 500; font-size: 1rem; letter-spacing: 0; line-height: 1.1; color: var(--lr-mute); transition: color 200ms var(--lr-ease); }
   .lr-b-prog button:disabled { cursor: default; }
-  .lr-b-prog li:not(.done):not([aria-current]) button:disabled { opacity: 0.55; }
-  .lr-b-prog li.done button { color: var(--lr-soft); border-bottom-color: #6b5a3a; }
-  .lr-b-prog li.done button:hover { color: var(--lr-cream); }
-  .lr-b-prog li[aria-current] button { color: var(--lr-cream); border-bottom-color: var(--lr-brass); opacity: 1; }
-  .lr-b-prog li[aria-current] button span { color: var(--lr-brass-2); }
-  .lr-b-prog button:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 2px; }
-  @container bform (max-width: 719px) { .lr-b-prog button { font-size: 0; gap: 0; justify-content: center; padding: 0; } .lr-b-prog li[aria-current] button { font-size: 0.8125rem; gap: 8px; padding: 0 10px; } .lr-b-prog li { flex: 1 1 36px; } .lr-b-prog li[aria-current] { flex: 0 0 auto; } }
-  @container bform (max-width: 299px) { .lr-b-prog li, .lr-b-prog li[aria-current] { flex: 1 1 0; min-width: 0; } .lr-b-prog li[aria-current] button { font-size: 0; gap: 0; padding: 0; } }
+  .lr-b-prog li.done button, .lr-b-prog button:has(> [data-answer]:not(:empty)) { color: var(--lr-soft); }
+  .lr-b-prog li.done button > span, .lr-b-prog button:has(> [data-answer]:not(:empty)) > span { color: var(--lr-brass); }
+  .lr-b-prog li[aria-current] button { color: var(--lr-cream); }
+  .lr-b-prog li[aria-current] button > span { color: var(--lr-brass-2); }
+  .lr-b-prog button:not(:disabled):hover { color: var(--lr-cream); }
+  .lr-b-prog button:focus-visible { outline: 2px solid var(--demo-ring); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .lr-b-prog li::before, .lr-b-prog button, .lr-b-prog button > span { transition: none; } }
+  .lr-b-prog [data-answer] { display: none; }
+  @container bform (min-width: 720px) {
+    .lr-b-prog [data-answer]:not(:empty) { display: block; grid-row: 3; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--lr-soft); font-family: "Bodoni Moda", Georgia, serif; font-size: 0.9375rem; font-weight: 500; letter-spacing: 0; line-height: 1.25; }
+  }
+  /* phones keep all six names in the condensed face; the numeral sits above the name, so it costs no width */
+  @container bform (max-width: 719px) { .lr-b-prog { gap: 4px; } .lr-b-prog button { padding-right: 2px; font-size: 1rem; } }
+  @container bform (max-width: 299px) { .lr-b-prog { gap: 3px; } .lr-b-prog button { padding-right: 0; font-size: 0.9375rem; letter-spacing: 0.01em; } }
 
   .lr-b-mini { display: none; }
-  @media (max-width: 1023px) { .lr-b-form.is-stepped .lr-b-mini:not(:empty) { display: block; padding: 10px 14px; border: 1px solid var(--lr-line); color: var(--lr-soft); font-size: 0.9375rem; } }
+  @media (max-width: 1023px) {
+    .lr-b-form.is-stepped .lr-b-mini { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid var(--lr-line); color: var(--lr-soft); font-size: 0.9375rem; }
+    .lr-b-mini > span:empty { display: none; }
+    .lr-b-mini-next { font-style: italic; color: var(--lr-cream); }
+  }
 
   .lr-b-step { display: grid; gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; }
   .lr-b-step + .lr-b-step { padding-top: 28px; border-top: 1px solid var(--lr-line-soft); }
@@ -218,27 +249,41 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
 
   .lr-b-grid { display: grid; gap: 10px; }
   .lr-b-svc, .lr-b-barbers { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
-  .lr-b-days { grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); }
+  .lr-b-days { grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
+  /* six days: two across on a phone, two even rows of three once there is room, never five and a lone sixth */
+  @media (min-width: 600px) { .lr-b-days { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   .lr-b-times { grid-template-columns: repeat(auto-fill, minmax(min(100%, 128px), 1fr)); }
   .lr-b-grid .lr-pick > span { padding: 14px 16px; }
   .lr-b-grid strong { font-size: 1.0625rem; color: var(--lr-cream); }
-  .lr-b-grid small { color: var(--lr-mute); font-size: 0.875rem; line-height: 1.35; }
+  .lr-b-grid small { color: var(--lr-mute); font-size: 0.9375rem; line-height: 1.35; }
   .lr-b-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-  .lr-b-row em { font-style: normal; font-family: "Bodoni Moda", Georgia, serif; font-size: 1.25rem; color: var(--lr-brass-2); }
+  .lr-b-row em { font-style: normal; font-family: "Bodoni Moda", Georgia, serif; font-size: 1.25rem; color: var(--lr-brass-2); font-variant-numeric: lining-nums tabular-nums; }
+  .lr-b-times :global(strong) { font-variant-numeric: lining-nums tabular-nums; } /* the script draws the times */
   .lr-b-mono { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--tone); border-radius: 50%; color: var(--tone); font-style: normal; font-family: "Bodoni Moda", Georgia, serif; }
-  .lr-b-count { color: var(--lr-brass-2); }
-  .lr-pick input:disabled + span .lr-b-count, .lr-pick input:disabled + span strong { color: #6f6656; }
+  .lr-b-count { display: block; color: var(--lr-brass-2); }
+  .lr-b-grid small.lr-b-open { color: var(--lr-brass-2); }
+  .lr-pick input:disabled + span .lr-b-count, .lr-pick input:disabled + span .lr-b-open, .lr-pick input:disabled + span strong { color: #6f6656; }
   .lr-pick input:disabled + span strong { text-decoration: line-through; text-decoration-thickness: 1px; }
   .lr-b-times .lr-pick > span { justify-items: start; }
   .lr-b-hold, .lr-b-full { padding: 12px 16px; border: 1px dashed var(--lr-brass); color: var(--lr-cream); }
   .lr-b-full a, .lr-b-hold a { color: var(--lr-brass-2); }
+  /* "See Marcus's times on Thursday": an inline action in the note, set like its link */
+  .lr-b-jump { display: inline; padding: 0; border: 0; background: none; color: var(--lr-brass-2); font: inherit; line-height: inherit; text-align: inherit; text-decoration: underline 1px; text-underline-offset: 0.2em; cursor: pointer; }
+  .lr-b-jump:hover { color: var(--lr-cream); }
+  .lr-b-jump:focus-visible { outline: 2px solid var(--demo-ring); outline-offset: 2px; }
   .lr-b-sub { color: var(--lr-soft); }
   .lr-b-sub:empty { display: none; }
 
-  .lr-b-review { display: grid; border-top: 1px solid var(--lr-line); }
-  .lr-b-review div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 14px 0; border-bottom: 1px solid var(--lr-line-soft); }
-  .lr-b-review dt { color: var(--lr-mute); }
-  .lr-b-review dd { color: var(--lr-cream); font-weight: 600; text-align: right; }
+  /* the review is built by the script (so :global), and set as one sentence in Bodoni, read back the way the barber
+     would say it; each answer in it is an underlined button that goes back to its step */
+  .lr-b-review { display: grid; gap: 12px; padding: 24px 0 22px; border-block: 1px solid var(--lr-line-soft); border-top-color: var(--lr-brass); }
+  .lr-b-review :global(.lr-b-hint) { font-size: 0.9375rem; color: var(--lr-mute); }
+  .lr-b-review :global(.lr-b-tail) { white-space: nowrap; }
+  .lr-b-review :global(.lr-b-line) { max-width: 30ch; font-family: "Bodoni Moda", Georgia, serif; font-size: clamp(1.625rem, 1.15rem + 1.7vw, 2.375rem); font-weight: 500; line-height: 1.28; color: var(--lr-cream); text-wrap: pretty; font-variant-numeric: lining-nums; }
+  .lr-b-review :global(.lr-b-terms) { font-family: "Bodoni Moda", Georgia, serif; font-size: 1.1875rem; font-style: italic; color: var(--lr-soft); font-variant-numeric: lining-nums; }
+  .lr-b-review :global(.lr-b-who) { font-size: 1rem; color: var(--lr-soft); }
+  .lr-b-review :global(button) { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: inherit; text-decoration: underline 1px var(--lr-brass); text-underline-offset: 0.2em; cursor: pointer; transition: color 160ms ease-out, text-decoration-color 160ms ease-out; }
+  .lr-b-review :global(button:hover) { color: var(--lr-brass-2); text-decoration-color: currentColor; }
 
   .lr-b-nav { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 6px; }
   .lr-b-nav [data-next], .lr-b-nav [type="submit"] { margin-left: auto; }
@@ -253,15 +298,35 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
   .lr-b-sum dt { color: var(--lr-mute); }
   .lr-b-sum dd { text-align: right; font-weight: 600; color: var(--lr-cream); }
   .lr-b-price { display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px; border-top: 1px solid var(--lr-line); color: var(--lr-soft); }
-  .lr-b-price strong { font-family: "Bodoni Moda", Georgia, serif; font-size: 2.25rem; font-weight: 600; color: var(--lr-brass-2); font-variant-numeric: lining-nums; }
-  .lr-b-disclaim { font-size: 0.875rem; color: var(--lr-mute); }
+  .lr-b-price strong { font-family: "Bodoni Moda", Georgia, serif; font-size: 2.25rem; font-weight: 600; color: var(--lr-brass-2); font-variant-numeric: lining-nums tabular-nums; }
+  .lr-b-next { padding-top: 14px; border-top: 1px solid var(--lr-line-soft); font-family: "Bodoni Moda", Georgia, serif; font-size: 1rem; font-style: italic; line-height: 1.45; color: var(--lr-soft); }
+  .lr-b-next:empty { display: none; }
 
-  .lr-b-sec :global(.dc) { --dc-bg: #1d1914; --dc-ink: #f3ead8; --dc-soft: #c7bba5; --dc-line: #3a3128; --dc-accent: #c9a45c; --dc-on-accent: #14110e; --dc-panel: #14110e; --dc-radius: 2px; margin-top: 8px; }
+  /* the two house rules that matter before you confirm, from the menu page's list */
+  .lr-b-rules-h { font-size: 1.25rem; color: var(--lr-cream); }
+  .lr-b-rules { display: grid; gap: 10px; max-width: 62ch; margin-top: -6px; }
+  .lr-b-rules div { display: grid; gap: 2px; }
+  .lr-b-rules dt { font-family: "Sofia XC", "Arial Narrow", sans-serif; font-weight: 700; font-size: 1.0625rem; letter-spacing: 0.03em; color: var(--lr-brass-2); }
+  .lr-b-rules dd { font-size: 0.9375rem; color: var(--lr-soft); }
+
   .lr-b-sec :global(.dc h2) { font-family: "Bodoni Moda", Georgia, serif; }
 
-  .lr-wl { background: var(--lr-ink); scroll-margin-top: 80px; }
-  .lr-wl-in { display: grid; gap: 32px; align-items: start; }
-  @media (min-width: 960px) { .lr-wl-in { grid-template-columns: 1fr 1.2fr; gap: 56px; } }
+  /* a quiet strip under the booking: a short note and the closed list, not a second section of fields */
+  .lr-wl { background: var(--lr-ink); padding-block: clamp(40px, 5vw, 64px); }
+  .lr-wl-in { display: grid; gap: 20px; align-items: start; }
+  .lr-wl-intro { display: grid; gap: 8px; max-width: 60ch; }
+  .lr-wl-intro h2 { font-size: clamp(1.75rem, 3vw, 2.25rem); }
+  .lr-wl-intro p { color: var(--lr-soft); }
+  .lr-wl-more { scroll-margin-top: 96px; }
+  .lr-wl-more > summary { list-style: none; }
+  .lr-wl-more > summary::-webkit-details-marker { display: none; }
+  /* a plus that turns into a minus as the list opens (one bar turns flat: transform only) */
+  .lr-wl-sign { position: relative; width: 12px; height: 12px; flex: none; }
+  .lr-wl-sign::before, .lr-wl-sign::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; margin-top: -0.75px; background: currentColor; }
+  .lr-wl-sign::after { transform: rotate(90deg); transition: transform 220ms var(--lr-ease); }
+  .lr-wl-more[open] .lr-wl-sign::after { transform: rotate(0deg); }
+  @media (prefers-reduced-motion: reduce) { .lr-wl-sign::after { transition: none; } }
+  .lr-wl-body { max-width: 760px; margin-top: 20px; }
   .lr-wl-form { display: grid; gap: 20px; padding: clamp(20px, 3vw, 32px); background: var(--lr-panel); border: 1px solid var(--lr-line-soft); }
   .lr-wl-set { display: grid; gap: 10px; border: 0; padding: 0; margin: 0; min-width: 0; }
   .lr-wl-set legend { margin-bottom: 10px; font-weight: 600; font-size: 0.9375rem; }
@@ -270,13 +335,28 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
   .lr-wl-form > .lr-btn { justify-self: start; }
   .lr-wl-sent { display: grid; gap: 12px; justify-items: start; padding: clamp(20px, 3vw, 32px); background: var(--lr-panel); border: 1px solid var(--lr-brass); outline: none; }
   .lr-wl-sent h3 { font-size: 1.75rem; }
-  .lr-wl-sent p:not(.lr-label) { color: var(--lr-soft); }
+  .lr-wl-sent p { color: var(--lr-soft); }
 </style>
 
 <script>
-  import { stepper, firstInvalid, flag, type Stepper } from "../../../../lib/demo/stepper";
-  import { showComplete, onRestart } from "../../../../lib/demo/complete";
+  import { stepper, firstInvalid, flag, inlineErrors, type Stepper } from "../../../../lib/demo/stepper";
+  import { usd } from "../../../../lib/demo/money";
+  import { showComplete, onRestart, onAgain } from "../../../../lib/demo/complete";
   import { slots, openTimes, board, barbers, barberById, serviceById, bookingDays, dayName, slotLabel, type BarberId, type ServiceId } from "../../../../data/demos/lantern";
+
+  // the cancellation list: inline messages instead of the browser's bubble
+  const wlForm = document.querySelector<HTMLFormElement>("[data-demo-form=wl-sent]");
+  if (wlForm) inlineErrors(wlForm);
+  // the list is a closed disclosure: a link to #waitlist opens it (on arrival, on a same-page jump, and from the
+  // fully booked notes in the form, whose links point at it)
+  const wl = document.querySelector<HTMLDetailsElement>("[data-wl]");
+  const openWl = () => { if (wl && location.hash === "#waitlist") wl.open = true; };
+  openWl();
+  addEventListener("hashchange", openWl);
+  document.addEventListener("click", (e) => {
+    const a = (e.target as Element).closest<HTMLAnchorElement>('a[href$="#waitlist"]');
+    if (wl && a && a.pathname === location.pathname) wl.open = true;
+  });
 
   const form = document.querySelector<HTMLFormElement>("[data-lr-book]");
   if (form) {
@@ -305,7 +385,17 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
       $("[data-day-date]", box).textContent = days[i].toLocaleDateString("en-US", { month: "short", day: "numeric" });
     });
 
-    const fullNote = $("[data-b-full]"), fullText = $("[data-b-full-text]");
+    // each barber says how many open times they have across the days shown, so a fully booked chair is seen before it is picked
+    radios("barber").forEach((r) => {
+      if (r.value === "any") return;
+      const n = days.reduce((sum, _, i) => sum + openCount(r.value, i), 0);
+      const note = $("[data-barber-open]", r.closest("label")!);
+      r.disabled = n === 0;
+      note.textContent = n ? `${n} open ${n === 1 ? "time" : "times"} to book` : "Fully booked on every day shown";
+      note.hidden = false;
+    });
+
+    const fullNote = $("[data-b-full]"), fullText = $("[data-b-full-text]"), jump = $<HTMLButtonElement>("[data-b-jump]");
     const drawDays = () => {
       const who = val("barber") || "any";
       const full: number[] = [];
@@ -313,19 +403,36 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
         const n = openCount(who, i);
         r.disabled = n === 0;
         if (r.disabled) { r.checked = false; full.push(i); }
-        $("[data-day-count]", r.closest("label")!).textContent = n ? `· ${n} open` : "· Full";
+        $("[data-day-count]", r.closest("label")!).textContent = n ? `${n} open` : "Full";
       });
       fullNote.hidden = !full.length || who === "any";
-      if (!fullNote.hidden) fullText.textContent = `${barberById[who as BarberId].name} is fully booked ${full.map((i) => dayName(days[i], now)).join(" and ")}.`;
+      if (fullNote.hidden) return;
+      const barber = barberById[who as BarberId].name;
+      fullText.textContent = `${barber} is fully booked ${full.map((i) => dayName(days[i], now)).join(" and ")}.`;
+      // the way on: straight to that barber's first open day (a fully booked barber is disabled, so there is one)
+      const first = radios("day").findIndex((r) => !r.disabled);
+      const dn = dayName(days[first], now);
+      jump.dataset.day = String(first);
+      jump.textContent = `See ${barber}’s times ${/^(Today|Tomorrow)$/.test(dn) ? dn.toLowerCase() : `on ${dn}`}`;
     };
+    jump.addEventListener("click", () => {
+      const r = radios("day")[Number(jump.dataset.day)];
+      if (!r || r.disabled) return;
+      r.checked = true;
+      r.dispatchEvent(new Event("change", { bubbles: true }));
+      steps?.go(3);
+    });
 
-    const timesBox = $("[data-b-times]"), none = $("[data-b-none]"), timeSub = $("[data-b-time-sub]");
+    const timesBox = $("[data-b-times]"), none = $("[data-b-none]"), timeSub = $("[data-b-time-sub]"), cutSub = $("[data-b-cut-sub]");
     const drawTimes = () => {
       const who = val("barber") || "any", day = val("day"), keep = val("time");
+      // the cut rides along, so its length and price stay in view while the barber and the time are picked
+      const cut = serviceById[val("service") as ServiceId];
+      cutSub.textContent = cut ? `${cut.name}: about ${cut.mins} minutes, ${usd(cut.price)} with any barber.` : "";
       timesBox.replaceChildren();
       none.hidden = true;
       if (day === "") { timeSub.textContent = "Pick a day first."; return; }
-      timeSub.textContent = `${dayName(days[+day], now, true)}${who === "any" ? ", any barber" : `, with ${barberById[who as BarberId].name}`}.`;
+      timeSub.textContent = `${dayName(days[+day], now, true)}${who === "any" ? ", any barber" : `, with ${barberById[who as BarberId].name}`}.${cut ? ` ${cut.name}, about ${cut.mins} minutes, ${usd(cut.price)}.` : ""}`;
       const list = timesFor(who, +day);
       for (const s of list) {
         const label = document.createElement("label");
@@ -334,7 +441,7 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
         input.type = "radio";
         input.name = "time";
         input.required = true;
-        input.dataset.error = "Pick a time, or go back and choose another day.";
+        input.dataset.error = "Choose a time to continue, or go back and pick another day.";
         input.value = s.barber ? `${s.barber}@${s.time}` : s.time;
         input.disabled = !s.barber;
         input.checked = !!s.barber && input.value === keep;
@@ -372,25 +479,44 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
       sumOut("barber").textContent = f.barber;
       sumOut("day").textContent = f.day || "Not picked";
       sumOut("time").textContent = f.time || "Not picked";
-      sumOut("price").textContent = f.s ? `$${f.s.price}` : "";
-      mini.textContent = [f.s?.name, f.barber, f.day, f.time].filter(Boolean).join(" · ");
-      const rows: [string, string][] = [["Cut", f.s ? `${f.s.name}, $${f.s.price}` : ""], ["Barber", f.barber], ["When", f.longDay && f.time ? `${f.longDay} at ${f.time}` : ""], ["Name", name.value.trim()], ["Mobile", phoneLabel(mobile.value)]];
-      review.replaceChildren(...rows.map(([k, v]) => {
-        const row = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd");
-        dt.textContent = k; dd.textContent = v || "Not given";
-        row.append(dt, dd);
-        return row;
-      }));
+      sumOut("price").textContent = f.s ? usd(f.s.price) : "";
+      mini.textContent = [f.s && `${f.s.name} (${usd(f.s.price)})`, f.barber, f.day, f.time].filter(Boolean).join(", ");
+      // the review as one sentence: "A Skin Fade with Marcus on Thursday, November 27 at 2:30 pm." Each answer is a
+      // button back to the step that set it (its name starts with the words shown, then says what it changes)
+      const part = (text: string, step: number, what: string) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.dataset.edit = String(step); b.textContent = text;
+        b.setAttribute("aria-label", `${text}: change ${what}`);
+        return b;
+      };
+      const para = (cls: string, ...kids: (string | Node)[]) => { const p = document.createElement("p"); p.className = cls; p.append(...kids); return p; };
+      const cut = f.s?.name ?? "cut not picked";
+      // "Marcus (first available)" reads badly mid-sentence: the name goes in the sentence, the reason in the line below
+      const firstFree = / \(first available\)$/.test(f.barber);
+      const barber = f.barber === "First available" ? "whoever is free first" : f.barber.replace(/ \(first available\)$/, "");
+      const rel = /^(Today|Tomorrow)\b/.test(f.longDay);
+      // day and time are two short buttons (both open the time step) so the sentence wraps between words, not inside
+      // one long button; the full stop rides with the last one so it never starts a line alone
+      const day = f.longDay ? (rel ? f.longDay[0].toLowerCase() + f.longDay.slice(1) : f.longDay) : "no day picked";
+      const tail = document.createElement("span");
+      tail.className = "lr-b-tail";
+      tail.append(part(f.time || "no time picked", 2, "the time"), ".");
+      review.replaceChildren(
+        para("lr-b-hint", "Press any underlined part to change it."),
+        para("lr-b-line", /^[aeiou]/i.test(cut) ? "An " : "A ", part(cut, 0, "the cut"), " with ", part(barber, 1, "the barber"), rel || !f.longDay ? " " : " on ", part(day, 2, "the day"), " at ", tail),
+        para("lr-b-terms", [firstFree && `${barber} has the first free chair then.`, f.s && `About ${f.s.mins} minutes, ${usd(f.s.price)}, paid in the shop.`].filter(Boolean).join(" ") || "Paid in the shop."),
+        para("lr-b-who", "In the name of ", part(name.value.trim() || "no name given", 4, "your details"), ", mobile ", part(phoneLabel(mobile.value) || "not given", 4, "your details"), "."),
+      );
     };
 
     // a 10-digit number (an optional leading 1); the browser's own required check covers an empty field
-    const checkMobile = () => { const n = mobile.value.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").length; mobile.setCustomValidity(mobile.value && n !== 10 ? "Add a 10-digit mobile number." : ""); };
+    const checkMobile = () => { const n = mobile.value.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").length; mobile.setCustomValidity(mobile.value && n !== 10 ? "Enter a mobile number with 10 digits, like 507 555 0100." : ""); };
     mobile.addEventListener("input", checkMobile);
 
     form.addEventListener("change", (e) => {
       const n = (e.target as HTMLInputElement).name;
       if (n === "barber") { drawDays(); drawTimes(); }
-      else if (n === "day") drawTimes();
+      else if (n === "day" || n === "service") drawTimes(); // the time step's line names the cut
       sync();
     });
     form.addEventListener("input", sync);
@@ -419,19 +545,41 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
       hold.hidden = false;
     }
 
+    // "Your chair" says what is left after the open step (passing over any a link already answered), so six steps read
+    // as a short walk: "Next: a time, your name and number, then a last check." Written when a step opens, never per key
+    const nextOut = $("[data-b-next]"), miniNext = $("[data-b-mini-next]");
+    const still = ["the cut", "the barber", "a day", "a time", "your name and number", "a last check"];
+    const drawNext = (i: number) => {
+      const left = still.filter((_, j) => j > i && !skip.has(j));
+      nextOut.textContent = !left.length ? "Last step: check it and confirm."
+        : `Next: ${left.length === 1 ? left[0] : `${left.slice(0, -1).join(", ")}, then ${left[left.length - 1]}`}.`;
+      // phones and tablets show the ticket under the form, so the line above the steps carries it too
+      miniNext.textContent = nextOut.textContent;
+    };
+
     let last = 0;
     steps = stepper(form, {
       check: (i) => (i === 3 && !radios("time").some((r) => !r.disabled) ? "No open chairs that day. Go back and pick another day, or join the cancellation list below." : null),
+      // what each passed step says in the tracker
+      answer: (i) => {
+        const f = facts();
+        return [f.s?.name ?? "", val("barber") === "any" ? "First available" : f.barber, f.day, f.time, form.querySelector<HTMLInputElement>("input[name=name]")!.value.trim()][i] ?? "";
+      },
       onStep: (i) => {
         const forward = i > last;
         last = i;
         if (i > 0) hold.hidden = true;
         sync();
+        drawNext(i);
         if (forward && skip.delete(i) && steps) steps.go(i + 1);
       },
     });
     sync();
     if (start > 0) { last = start; steps.go(start, false); }
+    review.addEventListener("click", (e) => {
+      const b = (e.target as Element).closest<HTMLButtonElement>("[data-edit]");
+      if (b) steps!.go(Number(b.dataset.edit));
+    });
 
     for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-wl-link]")) a.addEventListener("click", () => {
       const who = val("barber");
@@ -457,9 +605,9 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
       }
       const f = facts();
       showComplete(done, [
-        ["Cut", `${f.s.name}, $${f.s.price} (pay in the shop)`],
+        ["When", `${f.longDay} at ${f.time}`, "lead"],
+        ["Cut", `${f.s.name}, ${usd(f.s.price)} (pay in the shop)`],
         ["Barber", f.barber],
-        ["When", `${f.longDay} at ${f.time}`],
         ["Name", name.value.trim()],
         ["Confirmation text", "Would go to the number you gave. Nothing was sent."],
       ], [wrap]);
@@ -467,6 +615,20 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
       name.value = "";
       mobile.value = "";
       sync();
+    });
+
+    // a regular's next visit: the same cut with the same barber, a new day and time (the details were cleared, so they
+    // are asked again). It opens on the day, with the cut and the barber marked done
+    onAgain(done, () => {
+      wrap.hidden = false;
+      skip.clear();
+      for (const r of [...radios("day"), ...radios("time")]) r.checked = false;
+      drawDays();
+      drawTimes();
+      sync();
+      steps!.reset(false);
+      last = 2;
+      steps!.go(2);
     });
 
     onRestart(done, () => {
@@ -477,7 +639,7 @@ const openDays = hours.filter((h) => h.open).map((h) => h.day);
       drawTimes();
       sync();
       last = 0;
-      steps!.go(0);
+      steps!.reset();
     });
   }
 </script>

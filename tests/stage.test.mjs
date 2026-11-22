@@ -61,7 +61,7 @@ test("every client project has its project page with the seven sections, its car
       assert.match(own, new RegExp(`<h2[^>]*>${h}</h2>`), `${c.slug}: the "${h}" section`);
     }
     assert.match(own, /Want a Website Built for Your Business\?/, `${c.slug}: the closing call to action`);
-    assert.match(own, /From booking systems to custom business websites, NUXY builds digital experiences around the way your business operates\./);
+    assert.match(own, /From online booking to fully custom sites, we build each website around the way your business already works\./);
     if (c.lead) assert.ok(own.includes(`/contact/?want=new-website&amp;from=${c.lead.id}`), `${c.slug}: Get a Free Quote carries the lead source`);
     // one quote button at the top and one in the closing band, not a third in between
     assert.equal((own.match(/data-track="cta_case_quote[a-z_]*"/g) ?? []).length, 2, `${c.slug}: two quote buttons`);

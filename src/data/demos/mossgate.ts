@@ -22,7 +22,9 @@ export const hours = [
 ] as const;
 
 // made-up towns, labelled as such where they appear
-export const area = ["Mossgate", "Alder Bend", "North Fennick", "Larkhollow", "Copper Mill"];
+export const area = ["Mossgate", "Birchford", "North Fennick", "Larkhollow", "Copper Mill"];
+/** "Mossgate, Birchford, North Fennick, Larkhollow and Copper Mill": the towns in a sentence */
+export const areaText = `${area.slice(0, -1).join(", ")} and ${area[area.length - 1]}`;
 
 /** what each clean covers, room by room: `clean` is the lightest clean that includes the task */
 export type Room = { id: string; name: string; tasks: { t: string; clean: Clean }[] };
@@ -68,16 +70,10 @@ export const rooms: Room[] = [
 ];
 
 export const team = [
-  { name: "Rosa", role: "Team lead, 9 years", note: "Trains every new cleaner on the checklist before they clean alone.", tone: "#2f6f5e" },
-  { name: "Dev", role: "Deep and move-out cleans", note: "The one to ask about ovens nobody has opened in years.", tone: "#d9714f" },
-  { name: "Maren", role: "Recurring homes", note: "Keeps the same seven homes every two weeks, so nothing gets missed.", tone: "#8a9a5b" },
-  { name: "Theo", role: "Office and scheduling", note: "Answers the texts and moves cleans when plans change.", tone: "#5b7f95" },
-];
-
-export const quotes = [
-  { text: "I booked on my phone in the school pickup line. Rosa texted when she was on the way and sent a photo of the checklist when she left.", who: "Sample testimonial", where: "Alder Bend" },
-  { text: "The move-out clean got our whole deposit back. The price on the site was what we paid.", who: "Sample testimonial", where: "North Fennick" },
-  { text: "Same cleaner every other Thursday for a year. I stopped writing notes because she already knows.", who: "Sample testimonial", where: "Mossgate" },
+  { name: "Rosa", role: "Team lead, 9 years", note: "Trains every new cleaner on the checklist before they clean alone.", tone: "#2443b8" },
+  { name: "Dev", role: "Deep and move-out cleans", note: "The one to ask about ovens nobody has opened in years.", tone: "#24221f" },
+  { name: "Maren", role: "Recurring homes", note: "Keeps the same seven homes every two weeks, so nothing gets missed.", tone: "#1b2f7a" },
+  { name: "Theo", role: "Office and scheduling", note: "Answers the texts and moves cleans when plans change.", tone: "#6b5f4f" },
 ];
 
 export const faq = [

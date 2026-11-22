@@ -102,8 +102,9 @@ const mp4 = (sources: { src: string; type: string }[]) => (sources.find((s) => s
       dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close());
       // (a click on the dimmed page around the player closes it; the dialog element itself is only that backdrop)
       dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
-      // Closing by the button, Escape or the backdrop: stop the sound and let go of the file.
-      dialog.addEventListener("close", () => { empty(); document.dispatchEvent(new Event("nuxy:player")); });
+      // Closing by the button, Escape or the backdrop: stop the sound and let go of the file. The close event comes a task
+      // after the dialog shuts, so a film opened again in that gap is already playing: leave it alone (2026-11-17).
+      dialog.addEventListener("close", () => { if (dialog.open) return; empty(); document.dispatchEvent(new Event("nuxy:player")); });
       document.addEventListener("visibilitychange", () => { if (document.hidden) video.pause(); });
     }
   </script>
@@ -134,7 +135,7 @@ const mp4 = (sources: { src: string; type: string }[]) => (sources.find((s) => s
   .cg-time { position: absolute; z-index: 1; right: 12px; bottom: 10px; padding: 2px 8px; border-radius: var(--r-full); background: rgba(6, 11, 22, 0.8); color: #fff; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
 
   .cg-body { display: flex; flex: 1; flex-direction: column; gap: 8px; padding: clamp(18px, 2.5vw, 24px); }
-  .cg-label { color: var(--cyan); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .cg-label { color: var(--cyan); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .cg-body h3 { font-size: 1.25rem; letter-spacing: 0.02em; }
   .cg-cat { color: var(--muted); font-size: 0.875rem; }
   .cg-text { color: var(--body); }

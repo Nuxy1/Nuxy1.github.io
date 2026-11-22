@@ -1,0 +1,24 @@
+---
+// One photo on an example site: AVIF with a WebP fallback at the widths scripts/demo-photos.mjs made, the real
+// width and height (so nothing jumps while it loads) and a flat colour behind it until it arrives.
+// `priority` is for the one photo that is the page's largest paint: it loads at once and the browser is told so.
+import photos from "../../data/demo-photos.json";
+
+interface Props { name: string; alt: string; sizes: string; priority?: boolean; class?: string; style?: string }
+const { name, alt, sizes, priority = false, class: cls, style } = Astro.props;
+const p = (photos as Record<string, { w: number; h: number; widths: number[]; bg: string }>)[name];
+if (!p) throw new Error(`No demo photo called "${name}": run node scripts/demo-photos.mjs`);
+const set = (ext: string) => p.widths.map((w) => `/images/demos/${name}-${w}.${ext} ${w}w`).join(", ");
+const fallback = `/images/demos/${name}-${p.widths[Math.min(1, p.widths.length - 1)]}.webp`;
+---
+<picture class:list={["demo-photo", cls]} style={`--photo-bg:${p.bg};${style ?? ""}`}>
+  <source type="image/avif" srcset={set("avif")} sizes={sizes} />
+  <source type="image/webp" srcset={set("webp")} sizes={sizes} />
+  <img src={fallback} alt={alt} width={p.w} height={p.h} loading={priority ? "eager" : "lazy"} decoding={priority ? "sync" : "async"}
+    fetchpriority={priority ? "high" : "auto"} />
+</picture>
+
+<style>
+  .demo-photo { display: block; background: var(--photo-bg); overflow: hidden; }
+  .demo-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+</style>

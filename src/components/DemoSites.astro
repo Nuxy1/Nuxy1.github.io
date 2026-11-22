@@ -1,7 +1,8 @@
 ---
 // The example websites and the example store (data/demo-sites.ts) as cards: the site on a computer with its phone
-// version in front, the kind of project, what was built, and three links: Live Demo (the demo itself at
-// /example-sites/<slug>/), View Project (its desktop/phone viewer at /examples/<slug>/, also the whole card's hit area)
+// version in front, the kind of project, what was built, and three links: Open the Demo Site (the demo itself at
+// /example-sites/<slug>/), Computer & Phone View (its viewer at /examples/<slug>/, also the whole card's hit area;
+// "View Project" is kept for real client case studies only, critique 11-17)
 // and Features (the viewer's feature list). Used on the homepage, /websites/, /ecommerce/ and /demos/. The note under the cards is part of the
 // component on purpose: the cards never appear without saying they are made-up businesses.
 import Icon from "./Icon.astro";
@@ -12,11 +13,18 @@ interface Props {
   /** show only these demos (by slug), in this order; when left out, every demo except the Immersive concept (it has
       its own card on /immersive-websites/, and the homepage, /demos/ and /get-a-website/ stay on the four) */
   only?: string[];
+  /** the page already says "made-up businesses" right above the cards (the home page's kind label), so the note
+      under them gives only the platform line instead of saying it a second time */
+  labelled?: boolean;
 }
-const { level = "h3", only } = Astro.props;
+const { level = "h3", only, labelled = false } = Astro.props;
 const H = level;
 const list = only ? only.map((slug) => demoSites.find((d) => d.slug === slug)!) : demoSites.filter((d) => d.tier !== "immersive");
-const tierName = { business: "Business", signature: "Signature", immersive: "Immersive" } as Record<string, string>;
+import { levelById } from "../data/tiers";
+import { serviceById } from "../data/services";
+// (critique 11-17, round 7) the same level badge as the portfolio's cards: a link to the level's page with its four-step
+// complexity meter, so a level looks the same wherever it appears
+const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
 // The platform line follows the levels on show: Business sites live in the client's own builder account, Signature
 // and up are custom-coded on hosting in the client's name, and a store stays on the client's own store platform.
 const hasBusiness = list.some((d) => d.tier === "business" && d.project !== "E-commerce store");
@@ -24,12 +32,20 @@ const hasCustom = list.some((d) => d.tier !== "business" && d.project !== "E-com
 // Three cards sit in a row of three; any other number in rows of two, so no card is left alone on a row.
 const cols = list.length % 3 === 0 ? 3 : 2;
 const hasStore = list.some((d) => d.project === "E-commerce store");
-// How wide a card's picture is drawn (.grid-2/.grid-3 and .wrap in Base.astro): one card per row, then two from
-// 720px; in threes, three from 1024px. Grid of three measured: 286px at 320 wide, 356 at 390, 341 at 768, 299 at
-// 1024, 358 at 1440. Grid of two: 550px from 1200 wide, half the screen less the gutters from 720.
+// (critique 11-17, round 9) one short disclaimer and one platform line under the cards, not a six-line note
+const platforms = [
+  hasBusiness && "Business sites are built in your own Squarespace or Wix account",
+  hasCustom && "Signature and Immersive sites are custom-coded and hosted in your name",
+  hasStore && "stores run on your own Shopify or Square Online",
+].filter(Boolean).join("; ").replace(/^./, (c) => c.toUpperCase()) + ".";
+// How wide a card's computer picture is drawn: 88% of the card's picture area, inside its padding (.demo-shot,
+// .demo-desk), with one card per row, then two from 720px; in threes, three from 1024px (.grid-2/.grid-3 and .wrap in
+// Base.astro). Measured: 222px at 320 wide, 302 at 412, 414 at 560, 251 at 720, 323 at 900; then in twos 370 at
+// 1024 and 442 from 1200, in threes 233 at 1024 and 285 from 1200. (The card's own width here made phones fetch the
+// 800px file for a 302px picture.)
 const sizes = cols === 3
-  ? "(min-width: 1200px) 360px, (min-width: 1024px) calc(33vw - 40px), (min-width: 720px) calc(46vw - 10px), calc(100vw - 34px)"
-  : "(min-width: 1200px) 550px, (min-width: 720px) calc(50vw - 50px), calc(100vw - 34px)";
+  ? "(min-width: 1200px) 285px, (min-width: 1024px) calc(29vw - 64px), (min-width: 720px) calc(40vw - 37px), calc(88vw - 58px)"
+  : "(min-width: 1200px) 442px, (min-width: 720px) calc(40vw - 37px), calc(88vw - 58px)";
 // (the phone in front is about a fifth of the card wide: 60 to 120px)
 const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
 ---
@@ -46,7 +62,7 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
         </div>
       </div>
       <div class="demo-meta">
-        <p class="demo-kind"><Icon name={d.icon} />{d.kind} · demonstration<span class="demo-tier">{tierName[d.tier]}</span></p>
+        <p class="demo-kind"><Icon name={d.icon} /><span><span class="nw">{d.kind}{"\u00a0·"}</span> <span class="nw">concept demo</span></span><a class="demo-tier tap" href={levelById[d.tier].page}><span class="demo-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps[levelById[d.tier].complexity] }}></i>)}</span>{levelById[d.tier].name}<span class="demo-price">{d.tier === "business" && d.project === "E-commerce store" ? serviceById["online-shop"].price : levelById[d.tier].price}</span></a></p>
         <H class="demo-name">{d.name}</H>
         <p class="demo-project">{d.project}</p>
         <p class="demo-sum">{d.summary}</p>
@@ -54,14 +70,14 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
           {d.shows.map((s) => <li><Icon name="check" />{s}</li>)}
         </ul>
         <p class="demo-acts">
-          <a class="demo-act demo-live" href={`/example-sites/${d.slug}/`} data-track="example_full">Live Demo<span class="sr-only">: {d.name}</span><Icon name="arrowUpRight" /></a>
-          <a class="demo-act demo-view" href={`/examples/${d.slug}/`} data-track="example_open">View Project<span class="sr-only">: {d.name}</span></a>
+          <a class="demo-act demo-live" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the Demo Site<span class="sr-only">: {d.name}</span><Icon name="arrowUpRight" /></a>
+          <a class="demo-act demo-view" href={`/examples/${d.slug}/`} data-track="example_open">Computer &amp; Phone View<span class="sr-only">: {d.name}</span></a>
         </p>
       </div>
     </li>
   ))}
 </ul>
-<p class="note demo-note"><Icon name="info" /><span>These are examples for made-up businesses, built to show the layout, features and finish we aim for. They are not clients.{hasStore && " The candle shop is a design example: you can fill its cart and walk through a demo checkout, but it never asks for a card, so nothing can be bought."}{hasBusiness && " A Business website is built in your own Squarespace or Wix account."}{hasCustom && " Signature and Immersive websites are custom-coded and published to hosting in your name."}{hasStore && " A store is built on your own Shopify or Square Online account."} The details follow what that platform can do.</span></p>
+<p class="note demo-note"><Icon name="info" /><span>{!labelled && "Examples for made-up businesses, not clients."}{hasStore && " The candle shop’s checkout is a demo and never asks for a card."} {platforms}</span></p>
 
 <style>
   .demo-grid { list-style: none; margin: 0; padding: 0; }
@@ -73,7 +89,7 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
     position: relative; aspect-ratio: 16 / 10; padding: clamp(16px, 4%, 26px) clamp(16px, 4%, 26px) 0; border-bottom: 1px solid var(--hairline); overflow: hidden;
     background: radial-gradient(90% 110% at 15% 0%, rgb(var(--blue-rgb) / 0.2), transparent 70%), var(--bg-2);
   }
-  .demo-desk { width: 88%; height: 100%; border: 1px solid var(--hairline-strong); border-bottom: 0; border-radius: 10px 10px 0 0; background: var(--surface-strong); box-shadow: var(--shadow); overflow: hidden; }
+  .demo-desk { width: 88%; height: 100%; border: 1px solid var(--hairline-strong); border-bottom: 0; border-radius: 10px 10px 0 0; background: var(--surface-strong); overflow: hidden; } /* (critique round 5) no shadow: only the phone in front casts one */
   .demo-bar { display: flex; gap: 5px; padding: 7px 10px; border-bottom: 1px solid var(--hairline); background: var(--panel); }
   .demo-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--hairline-strong); }
   .demo-desk img { display: block; width: 100%; height: auto; }
@@ -91,17 +107,39 @@ const phoneSizes = cols === 3 ? "90px" : "(min-width: 720px) 120px, 90px";
     .demo-live:hover :global(.icon) { transform: translate(2px, -2px); }
   }
   .demo-meta { display: flex; flex-direction: column; gap: 8px; padding: 20px; flex: 1; }
-  .demo-kind { display: inline-flex; align-items: center; gap: 6px; color: var(--cyan); font-size: 0.8125rem; font-weight: 600; }
-  .demo-tier { margin-left: auto; padding: 2px 8px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); color: var(--ink); font-size: 0.75rem; letter-spacing: 0.02em; }
+  /* (critique round 5: the badge used to run past the edge of cards under about 340px wide, at 320, 720 and 1024) */
+  /* (critique round 6: the badge now carries the level's starting price, as on the portfolio, and like there it always
+     takes the row under the icon and kind, so every card's name starts at the same height at every width) */
+  .demo-kind { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 6px; color: var(--cyan); font-size: 0.8125rem; font-weight: 600; }
+  .demo-kind .demo-tier { grid-column: 1 / -1; justify-self: start; }
+  /* three in a row from 1024 to 1199px, "Landscaping company · concept demo" takes two lines and its neighbours one:
+     each label keeps two lines there, so the names in a row line up */
+  @media (min-width: 1024px) and (max-width: 1199px) {
+    .grid-3 .demo-kind { align-items: start; }
+    .grid-3 .demo-kind > span { min-height: 3.2em; min-height: 2lh; }
+  }
+  .demo-price { color: var(--body); font-weight: 600; }
+  .demo-price::before { content: "·" / ""; margin-right: 8px; color: var(--muted); font-weight: 400; }
+  /* (audit 11-21) the kind breaks only before "concept demo", never inside "Barber shop" when the badge is beside it.
+     (critique round 4) "concept demo", not "concept demonstration": the longer words pushed the level badge out of
+     the 301px cards at 1024; the page eyebrows, which have the room, keep the full wording */
+  .demo-kind .nw { white-space: nowrap; }
+  .demo-tier { display: inline-flex; align-items: center; gap: 8px; padding: 2px 10px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); color: var(--ink); font-size: 0.8125rem; font-weight: 600; text-decoration: none; }
+  .demo-tier:hover { border-color: var(--link); }
+  .demo-steps { display: inline-grid; grid-template-columns: repeat(4, 10px); gap: 2px; }
+  .demo-steps i { height: 4px; border-radius: 2px; background: var(--hairline-strong); }
+  .demo-steps i.on { background: var(--link); }
   .demo-name { font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
-  /* two links; the whole card is View Project's hit area, and Live Demo sits above that layer */
+  /* two links; the whole card is the viewer link's hit area, and the demo-site link sits above that layer */
   .demo-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--hairline-soft); }
   .demo-act { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--link); font-size: 0.9375rem; font-weight: 650; text-decoration: none; }
   .demo-act:hover { text-decoration: underline; text-underline-offset: 3px; }
   .demo-act :global(.icon) { width: 1em; height: 1em; }
   .demo-live { padding: 0 14px; border: 1px solid var(--hairline-strong); border-radius: var(--r-sm, 8px); color: var(--ink); }
   .demo-live:hover { border-color: var(--link); text-decoration: none; }
-  .demo-live { position: relative; z-index: 1; }
+  /* (critique round 5, tap probe) the level pill too: under the card-wide link below, a tap on "Business" opened the
+     computer and phone view instead of the level page */
+  .demo-live, .demo-tier { position: relative; z-index: 1; }
   .demo-view::after { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
   .demo-view:focus-visible { outline: none; }
   .demo-view:focus-visible::after { outline: 2px solid var(--focus); outline-offset: -2px; }

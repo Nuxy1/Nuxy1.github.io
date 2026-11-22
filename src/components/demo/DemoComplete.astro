@@ -1,69 +1,288 @@
 ---
-// The end of every demo flow (quote, booking, estimate, checkout): "Demo complete." (or the flow's own line), what
-// the visitor chose, what would happen behind the scenes on a real Nuxy build, and the way back to Nuxy. It starts
-// hidden; the flow's script fills [data-complete-summary] with plain text rows and shows it. Styling follows the
-// business through CSS variables (--dc-*), so it looks at home on each site and stays readable.
+// The end of every demo flow (quote, booking, checkout). Two parts, in two voices:
+// 1. the business's own document, in its own type and paper: a work order (Fernway), a receipt stub (Mossgate), an
+//    appointment card (Lantern), a packing slip (Quillfern). The flow's script fills [data-complete-summary] with plain
+//    text rows (lib/demo/complete) and shows the panel; the restart button sits on the document because it restarts
+//    the business's flow.
+// 2. a Nuxy section below it, in Nuxy's voice (the N mark, what a real build would do next, the line that none of it
+//    ran, the way back to Nuxy) but in the site's own paper and type, so the flow does not end on another website.
+//    Lantern counts its steps in roman numerals, as its booking does.
 interface Props {
   id: string;
+  /** which document the business hands over */
+  variant: "ticket" | "receipt" | "card" | "slip";
+  /** the business, as its name reads on the document */
+  issuer: string;
+  /** what the document is, in the business's words */
+  docTitle: string;
+  /** print today's date on the document (a work order, receipt or slip is dated; an appointment card is not) */
+  dated?: boolean;
   heading?: string;
   /** one line under the heading */
   lead: string;
+  /** the document's last line: what it is not */
+  docFoot: string;
   /** what the automation would do, in order */
   flow: { title: string; text: string }[];
   /** the main Nuxy call to action */
   cta?: { label: string; href: string };
   restart?: string;
+  /** the business's own button classes for the restart button */
+  restartClass?: string;
+  /** an optional first action that repeats the same order with its answers kept (a regular's next visit); the flow's
+      script wires [data-again] (lib/demo/complete onAgain) */
+  again?: string;
+  againClass?: string;
 }
-const { id, heading = "Demo complete.", lead, flow, cta = { label: "See what Nuxy can build", href: "/websites/" }, restart = "Start again" } = Astro.props;
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+// Nuxy's section names what this flow handed over, and its call to action names the thing just tried, so the four
+// sites do not end on the same sentence
+const NUXY = {
+  ticket: { thing: "this estimate request", cta: "Get a quote form like this" },
+  receipt: { thing: "this booking request", cta: "Get online booking like this" },
+  card: { thing: "this appointment", cta: "Get a booking page like this" },
+  slip: { thing: "this order", cta: "Build a store like this" },
+} as const;
+const { id, variant, issuer, docTitle, dated = true, heading = "Demo complete.", lead, docFoot, flow, cta = { label: NUXY[variant].cta, href: "/websites/" }, restart = "Start again", restartClass = "", again, againClass = "" } = Astro.props;
 ---
-<section class="dc" id={id} hidden tabindex="-1" aria-labelledby={`${id}-h`} data-demo-complete>
-  <div class="dc-head">
-    <span class="dc-tick" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-    <div>
+<section class={`dc dc-${variant}`} id={id} hidden tabindex="-1" aria-labelledby={`${id}-h`} data-demo-complete>
+  <div class="dc-doc">
+    <div class="dc-mast">
+      <span class="dc-issuer">{issuer}</span>
+      <span class="dc-kind">{docTitle}{dated && <span class="dc-date" data-complete-date></span>}</span>
+    </div>
+    <div class="dc-head">
       <h2 id={`${id}-h`}>{heading}</h2>
-      <p>{lead}</p>
+      <p class="dc-lead">{lead}</p>
+    </div>
+    <dl class="dc-summary" data-complete-summary></dl>
+    <div class="dc-end">
+      <p class="dc-foot">{docFoot}</p>
+      <div class="dc-acts">
+        {again && <button type="button" class:list={["dc-again", againClass]} data-again>{again}</button>}
+        <button type="button" class:list={["dc-restart", restartClass]} data-restart>{restart}</button>
+      </div>
     </div>
   </div>
-  <dl class="dc-summary" data-complete-summary></dl>
-  <div class="dc-flow">
-    <p class="dc-flow-h">On a real Nuxy build, this would happen next</p>
-    <ol role="list">
-      {flow.map((f, i) => <li style={`--i:${i}`}><span class="dc-n" aria-hidden="true">{i + 1}</span><div><strong>{f.title}</strong><p>{f.text}</p></div></li>)}
+  <div class="dc-nuxy" role="group" aria-labelledby={`${id}-nh`}>
+    <h3 id={`${id}-nh`}><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 16V4l12 12V4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>What a real Nuxy build does with {NUXY[variant].thing}</h3>
+    <ol role="list" style={`--dc-cols:${flow.length <= 5 ? flow.length : Math.ceil(flow.length / 2)}`}>
+      {flow.map((f, i) => <li style={`--i:${i}`}><span class="dc-n" aria-hidden="true">{variant === "card" ? ROMAN[i] ?? i + 1 : i + 1}</span><div><strong>{f.title}</strong><p>{f.text}</p></div></li>)}
     </ol>
     <p class="dc-note">In this demo none of it runs: nothing was saved, sent, booked or charged.</p>
-  </div>
-  <div class="dc-ctas">
-    <a class="dc-cta" href={cta.href} target="_top">{cta.label}</a>
-    <a class="dc-cta ghost" href="/contact/" target="_top">Talk to Nuxy</a>
-    <button type="button" class="dc-cta ghost" data-restart>{restart}</button>
+    <div class="dc-ctas">
+      <a class="dc-cta" href={cta.href} target="_top">{cta.label}</a>
+      <a class="dc-cta ghost" href="/contact/" target="_top">Talk to Nuxy</a>
+    </div>
   </div>
 </section>
 
 <style>
-  .dc { --dc-bg: #fff; --dc-ink: #12201a; --dc-soft: #4a5a52; --dc-line: rgba(0, 0, 0, 0.1); --dc-accent: #1f6b45; --dc-on-accent: #fff; --dc-panel: rgba(0, 0, 0, 0.035); --dc-radius: 16px;
-    display: grid; gap: 22px; padding: clamp(20px, 4vw, 32px); border-radius: var(--dc-radius); background: var(--dc-bg); color: var(--dc-ink); box-shadow: 0 0 0 1px var(--dc-line) inset; outline: none; }
-  .dc-head { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
-  .dc-tick { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--dc-accent); color: var(--dc-on-accent); }
-  .dc h2 { font-size: clamp(1.5rem, 3vw, 1.875rem); line-height: 1.15; }
-  .dc-head p { margin-top: 4px; color: var(--dc-soft); }
-  .dc-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; border-radius: 12px; overflow: hidden; background: var(--dc-line); }
+  .dc { display: grid; gap: clamp(20px, 3vw, 28px); margin-top: 8px; outline: none; }
+  .dc-doc { position: relative; display: grid; container-type: inline-size; }
+  .dc-mast { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 4px 16px; }
+  .dc-kind { display: grid; text-align: right; }
+  .dc-date { font-variant-numeric: tabular-nums; }
+  /* once the document kind wraps under the issuer it lines up with it, not with a right edge it no longer touches */
+  @container (max-width: 460px) { .dc-kind { text-align: left; } }
+  .dc h2 { text-wrap: balance; }
+  .dc-summary { display: grid; margin: 0; }
   .dc-summary:empty { display: none; }
-  .dc-summary > div { padding: 12px 14px; background: var(--dc-bg); }
-  .dc-summary dt { font-size: 0.8125rem; color: var(--dc-soft); }
-  .dc-summary dd { font-weight: 650; overflow-wrap: anywhere; }
-  .dc-flow { display: grid; gap: 12px; padding: 18px; border-radius: 12px; background: var(--dc-panel); }
-  .dc-flow-h { font-weight: 700; }
-  .dc-flow ol { display: grid; gap: 12px; counter-reset: dc; }
-  .dc-flow li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
-  .dc-n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--dc-bg); box-shadow: 0 0 0 1px var(--dc-line) inset; font-size: 0.8125rem; font-weight: 700; }
-  .dc-flow li p { color: var(--dc-soft); font-size: 0.9375rem; }
-  .dc-note { font-size: 0.875rem; color: var(--dc-soft); }
+  /* rows are built by script (lib/demo/complete), so they carry no scope attribute; a list value is one span per line */
+  .dc-summary :global(dd) { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .dc-summary :global(dd > span) { display: block; }
+  .dc-end { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 20px; }
+  .dc-foot { flex: 1 1 260px; }
+  .dc-acts { display: flex; flex-wrap: wrap; gap: 10px; flex: none; }
+  @media (max-width: 479px) { .dc-acts, .dc-acts > * { flex: 1 1 100%; } }
+
+  /* ---- Fernway: a work order. Forest header band, the price range boxed like the total on a job ticket, the answers
+     as filled-in form lines, a dashed tear line above the sign-off. */
+  .dc-ticket .dc-doc { overflow: hidden; border-radius: var(--fw-radius); background: var(--fw-paper); color: var(--fw-ink); box-shadow: 0 0 0 1px var(--fw-line), 0 22px 44px -30px rgba(23, 35, 27, 0.45); }
+  .dc-ticket .dc-mast { padding: 14px clamp(18px, 3.4vw, 28px); background: var(--fw-forest); color: var(--fw-cream); }
+  .dc-ticket .dc-issuer { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-stretch: 86%; font-size: 1.1875rem; letter-spacing: -0.02em; }
+  .dc-ticket .dc-kind { color: var(--fw-lime-2); font-size: 0.875rem; font-weight: 600; }
+  .dc-ticket .dc-head { padding: 22px clamp(18px, 3.4vw, 28px) 0; }
+  .dc-ticket h2 { color: var(--fw-forest); font-size: clamp(1.625rem, 3.2vw, 2.125rem); }
+  .dc-ticket .dc-lead { margin-top: 6px; color: var(--fw-soft); }
+  .dc-ticket .dc-summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0 28px; padding: 14px clamp(18px, 3.4vw, 28px) 0; }
+  .dc-ticket .dc-summary > :global(div) { display: grid; gap: 2px; padding: 11px 0; border-bottom: 1px solid var(--fw-line); }
+  .dc-ticket .dc-summary :global(dt) { color: var(--fw-soft); font-size: 0.8125rem; font-weight: 600; }
+  .dc-ticket .dc-summary :global(dd) { font-weight: 600; }
+  .dc-ticket .dc-summary > :global([data-role="lead"]) { grid-column: 1 / -1; margin-bottom: 6px; padding: 14px 18px; border: 0; border-radius: calc(var(--fw-radius) - 4px); background: var(--fw-cream); }
+  .dc-ticket .dc-summary > :global([data-role="lead"]) :global(dd) { color: var(--fw-forest); font-family: "Bricolage Grotesque", sans-serif; font-size: clamp(1.5rem, 3.6vw, 2.125rem); font-weight: 800; font-stretch: 86%; line-height: 1.1; letter-spacing: -0.02em; }
+  .dc-ticket .dc-end { margin-top: 20px; padding: 16px clamp(18px, 3.4vw, 28px) 20px; border-top: 2px dashed rgba(31, 58, 43, 0.22); }
+  .dc-ticket .dc-foot { color: var(--fw-soft); font-size: 0.875rem; }
+
+  /* ---- Mossgate: a receipt stub, the same paper as the receipt on the home page. Centred header, dotted leaders,
+     the price as the total under a double rule, a torn bottom edge (two masked layers: a hairline and the paper). */
+  .dc-receipt .dc-doc { justify-self: center; width: min(100%, 560px); gap: 18px; padding: 28px clamp(20px, 4.4vw, 34px) 44px; isolation: isolate; color: var(--mg-ink); }
+  .dc-receipt .dc-doc::before, .dc-receipt .dc-doc::after { content: ""; position: absolute; z-index: -1; --tear: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 18px 100%; -webkit-mask: var(--tear); mask: var(--tear); }
+  .dc-receipt .dc-doc::before { inset: -1px; background: var(--mg-line-2); }
+  .dc-receipt .dc-doc::after { inset: 0; background: var(--mg-paper); }
+  .dc-receipt .dc-mast { display: grid; justify-content: center; justify-items: center; gap: 2px; text-align: center; }
+  .dc-receipt .dc-issuer { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; }
+  .dc-receipt .dc-kind { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 10px; color: var(--mg-soft); font-size: 0.9375rem; text-align: center; }
+  .dc-receipt .dc-head { text-align: center; }
+  .dc-receipt h2 { font-size: clamp(1.5rem, 4cqi, 1.875rem); }
+  .dc-receipt .dc-lead { margin-top: 6px; color: var(--mg-soft); font-size: 0.9375rem; }
+  .dc-receipt .dc-summary { gap: 12px; padding: 18px 0; border-block: 1.5px dashed var(--mg-line-2); }
+  /* label, leader, value: the value's column fits its widest line (up to 64%) and its lines start left, so a value that
+     wraps still meets the leader on its first line instead of leaving a gap under a right-aligned short line */
+  .dc-receipt .dc-summary > :global(div) { display: grid; grid-template-columns: auto minmax(20px, 1fr) fit-content(64%); align-items: baseline; column-gap: 10px; }
+  .dc-receipt .dc-summary > :global(div)::after { content: ""; grid-area: 1 / 2; border-bottom: 2px dotted var(--mg-line-2); }
+  .dc-receipt .dc-summary :global(dt) { grid-area: 1 / 1; color: var(--mg-soft); }
+  .dc-receipt .dc-summary :global(dd) { grid-area: 1 / 3; font-weight: 650; }
+  .dc-receipt .dc-summary > :global([data-role="total"]) { margin-top: 6px; padding-top: 14px; border-top: 3px double var(--mg-ink); }
+  .dc-receipt .dc-summary > :global([data-role="total"]) :is(:global(dt), :global(dd)) { color: var(--mg-ink); font-size: 1.125rem; font-weight: 800; }
+  /* one full-width track: with the base rule's space-between, a lone grid track shrinks to its content and sits at the
+     start, which left the restart button off the document's centre */
+  .dc-receipt .dc-end, .dc-card .dc-end { grid-template-columns: minmax(0, 1fr); justify-content: stretch; }
+  .dc-receipt .dc-end { display: grid; justify-items: center; text-align: center; }
+  .dc-receipt .dc-acts, .dc-card .dc-acts { justify-content: center; }
+  .dc-receipt .dc-foot { color: var(--mg-soft); font-size: 0.875rem; }
+  @container (max-width: 400px) {
+    .dc-receipt .dc-summary > :global(div) { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+    .dc-receipt .dc-summary > :global(div)::after { display: none; }
+    .dc-receipt .dc-summary :is(:global(dt), :global(dd)) { grid-area: auto; }
+  }
+
+  /* ---- Lantern: a printed appointment card handed across the counter. Cream stock on the dark shop, a double oxblood
+     rule inside the edge, Bodoni for what was booked, Sofia XC for the small labels. */
+  .dc-card .dc-doc { justify-self: center; width: min(100%, 640px); gap: 18px; padding: clamp(28px, 5vw, 44px); border-radius: 2px; background: var(--lr-cream); color: #1c1a19; box-shadow: inset 0 0 0 9px var(--lr-cream), inset 0 0 0 10px var(--lr-ox), inset 0 0 0 13px var(--lr-cream), inset 0 0 0 14px var(--lr-ox), 0 30px 60px -24px rgba(0, 0, 0, 0.7); }
+  .dc-card .dc-mast { display: grid; justify-content: center; justify-items: center; gap: 4px; padding-bottom: 16px; border-bottom: 1px solid rgba(110, 31, 36, 0.35); text-align: center; }
+  .dc-card .dc-issuer { font-family: "Bodoni Moda", Georgia, serif; font-size: clamp(1.5rem, 4.4cqi, 2rem); font-weight: 600; line-height: 1.1; }
+  .dc-card .dc-kind { color: var(--lr-ox); font-family: "Sofia XC", "Arial Narrow", sans-serif; font-size: 1.125rem; font-weight: 700; letter-spacing: 0.03em; text-align: center; }
+  .dc-card .dc-head { text-align: center; }
+  .dc-card h2 { color: #1c1a19; font-family: "Bodoni Moda", Georgia, serif; font-size: clamp(1.375rem, 3.6cqi, 1.75rem); font-weight: 500; }
+  .dc-card .dc-lead { margin-top: 6px; color: #5a4e43; font-size: 0.9375rem; }
+  .dc-card .dc-summary > :global(div) { display: grid; grid-template-columns: 8.5rem 1fr; align-items: baseline; gap: 4px 16px; padding: 10px 0; border-bottom: 1px solid rgba(110, 31, 36, 0.22); }
+  .dc-card .dc-summary :global(dt) { color: #5a4e43; font-family: "Sofia XC", "Arial Narrow", sans-serif; font-size: 1.0625rem; font-weight: 700; letter-spacing: 0.03em; }
+  .dc-card .dc-summary :global(dd) { color: #1c1a19; font-family: "Bodoni Moda", Georgia, serif; font-size: 1.125rem; font-weight: 500; }
+  .dc-card .dc-summary > :global([data-role="lead"]) :global(dd) { color: var(--lr-ox); font-size: clamp(1.375rem, 4cqi, 1.875rem); font-weight: 600; line-height: 1.15; }
+  .dc-card .dc-end { display: grid; justify-items: center; text-align: center; }
+  .dc-card .dc-foot { color: #5a4e43; font-size: 0.875rem; }
+  /* the card's one filled button is oxblood: the same-cut rebooking when it is offered, else the restart. A restart
+     beside it is the same button drawn in ink on the card (the shop's own line button is cream on black) */
+  .dc-card :is(.dc-again, .dc-restart) { background: var(--lr-ox); color: var(--lr-cream); }
+  .dc-card :is(.dc-again, .dc-restart):hover { background: #5a181d; box-shadow: none; }
+  .dc-card :is(.dc-again, .dc-restart):focus-visible { outline: 2px solid var(--lr-ox); outline-offset: 3px; }
+  .dc-card .dc-again ~ .dc-restart { background: transparent; color: var(--lr-ox); box-shadow: inset 0 0 0 1.5px var(--lr-ox); }
+  .dc-card .dc-again ~ .dc-restart:hover { background: rgba(110, 31, 36, 0.08); box-shadow: inset 0 0 0 1.5px var(--lr-ox); }
+  @container (max-width: 420px) {
+    .dc-card .dc-summary > :global(div) { grid-template-columns: 1fr; gap: 0; }
+  }
+
+  /* ---- Quillfern: a packing slip from the studio. Cream laid paper, the wordmark over a double copper rule, a
+     ledger of what was ordered with tabular figures, the total under a copper hairline. */
+  .dc-slip .dc-doc { justify-self: center; width: min(100%, 720px); gap: 18px; padding: clamp(22px, 4.4vw, 38px); border-radius: 6px; background: var(--qf-cream); color: var(--qf-ink); box-shadow: 0 0 0 1px var(--qf-line), 0 24px 48px -32px rgba(42, 31, 25, 0.45); font-family: "Fraunces", Georgia, serif; }
+  .dc-slip .dc-mast { padding-bottom: 14px; border-bottom: 3px double var(--qf-copper); }
+  .dc-slip .dc-issuer { font-size: 1.375rem; font-weight: 600; letter-spacing: -0.01em; }
+  .dc-slip .dc-kind { color: var(--qf-soft); font-size: 0.9375rem; }
+  .dc-slip h2 { font-size: clamp(1.5rem, 3.6cqi, 2rem); font-weight: 500; }
+  .dc-slip .dc-lead { margin-top: 6px; color: var(--qf-soft); font-size: 0.9375rem; }
+  .dc-slip .dc-summary > :global(div) { display: grid; grid-template-columns: 8.5rem 1fr; align-items: baseline; gap: 4px 18px; padding: 11px 0; border-bottom: 1px solid var(--qf-line); }
+  .dc-slip .dc-summary :global(dt) { color: var(--qf-soft); font-size: 0.9375rem; }
+  .dc-slip .dc-summary :global(dd > span + span) { margin-top: 4px; }
+  .dc-slip .dc-summary > :global([data-role="total"]) { border-top: 1px solid var(--qf-copper-line); }
+  .dc-slip .dc-summary > :global([data-role="total"]) :is(:global(dt), :global(dd)) { color: var(--qf-ink); font-weight: 650; }
+  .dc-slip .dc-summary > :global([data-role="total"]) :global(dd) { font-size: 1.25rem; }
+  .dc-slip .dc-foot { color: var(--qf-soft); font-size: 0.875rem; }
+  @container (max-width: 420px) {
+    .dc-slip .dc-summary > :global(div) { grid-template-columns: 1fr; gap: 0; }
+  }
+
+  /* ---- Nuxy's section: Nuxy's words (the N mark, "a real Nuxy build", the line that none of it ran) set in the
+     site's own materials, a quieter second sheet under the document rather than a dark panel from another website.
+     Structure here; each site's paper, type and accents below. */
+  .dc-nuxy { display: grid; gap: 16px; padding: clamp(20px, 3.6vw, 30px); font-size: 0.9375rem; line-height: 1.55; letter-spacing: normal; text-transform: none; }
+  .dc-nuxy h3 { display: flex; align-items: center; gap: 10px; font-size: 1.1875rem; line-height: 1.25; text-transform: none; }
+  .dc-nuxy h3 svg { flex: none; }
+  .dc-nuxy ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px 26px; margin: 0; padding: 0; }
+  .dc-nuxy li { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; }
+  .dc-n { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font-size: 0.875rem; font-weight: 650; line-height: 1; font-variant-numeric: tabular-nums; }
+  .dc-nuxy strong { font-weight: 650; }
+  .dc-nuxy li p { margin-top: 2px; font-size: 0.875rem; }
+  .dc-note { padding-top: 14px; border-top: 1px solid; font-size: 0.875rem; }
   .dc-ctas { display: flex; flex-wrap: wrap; gap: 10px; }
-  .dc-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 20px; border: 0; border-radius: var(--dc-btn-radius, 999px); background: var(--dc-accent); color: var(--dc-on-accent); font-weight: 700; text-decoration: none; transition: transform 160ms ease-out, filter 160ms ease-out; }
-  .dc-cta:hover { transform: translateY(-1px); filter: brightness(1.08); }
-  .dc-cta.ghost { background: transparent; color: var(--dc-ink); box-shadow: 0 0 0 1.5px var(--dc-line) inset; }
+  .dc-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 20px; font: inherit; font-size: 0.9375rem; font-weight: 650; line-height: 1; letter-spacing: normal; text-decoration: none; text-transform: none; transition: background-color 160ms ease-out, box-shadow 160ms ease-out, color 160ms ease-out; }
+  .dc-cta.ghost { background: transparent; }
+  .dc-cta:focus-visible { outline-offset: 3px; }
   @media (max-width: 479px) { .dc-cta { flex: 1 1 100%; } }
-  /* the steps arrive one after another when the panel opens (not under reduced motion: the global rule zeroes it) */
-  :global(:root[data-tier="1"]) .dc:not([hidden]) li, :global(:root[data-tier="2"]) .dc:not([hidden]) li { animation: dc-in 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(120ms + var(--i) * 90ms); }
+
+  /* Fernway: the sand office copy of the work order, forest type, forest buttons */
+  .dc-ticket .dc-nuxy { border-radius: var(--fw-radius); background: var(--fw-sand); color: var(--fw-ink); }
+  .dc-ticket .dc-nuxy h3 { color: var(--fw-forest); font-family: "Bricolage Grotesque", "Inter", system-ui, sans-serif; font-weight: 800; font-stretch: 86%; font-size: 1.375rem; letter-spacing: -0.02em; }
+  .dc-ticket .dc-n { box-shadow: inset 0 0 0 1.5px var(--fw-forest); color: var(--fw-forest); }
+  .dc-ticket .dc-nuxy strong { color: var(--fw-forest); }
+  .dc-ticket .dc-nuxy li p, .dc-ticket .dc-note { color: var(--fw-soft); }
+  .dc-ticket .dc-note { border-top-color: rgba(31, 58, 43, 0.2); }
+  .dc-ticket .dc-cta { border-radius: 999px; background: var(--fw-forest); color: var(--fw-cream); }
+  .dc-ticket .dc-cta:hover { background: var(--fw-moss); }
+  .dc-ticket .dc-cta.ghost { background: transparent; color: var(--fw-forest); box-shadow: inset 0 0 0 1.5px var(--fw-forest); }
+  .dc-ticket .dc-cta.ghost:hover { background: rgba(31, 58, 43, 0.08); }
+  .dc-ticket .dc-cta:focus-visible { outline: 3px solid var(--fw-forest); }
+
+  /* Mossgate: an oat card under the receipt, Figtree, the one cobalt accent */
+  .dc-receipt .dc-nuxy { border-radius: 12px; background: var(--mg-oat); color: var(--mg-ink); }
+  .dc-receipt .dc-nuxy h3 { color: var(--mg-ink); font-weight: 620; letter-spacing: -0.015em; }
+  .dc-receipt .dc-nuxy h3 svg { color: var(--mg-cobalt); }
+  .dc-receipt .dc-n { box-shadow: inset 0 0 0 1.5px var(--mg-cobalt); color: var(--mg-cobalt-2); }
+  .dc-receipt .dc-nuxy li p, .dc-receipt .dc-note { color: var(--mg-soft); }
+  .dc-receipt .dc-note { border-top-color: var(--mg-line-2); }
+  .dc-receipt .dc-cta { border-radius: 999px; background: var(--mg-cobalt); color: var(--mg-paper); }
+  .dc-receipt .dc-cta:hover { background: var(--mg-cobalt-2); }
+  .dc-receipt .dc-cta.ghost { background: transparent; color: var(--mg-cobalt-2); box-shadow: inset 0 0 0 1.5px var(--mg-cobalt); }
+  .dc-receipt .dc-cta.ghost:hover { background: var(--mg-sky); }
+  .dc-receipt .dc-cta:focus-visible { outline: 3px solid var(--mg-cobalt); }
+
+  /* Lantern: the shop's dark panel with a brass hairline, Bodoni heading, roman numerals in the condensed face, the
+     oxblood action */
+  .dc-card .dc-nuxy { border-radius: 2px; background: var(--lr-panel); color: var(--lr-cream); box-shadow: inset 0 0 0 1px var(--lr-line); }
+  .dc-card .dc-nuxy h3 { color: var(--lr-cream); font-family: "Bodoni Moda", Georgia, serif; font-weight: 500; font-size: 1.5rem; letter-spacing: -0.01em; }
+  .dc-card .dc-nuxy h3 svg { color: var(--lr-brass-2); }
+  .dc-card .dc-n { border-radius: 0; color: var(--lr-brass-2); font-family: "Sofia XC", "Arial Narrow", sans-serif; font-size: 1.0625rem; font-weight: 700; letter-spacing: 0.03em; }
+  .dc-card .dc-nuxy strong { color: var(--lr-cream); }
+  /* the Bodoni's low x-height and display hairlines want the shop's small-text floor: 15px at 500, as .lr-fine */
+  .dc-card .dc-nuxy li p, .dc-card .dc-note { color: var(--lr-soft); font-size: 0.9375rem; font-weight: 500; }
+  .dc-card .dc-note { border-top-color: var(--lr-line); }
+  .dc-card .dc-cta { border-radius: 2px; background: var(--lr-ox); color: var(--lr-cream); }
+  .dc-card .dc-cta:hover { background: #5a181d; }
+  .dc-card .dc-cta.ghost { background: transparent; color: var(--lr-cream); box-shadow: inset 0 0 0 1px var(--lr-brass); }
+  .dc-card .dc-cta.ghost:hover { box-shadow: inset 0 0 0 1px var(--lr-brass-2); color: var(--lr-brass-2); }
+  .dc-card .dc-cta:focus-visible { outline: 2px solid var(--lr-brass-2); }
+
+  /* Quillfern: a fern-green note tucked under the slip, Fraunces throughout, the umber button the shop uses */
+  .dc-slip .dc-nuxy { border-radius: 6px; background: var(--qf-fern-soft); color: var(--qf-ink); font-family: var(--qf-ui); }
+  .dc-slip .dc-nuxy h3 { color: var(--qf-umber); font-weight: 560; letter-spacing: -0.01em; }
+  .dc-slip .dc-nuxy h3 svg { color: var(--qf-fern); }
+  .dc-slip .dc-n { box-shadow: inset 0 0 0 1.5px var(--qf-fern); color: var(--qf-umber); }
+  .dc-slip .dc-nuxy strong { color: var(--qf-umber); font-weight: 600; }
+  .dc-slip .dc-nuxy li p, .dc-slip .dc-note { color: var(--qf-soft); }
+  .dc-slip .dc-note { border-top-color: rgba(79, 106, 74, 0.3); }
+  .dc-slip .dc-cta { border-radius: 4px; background: var(--qf-umber); color: var(--qf-wax); }
+  .dc-slip .dc-cta:hover { background: var(--qf-umber-2); }
+  .dc-slip .dc-cta.ghost { background: transparent; color: var(--qf-umber); box-shadow: inset 0 0 0 1.5px var(--qf-umber); }
+  .dc-slip .dc-cta.ghost:hover { background: rgba(45, 34, 28, 0.06); }
+  .dc-slip .dc-cta:focus-visible { outline: 2px solid var(--qf-copper); }
+  /* with room, Nuxy's section is a slim band under the document: the heading and the two links share the top line,
+     the steps run in one row under them (the links stay last in the source, so the reading order is unchanged) */
+  .dc { container: dc / inline-size; }
+  @container dc (min-width: 760px) {
+    .dc-nuxy { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px 24px; padding: 18px 24px 20px; }
+    .dc-nuxy h3 { grid-column: 1; grid-row: 1; }
+    .dc-ctas { grid-column: 2; grid-row: 1; }
+    .dc-nuxy ol, .dc-note { grid-column: 1 / -1; }
+    .dc-nuxy ol { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .dc-cta { min-height: 44px; }
+  }
+  /* wide: even rows, so five steps or fewer share one row and six run three and three, never five and an orphan */
+  @container dc (min-width: 1100px) {
+    .dc-nuxy ol { grid-template-columns: repeat(var(--dc-cols, 3), minmax(0, 1fr)); }
+  }
+  /* the document settles in, then the steps follow one after another (not under reduced motion: the global rule zeroes it) */
+  :global(:root[data-tier="1"]) .dc:not([hidden]) .dc-doc, :global(:root[data-tier="2"]) .dc:not([hidden]) .dc-doc { animation: dc-doc 520ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  :global(:root[data-tier="1"]) .dc:not([hidden]) li, :global(:root[data-tier="2"]) .dc:not([hidden]) li { animation: dc-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(360ms + var(--i) * 80ms); }
+  @keyframes dc-doc { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
   @keyframes dc-in { from { opacity: 0; transform: translateY(6px); } }
 </style>

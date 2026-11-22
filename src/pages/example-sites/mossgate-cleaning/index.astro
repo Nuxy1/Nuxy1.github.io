@@ -1,310 +1,610 @@
 ---
-// Mossgate Home Cleaning, home (a fictional company: data/demo-sites.ts). The hero is a drawn before/after living room
-// with a real range-input handle; typical prices link straight into the estimator; the texts a customer gets are shown
-// as an example phone; the cleaner's note, the quotes and the prices are all labelled as samples.
+// Mossgate Home Cleaning, home (a fictional company: data/demo-sites.ts). The page is built around one printed receipt:
+// four questions on top, every line of the sum below, the range at the foot. The room lists and the arrival-window day
+// further down follow whatever the receipt is set to. Prices, people and photos are demonstration material, labelled.
+// Without JavaScript the receipt shows the worked example and its button opens the full estimate with the answers.
 import Shell from "../../../components/demo/mossgate/Shell.astro";
-import RoomArt from "../../../components/demo/mossgate/RoomArt.astro";
-import BeforeAfter from "../../../components/demo/BeforeAfter.astro";
-import { base, rooms, quotes } from "../../../data/demos/mossgate";
-import { estimate, normalise, toQuery, CLEANS, type Clean } from "../../../lib/demo/mossgate-estimate";
-import { range } from "../../../lib/demo/money";
+import DemoPhoto from "../../../components/demo/DemoPhoto.astro";
+import { base, rooms, faq, callNote } from "../../../data/demos/mossgate";
+import { estimate, receipt, toQuery, hoursLabel, summary, priceLabel, perLabel, DEFAULT, HOMES, CLEANS, FREQS, WINDOWS, type Clean, type Freq } from "../../../lib/demo/mossgate-estimate";
+import { usd, range } from "../../../lib/demo/money";
 
-const typical = [
-  { label: "1 bed apartment", c: { home: "apartment", bed: 1, bath: 1 } },
-  { label: "2 bed apartment", c: { home: "apartment", bed: 2, bath: 1 } },
-  { label: "3 bed house", c: { home: "house", bed: 3, bath: 2 } },
-  { label: "4 bed house", c: { home: "house", bed: 4, bath: 3 } },
-].map((t) => {
-  const c = normalise({ ...t.c, clean: "standard", freq: "once" });
-  const e = estimate(c);
-  return { label: t.label, price: range(e.low, e.high), href: `${base}/estimate/?${toQuery(c)}` };
-});
-const steps = [
-  { t: "See your price", d: "Answer five questions about your home. The range updates as you choose, with every line of the sum shown." },
-  { t: "Pick an arrival window", d: "Choose a day and a two-hour window. Long cleans only offer mornings, so they finish the same day." },
-  { t: "We text, you get on with your day", d: "A confirmation, a reminder the day before, and a text when your cleaner is on the way and when they leave." },
+const e = estimate(DEFAULT);
+const lines = receipt(DEFAULT);
+const sum = lines.reduce((t, l) => t + l.amount, 0);
+const money = (n: number) => (n < 0 ? `−${usd(-n)}` : usd(n));
+const book = `${base}/book/?${toQuery(DEFAULT)}`;
+
+const beds = [1, 2, 3, 4, 5], baths = [1, 2, 3, 4];
+
+// the price key beside the receipt: every rate the receipt can use, read from the same sheet so it never drifts
+const pct = (x: number) => `${Math.round(Math.abs(x - 1) * 100)}%`;
+const priceKey = [
+  { h: "Visit", t: "$60 for getting there and setting up." },
+  { h: "Rooms", t: "$20 a bedroom and $25 a bathroom." },
+  { h: "Floor area", t: "$3 for every 100 sq ft. Until you give your own, the receipt uses a typical size for the bedrooms." },
+  { h: "Home type", t: `A house is ${pct(HOMES.house.x)} more, for stairs and often a basement. An apartment or condo is ${pct(HOMES.apartment.x)} less, all on one floor. A townhouse is the base price. You set it on the full estimate.` },
+  { h: "Kind of clean", t: `Deep is ${pct(CLEANS.deep.x)} more, move-in ${pct(CLEANS.movein.x)} more and move-out ${pct(CLEANS.moveout.x)} more. Each already includes the extras it needs, so those are never charged twice.` },
+  { h: "How often", t: `Monthly saves ${pct(FREQS.monthly.x)}, every 2 weeks ${pct(FREQS.biweekly.x)} and weekly ${pct(FREQS.weekly.x)}. Repeat plans are for standard cleans.` },
 ];
-const order: Clean[] = ["standard", "deep", "movein"];
-const counts = (clean: Clean) => rooms.reduce((n, r) => n + r.tasks.filter((t) => order.indexOf(t.clean) <= order.indexOf(clean)).length, 0);
-const std = counts("standard");
-const texts = [
-  { at: "Mon 4:12 pm", t: "Mossgate: Your standard clean is booked for Thu, arriving 10 am – 12 pm. Rosa is your cleaner. Reply C to change." },
-  { at: "Wed 5:00 pm", t: "Reminder: Rosa arrives tomorrow between 10 and 12. Leave the key in the lockbox as planned." },
-  { at: "Thu 10:18 am", t: "Rosa is on the way, about 12 minutes out." },
-  { at: "Thu 12:41 pm", t: `All done: ${std} of ${std} checklist items. Photo of the checklist and your invoice: mossgate.example/i/demo` },
-];
-const cleanCounts = (["standard", "deep", "movein"] as Clean[]).map((c) => ({ name: CLEANS[c].name + (c === "movein" ? " / move-out" : ""), n: counts(c), id: c }));
+const cleans: Clean[] = ["standard", "deep", "movein", "moveout"];
+const freqs: Freq[] = ["once", "monthly", "biweekly", "weekly"];
+
+// the room lists, split by the lightest clean that covers each task
+const levels = [
+  { id: "standard", h: "Every clean" },
+  { id: "deep", h: "Deep cleans add" },
+  { id: "movein", h: "Move-in and move-out cleans add" },
+] as const;
+const roomAlt: Record<string, string> = {
+  kitchen: "A stainless double sink on a white quartz counter, a blue cloth folded over the edge and white tiles behind",
+  bath: "A white bathroom with a glass-screened tiled shower, a white vanity and folded grey towels",
+  bed: "A made bed with a knit throw, a bedside lamp, an armchair and sheer curtains",
+  living: "A linen sofa and armchair, an oak coffee table with books and a blue vase, and a full bookshelf",
+  entry: "An oak staircase with white railings beside a bench, coats on hooks above it and shoes underneath",
+};
+
+// the arrival-window day: 8 am to 8 pm, so the latest finish of an afternoon window still fits on it
+const DAY = { from: 8, to: 20 };
+const startOf: Record<string, number> = { "8-10": 8, "10-12": 10, "1-3": 13, "3-5": 15 };
+const at = (h: number) => `${((h - DAY.from) / (DAY.to - DAY.from)) * 100}%`;
+const clock = (h: number) => {
+  const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+  return `${((hh + 11) % 12) + 1}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${hh >= 12 ? "pm" : "am"}`;
+};
+const ticks = [8, 10, 12, 14, 16, 18, 20];
+const people = (n: number) => `${n} cleaner${n > 1 ? "s" : ""}`;
+const whenText = `Arriving 8 – 10 am: ${people(e.crew)} for about ${hoursLabel(e.hours)}, done between about ${clock(8 + e.hours)} and ${clock(10 + e.hours)}.`;
 ---
-<Shell description="Mossgate Home Cleaning is a fictional cleaning company: a demonstration website by Nuxy Automation with an instant estimate, a room-by-room checklist and online booking.">
-  <section class="mg-hero">
-    <div class="mg-wrap mg-hero-in">
-      <div class="mg-hero-copy">
-        <p class="mg-kicker">Home cleaning, priced in seconds</p>
-        <h1>Come home to the clean you <span class="mg-nowrap">booked.</span></h1>
-        <p class="mg-lead">See your price before anyone visits, pick a two-hour arrival window, and get a text when your cleaner is on the way. Same cleaner every time.</p>
-        <div class="mg-hero-btns">
-          <a class="mg-btn mg-btn-clay" href={`${base}/estimate/`}>See your price</a>
-          <a class="mg-btn mg-btn-line" href={`${base}/book/`}>Book a clean</a>
+<Shell description="Mossgate Home Cleaning, a fictional cleaning company in a Nuxy Automation demonstration: an estimate you can change line by line, room-by-room checklists and two-hour arrival windows.">
+  <section class="mg-intro-band" aria-labelledby="hero-h">
+    <div class="mg-wrap mg-price-in">
+      <div class="mg-intro">
+        <h1 id="hero-h">A clean home, priced before we visit.</h1>
+        <p class="mg-lead">Choose your rooms and the kind of clean. The receipt adds it up line by line, and books a two-hour arrival window from the same answers.</p>
+        <div class="mg-hero-btns" data-dock-cover>
+          <a class="mg-btn" href="#price">See your price</a>
+          <a class="mg-btn mg-btn-line" href={book} data-book>Book a clean</a>
         </div>
-        <p class="mg-demo-note">Fictional company. Prices are for the demonstration only.</p>
+        <p class="mg-demo-note">Demonstration site: Mossgate is fictional and every price is invented.</p>
       </div>
-      <div class="mg-hero-art" data-hero>
-        <BeforeAfter label="Living room" tag="Example clean, illustrated" start={50} beforeLabel="Before" afterLabel="After a standard clean">
-          <RoomArt slot="before" state="before" />
-          <RoomArt slot="after" state="after" />
-        </BeforeAfter>
-      </div>
-    </div>
-    <div class="mg-wrap">
-      <div class="mg-typical">
-        <p class="mg-typical-h">Typical standard clean <span>(demonstration prices)</span></p>
-        <ul role="list" class="mg-typical-list">
-          {typical.map((t) => <li><a href={t.href}><span>{t.label}</span><strong class="mg-num">{t.price}</strong><i aria-hidden="true">→</i></a></li>)}
-        </ul>
-      </div>
-    </div>
-  </section>
 
-  <section class="mg-facts" aria-label="What every clean includes">
-    <ul role="list" class="mg-wrap mg-facts-in">
-      <li><strong>Supplies included</strong><span>Vacuum and fresh cloths for every home</span></li>
-      <li><strong>Same cleaner</strong><span>Every visit on a recurring plan</span></li>
-      <li><strong>Two-hour windows</strong><span>Not “sometime between 8 and 5”</span></li>
-      <li><strong>Pay after</strong><span>Invoice once the clean is done</span></li>
-    </ul>
-  </section>
-
-  <section class="mg-section" aria-labelledby="how-h">
-    <div class="mg-wrap">
-      <div class="mg-head">
-        <p class="mg-kicker">How it works</p>
-        <h2 id="how-h">No quote visit. No phone tag.</h2>
-      </div>
-      <ol role="list" class="mg-how">
-        {steps.map((s, i) => (
-          <li class="mg-rise" style={`--d:${i * 90}ms`}>
-            <span class="mg-how-n mg-num" aria-hidden="true">0{i + 1}</span>
-            <h3>{s.t}</h3>
-            <p>{s.d}</p>
-          </li>
-        ))}
-      </ol>
-    </div>
-  </section>
-
-  <section class="mg-section mg-texts-sec" aria-labelledby="texts-h">
-    <div class="mg-wrap mg-texts-in">
-      <div class="mg-texts-copy">
-        <p class="mg-kicker">Behind the scenes</p>
-        <h2 id="texts-h">The texts do the chasing.</h2>
-        <p class="mg-lead">Every booking starts the same run of messages, so nobody at the office has to remember. On a real build these go out by themselves; in this demo nothing is sent.</p>
-        <ul role="list" class="mg-ticks">
-          <li>Confirmation the moment you book, with a link to change it</li>
-          <li>A reminder the afternoon before</li>
-          <li>“On the way” when your cleaner sets off</li>
-          <li>The finished checklist and the invoice when they leave</li>
-        </ul>
-      </div>
-      <figure class="mg-phone" data-phone>
-        <div class="mg-phone-top"><span class="mg-phone-av" aria-hidden="true">M</span><span><strong>Mossgate</strong><small>Example texts</small></span></div>
-        <ol role="list" class="mg-phone-list">
-          {texts.map((m, i) => <li style={`--i:${i}`}><time>{m.at}</time><p>{m.t}</p></li>)}
-        </ol>
-        <figcaption>Example messages for a fictional booking. Nothing is sent from this demo.</figcaption>
+      <figure class="mg-price-pic">
+        <DemoPhoto name="mossgate-hero" priority sizes="(min-width: 1024px) 760px, 100vw"
+          alt="A bright white kitchen and dining room: shaker cabinets, a round oak table and chairs, fruit and herbs on the counter, linen curtains at a wide window" />
+        <figcaption>AI-generated example photo</figcaption>
       </figure>
+
+      <div class="mg-receipt-wrap mg-price-slip" id="price">
+        <form class="mg-receipt mg-quick" action={`${base}/estimate/`} method="get" data-quick>
+          <div class="mg-rc-top">
+            <h2 id="price-h">Your price, added up</h2>
+            <!-- the range as it stands, up here too: on a laptop the total sits below the fold while the rooms are picked,
+                 so each tap shows its price without a scroll. The total below is the one a screen reader hears. -->
+            <p class="mg-rc-peek" aria-hidden="true"><span>Estimate so far</span><strong data-peek>{range(e.low, e.high)}</strong></p>
+          </div>
+          <input type="hidden" name="home" value={DEFAULT.home} />
+
+          <fieldset class="mg-q">
+            <legend>Bedrooms</legend>
+            <div class="mg-q-row mg-q-5">
+              {beds.map((n) => (
+                <label class="mg-pick mg-pick-sm"><input type="radio" name="bed" value={n} checked={n === DEFAULT.bed} /><span>{n === 5 ? "5+" : n}</span></label>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset class="mg-q">
+            <legend>Bathrooms</legend>
+            <div class="mg-q-row mg-q-4">
+              {baths.map((n) => (
+                <label class="mg-pick mg-pick-sm"><input type="radio" name="bath" value={n} checked={n === DEFAULT.bath} /><span>{n === 4 ? "4+" : n}</span></label>
+              ))}
+            </div>
+          </fieldset>
+          <!-- the kind of clean moves the price most, so it stays open beside the rooms; how often starts folded on its
+               usual answer, which the receipt's last line already shows -->
+          <fieldset class="mg-q">
+            <legend>Kind of clean</legend>
+            <!-- the same chip as the estimate and the booking: the name, and what the clean is for under it -->
+            <div class="mg-q-row mg-q-wide mg-q-cleans">
+              {cleans.map((c) => (
+                <label class="mg-pick mg-pick-sm left"><input type="radio" name="clean" value={c} checked={c === DEFAULT.clean} /><span>{CLEANS[c].name}<small>{CLEANS[c].note}</small></span></label>
+              ))}
+            </div>
+          </fieldset>
+          <details class="mg-more">
+            <summary>
+              <span class="mg-more-k">How often</span>
+              <span class="mg-more-v" data-more>{FREQS[DEFAULT.freq].name}</span>
+              <span class="mg-more-go">Change</span>
+            </summary>
+            <div class="mg-more-in">
+          <fieldset class="mg-q">
+            <legend class="sr-only">How often</legend>
+            <div class="mg-q-row mg-q-wide">
+              {freqs.map((f) => (
+                <label class="mg-pick mg-pick-sm"><input type="radio" name="freq" value={f} checked={f === DEFAULT.freq} /><span>{FREQS[f].name}{FREQS[f].note && <small>{FREQS[f].note}</small>}</span></label>
+              ))}
+            </div>
+            <p class="mg-q-note" data-once hidden>Deep and move cleans are one-time visits.</p>
+          </fieldset>
+            </div>
+          </details>
+
+          <div class="mg-rc-sum-wrap" data-print>
+            <dl class="mg-rc-lines" data-lines>
+              {lines.map((l, i) => (
+                <div class:list={{ neg: l.amount < 0 }} style={`--i: ${i}`}><dt>{l.label}</dt><dd>{money(l.amount)}</dd></div>
+              ))}
+            </dl>
+            <p class="mg-rc-sum" style={`--i: ${lines.length}`}><span data-sum-label>{priceLabel(DEFAULT.freq)}</span><span data-sum>{usd(sum)}</span></p>
+            <p class="mg-rc-total" style={`--i: ${lines.length + 1}`} aria-live="polite" aria-atomic="true">
+              <span>Estimated range</span><strong data-total>{range(e.low, e.high)}</strong>
+            </p>
+          </div>
+          <p class="mg-rc-meta" data-meta>{people(e.crew)}, about {hoursLabel(e.hours)} on site.</p>
+          <p class="mg-rc-why">The range runs from 8% under that sum to 10% over, rounded to $5, because no home is priced to the dollar unseen.</p>
+
+          <div class="mg-rc-btns">
+            <a class="mg-btn" href={book} data-book>Book this clean</a>
+            <button class="mg-btn mg-btn-line" type="submit" data-adjust>Change home type, size and extras</button>
+          </div>
+          <p class="mg-rc-demo">Demonstration pricing only.</p>
+        </form>
+      </div>
+
+      <div class="mg-key">
+        <h3>How each line is priced</h3>
+        <dl>{priceKey.map((k) => <div><dt>{k.h}</dt><dd>{k.t}</dd></div>)}</dl>
+      </div>
     </div>
   </section>
 
-  <section class="mg-section mg-note-sec" aria-labelledby="note-h">
-    <div class="mg-wrap mg-note-in">
-      <div class="mg-note-card mg-rise" aria-describedby="note-cap">
-        <p class="mg-note-hand">Hi Jess, did the oven as you asked, the racks are soaking in the sink, give them an hour. Found two Lego pieces under the sofa, they're on the shelf. See you in two weeks! — Rosa</p>
-        <p class="mg-note-cap" id="note-cap">Sample cleaner’s note, written for this demo</p>
-      </div>
-      <div>
-        <p class="mg-kicker">The same person, every time</p>
-        <h2 id="note-h">Your cleaner knows your home.</h2>
-        <p class="mg-lead">Recurring homes keep one cleaner and one window, so the second visit is faster than the first and you stop writing instructions. If something is off, you reply to the text and it’s put right on the next visit.</p>
-        <a class="mg-link" href={`${base}/about/`}>Meet the team <span aria-hidden="true">→</span></a>
-      </div>
-    </div>
-  </section>
-
-  <section class="mg-section mg-list-sec mg-tiles" aria-labelledby="list-h">
+  <section class="mg-section mg-rooms" id="rooms" aria-labelledby="rooms-h" data-rooms data-clean={DEFAULT.clean}>
     <div class="mg-wrap">
       <div class="mg-head">
-        <p class="mg-kicker">What we clean</p>
-        <h2 id="list-h">A written checklist for every room.</h2>
-        <p class="mg-lead">The same list your cleaner ticks off on the day. A deeper clean adds to it, it never swaps things out.</p>
+        <h2 id="rooms-h">Every room comes with a written list.</h2>
+        <p class="mg-lead">Each cleaner works from the same list, so you know what a visit covers before it starts. Deeper cleans add to the list; they never swap things out.</p>
+        <p class="mg-fine" data-rooms-note>Filled ticks show what a <strong data-clean-name>standard</strong> clean covers, the clean your receipt is set to.</p>
       </div>
-      <div class="mg-list-grid">
-        {cleanCounts.map((c, i) => (
-          <a class="mg-list-card mg-rise" style={`--d:${i * 90}ms`} href={`${base}/checklist/?clean=${c.id}`}>
-            <span class="mg-list-n mg-num">{c.n}</span>
-            <span class="mg-list-t">{c.name} clean</span>
-            <span class="mg-list-s">tasks across {rooms.length} rooms</span>
-          </a>
+
+      <div class="mg-tabs" role="tablist" aria-label="Rooms" data-tabs hidden>
+        {rooms.map((r, i) => (
+          <button type="button" role="tab" id={`tab-${r.id}`} aria-controls={`room-${r.id}`} aria-selected={i === 0 ? "true" : "false"} tabindex={i === 0 ? 0 : -1}>{r.name}</button>
         ))}
       </div>
-      <a class="mg-link" href={`${base}/checklist/`}>See every room <span aria-hidden="true">→</span></a>
+
+      <div class="mg-room-list">
+        {rooms.map((r) => (
+          <article class="mg-room" id={`room-${r.id}`} aria-labelledby={`room-${r.id}-h`}>
+            <figure class="mg-room-pic">
+              <DemoPhoto name={`mossgate-${r.id}`} alt={roomAlt[r.id]} sizes="(min-width: 960px) 520px, 100vw" />
+            </figure>
+            <div class="mg-room-body">
+              <h3 id={`room-${r.id}-h`}>{r.name}</h3>
+              {levels.map((lv) => {
+                const tasks = r.tasks.filter((t) => t.clean === lv.id);
+                return tasks.length > 0 && (
+                  <div class="mg-group" data-level={lv.id}>
+                    <h4>{lv.h}{lv.id !== "standard" && <span class="mg-incl" data-incl>Not in a standard clean</span>}</h4>
+                    <ul class="mg-ticks" role="list">{tasks.map((t) => <li>{t.t}</li>)}</ul>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        ))}
+      </div>
+      <a class="mg-link" href={`${base}/checklist/`}>See every room’s list side by side</a>
     </div>
   </section>
 
-  <section class="mg-section" aria-labelledby="q-h">
+  <section class="mg-section mg-when" aria-labelledby="when-h" data-when>
     <div class="mg-wrap">
       <div class="mg-head">
-        <p class="mg-kicker">What customers say</p>
-        <h2 id="q-h">Booked on a phone, finished by lunch.</h2>
-        <p class="mg-fine">Sample testimonials written for this demonstration. Mossgate and its customers are fictional.</p>
+        <h2 id="when-h">Book a two-hour window. Know when we’ll be done.</h2>
+        <p class="mg-lead">Your cleaners arrive inside the window you book and text when they’re on the way. The bar is the clean on your receipt, from the earliest finish to the latest.</p>
       </div>
-      <div class="mg-quotes">
-        {quotes.map((q, i) => (
-          <figure class="mg-quote mg-rise" style={`--d:${i * 90}ms`}>
-            <blockquote><p>{q.text}</p></blockquote>
-            <figcaption><span class="mg-quote-tag">{q.who}</span> {q.where}</figcaption>
-          </figure>
-        ))}
+
+      <div class="mg-day-card">
+        <fieldset class="mg-q mg-day-pick">
+          <legend>Arrival window</legend>
+          <div class="mg-q-row mg-q-wide">
+            {WINDOWS.map((w, i) => (
+              <label class="mg-pick mg-pick-sm"><input type="radio" name="when" value={w.id} checked={i === 0} /><span>{w.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div class="mg-day" aria-hidden="true" style={`--from: ${startOf["8-10"] - DAY.from}; --len: ${e.hours}; --span: ${DAY.to - DAY.from}`} data-day>
+          <div class="mg-day-hours">
+            {ticks.map((h) => <span style={`left: ${at(h)}`}>{clock(h)}</span>)}
+          </div>
+          <div class="mg-day-track">
+            {WINDOWS.map((w, i) => (
+              <span class:list={["mg-day-win", { on: i === 0 }]} data-win={w.id} style={`left: ${at(startOf[w.id])}; width: ${at(DAY.from + 2)}`}></span>
+            ))}
+            <span class="mg-day-lunch" style={`left: ${at(12)}; width: ${at(DAY.from + 1)}`}>lunch</span>
+          </div>
+          <div class="mg-day-bar"><span class="mg-day-solid"></span><span class="mg-day-tail"></span></div>
+          <div class="mg-day-key">
+            <span><i class="k-win"></i>Your arrival window</span>
+            <span><i class="k-solid"></i>Cleaning, if we arrive at its start</span>
+            <span><i class="k-tail"></i>Latest finish, if we arrive at its end</span>
+          </div>
+        </div>
+
+        <p class="mg-day-out" aria-live="polite" data-when-out>{whenText}</p>
+        <p class="mg-fine" data-when-morning hidden>A clean this long starts in a morning window, so the crew finishes the same day.</p>
+        <a class="mg-link" href={book} data-book>See the open windows this week</a>
       </div>
     </div>
   </section>
 
-  <section class="mg-section mg-close">
-    <div class="mg-wrap">
-      <div class="mg-band">
-        <p class="mg-label">Ready when you are</p>
-        <h2>Your price, then your window. That’s it.</h2>
-        <p>It takes under a minute. In this demo nothing is booked, charged or sent.</p>
-        <div class="mg-band-btns">
-          <a class="mg-btn" href={`${base}/estimate/`}>See your price</a>
-          <a class="mg-btn mg-btn-line" href={`${base}/book/`}>Book a clean</a>
+  <!-- the questions, and beside them the receipt's torn-off stub: the clean priced at the top of the page, ready to
+       book. Without JavaScript it shows the worked example and books that -->
+  <section class="mg-section mg-faq" aria-labelledby="faq-h">
+    <div class="mg-wrap mg-faq-in">
+      <div class="mg-faq-main">
+        <div class="mg-faq-side">
+          <h2 id="faq-h">Questions people ask first.</h2>
+          <p class="mg-lead">Anything else goes straight to the office.</p>
+          <a class="mg-link" href={`${base}/about/#ask`}>Ask a question</a>
+        </div>
+        <div class="mg-faq-list">
+          {faq.map(([q, a]) => (
+            <details class="mg-faq-item">
+              <summary>{q}</summary>
+              <p>{a}</p>
+            </details>
+          ))}
         </div>
       </div>
+
+      <aside class="mg-stub-col" aria-labelledby="stub-h">
+        <div class="mg-receipt-wrap">
+          <div class="mg-receipt mg-stub" data-stub>
+            <div class="mg-rc-top">
+              <h2 id="stub-h">Your clean</h2>
+              <p>From the receipt at the top of the page</p>
+            </div>
+            <p class="mg-stub-what" data-stub-what>{summary(DEFAULT)}</p>
+            <p class="mg-rc-total"><span data-stub-per>{perLabel(DEFAULT.freq)}</span><strong data-stub-total>{range(e.low, e.high)}</strong></p>
+            <p class="mg-stub-crew" data-stub-crew>{people(e.crew)}, about {hoursLabel(e.hours)} on site. Nothing is charged until the clean is done.</p>
+            <div class="mg-rc-btns" data-dock-cover>
+              <a class="mg-btn" href={book} data-book>Book this clean</a>
+              <button class="mg-btn mg-btn-line" type="button" data-demo-action={callNote}>Call the office</button>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
   </section>
 </Shell>
 
 <style>
-  .mg-nowrap { white-space: nowrap; }
-  .mg-hero { padding: clamp(36px, 6vw, 80px) 0 clamp(40px, 6vw, 72px); }
-  .mg-hero-in { display: grid; gap: clamp(28px, 4vw, 56px); align-items: center; }
-  @media (min-width: 960px) { .mg-hero-in { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); } }
-  .mg-hero-copy { display: grid; gap: 22px; justify-items: start; }
-  .mg-hero-btns { display: flex; flex-wrap: wrap; gap: 12px; }
-  @media (max-width: 419px) { .mg-hero-btns .mg-btn { flex: 1 1 100%; } }
-  .mg-hero-art :global(.ba) { --ba-radius: 26px; --ba-ratio: 8 / 5; --ba-handle-ink: #1f4a3f; --ba-label-bg: rgba(28, 43, 39, 0.78); --ba-caption: #5c6b64; }
-  .mg-hero-art :global(.ba-stage) { box-shadow: 0 0 0 1px var(--mg-line), 0 30px 60px -30px rgba(31, 74, 63, 0.45); }
-  .mg-hero-art.is-off :global(.rm-sparks path) { animation-play-state: paused; }
+  /* the first screen: the headline set left on linen, and the receipt itself as the hero's object. On a desktop the
+     receipt opens the right column at the top and the kitchen photo runs under the headline, the receipt laid over
+     its right edge; on a phone the photo comes first and the receipt hangs over its foot */
+  .mg-intro-band { padding-block: clamp(40px, 6vw, 72px) clamp(64px, 9vw, 120px); }
+  .mg-intro { display: grid; justify-items: start; gap: 22px; margin-bottom: clamp(36px, 6vw, 56px); }
+  .mg-intro h1 { max-width: 13ch; }
+  .mg-intro .mg-lead { max-width: 46ch; }
+  /* a phone on its side (390 px tall): the headline alone filled the first screen, so it is capped by the screen's
+     height and the lead shows under it */
+  @media (max-height: 500px) and (min-width: 480px) {
+    .mg-intro-band { padding-top: 28px; }
+    .mg-intro h1 { font-size: min(clamp(2.75rem, 1.5rem + 5.2vw, 5.75rem), 14svh); }
+  }
+  .mg-hero-btns { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+  .mg-price-slip { scroll-margin-top: 80px; }
+  .mg-price-in { display: grid; gap: 0; }
+  .mg-price-pic { position: relative; margin: 0; }
+  .mg-price-pic :global(.demo-photo) { aspect-ratio: 4 / 3; border-radius: 24px; }
+  .mg-price-pic :global(.demo-photo img) { object-position: 30% 50%; }
+  /* the label sits on the photo, so the receipt laid over its foot never hides it */
+  .mg-price-pic figcaption { position: absolute; left: 14px; top: 14px; max-width: calc(100% - 28px); padding: 5px 12px; border-radius: 999px; background: rgba(252, 250, 247, 0.9); color: var(--mg-ink); font-size: 0.8125rem; line-height: 1.35; }
+  .mg-price-slip { position: relative; margin: -56px 10px 0; }
+  /* the price key: on a phone it follows the receipt; on a desktop it fills the column under the photo while the
+     long receipt runs on beside it (the receipt's height goes to the second row, so the key sits right under the photo) */
+  .mg-key { margin-top: clamp(40px, 6vw, 56px); max-width: 640px; }
+  .mg-key h3 { margin: 0 0 14px; font-size: 1.5rem; font-weight: 400; line-height: 1.2; letter-spacing: -0.01em; }
+  .mg-key dl { margin: 0; border-top: 1px solid var(--mg-line); }
+  .mg-key dl > div { display: grid; gap: 4px 24px; padding: 14px 0; border-bottom: 1px solid var(--mg-line); }
+  .mg-key dt { font-weight: 620; }
+  .mg-key dd { margin: 0; color: var(--mg-soft); font-variant-numeric: tabular-nums; text-wrap: pretty; }
+  @media (min-width: 620px) { .mg-key dl > div { grid-template-columns: 8.5rem minmax(0, 1fr); } }
+  @media (min-width: 1024px) {
+    /* the receipt spans all three rows; its extra height goes to the last (1fr), so the key sits right under the photo */
+    .mg-price-in { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto auto 1fr; align-items: start; }
+    .mg-intro { grid-column: 1 / 8; grid-row: 1; padding-right: 24px; margin-bottom: 48px; }
+    .mg-intro h1 { font-size: clamp(3.5rem, 1rem + 4.6vw, 5.25rem); }
+    /* the receipt beside the headline is the way in here, and the header carries Book a clean */
+    .mg-hero-btns { display: none; }
+    .mg-price-pic { grid-column: 1 / 9; grid-row: 2; }
+    .mg-price-pic :global(.demo-photo) { aspect-ratio: 3 / 2; }
+    .mg-price-slip { grid-column: 8 / 13; grid-row: 1 / 4; margin: 0; }
+    .mg-key { grid-column: 1 / 8; grid-row: 3; margin-top: 44px; padding-right: clamp(8px, 2vw, 32px); }
+  }
 
-  .mg-typical { display: grid; gap: 12px; margin-top: clamp(28px, 4vw, 44px); padding: 18px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
-  @media (min-width: 960px) { .mg-typical { grid-template-columns: 200px 1fr; align-items: center; } }
-  .mg-typical-h { font-weight: 800; color: var(--mg-moss); line-height: 1.25; }
-  .mg-typical-h span { display: block; font-weight: 500; font-size: 0.875rem; color: var(--mg-mute); }
-  .mg-typical-list { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
-  .mg-typical-list a { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 10px; align-items: center; min-height: 64px; padding: 10px 16px; border-radius: 14px; background: var(--mg-mint); text-decoration: none; transition: background-color 200ms var(--mg-ease), transform 200ms var(--mg-ease); }
-  .mg-typical-list a span { font-size: 0.9375rem; color: var(--mg-soft); }
-  .mg-typical-list a strong { grid-row: 2; font-size: 1.25rem; font-weight: 800; color: var(--mg-moss); }
-  .mg-typical-list a i { grid-row: 1 / 3; grid-column: 2; font-style: normal; font-weight: 800; color: var(--mg-moss-2); transition: transform 200ms var(--mg-ease); }
-  .mg-typical-list a:hover { background: var(--mg-sage); transform: translateY(-2px); }
-  .mg-typical-list a:hover i { transform: translateX(3px); }
+  /* how often, folded on its answer until asked for */
+  .mg-more { border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--mg-edge); }
+  .mg-more > summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; min-height: 56px; padding: 10px 14px; border-radius: 12px; list-style: none; cursor: pointer; transition: background-color 160ms ease-out; }
+  .mg-more > summary::-webkit-details-marker { display: none; }
+  .mg-more > summary:hover { background: var(--mg-linen); }
+  .mg-more-k { font-weight: 620; font-size: 0.9375rem; }
+  .mg-more-v { grid-row: 2; color: var(--mg-soft); font-size: 0.9375rem; }
+  .mg-more-go { grid-row: 1 / 3; grid-column: 2; display: inline-flex; align-items: center; gap: 8px; color: var(--mg-cobalt); font-weight: 650; font-size: 0.9375rem; }
+  .mg-more-go::after { content: ""; width: 7px; height: 7px; margin-top: -4px; border-right: 2px solid; border-bottom: 2px solid; transform: rotate(45deg); transition: transform 200ms var(--mg-ease); }
+  .mg-more[open] .mg-more-go::after { margin-top: 4px; transform: rotate(-135deg); }
+  .mg-more[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .mg-more-in { display: grid; gap: 18px; padding: 6px 14px 16px; }
+  @media (prefers-reduced-motion: reduce) { .mg-more-go::after { transition: none; } }
 
-  .mg-facts { border-block: 1px solid var(--mg-line); background: var(--mg-paper); }
-  .mg-facts-in { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
-  .mg-facts li { display: grid; gap: 2px; padding: 22px 20px; border-left: 1px solid var(--mg-line); }
-  .mg-facts li:first-child { border-left: 0; }
-  @media (max-width: 959px) { .mg-facts li { border-left: 0; border-top: 1px solid var(--mg-line); } .mg-facts li:first-child { border-top: 0; } }
-  @media (min-width: 480px) and (max-width: 959px) { .mg-facts-in { grid-template-columns: 1fr 1fr; } .mg-facts li:nth-child(2) { border-top: 0; } .mg-facts li:nth-child(even) { border-left: 1px solid var(--mg-line); } }
-  .mg-facts strong { font-weight: 800; color: var(--mg-moss); }
-  .mg-facts span { font-size: 0.9375rem; color: var(--mg-mute); }
+  .mg-quick { gap: 18px; container-type: inline-size; }
 
-  .mg-how { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); counter-reset: how; }
-  .mg-how li { position: relative; display: grid; gap: 12px; align-content: start; padding: 28px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
-  .mg-how li:not(:last-child)::after { content: ""; position: absolute; right: 28px; top: 40px; width: 64px; height: 2px; background: repeating-linear-gradient(90deg, var(--mg-line-2) 0 6px, transparent 6px 12px); }
-  .mg-how-n { font-size: 2.75rem; font-weight: 850; letter-spacing: -0.04em; color: var(--mg-clay); line-height: 1; }
-  .mg-how p { color: var(--mg-soft); }
+  .mg-q { margin: 0; padding: 0; border: 0; min-width: 0; }
+  .mg-q legend { padding: 0; margin-bottom: 8px; font-weight: 620; font-size: 0.9375rem; }
+  .mg-q-row { display: grid; gap: 6px; }
+  .mg-q-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .mg-q-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mg-q-wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @container (min-width: 430px) { .mg-quick .mg-q-wide:not(.mg-q-cleans) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .mg-pick-sm.left > span { padding-inline: 12px; }
+  .mg-pick-sm > span { min-height: 46px; padding: 6px 8px; font-weight: 600; font-size: 0.9375rem; line-height: 1.2; }
+  .mg-pick-sm > span small { font-size: 0.875rem; }
+  .mg-q-note { margin-top: 8px; font-size: 0.875rem; color: var(--mg-soft); }
 
-  .mg-texts-sec { background: var(--mg-mint); }
-  .mg-texts-in { display: grid; gap: clamp(32px, 5vw, 72px); align-items: center; }
-  @media (min-width: 900px) { .mg-texts-in { grid-template-columns: 1fr minmax(320px, 400px); } }
-  .mg-texts-copy { display: grid; gap: 20px; }
-  .mg-phone { display: grid; gap: 12px; justify-self: center; width: min(100%, 380px); padding: 14px; border-radius: 40px; background: var(--mg-ink); box-shadow: 0 40px 80px -40px rgba(28, 43, 39, 0.6); }
-  .mg-phone-top { display: flex; align-items: center; gap: 10px; padding: 12px 14px 4px; color: #e7efe9; }
-  .mg-phone-top span:last-child { display: grid; line-height: 1.15; }
-  .mg-phone-top small { color: #9fb8ad; font-size: 0.8125rem; }
-  .mg-phone-av { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--mg-moss-2); font-weight: 800; }
-  .mg-phone-list { display: grid; gap: 10px; padding: 16px 12px 18px; border-radius: 28px; background: var(--mg-linen); }
-  .mg-phone-list li { display: grid; gap: 4px; justify-items: start; }
-  .mg-phone-list time { font-size: 0.75rem; font-weight: 650; color: var(--mg-mute); padding-left: 6px; }
-  .mg-phone-list p { max-width: 92%; padding: 10px 14px; border-radius: 18px 18px 18px 6px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); font-size: 0.9375rem; line-height: 1.4; }
-  .mg-phone-list li:last-child p { background: var(--mg-moss); color: var(--mg-linen); box-shadow: none; }
-  .mg-phone figcaption { padding: 0 14px 8px; font-size: 0.8125rem; color: #9fb8ad; }
-  :root[data-tier="1"] .mg-phone.wait li, :root[data-tier="2"] .mg-phone.wait li { opacity: 0; transform: translateY(10px) scale(0.98); }
-  :root[data-tier="1"] .mg-phone li, :root[data-tier="2"] .mg-phone li { transition: opacity 360ms var(--mg-ease), transform 360ms var(--mg-ease); transition-delay: calc(var(--i) * 380ms); transform-origin: left bottom; }
 
-  .mg-note-in { display: grid; gap: clamp(32px, 5vw, 72px); align-items: center; }
-  @media (min-width: 900px) { .mg-note-in { grid-template-columns: minmax(300px, 440px) 1fr; } }
-  .mg-note-in > div:last-child { display: grid; gap: 18px; justify-items: start; }
-  .mg-note-card { position: relative; display: grid; gap: 18px; padding: 36px 30px 24px; background: #fffbe8; box-shadow: 0 1px 0 #e9dfb8, 0 24px 40px -24px rgba(28, 43, 39, 0.4); transform: rotate(-2deg); background-image: repeating-linear-gradient(transparent 0 33px, #e8dfc2 33px 34px); background-position: 0 22px; }
-  .mg-note-card::before { content: ""; position: absolute; top: -12px; left: 50%; width: 96px; height: 26px; margin-left: -48px; background: rgba(207, 224, 214, 0.85); transform: rotate(3deg); }
-  .mg-note-hand { font-family: "Kalam", "Segoe Print", cursive; font-size: 1.3125rem; line-height: 34px; color: #23465c; }
-  .mg-note-cap { font-size: 0.8125rem; font-weight: 650; color: var(--mg-mute); }
+  /* the receipt prints once, line by line, the first time it comes into view (JavaScript adds the classes; tier 3 and
+     reduced motion never get them); a changed line glints sky when the answers change */
+  .mg-quick.is-waiting [data-print] :is(.mg-rc-lines > div, .mg-rc-sum, .mg-rc-total) { opacity: 0; }
+  .mg-quick.is-printing [data-print] :is(.mg-rc-lines > div, .mg-rc-sum, .mg-rc-total) { animation: mg-print 340ms var(--mg-ease) calc(var(--i, 0) * 65ms) both; }
+  @keyframes mg-print { from { opacity: 0; transform: translateY(-6px); } }
 
-  .mg-list-sec .mg-wrap { display: grid; gap: 28px; justify-items: start; }
-  .mg-list-sec .mg-head { margin-bottom: 0; }
-  .mg-list-grid { display: grid; gap: 16px; width: 100%; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
-  .mg-list-card { display: grid; gap: 4px; padding: 26px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); text-decoration: none; transition: transform 200ms var(--mg-ease), box-shadow 200ms var(--mg-ease); }
-  .mg-list-card:hover { transform: translateY(-3px); box-shadow: 0 0 0 1.5px var(--mg-moss-2), 0 20px 40px -24px rgba(31, 74, 63, 0.45); }
-  .mg-list-n { font-size: 3.5rem; font-weight: 850; letter-spacing: -0.05em; line-height: 1; color: var(--mg-moss); }
-  .mg-list-t { font-weight: 800; font-size: 1.125rem; color: var(--mg-ink); }
-  .mg-list-s { color: var(--mg-mute); font-size: 0.9375rem; }
+  /* rooms: tabs once JavaScript is on, every room stacked without it */
+  .mg-rooms { background: var(--mg-paper); }
+  .mg-rooms .mg-head { margin-bottom: clamp(28px, 4vw, 40px); }
+  .mg-rooms .mg-fine strong { color: var(--mg-ink); font-weight: 650; }
+  .mg-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .mg-tabs[hidden] { display: none; }
+  .mg-tabs button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--mg-linen); color: var(--mg-soft); font: inherit; font-weight: 600; font-size: 0.9375rem; cursor: pointer; box-shadow: inset 0 0 0 1px var(--mg-line-2); transition: background-color 160ms ease-out, color 160ms ease-out; }
+  .mg-tabs button:hover { color: var(--mg-ink); background: var(--mg-oat); }
+  .mg-tabs button[aria-selected="true"] { background: var(--mg-ink); color: var(--mg-paper); box-shadow: none; }
+  .mg-tabs button:focus-visible { outline: 3px solid var(--mg-cobalt); outline-offset: 3px; }
+  .mg-room-list { display: grid; gap: 56px; margin-bottom: 28px; }
+  .mg-room { display: grid; gap: 24px 48px; align-items: start; }
+  .mg-room[hidden] { display: none; }
+  .mg-room:focus-visible { outline: 3px solid var(--mg-cobalt); outline-offset: 8px; border-radius: 20px; }
+  @media (min-width: 960px) { .mg-room { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .mg-room-pic { margin: 0; }
+  .mg-room-pic :global(.demo-photo) { aspect-ratio: 4 / 3; border-radius: 20px; }
+  .mg-room-body { display: grid; gap: 26px; }
+  .mg-room-body h3 { font-size: clamp(1.625rem, 1.3rem + 1vw, 2.125rem); font-weight: 400; letter-spacing: -0.03em; }
+  .mg-group { display: grid; gap: 12px; }
+  .mg-group h4 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 1rem; font-weight: 640; }
+  .mg-incl { padding: 2px 10px; border-radius: 999px; background: var(--mg-oat); color: var(--mg-soft); font-size: 0.8125rem; font-weight: 600; }
+  /* a group the chosen clean doesn't reach: hollow ticks, softer text */
+  .mg-group.is-out li { color: var(--mg-soft); }
+  .mg-group.is-out .mg-ticks li::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--mg-edge); }
+  .mg-group.is-in .mg-incl { background: var(--mg-sky); color: var(--mg-sky-ink); }
 
-  .mg-quotes { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
-  .mg-quote { display: grid; gap: 18px; align-content: space-between; padding: 28px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
-  .mg-quote blockquote p { font-size: 1.125rem; line-height: 1.5; color: var(--mg-ink); }
-  .mg-quote blockquote p::before { content: "“"; display: block; font-size: 3rem; line-height: 0.8; font-weight: 850; color: var(--mg-clay); }
-  .mg-quote figcaption { font-size: 0.9375rem; color: var(--mg-mute); }
-  .mg-quote-tag { display: inline-block; margin-right: 6px; padding: 3px 10px; border-radius: 999px; background: var(--mg-clay-soft); color: #7a3320; font-size: 0.8125rem; font-weight: 700; }
-  .mg-close { padding-top: 0; }
+  /* arrival windows: the chips choose, the drawn day shows the result */
+  .mg-day-card { display: grid; gap: 22px; justify-items: start; padding: clamp(22px, 4vw, 40px); border-radius: 28px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); container-type: inline-size; }
+  .mg-day-pick { width: 100%; }
+  @container (min-width: 600px) { .mg-day-pick .mg-q-wide { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .mg-day-pick input:disabled + span::after { content: "Mornings only for this clean"; font-size: 0.8125rem; font-weight: 450; }
+  .mg-day { width: 100%; display: grid; gap: 8px; --hour: calc(100% / var(--span)); }
+  .mg-day-hours { position: relative; height: 1.25rem; font-size: 0.8125rem; color: var(--mg-mute); font-variant-numeric: tabular-nums; }
+  .mg-day-hours span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+  .mg-day-hours span:first-child { transform: none; }
+  .mg-day-hours span:last-child { transform: translateX(-100%); }
+  .mg-day-track, .mg-day-bar { position: relative; height: 40px; border-radius: 10px; }
+  .mg-day-track { background: var(--mg-linen) repeating-linear-gradient(90deg, var(--mg-line) 0 1px, transparent 1px var(--hour)); }
+  .mg-day-win { position: absolute; top: 5px; bottom: 5px; border-radius: 7px; background: var(--mg-sky); box-shadow: inset 0 0 0 1px rgba(36, 67, 184, 0.25); transition: background-color 200ms ease-out, box-shadow 200ms ease-out; }
+  .mg-day-win.on { background: var(--mg-cobalt); box-shadow: none; }
+  .mg-day-win.off { background: transparent; box-shadow: inset 0 0 0 1.5px var(--mg-line-2); }
+  .mg-day-lunch { position: absolute; top: 0; bottom: 0; display: grid; place-items: center; font-size: 0.8125rem; color: var(--mg-mute); }
+  .mg-day-bar { overflow: hidden; background: var(--mg-linen); }
+  .mg-day-solid, .mg-day-tail { position: absolute; top: 8px; bottom: 8px; transition: left 320ms var(--mg-ease), width 320ms var(--mg-ease); }
+  .mg-day-solid { left: calc(var(--from) * var(--hour)); width: calc(var(--len) * var(--hour)); border-radius: 6px 0 0 6px; background: var(--mg-ink); }
+  .mg-day-tail { left: calc((var(--from) + var(--len)) * var(--hour)); width: calc(2 * var(--hour)); border-radius: 0 6px 6px 0; background: repeating-linear-gradient(135deg, var(--mg-ink) 0 2px, transparent 2px 7px); opacity: 0.55; }
+  .mg-day-key { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 4px; font-size: 0.8125rem; color: var(--mg-soft); }
+  .mg-day-key span { display: inline-flex; align-items: center; gap: 8px; }
+  .mg-day-key i { width: 22px; height: 12px; border-radius: 3px; }
+  .mg-day-key .k-win { background: var(--mg-cobalt); }
+  .mg-day-key .k-solid { background: var(--mg-ink); }
+  .mg-day-key .k-tail { background: repeating-linear-gradient(135deg, var(--mg-ink) 0 2px, transparent 2px 6px); opacity: 0.7; box-shadow: inset 0 0 0 1px rgba(36, 34, 31, 0.3); }
+  /* a narrow day: every other hour label and no lunch label, so nothing collides */
+  @container (max-width: 520px) { .mg-day-hours span:nth-child(even), .mg-day-lunch { visibility: hidden; } }
+  .mg-day-out { max-width: 60ch; font-weight: 600; font-size: 1.0625rem; }
+  :global(:root[data-tier="3"]) :is(.mg-day-solid, .mg-day-tail, .mg-day-win) { transition: none; }
+
+  /* questions in a reading-width column, the receipt's stub beside them (sticky on wide screens, last on phones) */
+  .mg-faq-in { display: grid; gap: 48px 64px; }
+  @media (min-width: 1024px) { .mg-faq-in { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } .mg-stub-col { position: sticky; top: 96px; } }
+  .mg-faq-main { display: grid; gap: clamp(28px, 4vw, 40px); min-width: 0; max-width: 720px; }
+  .mg-faq-side { display: grid; gap: 14px; justify-items: start; }
+  .mg-faq-side h2 { max-width: 14ch; }
+  /* the stub: a short slip in the hero receipt's paper, torn top and bottom */
+  .mg-stub-col { width: 100%; max-width: 440px; min-width: 0; }
+  .mg-stub { gap: 16px; }
+  /* the header line of the hero receipt: a short label, and the range as it stands while the range line is off screen */
+  .mg-rc-peek { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+  .mg-rc-peek strong { color: var(--mg-ink); font-size: 1rem; font-weight: 620; font-variant-numeric: tabular-nums; }
+  .mg-rc-peek { transition: opacity 180ms ease-out; }
+  .mg-rc-peek.is-quiet { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .mg-rc-peek { transition: none; } }
+  .mg-stub-what { font-weight: 620; }
+  .mg-stub .mg-rc-total { margin-top: 0; }
+  .mg-stub-crew { font-size: 0.9375rem; color: var(--mg-soft); }
+  /* the questions sit between the dashed tear lines the receipts use; the toggle is an open ring until it is open */
+  .mg-faq-list { border-top: 1.5px dashed var(--mg-line-2); }
+  .mg-faq-item { border-bottom: 1.5px dashed var(--mg-line-2); }
+  .mg-faq-item summary { display: flex; justify-content: space-between; align-items: center; gap: 20px; min-height: 64px; padding: 14px 0; font-weight: 620; font-size: 1.0625rem; cursor: pointer; list-style: none; }
+  .mg-faq-item summary::-webkit-details-marker { display: none; }
+  .mg-faq-item summary::after { content: ""; flex: none; width: 28px; height: 28px; border-radius: 50%; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2324221f' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center / 14px no-repeat; box-shadow: inset 0 0 0 1.5px var(--mg-edge); transition: transform 220ms var(--mg-ease), background-color 160ms ease-out, box-shadow 160ms ease-out; }
+  .mg-faq-item summary:hover::after { background-color: var(--mg-oat); }
+  .mg-faq-item[open] summary::after { transform: rotate(45deg); background: var(--mg-cobalt) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fcfaf7' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center / 14px no-repeat; box-shadow: none; }
+  .mg-faq-item summary:focus-visible { outline: 3px solid var(--mg-cobalt); outline-offset: 2px; border-radius: 6px; }
+  .mg-faq-item p { max-width: 62ch; padding-bottom: 20px; color: var(--mg-soft); }
 </style>
 
 <script>
+  import { estimate, receipt, normalise, toQuery, hoursLabel, typicalSqft, summary, priceLabel, perLabel, CLEANS, FREQS, WINDOWS, type Clean } from "../../../lib/demo/mossgate-estimate";
+  import { usd, range } from "../../../lib/demo/money";
+  import { base } from "../../../data/demos/mossgate";
   import { tier } from "../../../lib/demo/tier";
 
-  // the hero's sparkles pause when it is scrolled away; the handle nudges once so the slider reads as a slider
-  const hero = document.querySelector<HTMLElement>("[data-hero]");
-  const range = hero?.querySelector<HTMLInputElement>("[data-ba-range]");
-  if (hero && range) {
-    let touched = false, raf = 0;
-    const stopNudge = () => { touched = true; cancelAnimationFrame(raf); };
-    for (const ev of ["pointerdown", "keydown", "focus"]) range.addEventListener(ev, stopNudge, { once: true });
-    const nudge = () => {
-      if (touched || tier() > 2) return;
-      const keys = [[0, 50], [500, 38], [1100, 62], [1600, 50]];
-      const t0 = performance.now();
-      const step = (now: number) => {
-        if (touched) return;
-        const t = now - t0;
-        const i = keys.findIndex(([at]) => at > t);
-        if (i < 0) { range.value = "50"; range.dispatchEvent(new Event("input")); return; }
-        const [a, va] = keys[i - 1], [b, vb] = keys[i];
-        const k = (t - a) / (b - a), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
-        range.value = String(va + (vb - va) * e);
-        range.dispatchEvent(new Event("input"));
-        raf = requestAnimationFrame(step);
-      };
-      raf = requestAnimationFrame(step);
+  const form = document.querySelector<HTMLFormElement>("[data-quick]");
+  const roomsEl = document.querySelector<HTMLElement>("[data-rooms]");
+  const whenEl = document.querySelector<HTMLElement>("[data-when]");
+  const stub = document.querySelector<HTMLElement>("[data-stub]");
+  const money = (n: number) => (n < 0 ? `−${usd(-n)}` : usd(n));
+  const people = (n: number) => `${n} cleaner${n > 1 ? "s" : ""}`;
+  const clock = (h: number) => {
+    const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+    return `${((hh + 11) % 12) + 1}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${hh >= 12 ? "pm" : "am"}`;
+  };
+  const startOf: Record<string, number> = { "8-10": 8, "10-12": 10, "1-3": 13, "3-5": 15 };
+  const rank: Record<Clean, number> = { standard: 0, deep: 1, movein: 2, moveout: 2 };
+
+  // rooms: tabs (arrow keys, Home and End move between them), built over the stacked lists the page starts with
+  if (roomsEl) {
+    const list = roomsEl.querySelector<HTMLElement>("[data-tabs]")!;
+    const tabs = [...list.querySelectorAll<HTMLButtonElement>("[role=tab]")];
+    const panels = tabs.map((t) => document.getElementById(t.getAttribute("aria-controls")!)!);
+    panels.forEach((p, i) => { p.setAttribute("role", "tabpanel"); p.setAttribute("aria-labelledby", tabs[i].id); p.tabIndex = 0; });
+    const select = (i: number, focus = false) => {
+      tabs.forEach((t, j) => { t.setAttribute("aria-selected", String(i === j)); t.tabIndex = i === j ? 0 : -1; panels[j].hidden = i !== j; });
+      if (focus) tabs[i].focus();
     };
-    let nudged = false;
-    new IntersectionObserver(([e]) => {
-      hero.classList.toggle("is-off", !e.isIntersecting);
-      if (e.isIntersecting && !nudged) { nudged = true; setTimeout(nudge, 900); }
-    }, { threshold: 0.4 }).observe(hero);
+    list.hidden = false;
+    select(0);
+    list.addEventListener("click", (ev) => { const t = (ev.target as Element).closest<HTMLButtonElement>("[role=tab]"); if (t) select(tabs.indexOf(t)); });
+    list.addEventListener("keydown", (ev) => {
+      const i = tabs.indexOf(document.activeElement as HTMLButtonElement);
+      if (i < 0) return;
+      const n = { ArrowRight: (i + 1) % tabs.length, ArrowLeft: (i - 1 + tabs.length) % tabs.length, Home: 0, End: tabs.length - 1 }[ev.key];
+      if (n === undefined) return;
+      ev.preventDefault();
+      select(n, true);
+    });
   }
 
-  // the example texts arrive one after another when the phone scrolls into view
-  const phone = document.querySelector<HTMLElement>("[data-phone]");
-  if (phone && tier() <= 2 && "IntersectionObserver" in window && phone.getBoundingClientRect().top > innerHeight) {
-    phone.classList.add("wait");
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { phone.classList.remove("wait"); io.disconnect(); } }, { threshold: 0.35 });
-    io.observe(phone);
+  // the rooms' ticks follow the receipt's clean
+  const showClean = (clean: Clean) => {
+    if (!roomsEl) return;
+    roomsEl.dataset.clean = clean;
+    const name = CLEANS[clean].name.toLowerCase();
+    roomsEl.querySelector("[data-clean-name]")!.textContent = name;
+    for (const g of roomsEl.querySelectorAll<HTMLElement>(".mg-group[data-level]")) {
+      const lv = g.dataset.level as Clean;
+      if (lv === "standard") continue;
+      const inside = rank[lv] <= rank[clean];
+      g.classList.toggle("is-in", inside);
+      g.classList.toggle("is-out", !inside);
+      g.querySelector("[data-incl]")!.textContent = inside ? "In your clean" : `Not in a ${name} clean`;
+    }
+  };
+
+  // the drawn day follows the receipt's hours and the chosen window
+  let last = estimate(normalise({}));
+  const showDay = (e = last) => {
+    if (!whenEl) return;
+    last = e;
+    const radios = [...whenEl.querySelectorAll<HTMLInputElement>("input[name=when]")];
+    for (const r of radios) r.disabled = e.morningOnly && !WINDOWS.find((w) => w.id === r.value)!.morning;
+    if (radios.find((r) => r.checked)?.disabled) radios[0].checked = true;
+    const pick = radios.find((r) => r.checked)!.value;
+    const start = startOf[pick];
+    const day = whenEl.querySelector<HTMLElement>("[data-day]")!;
+    day.style.setProperty("--from", String(start - 8));
+    day.style.setProperty("--len", String(e.hours));
+    for (const w of day.querySelectorAll<HTMLElement>("[data-win]")) {
+      w.classList.toggle("on", w.dataset.win === pick);
+      w.classList.toggle("off", radios.find((r) => r.value === w.dataset.win)!.disabled);
+    }
+    const label = WINDOWS.find((w) => w.id === pick)!.label;
+    whenEl.querySelector("[data-when-out]")!.textContent =
+      `Arriving ${label}: ${people(e.crew)} for about ${hoursLabel(e.hours)}, done between about ${clock(start + e.hours)} and ${clock(start + 2 + e.hours)}.`;
+    whenEl.querySelector<HTMLElement>("[data-when-morning]")!.hidden = !e.morningOnly;
+  };
+  whenEl?.addEventListener("change", () => showDay());
+
+  if (form) {
+    const lines = form.querySelector<HTMLElement>("[data-lines]")!;
+    const freqs = [...form.querySelectorAll<HTMLInputElement>("input[name=freq]")];
+    let shown = [...lines.children].map((d) => d.textContent);
+
+    const read = () => {
+      const f = new FormData(form);
+      const bed = Number(f.get("bed"));
+      return normalise({ home: f.get("home"), bed, bath: f.get("bath"), sqft: typicalSqft(bed), clean: f.get("clean"), freq: f.get("freq") });
+    };
+    const update = (glint: boolean) => {
+      // deep and move cleans are one-off visits, so only "One time" stays open for them
+      const clean = (new FormData(form).get("clean") as Clean) ?? "standard";
+      const repeat = CLEANS[clean]?.repeat ?? true;
+      for (const r of freqs) r.disabled = !repeat && r.value !== "once";
+      if (!repeat) freqs.find((r) => r.value === "once")!.checked = true;
+      form.querySelector<HTMLElement>("[data-once]")!.hidden = repeat;
+
+      const c = read(), e = estimate(c), rows = receipt(c);
+      const rowsEls = rows.map((r) => {
+        const d = document.createElement("div");
+        if (r.amount < 0) d.className = "neg";
+        const dt = document.createElement("dt"), dd = document.createElement("dd");
+        dt.textContent = r.label;
+        dd.textContent = money(r.amount);
+        d.append(dt, dd);
+        if (glint && !shown.includes(d.textContent)) d.classList.add("is-new");
+        return d;
+      });
+      lines.replaceChildren(...rowsEls);
+      shown = rowsEls.map((d) => d.textContent);
+      form.querySelector("[data-sum]")!.textContent = usd(rows.reduce((t, r) => t + r.amount, 0));
+      form.querySelector("[data-sum-label]")!.textContent = priceLabel(c.freq);
+      form.querySelector("[data-total]")!.textContent = range(e.low, e.high);
+      form.querySelector("[data-peek]")!.textContent = range(e.low, e.high);
+      form.querySelector("[data-meta]")!.textContent = `${people(e.crew)}, about ${hoursLabel(e.hours)} on site.`;
+      form.querySelector("[data-more]")!.textContent = repeat ? FREQS[c.freq].name : `One time, the only plan for a ${CLEANS[c.clean].name.toLowerCase()} clean`;
+      // the stub by the questions echoes the receipt, so the clean booked there is the clean priced here
+      if (stub) {
+        stub.querySelector("[data-stub-what]")!.textContent = summary(c);
+        stub.querySelector("[data-stub-per]")!.textContent = perLabel(c.freq);
+        stub.querySelector("[data-stub-total]")!.textContent = range(e.low, e.high);
+        stub.querySelector("[data-stub-crew]")!.textContent = `${people(e.crew)}, about ${hoursLabel(e.hours)} on site. Nothing is charged until the clean is done.`;
+      }
+      const q = toQuery(c);
+      for (const a of document.querySelectorAll<HTMLAnchorElement>("a[data-book]")) a.href = `${base}/book/?${q}`;
+      showClean(c.clean);
+      showDay(e);
+    };
+    form.addEventListener("change", () => update(true));
+    // "Change home type, size and extras" carries the answers to the full estimate as one link
+    form.addEventListener("submit", (ev) => { ev.preventDefault(); location.href = `${base}/estimate/?${toQuery(read())}`; });
+    update(false);
+
+    // print the receipt line by line the first time it scrolls into view (never when it is already on screen, so
+    // nothing that has been seen disappears)
+    const paper = form.querySelector<HTMLElement>("[data-print]")!;
+    if (tier() <= 2 && "IntersectionObserver" in window && paper.getBoundingClientRect().top > innerHeight) {
+      form.classList.add("is-waiting");
+      const io = new IntersectionObserver(([en]) => {
+        if (!en.isIntersecting) return;
+        io.disconnect();
+        form.classList.replace("is-waiting", "is-printing");
+        setTimeout(() => form.classList.remove("is-printing"), (lines.children.length + 2) * 65 + 400);
+      }, { threshold: 0.35 });
+      io.observe(paper);
+    }
+
+    // the header's running figure only while the range line itself is off screen, so the price never shows twice
+    const peek = form.querySelector<HTMLElement>(".mg-rc-peek")!;
+    const totalLine = form.querySelector<HTMLElement>(".mg-rc-total")!;
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(([en]) => peek.classList.toggle("is-quiet", en.isIntersecting), { threshold: 0.6 }).observe(totalLine);
+    }
   }
 </script>

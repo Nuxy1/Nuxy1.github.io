@@ -1,5 +1,6 @@
 ---
 import { titleCase } from "../../lib/title-case";
+import { noWidow } from "../../lib/no-widow";
 // Pricing, in the brief's order: the three bundles (#bundles), every service (#services), the optional monthly plans
 // (#plans, with #care, #automation-starter, #automation-growth, #automation-partner and the retired #automation-care),
 // custom projects (#custom) and the questions (#faq). Old homepage links (/#plans, /#faq, /#care...) land here
@@ -8,6 +9,7 @@ import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import PackageEstimator from "../../components/PackageEstimator.astro";
 import { groups, services, plans, planNote, planTerms, bundle, bundles, bundleMath, money, dollars, faqs, keep, retired, priceWords, statusWords, manageWords } from "../../data/services";
+import { billingCheckout, planAction, disclosure } from "../../data/billing";
 import type { IconName } from "../../components/Icon.astro";
 import type { Service, Variant } from "../../data/services";
 // (the lowest monthly plan and one-time price, from the data, so a price change follows into the description)
@@ -127,7 +129,7 @@ const compare: [string, string, string][] = [
             <li class="bundle" id={b.id}>
               <span class="bundle-icon"><Icon name={b.icon} /></span>
               <h3>{titleCase(b.name)}</h3>
-              <p class="plan-who">{b.who}</p>
+              <p class="plan-who">{noWidow(b.who)}</p>
               <p class="plan-price"><strong>{b.price}</strong> one-time</p>
               <p class="bundle-save">{money(m.separately)} separately: you save {money(m.save)}</p>
               <ul class="ticks" role="list">{b.includes.map((point) => <li><Icon name="check" />{point}</li>)}</ul>
@@ -189,10 +191,18 @@ const compare: [string, string, string][] = [
             {p.recommended && <span class="chip blue badge">For several automations</span>}
             <p class="plan-kind">{p.kind === "website" ? "Website" : "Automations"}</p>
             <h3>{titleCase(p.name)}</h3>
-            <p class="plan-who">{p.who}</p>
+            <p class="plan-who">{noWidow(p.who)}</p>
             <p class="plan-price"><strong>{p.amount}</strong> a month</p>
-            <ul class="ticks" role="list">{p.points.map((point) => <li><Icon name="check" />{point}</li>)}</ul>
-            <a class={`button wide${p.recommended ? "" : " secondary"}`} href={`/contact/?service=${p.id}`} data-track="plan_ask">Get a Free Quote<span class="sr-only">: {p.name}</span></a>
+            <ul class="ticks" role="list">{p.points.map((point) => <li><Icon name="check" />{noWidow(point)}</li>)}</ul>
+            {billingCheckout && planAction[p.id] ? (
+              <>
+                {/* The disclosure sits above the button, so every card's button lines up at the bottom. */}
+                {planAction[p.id].href.startsWith("/get-started/") && <p class="plan-bill">{disclosure}</p>}
+                <a class={`button wide${p.recommended ? "" : " secondary"}`} href={planAction[p.id].href} data-track={planAction[p.id].href.startsWith("/get-started/") ? "plan_start" : "plan_ask"}>{planAction[p.id].label}<span class="sr-only">: {p.name}</span></a>
+              </>
+            ) : (
+              <a class={`button wide${p.recommended ? "" : " secondary"}`} href={`/contact/?service=${p.id}`} data-track="plan_ask">Get a Free Quote<span class="sr-only">: {p.name}</span></a>
+            )}
           </li>
         ))}
       </ul>
@@ -337,6 +347,8 @@ const compare: [string, string, string][] = [
   .plan-price strong { margin-right: 4px; color: var(--ink); font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
   .plan .ticks { margin: 0 0 8px; padding: 14px 0 0; border-top: 1px solid var(--hairline-soft); color: var(--body); font-size: 0.9375rem; }
   .plan .button { margin-top: auto; }
+  .plan-bill { margin-top: auto; color: var(--muted); font-size: 0.8125rem; line-height: 1.45; }
+  .plan-bill + .button { margin-top: 0; }
   .plan-note { display: flex; gap: 10px; align-items: flex-start; max-width: 80ch; margin-top: 24px; color: var(--muted); font-size: 0.9375rem; }
   .plan-note :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
 

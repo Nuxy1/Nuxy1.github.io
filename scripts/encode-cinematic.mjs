@@ -7,6 +7,8 @@
 //       --blend fades the last half second into the first so the loop has no visible cut (0 for a master that
 //       already loops). Makes a 1280x720 and a 640x360 version (MP4, plus WebM when it is smaller) and two posters,
 //       which are the loop's first frame, so the video takes over from the picture without a jump.
+//       --phone-still <png> [--phone-rows 0.38:0.76]: screens under 1200px show this portrait still (the rows between
+//       the two fractions of its height) instead of any video; used where the composition is made for each shape.
 //   node scripts/encode-cinematic.mjs demo <id> <master> [--poster-at 1] [--captions file.vtt] [--vertical master]
 //       A portfolio demo with its sound. <id>: one of `demos` in src/data/creative.ts. --vertical adds a 9:16 cut
 //       that phones held upright get instead.
@@ -34,7 +36,7 @@ const { values: opt, positionals } = parseArgs({
   allowPositionals: true,
   options: {
     from: { type: "string", default: "0" }, length: { type: "string" }, blend: { type: "string", default: "0.5" },
-    "poster-at": { type: "string" }, captions: { type: "string" }, vertical: { type: "string" },
+    "poster-at": { type: "string" }, "phone-still": { type: "string" }, "phone-rows": { type: "string", default: "0.38:0.76" }, captions: { type: "string" }, vertical: { type: "string" },
     // (for trial runs and the tests: write somewhere other than the real site)
     out: { type: "string", default: join(root, "public", "media") },
     manifest: { type: "string", default: join(root, "src", "data", "cinematic-manifest.json") },
@@ -75,7 +77,7 @@ process.on("exit", () => { for (const t of temps) rmSync(t, { recursive: true, f
 const temp = (prefix) => { const t = mkdtempSync(join(tmpdir(), prefix)); temps.push(t); return t; };
 const nameOf = (src) => src.replace(/^\/media\//, "");
 const listed = (name) => ({ src: `/media/${name}`, bytes: statSync(join(dir, name)).size });
-const filesOf = (entry) => [entry.poster, entry.posterMobile, entry.captions, ...(entry.sources ?? []), ...(entry.mobile ?? []), ...(entry.vertical ? filesOf(entry.vertical) : [])].filter(Boolean);
+const filesOf = (entry) => [entry.poster, entry.posterMobile, entry.posterMobile?.phone, entry.captions, ...(entry.sources ?? []), ...(entry.mobile ?? []), ...(entry.vertical ? filesOf(entry.vertical) : [])].filter(Boolean);
 const fill = (w, h) => `scale=${w}:${h}:force_original_aspect_ratio=increase:flags=lanczos,crop=${w}:${h},setsar=1`;
 const round = (n) => Math.round(n * 100) / 100;
 
@@ -106,6 +108,24 @@ function sources(source, stem, [w, h], limit, crf) {
   return [{ ...mp4, type: "video/mp4" }];
 }
 
+// A still for screens under 1200px (the home hero has no room for copy and object side by side there): a band of a
+// portrait master, 1280 wide, held to the poster limit.
+function phoneStill(source, name) {
+  const [top, bottom] = opt["phone-rows"].split(":").map(Number);
+  if (!(top >= 0 && bottom <= 1 && bottom - top >= 0.2)) fail("--phone-rows is two fractions of the height, top:bottom, at least 0.2 apart");
+  const info = probe(source);
+  // two widths: 1280 for a tablet or narrow laptop window (the still spans it), 880 for a phone (a 390-440px screen at 2x
+  // draws 780-880px; Lighthouse flagged the 1280 file as ~20KB more than a phone needs). The picture picks by srcset.
+  const cut = (width, file) => {
+    const height = Math.round((info.height * (bottom - top) * width) / info.width / 2) * 2;
+    ffmpeg(["-i", source, "-frames:v", "1", "-vf", `crop=iw:ih*${bottom - top}:0:ih*${top},scale=${width}:${height}:flags=lanczos,setsar=1`, "-c:v", "libwebp", "-quality", "72", join(dir, file)]);
+    const out = listed(file);
+    if (out.bytes > LIMITS.poster) fail(`${file} is ${out.bytes} bytes (limit ${LIMITS.poster})`);
+    return { ...out, width, height };
+  };
+  return { ...cut(1280, name), phone: cut(880, name.replace(/\.webp$/, "-880.webp")) };
+}
+
 function loop(id, master) {
   if (!LOOPS.includes(id) && !opt["allow-id"]) fail(`not a loop the site has a place for: ${id} (${LOOPS.join(", ")})`);
   if (opt["poster-at"] !== undefined) fail("--poster-at is for demos; a loop's poster is its first frame");
@@ -128,10 +148,10 @@ function loop(id, master) {
     const entry = {
       width: 1280, height: 720, duration: round(probe(clean).duration), audio: false,
       poster: poster(clean, 0, `${stem}.webp`, 1280, 720),
-      posterMobile: poster(clean, 0, `${stem}-m.webp`, 640, 360),
       sources: sources(clean, stem, [1280, 720], LIMITS.loop, 27),
-      mobile: sources(clean, `${stem}-m`, [640, 360], LIMITS.loopMobile, 29),
     };
+    if (opt["phone-still"]) Object.assign(entry, { posterMobile: phoneStill(resolve(opt["phone-still"]), `${stem}-m.webp`), mobile: [], stillBelow: 1200 });
+    else Object.assign(entry, { posterMobile: poster(clean, 0, `${stem}-m.webp`, 640, 360), mobile: sources(clean, `${stem}-m`, [640, 360], LIMITS.loopMobile, 29) });
     return entry;
   }
 }

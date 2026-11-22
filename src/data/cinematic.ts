@@ -11,7 +11,9 @@ import listed from "./cinematic-manifest.json";
 
 export type MediaFile = { src: string; bytes: number };
 export type MediaSource = MediaFile & { type: string };
-export type Loop = { width: number; height: number; duration: number; audio: false; poster: MediaFile; posterMobile?: MediaFile; sources: MediaSource[]; mobile?: MediaSource[] };
+/** stillBelow: under this width the loop is a still (posterMobile, a composition made for that shape) and never plays;
+ *  without it, phones (640px and under) get the smaller video, or the full one when there is no smaller one */
+export type Loop = { width: number; height: number; duration: number; audio: false; poster: MediaFile; posterMobile?: MediaFile & { width?: number; height?: number; phone?: MediaFile & { width: number; height: number } }; sources: MediaSource[]; mobile?: MediaSource[]; stillBelow?: number };
 /** Optional dimensions describe the poster file itself, independently of the video's resolution. */
 export type DemoPoster = MediaFile & { width?: number; height?: number };
 /** posterMobile: the same frame in a smaller file, for a card that shows it as a thumbnail */

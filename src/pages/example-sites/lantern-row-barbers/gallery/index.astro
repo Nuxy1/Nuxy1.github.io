@@ -1,118 +1,153 @@
 ---
-// Lantern Row style book: nine drawn style examples (not photos of clients) with a filter by kind (fades, textured,
-// beard, classic). ?style=fades opens on that filter. Each card books the cut that makes the look with the barber
-// known for it. Without JavaScript every style shows and the filter stays hidden.
+// Lantern Row style book: nine styles in four chapters (fades, textured, beard, classic). Each chapter leads with one
+// style photo generated for this demo (never a client) and lists every style in it, with the cut, price and barber to
+// book. ?style=fades opens on that chapter. Without JavaScript every chapter shows and the filter stays hidden.
+// Every look carries its cut sheet: neck, sides and top (or neck, cheek and chin for a beard), each drawn as a brass
+// stem whose height is the square root of the length in millimetres, so a skin fade and a 4.5 in pompadour both read.
 import Shell from "../../../../components/demo/lantern/Shell.astro";
-import StyleArt from "../../../../components/demo/lantern/StyleArt.astro";
+import DemoPhoto from "../../../../components/demo/DemoPhoto.astro";
 import { base, gallery, styleNames, barberById, serviceById } from "../../../../data/demos/lantern";
 
+type Style = keyof typeof styleNames;
+const chapters = (Object.keys(styleNames) as Style[]).map((style) => {
+  const items = gallery.filter((g) => g.style === style);
+  return { style, items, lead: items.find((g) => g.photo) };
+});
 const filters = [["all", "All"], ...Object.entries(styleNames)] as [string, string][];
+const tallest = Math.max(...gallery.flatMap((g) => g.lengths.map(([, , mm]) => mm)));
+const stem = (mm: number) => `--h:${Math.round(Math.sqrt(mm / tallest) * 100)}%`;
 ---
-<Shell title="Style book" current="gallery" description="The Lantern Row style book: fades, textured cuts, beards and classic styles, drawn as illustrated examples, each with the cut and barber to book. A fictional shop.">
+<Shell title="Style book" current="gallery" description="The Lantern Row style book: fades, textured cuts, beards and classic styles, each with the cut and barber to book. A fictional shop.">
   <section class="lr-section lr-gal-top">
     <div class="lr-wrap">
       <div class="lr-head">
-        <p class="lr-kicker">Style book</p>
         <h1>Find the look. Book the cut.</h1>
         <p class="lr-lead">Show this page in the chair, or book the cut that makes it with the barber who does it best.</p>
-        <p class="lr-demo-note">Illustrated style examples, not photos of clients.</p>
+        <p class="lr-demo-note">The style photos were generated for this demo. None of them shows a client.</p>
       </div>
 
       <div class="lr-gal-bar" data-gal-bar>
-        <div class="lr-gal-filters" role="group" aria-label="Filter styles">
+        <div class="lr-gal-filters" role="group" aria-label="Show one group of styles">
           {filters.map(([k, v], i) => <button type="button" class="lr-gal-f" data-filter={k} aria-pressed={i === 0 ? "true" : "false"}>{v}</button>)}
         </div>
         <p class="lr-gal-count" data-gal-count aria-live="polite">{gallery.length} styles</p>
       </div>
+      <p class="lr-gal-key">Lengths are in clipper guards and inches: #1 is 3 mm, #2 is 6 mm, #3 is 10 mm, #4 is 13 mm.</p>
 
-      <ul class="lr-gal" role="list" data-gal>
-        {gallery.map((g, i) => {
-          const b = barberById[g.by], s = serviceById[g.service];
-          return (
-            <li class="lr-gal-item" data-style={g.style} style={`--i:${i}`}>
-              <article aria-labelledby={`g-${g.id}`}>
-                <div class="lr-gal-art"><StyleArt cut={g.cut} uid={`gal-${g.id}`} /></div>
-                <div class="lr-gal-copy">
-                  <p class="lr-label">{styleNames[g.style]}</p>
-                  <h2 id={`g-${g.id}`}>{g.name}</h2>
-                  <p>{g.note}</p>
-                  <p class="lr-gal-meta">{s.name}, ${s.price} · {b.name}</p>
-                  <a class="lr-link" href={`${base}/booking/?service=${g.service}&barber=${g.by}`}>Book this look<span class="sr-only">: {g.name} with {b.name}</span> <span aria-hidden="true">→</span></a>
-                </div>
-              </article>
-            </li>
-          );
-        })}
-      </ul>
-      <p class="lr-gal-empty" data-gal-empty hidden>No styles in this group yet.</p>
+      <div class="lr-book" data-gal>
+        {chapters.map(({ style, items, lead }) => (
+          <section class="lr-ch" data-style={style} aria-labelledby={`ch-${style}`}>
+            <h2 class="lr-ch-h" id={`ch-${style}`}>{styleNames[style]}</h2>
+            {lead && (
+              <figure class="lr-ch-fig">
+                <DemoPhoto name={lead.photo!} alt={`${lead.name}, the ${styleNames[style].toLowerCase()} style ${barberById[lead.by].name} is known for`} sizes="(min-width: 900px) 420px, min(520px, 100vw - 40px)" class="lr-ch-ph" />
+                <figcaption>Pictured: {lead.name.toLowerCase()}</figcaption>
+              </figure>
+            )}
+            <ul class="lr-ch-list" role="list">
+              {items.map((g) => {
+                const b = barberById[g.by], s = serviceById[g.service];
+                return (
+                  <li class="lr-look" id={g.id}>
+                    <h3>{g.name}</h3>
+                    <p>{g.note}</p>
+                    <dl class="lr-sheet">
+                      {g.lengths.map(([zone, said, mm]) => (
+                        <div style={stem(mm)}><dt>{zone}</dt><dd>{said}</dd></div>
+                      ))}
+                    </dl>
+                    <p class="lr-look-meta">{s.name}, ${s.price}, with {b.name}</p>
+                    <a class="lr-link" href={`${base}/booking/?service=${g.service}&barber=${g.by}`}>Book this look<span class="sr-only">: {g.name} with {b.name}</span></a>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
     </div>
   </section>
 
   <section class="lr-section lr-rule" aria-labelledby="band-h">
     <div class="lr-wrap">
-      <div class="lr-band lr-rise">
-        <p class="lr-kicker">Bring a picture</p>
+      <div class="lr-band lr-band-lamp">
         <h2 id="band-h">Not here? Show us yours.</h2>
         <p>Every cut starts with a consultation, so bring a photo of the look you want.</p>
-        <a class="lr-btn" href={`${base}/booking/`}>Book a chair</a>
+        <a class="lr-btn lr-btn-ox" href={`${base}/booking/`}>Book a chair</a>
+        <DemoPhoto name="lantern-tools" alt="" sizes="(min-width: 900px) min(1240px, 100vw - 40px), calc(100vw - 40px)" class="lr-band-ph" />
       </div>
     </div>
   </section>
 </Shell>
 
 <style>
-  .lr-gal-top { padding-top: clamp(40px, 6vw, 80px); }
+  .lr-gal-top { padding-top: clamp(40px, 6vw, 80px); padding-bottom: clamp(24px, 3vw, 40px); }
+  .lr-gal-key { margin-top: 14px; color: var(--lr-mute); font-size: 0.9375rem; text-wrap: pretty; }
   /* the filter bar holds its space from the first paint (no layout shift); it stays invisible, and out of the tab
      order, until the script wires it up, and without JS */
   .lr-gal-bar:not(.is-on) { visibility: hidden; }
-  .lr-gal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--lr-line); }
+  .lr-gal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 8px; padding-bottom: 20px; border-bottom: 1px solid var(--lr-line); }
   .lr-gal-filters { display: flex; flex-wrap: wrap; gap: 8px; }
-  .lr-gal-f { min-height: 44px; padding: 0 18px; border: 1px solid var(--lr-line); border-radius: 999px; background: transparent; color: var(--lr-soft); font: inherit; font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out; }
+  .lr-gal-f { min-height: 44px; padding: 0 18px; border: 1px solid var(--lr-line); border-radius: 2px; background: transparent; color: var(--lr-soft); font: inherit; font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out; }
   .lr-gal-f:hover { border-color: var(--lr-brass); color: var(--lr-cream); }
   .lr-gal-f[aria-pressed="true"] { background: var(--lr-brass); border-color: var(--lr-brass); color: var(--lr-bg); }
-  .lr-gal-f:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 3px; }
+  .lr-gal-f:focus-visible { outline: 2px solid var(--demo-ring); outline-offset: 3px; }
   .lr-gal-count { color: var(--lr-mute); font-size: 0.9375rem; }
 
-  .lr-gal { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
-  .lr-gal-item[hidden] { display: none; }
-  .lr-gal-item article { display: grid; height: 100%; background: var(--lr-panel); border: 1px solid var(--lr-line-soft); transition: border-color 220ms ease-out; }
-  .lr-gal-item article:hover { border-color: #6b5a3a; }
-  .lr-gal-art { display: grid; place-items: center; padding: 28px 28px 8px; background: radial-gradient(circle at 50% 40%, #241d15, transparent 70%); }
-  .lr-gal-art :global(.lr-style-art) { max-width: 220px; transition: transform 320ms var(--lr-ease); }
-  .lr-gal-item article:hover :global(.lr-style-art) { transform: scale(1.03) rotate(-0.6deg); }
-  .lr-gal-copy { display: grid; gap: 8px; align-content: start; padding: 20px 24px 26px; }
-  .lr-gal-copy h2 { font-size: 1.75rem; }
-  .lr-gal-copy > p:not(.lr-label) { color: var(--lr-soft); }
-  .lr-gal-copy .lr-gal-meta { color: var(--lr-mute); font-size: 0.875rem; }
-  .lr-gal-copy .lr-link { margin-top: 6px; justify-self: start; }
-  .lr-gal-empty { padding: 32px 0; color: var(--lr-mute); }
-  :global(:root[data-tier="1"]) .lr-gal.is-filtered .lr-gal-item:not([hidden]), :global(:root[data-tier="2"]) .lr-gal.is-filtered .lr-gal-item:not([hidden]) { animation: lr-gal-in 300ms var(--lr-ease) both; animation-delay: calc(var(--n, 0) * 40ms); }
-  @keyframes lr-gal-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
+  .lr-ch { display: grid; gap: 20px 0; padding: clamp(32px, 5vw, 64px) 0; border-bottom: 1px solid var(--lr-line-soft); scroll-margin-top: 96px; }
+  .lr-ch[hidden] { display: none; }
+  .lr-ch-h { font-size: clamp(3rem, 8vw, 6rem); line-height: 0.95; color: var(--lr-cream); }
+  .lr-ch-fig { display: grid; gap: 10px; width: min(420px, 100%); margin: 0; }
+  .lr-ch-fig :global(.lr-ch-ph) { aspect-ratio: 4 / 5; border: 1px solid var(--lr-line-soft); }
+  .lr-ch-fig figcaption { font-size: 0.9375rem; color: var(--lr-mute); }
+  .lr-ch-list { display: grid; align-content: start; }
+  .lr-look { display: grid; gap: 6px; justify-items: start; padding: 22px 0; border-top: 1px solid var(--lr-line-soft); scroll-margin-top: 96px; }
+  .lr-look:first-child { border-top: 0; padding-top: 4px; }
+  .lr-look h3 { font-family: "Bodoni Moda", Georgia, serif; font-weight: 500; font-size: clamp(1.5rem, 2.4vw, 1.875rem); line-height: 1.15; color: var(--lr-cream); }
+  .lr-look p { color: var(--lr-soft); max-width: 46ch; }
+  .lr-look .lr-look-meta { color: var(--lr-brass-2); font-size: 0.9375rem; }
+  .lr-look .lr-link { margin-top: 4px; }
+  .lr-ch:last-child { border-bottom: 0; padding-bottom: 0; }
+  /* the cut sheet: one brass stem per zone on a shared baseline, side by side so the three read as the cut's profile */
+  .lr-sheet { display: grid; grid-template-columns: repeat(3, 76px); column-gap: 4px; margin: 12px 0 8px; background: linear-gradient(var(--lr-line), var(--lr-line)) 0 56px / 100% 1px no-repeat; }
+  .lr-sheet div { display: grid; grid-template-rows: 56px auto auto; }
+  .lr-sheet div::before { content: ""; grid-row: 1; align-self: end; height: max(2px, var(--h)); background: linear-gradient(180deg, var(--lr-brass-2), var(--lr-brass) 55%, rgba(184, 146, 90, 0.5)); }
+  .lr-sheet dt { grid-row: 2; margin-top: 10px; font-size: 0.9375rem; color: var(--lr-mute); }
+  .lr-sheet dd { grid-row: 3; margin: 0; font-family: "Sofia XC", "Arial Narrow", sans-serif; font-weight: 700; font-size: 1.0625rem; letter-spacing: 0.02em; color: var(--lr-cream); }
+  @media (min-width: 900px) {
+    .lr-ch { grid-template-columns: 420px minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: clamp(40px, 6vw, 96px); align-items: start; }
+    .lr-ch-fig { grid-row: 1 / span 2; grid-column: 1; }
+    .lr-ch-h { grid-column: 2; }
+    .lr-ch-list { grid-column: 2; }
+    .lr-look { grid-template-columns: minmax(0, 1fr) auto; column-gap: clamp(28px, 4vw, 56px); }
+    .lr-look > * { grid-column: 1; }
+    .lr-look > .lr-sheet { grid-column: 2; grid-row: 1 / span 4; align-self: center; margin: 0; }
+  }
+  :global(:root[data-tier="1"]) .lr-book.is-filtered .lr-ch:not([hidden]), :global(:root[data-tier="2"]) .lr-book.is-filtered .lr-ch:not([hidden]) { animation: lr-ch-in 280ms var(--lr-ease) both; }
+  @keyframes lr-ch-in { from { opacity: 0; transform: translateY(8px); } }
 </style>
 
 <script>
-  const list = document.querySelector<HTMLElement>("[data-gal]");
+  const book = document.querySelector<HTMLElement>("[data-gal]");
   const bar = document.querySelector<HTMLElement>("[data-gal-bar]");
-  if (list && bar) {
-    const items = [...list.querySelectorAll<HTMLElement>("[data-style]")];
+  if (book && bar) {
+    const chapters = [...book.querySelectorAll<HTMLElement>("[data-style]")];
     const buttons = [...bar.querySelectorAll<HTMLButtonElement>("[data-filter]")];
     const count = bar.querySelector<HTMLElement>("[data-gal-count]")!;
-    const empty = document.querySelector<HTMLElement>("[data-gal-empty]")!;
     const keys = buttons.map((b) => b.dataset.filter!);
     const show = (key: string, animate = true) => {
       if (!keys.includes(key)) key = "all";
       buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filter === key)));
       let n = 0;
-      for (const it of items) {
-        const on = key === "all" || it.dataset.style === key;
-        it.hidden = !on;
-        if (on) it.style.setProperty("--n", String(n++));
+      for (const ch of chapters) {
+        const on = key === "all" || ch.dataset.style === key;
+        ch.hidden = !on;
+        if (on) n += ch.querySelectorAll(".lr-look").length;
       }
-      list.classList.remove("is-filtered");
-      if (animate) { void list.offsetWidth; list.classList.add("is-filtered"); }
+      book.classList.remove("is-filtered");
+      if (animate) { void book.offsetWidth; book.classList.add("is-filtered"); }
       const label = buttons.find((b) => b.dataset.filter === key)!.textContent;
       count.textContent = key === "all" ? `${n} styles` : `${n} ${n === 1 ? "style" : "styles"} in ${label}`;
-      empty.hidden = n > 0;
       const url = new URL(location.href);
       if (key === "all") url.searchParams.delete("style"); else url.searchParams.set("style", key);
       history.replaceState(history.state, "", url);

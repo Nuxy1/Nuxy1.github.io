@@ -11,5 +11,12 @@ export const gmail = (p?: Item) => "https://mail.google.com/mail/?" + query({ vi
 export const outlook = (p?: Item) => "https://outlook.live.com/mail/0/deeplink/compose?" + query({ to: inbox, subject: subject(p), body: body(p) });
 // The contact form's fallback when sending fails: the customer's own answers as an email, same "Setup request"
 // subject so it lands in the inbox like every other request.
+const sent = (answers: [string, string][]) =>
+  answers.filter(([, v]) => v.trim()).map(([k, v]) => (v.includes("\n") ? `${k}:\n${v}` : `${k}: ${v}`)).join("\n") + "\n";
 export const askWith = (answers: [string, string][], p?: Item) =>
-  `mailto:${inbox}?` + query({ subject: subject(p), body: answers.filter(([, v]) => v.trim()).map(([k, v]) => (v.includes("\n") ? `${k}:\n${v}` : `${k}: ${v}`)).join("\n") + "\n" });
+  `mailto:${inbox}?` + query({ subject: subject(p), body: sent(answers) });
+// (critique round 9) the same email in Gmail or Outlook on the web, for a computer with no email app
+export const gmailWith = (answers: [string, string][], p?: Item) =>
+  "https://mail.google.com/mail/?" + query({ view: "cm", fs: "1", to: inbox, su: subject(p), body: sent(answers) });
+export const outlookWith = (answers: [string, string][], p?: Item) =>
+  "https://outlook.live.com/mail/0/deeplink/compose?" + query({ to: inbox, subject: subject(p), body: sent(answers) });

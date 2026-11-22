@@ -13,26 +13,38 @@
 // depends on the footage: a "darken" layer caps every pixel at a dim slate on the right and at the page colour on
 // the left, where the headline is, so even a white frame stays darker than the limit the muted text needs (4.5:1).
 // Renders nothing at all (no box, no script) when the loop is not listed in data/cinematic-manifest.json.
+// A "view" loop with video also gets the visitor's own pause button (WCAG 2.2.2), outside the hidden box so it can be
+// reached. It stays hidden until the video really plays, so the still-only cases (phones, reduced motion, data saver,
+// no JavaScript) never show it.
 import { loopOf } from "../data/cinematic";
+import Icon from "./Icon.astro";
 
 // eager: the poster is in the first screen and is usually the biggest thing in it, so it is fetched ahead of the other
 // pictures (fetchpriority high); every other loop's poster is lazy and low.
 interface Props { id: string; mode?: "view" | "hover"; class?: string; /** the poster is in the first screen: load it with the page */ eager?: boolean; backdrop?: boolean }
 const { id, mode = "view", class: className, eager = false, backdrop = false } = Astro.props;
 const loop = loopOf(id);
+// (the width under which the small poster, and the small video or none, is used)
+const small = `(max-width: ${loop?.stillBelow ? loop.stillBelow - 1 : 640}px)`;
 ---
-{loop && (
-  <div class:list={["cine", { backdrop }, className]} data-cine={mode} data-sources={JSON.stringify(loop.sources)} data-mobile={loop.mobile ? JSON.stringify(loop.mobile) : undefined} aria-hidden="true">
+{loop && (<>
+  <div class:list={["cine", { backdrop }, className]} data-cine={mode} data-sources={JSON.stringify(loop.sources)} data-mobile={loop.mobile ? JSON.stringify(loop.mobile) : undefined} data-small={small} aria-hidden="true">
     <picture>
-      {loop.posterMobile && <source media="(max-width: 640px)" srcset={loop.posterMobile.src} />}
+      {/* (a still with a phone cut offers both widths: the still spans the screen, so the browser picks by screen width) */}
+      {loop.posterMobile && <source media={small} srcset={loop.posterMobile.phone ? `${loop.posterMobile.phone.src} ${loop.posterMobile.phone.width}w, ${loop.posterMobile.src} ${loop.posterMobile.width}w` : loop.posterMobile.src} sizes={loop.posterMobile.phone ? "100vw" : undefined} width={loop.posterMobile.width} height={loop.posterMobile.height} />}
       <img src={loop.poster.src} alt="" width={loop.width} height={loop.height} loading={eager ? "eager" : "lazy"} decoding="async" fetchpriority={eager ? "high" : "low"} />
     </picture>
     <video muted loop playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback width={loop.width} height={loop.height}></video>
   </div>
+  {mode === "view" && loop.sources.length > 0 && (
+    <button type="button" class:list={["cine-toggle", { "cine-toggle-backdrop": backdrop }]} data-cine-toggle aria-label="Pause background video" aria-pressed="false" hidden>
+      <span class="is-pause"><Icon name="pause" /></span><span class="is-play"><Icon name="play" /></span>
+    </button>
+  )}
   <script>
     import "../scripts/cinematic";
   </script>
-)}
+</>)}
 
 <style>
   .cine { position: relative; overflow: hidden; aspect-ratio: 16 / 9; background: var(--bg-2); }
@@ -41,6 +53,17 @@ const loop = loopOf(id);
   .cine video { opacity: 0; transition: opacity var(--dur-4) ease; pointer-events: none; }
   .cine:global(.on) video { opacity: 1; }
   @media print { .cine video { display: none; } }
+
+  /* the pause button: quiet, round, 44px (the site's touch size); on a backdrop it sits at the bottom right of the content column */
+  .cine-toggle:not([hidden]) { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-top: 8px; padding: 0; border: 1px solid var(--hairline-strong); border-radius: 50%; background: rgb(8 13 23 / 0.72); color: var(--ink); cursor: pointer; transition: border-color var(--dur-2, 200ms) ease, color var(--dur-2, 200ms) ease; }
+  .cine-toggle:hover { border-color: var(--link); color: #fff; }
+  .cine-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+  .cine-toggle.cine-toggle-backdrop { position: absolute; z-index: 2; margin: 0; right: max(16px, calc(50% - 600px + clamp(16px, 4vw, 40px))); bottom: clamp(16px, 2vw, 24px); }
+  .cine-toggle :global(.icon) { width: 18px; height: 18px; }
+  .cine-toggle .is-play, .cine-toggle[aria-pressed="true"] .is-pause { display: none; }
+  .cine-toggle[aria-pressed="true"] .is-play { display: contents; }
+  .cine-toggle .is-pause { display: contents; }
+  @media print { .cine-toggle { display: none !important; } }
 
   :global(.cine-host) { position: relative; isolation: isolate; }
   .cine.backdrop {
@@ -59,6 +82,9 @@ const loop = loopOf(id);
   @media (min-width: 1024px) {
     .cine.backdrop::after { background: linear-gradient(90deg, var(--bg) 0%, var(--bg) 34%, rgb(32 40 58) 78%); }
   }
+  /* dim: a lower cap, for footage whose shapes would compete with the words (the /automation/ spheres, critique round 11) */
+  .cine.backdrop.dim::after { background: rgb(20 26 40); }
+  @media (min-width: 1024px) { .cine.backdrop.dim::after { background: linear-gradient(90deg, var(--bg) 0%, var(--bg) 40%, rgb(22 28 42) 82%); } }
   /* (a stacked phone layout makes the section very tall: the picture keeps to the top of it, not stretched over all of it) */
   @media (max-width: 1023px) { .cine.backdrop { inset: 0 0 auto; height: min(100%, 600px); } }
   @media print { .cine.backdrop { display: none; } }

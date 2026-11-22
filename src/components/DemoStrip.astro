@@ -1,0 +1,60 @@
+---
+// The home page's concept demonstrations, as one strip of small pictures under the real client project (site audit
+// 2026-11-21, findings 2 and 11): the client's work leads, and four made-up businesses show the range of builds in
+// about a third of the height the full demo cards took on a phone. Each tile is the desktop picture, the demo's name
+// (a link to its Computer & Phone View, which is also the tile's hit area), the kind of business and, on a line of its
+// own so a narrow tile never cuts it, its website level.
+// The full cards, with what each demo includes and the link to open the demo itself, stay on /portfolio/ and /demos/.
+// The page around the strip says these are made-up businesses (the home page's kind label).
+import { demoSiteBySlug, shotSrcset } from "../data/demo-sites";
+import { levelById } from "../data/tiers";
+
+interface Props {
+  /** the demos to show, by slug, in this order */
+  only: string[];
+}
+const list = Astro.props.only.map((slug) => {
+  const d = demoSiteBySlug[slug];
+  if (!d) throw new Error(`DemoStrip: no demo site called “${slug}” in data/demo-sites.ts`);
+  return d;
+});
+// Two tiles a row on a phone, four from 900px, inside .wrap (max 1200px with its padding): 280px at most.
+const sizes = "(min-width: 1200px) 270px, (min-width: 900px) calc(25vw - 36px), calc(50vw - 28px)";
+---
+<ul class="strip" role="list">
+  {list.map((d) => (
+    <li class="strip-item reveal">
+      <span class="strip-shot">
+        <img src={`/images/examples/${d.slug}-desktop.webp`} srcset={shotSrcset(d.slug, "desktop")} sizes={sizes} alt="" width="800" height="500" loading="lazy" decoding="async" />
+      </span>
+      <h3 class="strip-name"><a href={`/examples/${d.slug}/`} data-track="example_open">{d.name}</a></h3>
+      <p class="strip-meta">{d.kind}<span class="sr-only">, </span><span class="strip-level">{levelById[d.tier].name} level</span></p>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; list-style: none; margin: 0; padding: 0; }
+  @media (min-width: 900px) { .strip { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; } }
+  .strip-item { position: relative; display: flex; flex-direction: column; gap: 4px; padding-bottom: 14px; border: 1px solid var(--hairline-strong); border-radius: var(--r-lg); background: var(--panel); overflow: hidden; transition: border-color 160ms ease-out; }
+  .strip-item:hover { border-color: var(--link); }
+  .strip-item:focus-within { border-color: var(--focus); }
+  /* the site's first screen, cut to 16:10 and kept to its top edge */
+  .strip-shot { display: block; aspect-ratio: 16 / 10; margin-bottom: 8px; border-bottom: 1px solid var(--hairline); background: var(--bg-2); overflow: hidden; }
+  .strip-shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .strip-name { padding-inline: 14px; font-size: 1rem; font-weight: 650; letter-spacing: -0.01em; line-height: 1.3; text-wrap: balance; }
+  .strip-name a { color: var(--ink); text-decoration: none; }
+  /* the name's link covers the whole tile */
+  .strip-name a::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+  .strip-name a:focus-visible { outline: none; }
+  .strip-name a:focus-visible::after { outline: 2px solid var(--focus); outline-offset: -2px; }
+  .strip-item:hover .strip-name a { text-decoration: underline; text-underline-offset: 3px; }
+  .strip-meta { padding-inline: 14px; color: var(--muted); font-size: 0.8125rem; line-height: 1.4; }
+  .strip-level { display: block; margin-top: 2px; color: var(--cyan); font-weight: 600; }
+  @media (hover: hover) and (pointer: fine) {
+    .strip-shot img { transition: transform 380ms var(--ease); }
+    .strip-item:hover .strip-shot img { transform: translateY(-3px) scale(1.02); }
+  }
+  @media (prefers-reduced-motion: reduce) { .strip-item, .strip-shot img { transition: none; } .strip-item:hover .strip-shot img { transform: none; } }
+  :global(html[data-motion="reduced"]) .strip-item:hover .strip-shot img { transform: none; }
+</style>

@@ -1,0 +1,94 @@
+---
+// Where Stripe Checkout sends the visitor back (agent src/billing/routes.js success_url / cancel_url, ?ref=NX-…).
+// Built only when data/billing.ts billingCheckout is on. Coming back proves nothing about the payment: only the
+// signed webhook (src/billing/webhook.js) marks a plan paid, so "thanks" says the payment is being confirmed and that
+// a receipt and a welcome email follow; it never says "paid". The page is static and can't look the reference up;
+// it shows it only when it has the right shape.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import { inbox } from "../../data/site";
+import { billingCheckout, selfServePlans } from "../../data/billing";
+import { plans } from "../../data/services";
+
+// "Website Care, $79 a month" for each plan sold online: the thanks page names the plan this tab checked out.
+const planLines = Object.fromEntries(
+  plans.filter((p) => (selfServePlans as readonly string[]).includes(p.id)).map((p) => [p.id, `${p.name}, ${p.amount} a month`]),
+);
+
+export function getStaticPaths() {
+  return billingCheckout ? [{ params: { page: "thanks" } }, { params: { page: "cancelled" } }] : [];
+}
+
+const { page } = Astro.params as { page: "thanks" | "cancelled" };
+const thanks = page === "thanks";
+---
+<Base title={thanks ? "Confirming your payment · Nuxy Automation" : "Checkout cancelled · Nuxy Automation"} description={thanks ? "Your checkout finished; the payment is being confirmed." : "Checkout was cancelled; nothing was charged."} noindex>
+  <div class="back">
+    <span class="badge"><Icon name={thanks ? "clock" : "arrowCounterClockwise"} /></span>
+    {thanks ? (
+      <>
+        <h1>Thanks, We’re Confirming Your Payment</h1>
+        <p class="lead">Stripe sent you back to us, which means checkout finished on their side.</p>
+        <p class="plan-line" hidden data-plan-line data-plans={JSON.stringify(planLines)}>Your plan: <strong data-plan></strong></p>
+        <h2 class="next-h">What happens next</h2>
+        <ol class="next" role="list">
+          <li><span class="n" aria-hidden="true">1</span><span>Stripe confirms the payment to us and emails your receipt. Your plan starts then.</span></li>
+          <li><span class="n" aria-hidden="true">2</span><span>We send a welcome email with the next steps.</span></li>
+          <li><span class="n" aria-hidden="true">3</span><span>You invite us as a user to your accounts, as that email explains. We never ask for a password.</span></li>
+        </ol>
+      </>
+    ) : (
+      <>
+        <h1>Checkout Cancelled</h1>
+        <p class="lead">You left checkout before paying, so nothing was charged and no plan has started.</p>
+        <p>Your answers are saved with us under the reference below. To try again, start the sign-up again (in the tab you checked out from, the button below fills your answers back in); the earlier checkout link only works once.</p>
+      </>
+    )}
+    <p class="ref-line" hidden data-ref-line>Your reference: <strong data-ref></strong></p>
+    <p>{thanks ? "No email within an hour? Check your spam folder, or email" : "Questions? Email"} <a class="mail" href={`mailto:${inbox}`}>{inbox}</a> with your reference.</p>
+    <p class="actions">
+      {thanks
+        ? <a class="button secondary" href="/"><Icon name="arrowLeft" />Back to the homepage</a>
+        : <a class="button" href="/pricing/#plans" data-back><Icon name="arrowLeft" /><span data-back-label>Back to the plans</span></a>}
+    </p>
+  </div>
+</Base>
+
+<style>
+  .back { display: grid; gap: 18px; justify-items: start; max-width: 720px; padding-block: clamp(24px, 6vw, 64px); }
+  .badge { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: rgb(var(--blue-rgb) / 0.14); color: var(--ink); }
+  /* Icon.astro injects the svg with set:html, out of reach of scoped selectors. */
+  .badge > :global(.icon) { width: 30px; height: 30px; }
+  .ref-line strong { font-family: var(--mono); color: var(--ink); }
+  .plan-line strong { color: var(--ink); }
+  .next-h { margin-top: 6px; font-size: 1.125rem; }
+  .next { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; max-width: 62ch; }
+  .next li { display: flex; gap: 12px; align-items: flex-start; color: var(--body); }
+  .next .n { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 50%; border: 1px solid var(--blue-line); color: var(--ink); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+  .next li > span:last-child { padding-top: 2px; }
+  .actions { margin-top: 8px; }
+  /* The email link is the way back to a person: vertical padding gives it a tall tap area without moving the line. */
+  .mail { padding-block: 12px; }
+</style>
+
+<script>
+  const ref = new URLSearchParams(location.search).get("ref") ?? "";
+  if (/^NX-[0-9A-F]{10}$/.test(ref)) {
+    document.querySelector("[data-ref]")!.textContent = ref;
+    (document.querySelector("[data-ref-line]") as HTMLElement).hidden = false;
+  }
+  // Answers the sign-up page kept for this tab when it opened checkout ([plan].astro). Paid: drop them. Cancelled:
+  // the button goes back to that plan's sign-up, which fills them in.
+  try {
+    const back = document.querySelector<HTMLAnchorElement>("[data-back]");
+    const kept = JSON.parse(sessionStorage.getItem("nuxy-signup") ?? "null");
+    const planLine = document.querySelector<HTMLElement>("[data-plan-line]");
+    const line = planLine && typeof kept?.plan === "string" ? (JSON.parse(planLine.dataset.plans ?? "{}") as Record<string, string>)[kept.plan] : "";
+    if (planLine && line) { planLine.querySelector("[data-plan]")!.textContent = line; planLine.hidden = false; }
+    if (!back) sessionStorage.removeItem("nuxy-signup");
+    else if (typeof kept?.plan === "string" && /^[a-z-]{1,40}$/.test(kept.plan) && Date.now() - kept.at < 3_600_000) {
+      back.href = `/get-started/${kept.plan}/`;
+      back.querySelector("[data-back-label]")!.textContent = "Back to your answers";
+    }
+  } catch { /* no storage: the button stays "Back to the plans" */ }
+</script>

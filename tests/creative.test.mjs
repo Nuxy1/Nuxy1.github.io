@@ -258,7 +258,7 @@ test("every counted button in the build has a name the counting service accepts,
 
 // ---- The video files. An entry here is a claim that a real, checked file is in public/: a missing or resized
 // file fails, and the three demos appear together or not at all (no half-built portfolio). ----
-const files = (entry) => [entry.poster, entry.posterMobile, entry.captions, ...(entry.sources ?? []), ...(entry.mobile ?? []), ...(entry.vertical ? files(entry.vertical) : [])].filter(Boolean);
+const files = (entry) => [entry.poster, entry.posterMobile, entry.posterMobile?.phone, entry.captions, ...(entry.sources ?? []), ...(entry.mobile ?? []), ...(entry.vertical ? files(entry.vertical) : [])].filter(Boolean);
 test("every video file the site lists exists and is the size the list says", () => {
   assert.deepEqual(Object.keys(manifest).sort(), ["demos", "loops"]);
   for (const [group, entries] of Object.entries(manifest))

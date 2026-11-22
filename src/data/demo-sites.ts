@@ -45,13 +45,13 @@ export const demoSites: DemoSite[] = [
     services: ["new-website", "quotes", "follow-up"],
     tier: "business",
     objective: "More quote requests in spring, and fewer calls to answer while the crew is out on jobs.",
-    direction: "Fresh greens on white, big photos of finished yards and plain, friendly words.",
+    direction: "Deep greens on ivory, big photos of finished yards and plain, friendly words.",
     technology: "For a client: built in their own Squarespace or Wix account, so they can edit it. This demonstration is coded to show the layout.",
     automation: "Quote requests saved and answered at once, with a follow-up if the customer goes quiet.",
     performance: "Light pages and compressed photos, with no heavy motion, so it opens fast on a phone signal.",
     mobile: "Call and text buttons stay in reach, and the quote form is one short column.",
     includes: ["Up to 4 pages: home, services, service area and quote", "A quote form with job type, yard size and photos", "Your Google Business Profile linked, and the local search basics", "One round of changes within 14 days of handover"],
-    capabilities: ["Interactive yard hero that reacts to the pointer", "Five-step quote estimator with a live price range", "Photo upload checked and previewed in the browser", "Before-and-after project sliders", "Service-area map with drive times", "Lead routing: CRM record, owner text, follow-up"],
+    capabilities: ["Season-by-season service calendar", "Five-step quote estimator with a live price range", "Photo upload checked and previewed in the browser", "Before-and-after project sliders", "Service-area map with drive times", "Lead routing: CRM record, owner text, follow-up"],
     cta: { label: "Build My Website", href: "/websites/" },
   },
   {
@@ -65,13 +65,13 @@ export const demoSites: DemoSite[] = [
     services: ["new-website", "booking", "reviews"],
     tier: "signature",
     objective: "Let clients book themselves while the chairs are full, and look like the best shop in the neighbourhood.",
-    direction: "A warm, lamplit palette, editorial type and layered photo sections with a craft feel.",
+    direction: "Charcoal, oxblood and cream with brass detail, editorial type and an opening sequence that sets the scene.",
     technology: "Custom-coded and published to hosting in the client’s name, with their booking tool connected.",
     automation: "Online booking with confirmations and reminders, and a review request after the cut.",
     performance: "Motion steps down on slower phones, and every photo is sized for the screen it lands on.",
     mobile: "The Book button stays in reach, and services and prices fit on one screen.",
     includes: ["A custom design direction, agreed before the build", "Services, barbers, gallery, booking and contact pages", "Premium motion: reveals, transitions and hover detail", "Two rounds on the design and one on the finished build"],
-    capabilities: ["Six-step booking with barbers, dates and open times", "Live “available today” board", "Cancellation waitlist", "Filterable style gallery", "Reminder texts and review requests after the visit"],
+    capabilities: ["Opening sequence that settles on the shop at dusk", "Six-step booking with barbers, dates and open times", "“Available today” board with demo open times", "Cancellation waitlist", "Filterable style gallery", "Reminder texts and review requests after the visit"],
     cta: { label: "Automate My Business", href: "/automation/" },
   },
   {
@@ -91,7 +91,7 @@ export const demoSites: DemoSite[] = [
     performance: "Small pages and calm motion that never gets between a visitor and the price.",
     mobile: "The price range and the request form work with one thumb.",
     includes: ["Up to 4 pages: home, services, pricing and booking", "A price range by home size", "A booking request with preferred days", "One round of changes within 14 days of handover"],
-    capabilities: ["Before-and-after room slider", "Instant estimate by home size, clean type and extras", "Room-by-room checklist", "Arrival-window scheduler that carries the estimate", "Confirmation, reminder and invoice automation"],
+    capabilities: ["Instant estimate by home size, clean type and extras", "Room-by-room checklist", "Arrival-window scheduler that carries the estimate", "Confirmation, reminder and invoice automation"],
     cta: { label: "Automate My Business", href: "/automation/" },
   },
   {
@@ -107,14 +107,15 @@ export const demoSites: DemoSite[] = [
     services: ["online-shop", "store", "email-list"],
     tier: "signature",
     objective: "Sell online with shipping and local pickup, not just at weekend markets, and feel as handmade as the candles.",
-    direction: "Warm paper tones, still-life photography and a quiet, editorial shop layout.",
+    direction: "Ivory and parchment with copper detail, botanical still lifes and a quiet, editorial shop layout.",
     technology: "For a client: a custom-designed theme on their own Shopify store, so orders, stock and payments stay in Shopify.",
     automation: "Order and pickup emails, a back-in-stock list and a welcome email for new subscribers.",
     performance: "Product photos sized for each screen, and the cart stays quick with any number of items.",
     mobile: "Filters, sizes and the cart are built for a phone first.",
     includes: ["A custom shop design and product pages", "Collections, filters, scent notes and sizes", "Shipping and local pickup explained before checkout", "Two rounds on the design and one on the finished build"],
-    capabilities: ["WebGL candle flame with a still fallback", "Product pages with scent profiles", "Cart that persists in the browser", "Five-step checkout demo (no card taken)", "Order confirmation, stock and email automation"],
-    cta: { label: "Build My Store", href: "/ecommerce/" },
+    capabilities: ["A hero candle that lights itself, still under reduced motion", "Product pages with scent profiles", "Cart that persists in the browser", "Three-step checkout demo (no card taken)", "Order confirmation, stock and email automation"],
+    // (a Signature store: the quote form opens on "Online store" at the Signature level, not the Online shop's price)
+    cta: { label: "Build My Store", href: "/contact/?want=shopify&level=signature" },
   },
   {
     // The Immersive concept (website levels brief): a made-up speaker brand, its page built with Three.js. Names
@@ -141,6 +142,12 @@ export const demoSites: DemoSite[] = [
 ];
 
 export const demoSiteBySlug = Object.fromEntries(demoSites.map((d) => [d.slug, d]));
+
+// The services a demo lists beside its price. A Signature or Immersive demo is the website itself, priced by its level,
+// so it never also lists the Business website ($900) or the Business shop ($1,200): that read as the price of the
+// demo (critique 11-17). The automations it shows keep their own prices on every level.
+const businessOnly = new Set(["new-website", "online-shop"]);
+export const listedServices = (d: DemoSite) => (d.tier === "business" ? d.services : d.services.filter((id) => !businessOnly.has(id)));
 
 // Screenshot widths in public/images/examples/ (scripts/example-shots.mjs makes them from the demo pages). The widest
 // keeps the plain name (<slug>-desktop.webp); the others add their width (<slug>-desktop-400.webp). Pages list them all

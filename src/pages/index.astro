@@ -1,39 +1,40 @@
 ---
 import { titleCase } from "../lib/title-case";
-// Homepage (website improvement brief, 2026-11), in the order a visitor decides: what Nuxy does in three categories,
-// the four website levels with their prices, the concept demonstrations, the automations working, the five steps,
-// handover in short, one trust band, the first questions and one next step. The goal picker and the price estimator
-// have their own pages (/automation/ and /pricing/) and are linked from under the demos; the full handover account is
-// on /handover/ (approvals 87, owner's yes 2026-11-13).
+import { noWidow } from "../lib/no-widow";
+// Homepage, in the order of the owner's site audit brief (2026-11-21, which replaces the 11-17 "real work straight after
+// the hero"): hero, the three kinds of work with their starting prices, real work (the client project, then a strip of
+// concept demonstrations), the four website levels, one automation demo, why Nuxy, the handover steps and one next
+// step. To keep the page short on a phone (audit finding 2), the video teasers, the first questions and the two ways to
+// own the site left home: the Creative Studio, /pricing/#faq and /handover/ carry them, each linked from here.
+// (2026-11-17: the five steps of a job left home too; /about/#how-we-work has them, linked from the handover.) The goal
+// picker and the price estimator have their own pages (/automation/ and /pricing/) and are linked from under the demo
+// (approvals 87, owner's yes 2026-11-13).
 // Services and prices come from data/services.ts and data/tiers.ts; nothing on this page is a client result. Section
 // ids avoid the old one-page anchors that Base.astro forwards (any service, plan or bundle id, "services", "plans",
 // "faq", "work", ...), or the forwarding script would send the visitor away.
 import Base from "../layouts/Base.astro";
 import Icon from "../components/Icon.astro";
-import AutomationCore from "../components/AutomationCore.astro";
 import CinematicLoop from "../components/CinematicLoop.astro";
 import AutopilotDemos from "../components/AutopilotDemos.astro";
-import DemoSites from "../components/DemoSites.astro";
+import DemoStrip from "../components/DemoStrip.astro";
 import CaseStudy from "../components/CaseStudy.astro";
-import VideoTeasers from "../components/VideoTeasers.astro";
 import LevelRail from "../components/levels/LevelRail.astro";
-import { demos as videoDemos } from "../data/creative";
-import { demosReady } from "../data/cinematic";
-import { steps, services, plans, health, faqs, areas, automationFrom, dollars, money, variantById } from "../data/services";
-import { callbackForm, inbox, shownCases, isStaged, replacedDemos } from "../data/site";
-import { arrangements, handoverSteps } from "../data/handover";
+import { services, plans, health, areas, automationFrom, dollars, money, variantById } from "../data/services";
+import { callbackForm, inbox, shownCases, isStaged } from "../data/site";
+import { handoverSteps } from "../data/handover";
 import type { IconName } from "../components/Icon.astro";
 
-// the home page links to the video portfolio only when all three demo videos have real, checked files
-const hasVideos = demosReady(videoDemos.map((d) => d.id));
 // a client project reaches the page only with written consent and its checks (data/case-studies.ts): Chrysfadezzz since 13 Nov 2026. The
 // stage build also shows a project still waiting on that consent, marked "Staged preview" (shownCases, isStaged).
 const clients = shownCases;
 const hasClients = clients.length > 0;
 const anyStaged = clients.some((c) => isStaged(c));
-// the video demos shown: one that a client project replaces is left out (VideoTeasers does the same)
-const videoCount = videoDemos.filter((d) => !replacedDemos.has(d.id)).length;
-const videoWord = ["no", "one", "two", "three", "four", "five", "six"][videoCount] ?? String(videoCount);
+// The concept demonstrations in the strip: one per kind of build (two Business sites, the Signature store, the Immersive
+// concept). The made-up barber stays off the home page beside the real one (critique 11-17: both in black and gold, a
+// skimming visitor merged them); /portfolio/ shows all five.
+const concepts = hasClients
+  ? ["fernway-lawn", "mossgate-cleaning", "quillfern-candles", "halvane-audio"]
+  : ["fernway-lawn", "lantern-row-barbers", "quillfern-candles", "halvane-audio"];
 
 // The cheapest and dearest one-time prices, for search engines' price range: read from the price list so it can't drift.
 const oneTime = services.flatMap((s) => [s, ...(s.variants ?? [])]).map((s) => dollars(s.price)).filter(Boolean);
@@ -50,36 +51,27 @@ const startPrices: { text: string; href?: string }[] = [
 
 // The three kinds of work. Every service in the catalogue sits under one of them, and each card's price is the
 // smallest published price in that kind. The security page is linked once on this page, from the third card.
-type Category = { icon: IconName; title: string; text: string; price: string; href: string; cta: string; track: string; more: [string, string][] };
+// (critique 11-17: the cards lost their chip rows; one link each, and the menu and the pages carry the rest)
+type Category = { icon: IconName; title: string; text: string; price: string; href: string; cta: string; track: string };
 const categories: Category[] = [
   { icon: "browser", title: "Websites & Digital Experiences",
     text: "A website sized to your business, from a clear one-page site to a custom interactive experience. Also online stores, and redesigns of the site you already have.",
-    price: `Websites from ${websiteFrom}, one-time`, href: "/web-design/", cta: "Compare website levels", track: "cta_cat_websites",
-    more: [["Business websites", "/websites/"], ["Online stores", "/ecommerce/"], ["Website redesigns", "/websites/#redesign"]] },
+    price: `Websites from ${websiteFrom}, one-time`, href: "/web-design/", cta: "Compare website levels", track: "cta_cat_websites" },
   { icon: "lightning", title: "AI & Business Automation",
     text: "Every inquiry answered and followed up, calls picked up by an AI receptionist, bookings and reminders sent for you, and the tools you already use connected.",
-    price: `One-time setups from ${automationFrom}`, href: "/automation/", cta: "See automation services", track: "cta_cat_automation",
-    more: [["AI Voice Receptionist", "/automation/#voice"], ["Lead response and follow-up", "/automation/#lead-response"], ["Monthly automation plans", "/pricing/#plans"]] },
+    price: `One-time setups from ${automationFrom}`, href: "/automation/", cta: "See automation services", track: "cta_cat_automation" },
   { icon: "shieldCheck", title: "Website Care & Security",
     text: `A ${health[0].price.toLowerCase()} website health consultation, monthly care that keeps a website working, repairs when it doesn’t, and security assessments done only with the owner’s written authorization.`,
-    price: `${care.name} ${care.price}, optional`, href: "/website-security/", cta: "See care, repairs and security", track: "cta_home_security",
-    more: [["Website Care plan", `/pricing/#${care.id}`], ["How handover works", "/handover/"]] },
+    price: `${care.name} ${care.price}, optional`, href: "/website-security/", cta: "See care, repairs and security", track: "cta_home_security" },
 ];
 
 // Easy handover: three steps, each said only in words the published terms already use (data/services.ts `steps`,
 // /websites/#ownership and /policies/). Nothing here describes the client portal, which is not open to customers.
-// The first questions an owner asks, taken word for word from the price list's questions (/pricing/#faq has them all).
-const firstQuestions = ["Who owns what you build?", "Do I have to sign up for a monthly plan?", "What if something breaks after launch?", "How do I pay?", "Do we need to get on a call?", "Can you promise more customers or a top Google ranking?"];
-const homeFaqs = firstQuestions.map((q) => {
-  const found = faqs.find(([question]) => question === q);
-  if (!found) throw new Error(`home page: no published answer for “${q}” in data/services.ts`);
-  return found;
-});
 
 // The one trust band: each line is a published term (/policies/, /websites/#ownership), said once on this page.
 const trust: { icon: IconName; title: string; text: string }[] = [
   { icon: "receipt", title: "Clear Pricing", text: "You see the price before work starts." },
-  { icon: "lockSimple", title: "Your Accounts", text: "Your website, domain and tools remain yours." },
+  { icon: "lockSimple", title: "Your Accounts", text: "Your website, domain and tools stay yours." },
   { icon: "checkCircle", title: "Tested Before Launch", text: "Everything is tested before handover." },
   { icon: "handshake", title: "No Long Contracts", text: "Monthly management is optional." },
   { icon: "userCircle", title: "Direct Support", text: "You work directly with the person building your system." },
@@ -125,16 +117,15 @@ const business = {
     <CinematicLoop id="hero" backdrop eager />
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow">Websites, automation & website care · Faribault, MN</p>
-        <h1><span>Build Smarter.</span> <span>Grow Faster.</span></h1>
-        <p class="hero-lead">Premium websites, intelligent automation and dependable digital systems, built around your business. Clear prices in writing, and everything set up in your own accounts.</p>
+        <p class="eyebrow">Websites, automation & website care<span class="ey-sep"> · </span><span class="ey-place">Faribault, MN</span></p>
+        <h1><span>Websites That Stand Out.</span> <span>Systems That Save You Time.</span></h1>
+        <p class="hero-lead">Custom websites and practical automation built around your business. Clear prices in writing, and everything set up in your own accounts.</p>
         <div class="hero-actions">
           <a class="button" href="/contact/" data-track="cta_hero">Get a Free Quote<Icon name="arrowRight" /></a>
           <a class="button secondary" href="#portfolio" data-track="cta_explore_work">Explore Our Work</a>
         </div>
         <div class="hero-price-clip"><ul class="hero-price" aria-label="Starting prices">{startPrices.map((p) => <li>{p.href ? <a href={p.href}>{p.text}</a> : p.text}</li>)}</ul></div>
       </div>
-      <AutomationCore />
     </div>
   </section>
 
@@ -148,32 +139,39 @@ const business = {
       <div class="grid-3">
         {categories.map((c) => (
           <article class="prim cat reveal">
-            <span class="prim-icon"><Icon name={c.icon} /></span>
-            <h3>{titleCase(c.title)}</h3>
+            <div class="prim-head"><span class="prim-icon"><Icon name={c.icon} /></span><h3>{titleCase(c.title)}</h3></div>
             <p>{c.text}</p>
-            <ul class="cat-more" role="list">
-              {c.more.map(([label, href]) => <li><a href={href}>{label}</a></li>)}
-            </ul>
             <p class="prim-price">{c.price}</p>
             <a class="text-link" href={c.href} data-track={c.track}>{c.cta}<Icon name="arrowRight" /></a>
           </article>
         ))}
       </div>
       <p class="more"><a class="text-link" href="/solutions/" data-track="cta_services">See all {services.length} services<Icon name="arrowRight" /></a></p>
-      {!hasVideos && (
-        <p class="note also-note"><Icon name="filmSlate" /><span>Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person.</span></p>
-      )}
-      {hasVideos && (
-        <div class="home-video">
-          <VideoTeasers level={3} headingId="home-video-h" title={`We Also Make Video: ${titleCase(videoWord)} Concept Demonstration${videoCount === 1 ? "" : "s"}`}>
-            <p slot="intro">Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person. {videoCount === 1 ? "This one is for a made-up brand: open it to watch it." : `These ${videoWord} are for made-up brands: open one to watch it.`}</p>
-          </VideoTeasers>
-        </div>
-      )}
+      <p class="note also-note"><Icon name="filmSlate" /><span>Need a video for your business? We also make <a href="/creative-studio/" data-track="cta_home_creative">short video ads, moving menus and product showcases</a>, made with AI video tools and finished by a person.</span></p>
     </div>
   </section>
 
-  <section class="section band" id="website-levels" aria-labelledby="levels-h">
+  <section class="section band" id="portfolio" aria-labelledby="portfolio-h">
+    <div class="wrap">
+      <div class="web-head">
+        <div class="section-head">
+          <p class="eyebrow">Our work</p>
+          <h2 id="portfolio-h">{hasClients ? "Client Projects and Concept Demonstrations" : "Concept Demonstrations: Real Websites for Made-Up Businesses"}</h2>
+          <p>{hasClients
+            ? `Real client work first, ${anyStaged ? "published only once the client approves in writing" : "shown with permission"}. After it, concept demonstrations: websites for made-up businesses that you can open and try.`
+            : "None of them is a client project. They are websites and an online store built to show what Nuxy can build. Open one to try it at full size, on a computer or a phone."}</p>
+        </div>
+        <div class="web-actions">
+          <a class="button secondary" href="/portfolio/" data-track="cta_portfolio">See All Our Work<Icon name="arrowRight" /></a>
+        </div>
+      </div>
+      {hasClients && <div class="cases">{clients.map((c) => <CaseStudy study={c} />)}</div>}
+      <p class="kind-label"><Icon name="info" /><span><strong>Concept demonstrations</strong> · made-up businesses, built to show what Nuxy can build. Open one to see it on a computer and a phone.</span></p>
+      <DemoStrip only={concepts} />
+    </div>
+  </section>
+
+  <section class="section" id="website-levels" aria-labelledby="levels-h">
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Website levels and prices</p>
@@ -182,30 +180,11 @@ const business = {
       </div>
       <LevelRail compact />
       <p class="more">
-        <a class="button" href="/web-design/" data-track="cta_levels_compare">Compare Website Levels<Icon name="arrowRight" /></a>
-        <a class="button secondary" href="/contact/" data-track="cta_tiers_quote">Get a Free Quote</a>
-        <a class="text-link" href="/pricing/" data-track="cta_pricing_preview">See all pricing<Icon name="arrowRight" /></a>
+        {/* (site audit 2026-11-21, critique round 3) the quote is this section's one filled button, as in the others.
+            (critique round 5) two ways on, not three: "See all pricing" went, Pricing is in the menu on every page */}
+        <a class="button" href="/contact/" data-track="cta_tiers_quote">Get a Free Quote</a>
+        <a class="button secondary" href="/web-design/" data-track="cta_levels_compare">Compare Website Levels<Icon name="arrowRight" /></a>
       </p>
-    </div>
-  </section>
-
-  <section class="section" id="portfolio" aria-labelledby="portfolio-h">
-    <div class="wrap">
-      <div class="web-head">
-        <div class="section-head">
-          <p class="eyebrow">{hasClients ? "Our work · real clients and concept demonstrations" : "Our work · concept demonstrations"}</p>
-          <h2 id="portfolio-h">{hasClients ? "Client Projects and Concept Demonstrations" : "Concept Demonstrations: Real Websites for Made-Up Businesses"}</h2>
-          <p>{hasClients
-            ? `The client projects come first: real businesses, ${anyStaged ? "published only once each client approves in writing" : "shown with their permission"}. The concept demonstrations after them are websites and an online store for made-up businesses, built to show what Nuxy can build. Open one to try it at full size, on a computer or a phone.`
-            : "None of them is a client project. They are websites and an online store built to show what Nuxy can build. Open one to try it at full size, on a computer or a phone."}</p>
-        </div>
-        <div class="web-actions">
-          <a class="button secondary" href="/portfolio/" data-track="cta_portfolio">See the full portfolio<Icon name="arrowRight" /></a>
-        </div>
-      </div>
-      {hasClients && <div class="cases">{clients.map((c) => <CaseStudy study={c} />)}</div>}
-      {hasClients && <p class="kind-label"><Icon name="info" /><span><strong>Concept demonstrations</strong> · made-up businesses, built to show what Nuxy can build</span></p>}
-      <DemoSites />
     </div>
   </section>
 
@@ -215,47 +194,6 @@ const business = {
       <li><a class="tool" href="/pricing/#package" data-track="cta_home_estimator"><span class="tool-name">Build Your Automation Package</span><span class="tool-text">Choose what your business needs and see an estimated starting price.</span><Icon name="arrowRight" /></a></li>
     </ul>
   </AutopilotDemos>
-
-  <section class="section" id="how" aria-labelledby="how-h">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">How it works</p>
-        <h2 id="how-h">Five Steps, All in Writing</h2>
-        <p>No sales call and no long contract. Nothing is charged until you agree to the written plan.</p>
-      </div>
-      <ol class="steps">
-        {steps.map((s, i) => (
-          <li class="step reveal">
-            <span class="step-num" aria-hidden="true">{i + 1}</span>
-            <h3><span class="sr-only">Step {i + 1}: </span>{titleCase(s.title)}</h3>
-            <p>{s.text}</p>
-          </li>
-        ))}
-      </ol>
-    </div>
-  </section>
-
-  <section class="section band" id="handover" aria-labelledby="handover-h">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Easy handover</p>
-        <h2 id="handover-h">Your Website. Your Control. None of the Technical Headaches.</h2>
-        <p>From getting your website online to connecting your business tools, Nuxy helps make the complicated parts simple. We guide you through the decisions that matter and handle the technical work covered by your project.</p>
-      </div>
-      <ol class="ho-steps">
-        {handoverSteps.map((s, i) => <li class="ho-step"><span class="ho-num" aria-hidden="true">{i + 1}</span>{s.title}</li>)}
-      </ol>
-      <dl class="ho-ways">
-        {arrangements.map((a) => (
-          <div class="ho-way">
-            <dt>{a.title}</dt>
-            <dd><span class="ho-tag">{a.tag}</span>{a.text}</dd>
-          </div>
-        ))}
-      </dl>
-      <p class="more"><a class="button secondary" href="/handover/" data-track="cta_handover">How Handover Works<Icon name="arrowRight" /></a></p>
-    </div>
-  </section>
 
   <section class="section" id="why-nuxy" aria-labelledby="why-h">
     <div class="wrap">
@@ -268,29 +206,25 @@ const business = {
           <li class="reveal">
             <Icon name={t.icon} />
             <h3>{titleCase(t.title)}</h3>
-            <p>{t.text}</p>
+            <p>{noWidow(t.text)}</p>
           </li>
         ))}
       </ul>
-      <p class="trust-foot"><Icon name="mapPin" /><span>Based in Faribault, Minnesota. We work with businesses in {areas.slice(0, -2).join(", ")}, {areas.at(-2)} and {areas.at(-1)}, and remotely anywhere in the US. <a href="/about/">About Nuxy</a> · <a href="/policies/">Our written policies</a></span></p>
+      <p class="trust-foot"><Icon name="mapPin" /><span>Based in Faribault, Minnesota. We work with businesses in {areas.slice(0, -2).join(", ")}, {areas.at(-2)} and {areas.at(-1)}, and remotely anywhere in the US. <a href="/about/">About Nuxy</a> · <a href="/policies/">Our written policies</a> · <a href="/pricing/#faq">Questions about prices and paying</a></span></p>
     </div>
   </section>
 
-  <section class="section band" id="home-faq" aria-labelledby="home-faq-h">
-    <div class="wrap faq-wrap">
+  <section class="section band" id="handover" aria-labelledby="handover-h">
+    <div class="wrap">
       <div class="section-head">
-        <p class="eyebrow">Questions</p>
-        <h2 id="home-faq-h">What Owners Ask First</h2>
+        <p class="eyebrow">Easy handover</p>
+        <h2 id="handover-h">Your Website. Your Control. <span class="nw-line">None of the Technical Headaches.</span></h2>
+        <p>From getting your website online to connecting your business tools, Nuxy helps make the complicated parts simple. We guide you through the decisions that matter and handle the technical work covered by your project. No sales call and no long contract: nothing is charged until you agree to the written plan (<a href="/about/#how-we-work">how a job runs</a>).</p>
       </div>
-      <div class="faq">
-        {homeFaqs.map(([q, a]) => (
-          <details>
-            <summary><span>{q}</span><Icon name="plus" /></summary>
-            <p>{a}</p>
-          </details>
-        ))}
-      </div>
-      <p class="more"><a class="text-link" href="/pricing/#faq">All questions about prices and paying<Icon name="arrowRight" /></a></p>
+      <ol class="ho-steps" role="list">
+        {handoverSteps.map((s, i) => <li class="ho-step"><span class="ho-num" aria-hidden="true">{i + 1}</span><span class="ho-body"><span class="ho-title">{s.title}</span><span class="ho-line">{s.text.split(/(?<=\.)\s/)[0]}</span></span></li>)}
+      </ol>
+      <p class="more"><a class="button secondary" href="/handover/" data-track="cta_handover">How Handover Works<Icon name="arrowRight" /></a></p>
     </div>
   </section>
 
@@ -302,6 +236,9 @@ const business = {
         <a class="button" href="/contact/" data-track="cta_final">Get a Free Quote<Icon name="arrowRight" /></a>
         {callbackForm && <a class="final-mail" href="/contact/#callback" data-track="cta_final_callback"><Icon name="phone" />Request a callback</a>}
         <a class="final-mail" href={`mailto:${inbox}`}><Icon name="envelopeSimple" />{inbox}</a>
+        {/* (critique round 5) the only way to the answers was a link at the end of the location line; a visitor with a
+            question before asking now finds it where they decide */}
+        <a class="final-mail" href="/pricing/#faq"><Icon name="question" />Questions about prices and paying</a>
       </div>
     </div></div>
   </section>
@@ -342,16 +279,74 @@ const business = {
 
 
 <style>
-  .hero { position: relative; padding: clamp(48px, 8vw, 104px) 0 clamp(56px, 8vw, 96px); overflow: hidden; }
-  .hero::before {
-    content: ""; position: absolute; inset: -20% -10% auto; height: 80%; pointer-events: none;
-    background: radial-gradient(60% 60% at 70% 30%, rgb(var(--blue-rgb) / 0.16), transparent 70%);
+  /* (2026-11-17) The studio hero: the copy in one column on the page colour, the graphite object (H1/H3, a 16:9 loop)
+     at full brightness to its right. No part of the picture sits under a word: from 1200px a page-colour band
+     (::before) covers the copy column and fades out past it, so the text contrast is the page's own. */
+  .hero { position: relative; padding: clamp(40px, 7vw, 72px) 0 clamp(48px, 7vw, 72px); overflow: hidden; }
+  .hero-grid { position: relative; display: grid; }
+  .hero-copy { max-width: 36rem; }
+  .hero :global(.cine.backdrop)::after { background: none; }
+  /* (critique round 5) the two mask gradients must intersect: by default mask layers add up, so wherever one gradient was
+     solid the other's fade did nothing, and the picture kept a hard top edge under the menu (1440) and a hard right and
+     bottom edge on a phone. Intersected, every edge fades into the page. */
+  .hero :global(.cine.backdrop) { -webkit-mask-composite: source-in; mask-composite: intersect; }
+  @media (min-width: 1200px) {
+    /* the hero is at most one 16:9 frame tall; the frame is pinned right and runs a little off the edge (its right strip
+       is empty studio), so the object starts after the copy column at every width from 1200 up */
+    .hero { --hh: clamp(600px, calc(100svh - 72px), 660px); --copy-end: calc(max(40px, 50% - 560px) + 36rem); display: grid; align-items: center; min-height: var(--hh); }
+    .hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, var(--bg) 0, var(--bg) var(--copy-end), transparent calc(var(--copy-end) + 96px)); }
+    .hero :global(.cine.backdrop) {
+      inset: 0 calc(var(--hh) * 16 / 9 * -0.07) auto auto; width: calc(var(--hh) * 16 / 9); height: var(--hh);
+      -webkit-mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 72%, transparent), linear-gradient(90deg, transparent, #000 20%);
+      mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 72%, transparent), linear-gradient(90deg, transparent, #000 20%);
+    }
   }
-  .hero-grid { position: relative; display: grid; gap: clamp(40px, 6vw, 64px); align-items: center; }
-  /* (two short sentences, each kept whole: side by side where they fit, one per line where they don't) */
+  /* Under 1200px the 16:9 frame no longer clears the copy: the object is a still made for a narrower shape (H2,
+     cinematic-manifest stillBelow), never behind a word. 900-1199: beside the copy, a narrower copy column. */
+  @media (max-width: 1199px) {
+    /* (the box sits on whole pixels: on a half pixel the picture's top row showed through the mask as a faint line) */
+    .hero :global(.cine.backdrop) {
+      inset: round(down, calc(var(--top)), 1px) 0 auto auto; width: var(--sw); height: var(--sh);
+      -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 80%, transparent), linear-gradient(90deg, transparent, #000 14%, #000 88%, transparent);
+      mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 80%, transparent), linear-gradient(90deg, transparent, #000 14%, #000 88%, transparent);
+    }
+  }
+  /* (critique round 6: on a phone the picture's lit right side met the screen edge after a fade only about 37px wide,
+     so it read as cut off) under 900px the right side fades over the last quarter of the picture */
+  @media (max-width: 899px) {
+    .hero :global(.cine.backdrop) {
+      -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 80%, transparent), linear-gradient(90deg, transparent, #000 14%, #000 74%, transparent);
+      mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 80%, transparent), linear-gradient(90deg, transparent, #000 14%, #000 74%, transparent);
+    }
+  }
+  @media (min-width: 900px) and (max-width: 1199px) {
+    .hero-copy { max-width: 30rem; }
+    .hero { --sw: round(down, 100vw - 30rem - max(40px, 4vw) - 24px, 2px); --sh: round(down, var(--sw) / 1.1636, 2px); --top: 50% - var(--sh) / 2; }
+  }
+  /* Under 900px: the copy, then the object below it. The work follows. (site audit 2026-11-21: the bottom padding was the
+     still's height less 8-16px, so the still's fading top edge ran under the last line of prices: 4.14:1 on a white
+     frame at 390px. The padding is now the still's full height, so no word sits over it.) */
+  @media (max-width: 899px) {
+    .hero { --sw: round(down, min(100vw, 560px), 2px); --sh: round(down, var(--sw) / 1.1636, 2px); --top: 100% - var(--sh); padding-bottom: var(--sh); }
+  }
+  /* (critique 11-17, round 7) on a phone the full-width object took most of a screen between the offer and the work:
+     a smaller one, set to the right, leaves the work starting about 60px sooner */
+  @media (max-width: 599px) {
+    .hero { --sw: round(down, 80vw, 2px); }
+    /* (critique 11-17, round 8) the eyebrow wrapped mid-line and left the "·" dangling: the place gets its own line */
+    /* (round 9) the eyebrow is a flex row, so a block span became a second column: wrap, and give the place the full row */
+    .ey-sep { display: none; }
+    .hero .eyebrow { flex-wrap: wrap; }
+    .ey-place { flex-basis: 100%; }
+  }
+  /* the hero already ends in its own space (the copy is centred in a frame-tall box, or the still fades out under it):
+     the work after it takes a shorter top margin, or the two added up to ~190px of nothing on a desktop */
+  .hero + .section { padding-top: clamp(32px, 4.5vw, 64px); }
   /* the hero type token from DESIGN.md, to the letter */
-  .hero h1 { font-size: clamp(2.25rem, 1.3rem + 3.6vw, 3.75rem); line-height: 1.06; letter-spacing: -0.035em; }
-  .hero h1 span { display: inline-block; }
+  /* Two statements, one per offer: the second line steps back in tone so four wrapped lines still read as two. */
+  .hero h1 { font-size: clamp(2.25rem, 1.3rem + 3.6vw, 3.75rem); line-height: 1.06; letter-spacing: -0.035em; text-wrap: balance; }
+  .hero h1 span + span { color: var(--muted); }
+  .hero h1 span { display: block; }
   .hero-lead { max-width: 54ch; margin-top: 22px; font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem); color: var(--body); }
   .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
   /* three short facts with a rule between them; the list is pulled left by one item's padding and clipped, so a
@@ -361,11 +356,18 @@ const business = {
   .hero-price li { padding: 0 12px 0 14px; border-left: 1px solid var(--hairline-strong); line-height: 1.3; }
   .hero-price a { display: inline-block; padding-block: 6px; margin-block: -6px; color: inherit; text-decoration: underline; text-decoration-color: var(--hairline-strong); text-underline-offset: 3px; }
   .hero-price a:hover { color: var(--ink); text-decoration-color: currentColor; }
-  @media (min-width: 1024px) { .hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); } }
+  /* (critique 11-17, round 9: each price link was a 30px target) on a touch screen each is 44px tall without moving the
+     line; the clip box gets room above and below so its edges don't cut the taller targets */
+  @media (pointer: coarse) {
+    .hero-price-clip { margin-top: 12px; padding-block: 8px; }
+    .hero-price a { padding-block: 13px; margin-block: -13px; }
+  }
   @media (max-width: 479px) { .hero-actions .button { width: 100%; } }
 
   .prim { display: flex; flex-direction: column; gap: 12px; padding: 24px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
-  .prim-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
+  /* (critique 11-17) the icon sits beside the heading, not in a tile stacked over it (the stock feature-card shape) */
+  .prim-head { display: flex; align-items: center; gap: 14px; }
+  .prim-icon { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
   .prim-icon :global(.icon) { width: 24px; height: 24px; }
   .prim p { font-size: 0.9375rem; }
   .prim .ticks { font-size: 0.9375rem; gap: 8px; }
@@ -382,10 +384,7 @@ const business = {
     .prim:hover .text-link :global(.icon) { transform: translateX(3px); }
   }
   /* a category card's smaller links: the pages inside that kind of work */
-  .cat h3 { font-size: 1.3125rem; }
-  .cat-more { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 2px 0 0; padding: 0; list-style: none; }
-  .cat-more a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--hairline); border-radius: 999px; color: var(--body); font-size: 0.875rem; font-weight: 500; text-decoration: none; }
-  .cat-more a:hover { border-color: var(--hairline-strong); color: var(--ink); }
+  .cat h3 { font-size: 1.25rem; }
   .more { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 32px; }
   .more .text-link { display: inline-flex; align-items: center; min-height: 44px; }
   @media (max-width: 479px) { .more .button { flex: 1 1 100%; } }
@@ -396,23 +395,10 @@ const business = {
   .also-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; max-width: 80ch; }
   .also-note :global(.icon) { flex: none; margin-top: 0.2em; width: 1.05em; height: 1.05em; }
   .cases { display: grid; gap: 20px; margin-block: 24px clamp(32px, 4vw, 48px); }
-  /* with a client project above them, the concept demos get a label of their own so the two kinds never blur */
+  /* the concept demos get a label of their own, so they never blur with the client project above them */
   .kind-label { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 20px; padding-top: 20px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 0.9375rem; }
   .kind-label strong { color: var(--ink); font-weight: 600; }
   .kind-label :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
-  .home-video { margin-top: clamp(32px, 4vw, 48px); }
-
-  /* the five steps as numbered rows: number, title, then the text in its own column on wide screens */
-  .steps { list-style: none; border-top: 1px solid var(--hairline); }
-  .step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px 20px; align-items: center; padding: 22px 0; border-bottom: 1px solid var(--hairline); }
-  .step-num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--button); color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .step h3 { font-size: 1.1875rem; }
-  .step p { grid-column: 2; color: var(--body); }
-  @media (min-width: 880px) {
-    .step { grid-template-columns: 40px minmax(0, 17rem) minmax(0, 1fr); gap: 0 28px; align-items: start; padding: 26px 0; }
-    .step h3 { line-height: 40px; }
-    .step p { grid-column: 3; padding-top: 8px; }
-  }
 
   /* under the demos: the goal picker and the price estimator have their own pages; two plain rows lead to them */
   .tools { display: grid; margin-top: clamp(28px, 4vw, 40px); border-top: 1px solid var(--hairline); list-style: none; }
@@ -425,22 +411,26 @@ const business = {
   .tool:hover :global(.icon) { transform: translateX(3px); }
   @media (min-width: 880px) { .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; } }
 
-  /* easy handover, in short: the three steps as one numbered row, then the two arrangements by name. What each step
-     covers, and the notes on contracts and platforms, are on /handover/ */
+  /* easy handover, in short: the three steps as one numbered row. What each step, the two ways to own the site
+     and the notes on contracts and platforms are on /handover/ */
+  /* (critique round 5) the heading's last sentence moves to its own line as a whole when it fits on one (wide screens),
+     instead of leaving "None of the" on the line above; on a phone it wraps inside itself as usual */
+  .nw-line { display: inline-block; }
   .ho-steps { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
-  .ho-step { display: flex; align-items: center; gap: 12px; color: var(--ink); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
+  .ho-step { display: flex; align-items: flex-start; gap: 12px; }
+  /* (critique 11-17, round 8) three bare titles said nothing: each step carries its first plain sentence from data/handover.ts */
+  .ho-body { display: grid; gap: 4px; padding-top: 3px; }
+  .ho-title { color: var(--ink); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
+  .ho-line { color: var(--body); font-size: 0.9375rem; line-height: 1.5; max-width: 40ch; }
   .ho-num { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--button); color: #fff; font-size: 0.9375rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-  @media (min-width: 880px) { .ho-steps { grid-template-columns: repeat(3, auto); justify-content: start; gap: 48px; } }
-  .ho-ways { display: grid; gap: 24px 48px; margin: clamp(28px, 4vw, 40px) 0 0; padding-top: clamp(24px, 3vw, 32px); border-top: 1px solid var(--hairline); }
-  .ho-way dt { color: var(--ink); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
-  .ho-way dd { max-width: 62ch; margin: 6px 0 0; color: var(--body); font-size: 0.9375rem; }
-  .ho-tag { display: block; margin-bottom: 4px; color: var(--cyan); font-size: 0.875rem; font-weight: 600; }
-  @media (min-width: 720px) { .ho-ways { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 880px) { .ho-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; } }
 
   /* one trust band: five short promises. One column on a phone, three then two from 720px, five across from 1100px */
-  .trust { display: grid; gap: 14px; list-style: none; }
-  .trust li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 2px 14px; align-content: start; padding: 18px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
-  .trust li > :global(.icon) { grid-row: span 2; width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: rgb(var(--cyan-rgb) / 0.1); color: var(--cyan); }
+  .trust { display: grid; gap: 14px 28px; list-style: none; }
+  /* (critique 11-17, round 7) five framed tiles with tinted icon squares read as a feature-card grid: now a ruled list,
+     one hairline above each reason, the icon plain */
+  .trust li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 4px 14px; align-content: start; padding: 16px 0 4px; border-top: 1px solid var(--hairline-strong); }
+  .trust li > :global(.icon) { grid-row: span 2; width: 22px; height: 22px; margin-top: 2px; color: var(--cyan); }
   .trust h3 { font-size: 1.0625rem; }
   .trust p { grid-column: 2; color: var(--body); font-size: 0.9375rem; }
   @media (min-width: 720px) {
@@ -451,7 +441,7 @@ const business = {
   @media (min-width: 1100px) {
     .trust { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .trust li, .trust li:nth-child(n + 4) { grid-column: auto; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-    .trust li > :global(.icon) { grid-row: auto; margin-bottom: 4px; }
+    .trust li > :global(.icon) { grid-row: auto; margin: 0 0 4px; }
     .trust p { grid-column: 1; }
   }
   .trust-foot { display: flex; align-items: flex-start; gap: 8px; max-width: 110ch; text-wrap: pretty; margin-top: 24px; color: var(--muted); font-size: 0.9375rem; }

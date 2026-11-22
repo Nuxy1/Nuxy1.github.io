@@ -83,6 +83,9 @@ export default defineConfig({
   ...build,
   vite: { ...(build.vite || {}), plugins: [inlineEmptyPreload()] },
   site: "https://nuxyautomation.com",
+  // Every page's CSS goes into the page itself (about 15 KB gzipped on home): five small stylesheet requests blocked the
+  // first paint by about 430 ms on a throttled phone. Astro hashes each inlined <style> into the CSP below.
+  build: { inlineStylesheets: "always" },
   markdown: { shikiConfig: { theme: "github-dark-default" } },
   security: {
     csp: {

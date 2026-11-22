@@ -73,12 +73,15 @@ fictional concept demonstrations, labelled as such on the page and inside each f
 ### Home page
 
 The home page has one job: a small-business owner understands within seconds what Nuxy can do for them, sees the
-automation working, sees roughly what it costs, and knows how to ask. In order: the hero (two buttons and the
-starting prices), four cards (AI Voice Receptionist, Lead Recovery Automation, Business Websites, Business
-Automation; `featured` in `src/data/services.ts`), the automation demos, the goal picker, the package estimator,
-example work, three ways to start (Starter, Growth, Custom; `tiers`), the five steps, why Nuxy, and one final
-button. Every price on it is worked out from the catalogue. The estimator gives an estimated starting price, never
-a quote. E-commerce stores and website management are reached from the Services menu and the full list.
+automation working, sees roughly what it costs, and knows how to ask. In order (pinned by `tests/pages.test.mjs`;
+owner's site audit brief 2026-11-21, which replaced the 11-17 "work straight after the hero"): the dark studio hero
+(two buttons and the starting prices), what we do (three kinds of work with their starting prices), real work (the
+client project, then a strip of concept demonstrations), the website levels, one automation demo, why Nuxy, the
+handover steps, and one final button. To keep the page short on a phone, the video teasers, the common questions and
+the two ways to own the site left home; the Creative Studio, `/pricing/#faq` and `/handover/` carry them, each linked
+from here. In the levels block the quote is the one filled button (site audit round 4, 2026-11-21). Every price on it
+is worked out from the catalogue. The goal picker and the package estimator live on `/automation/` and `/pricing/`.
+E-commerce stores and website management are reached from the Services menu and the full list.
 
 The flagship is **Lead response & follow-up**: an instant reply to every website form, email, Facebook or Instagram
 inquiry, friendly follow-ups that stop when the customer replies, and an alert to the owner.

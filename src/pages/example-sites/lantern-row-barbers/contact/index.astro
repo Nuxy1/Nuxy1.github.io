@@ -10,15 +10,14 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
     <div class="lr-wrap lr-ct">
       <div class="lr-ct-copy">
         <div class="lr-head">
-          <p class="lr-kicker">Visit</p>
           <h1>{address}.</h1>
           <p class="lr-lead">Halfway down Lantern Row, under the brass lantern. Free parking behind the shop off Mill Lane.</p>
         </div>
         <p class="lr-ct-now" data-open-now><span class="lr-ct-dot" aria-hidden="true"></span><span data-open-text></span></p>
         <div class="lr-ct-acts">
-          <a class="lr-btn" href={`${base}/booking/`}>Book a chair</a>
-          <a class="lr-btn lr-btn-line" href="#call" data-demo-action={callNote}>Call {phone}</a>
-          <a class="lr-btn lr-btn-line" href="#directions" data-demo-action={directionsNote}>Get directions</a>
+          <a class="lr-btn lr-btn-ox" href={`${base}/booking/`}>Book a chair</a>
+          <a class="lr-btn lr-btn-line" href="#hrs-h" data-demo-action={callNote}>Call {phone}</a>
+          <a class="lr-btn lr-btn-line" href="#map-t" data-demo-action={directionsNote}>Get directions</a>
         </div>
         <p class="lr-demo-note">Demo: the call and directions buttons explain what they would do; nothing dials or opens.</p>
       </div>
@@ -49,10 +48,10 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
           <!-- parking behind the shop -->
           <g transform="translate(264 248)">
             <rect x="-6" y="-6" width="52" height="40" fill="#14110e" stroke="#8a7d66" />
-            <text x="20" y="22" text-anchor="middle" fill="#c7bba5" font-family="Inter, sans-serif" font-size="20" font-weight="700">P</text>
+            <text x="20" y="22" text-anchor="middle" fill="#c7bba5" font-family="Sofia XC, Arial Narrow, sans-serif" font-size="20" font-weight="700">P</text>
           </g>
           <!-- street names -->
-          <g fill="#c7bba5" font-family="Inter, sans-serif" font-size="12" font-weight="600" letter-spacing="2">
+          <g fill="#c7bba5" font-family="Sofia XC, Arial Narrow, sans-serif" font-size="12" font-weight="600" letter-spacing="2">
             <text x="40" y="183">LANTERN ROW</text>
             <text x="440" y="183">LANTERN ROW</text>
             <text x="40" y="328" font-size="10">MILL LANE</text>
@@ -73,7 +72,7 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
           <!-- compass -->
           <g transform="translate(510 390)" fill="none" stroke="#8a7d66" stroke-width="1.2">
             <circle r="18" /><path d="M0 -14 4 0 0 14 -4 0Z" fill="#c9a45c" stroke="none" />
-            <text y="-24" text-anchor="middle" fill="#8a7d66" stroke="none" font-family="Inter, sans-serif" font-size="10" font-weight="700">N</text>
+            <text y="-24" text-anchor="middle" fill="#8a7d66" stroke="none" font-family="Sofia XC, Arial Narrow, sans-serif" font-size="10" font-weight="700">N</text>
           </g>
         </svg>
         <figcaption class="lr-fine">Illustrated map of a fictional street. Not to scale.</figcaption>
@@ -84,7 +83,6 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
   <section class="lr-section lr-rule" aria-labelledby="hrs-h">
     <div class="lr-wrap lr-ct-info">
       <div>
-        <p class="lr-kicker">Hours</p>
         <h2 id="hrs-h">When the chairs are open.</h2>
         <dl class="lr-hours lr-ct-hours" data-hours>{hours.map((h) => <div data-d={h.d}><dt>{h.day}</dt><dd class={h.open ? undefined : "off"}>{h.open ?? "Closed"}</dd></div>)}</dl>
       </div>
@@ -92,7 +90,7 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
         <div><dt>Walk-ins</dt><dd>Welcome until 4 pm whenever a chair is free. Booked clients go first.</dd></div>
         <div><dt>Parking</dt><dd>Free behind the shop, entrance off Mill Lane. Two-hour street parking on Lantern Row.</dd></div>
         <div><dt>Getting in</dt><dd>Step-free entrance and one chair that lowers for wheelchair transfers.</dd></div>
-        <div><dt>Write to us</dt><dd><a href="#email" data-demo-action={`Demo: on a real site this writes to ${email}.`}>{email}</a></dd></div>
+        <div><dt>Write to us</dt><dd><a href="#hrs-h" data-demo-action={`Demo: on a real site this writes to ${email}.`}>{email}</a></dd></div>
       </dl>
     </div>
   </section>
@@ -100,10 +98,9 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
   <section class="lr-section" aria-labelledby="rev-h">
     <div class="lr-wrap">
       <div class="lr-band">
-        <p class="lr-kicker">Been in the chair?</p>
-        <h2 id="rev-h">Tell the next person.</h2>
+        <h2 id="rev-h">Been in the chair? Tell the next person.</h2>
         <p>On a real build, a review link goes out by text after each visit. This one explains itself instead.</p>
-        <a class="lr-btn" href="#review" data-demo-action="Demo: on a real site this opens the shop's review page. Lantern Row is fictional, so there is nothing to review.">Leave a review</a>
+        <a class="lr-btn lr-btn-line" href="#rev-h" data-demo-action="Demo: on a real site this opens the shop’s review page. Lantern Row is fictional, so there is nothing to review.">Leave a review</a>
       </div>
     </div>
   </section>
@@ -136,32 +133,19 @@ import { base, address, phone, email, hours, callNote, directionsNote } from "..
   .lr-ct-facts div { display: grid; gap: 6px; padding: 22px 24px; background: var(--lr-bg); }
   .lr-ct-facts dt { font-family: "Bodoni Moda", Georgia, serif; font-size: 1.375rem; font-weight: 600; }
   .lr-ct-facts dd { color: var(--lr-soft); }
-  .lr-ct-facts a { color: var(--lr-brass-2); }
+  .lr-ct-facts a { display: inline-flex; align-items: center; min-height: 44px; color: var(--lr-brass-2); overflow-wrap: anywhere; }
 </style>
 
 <script>
   import { hours } from "../../../../data/demos/lantern";
+  import { openStatus } from "../../../../lib/demo/lantern-hours";
   // "Open now" from the visitor's clock and the shop's hours (the clock is read, nothing is kept)
   const box = document.querySelector<HTMLElement>("[data-open-now]");
   if (box) {
-    const now = new Date();
-    const toMin = (s: string) => { const m = /(\d+):(\d+)\s*(am|pm)/.exec(s)!; return ((+m[1] % 12) + (m[3] === "pm" ? 12 : 0)) * 60 + +m[2]; };
-    const today = hours.find((h) => h.d === now.getDay())!;
-    document.querySelector(`[data-hours] [data-d="${today.d}"]`)?.classList.add("is-today");
-    const t = now.getHours() * 60 + now.getMinutes();
-    let text = "";
-    if (today.open) {
-      const [a, b] = today.open.split("–").map((x) => x.trim());
-      if (t >= toMin(a) && t < toMin(b)) { text = `Open now, until ${b}`; box.classList.add("is-open"); }
-      else if (t < toMin(a)) text = `Closed now. Opens today at ${a}`;
-    }
-    if (!text) {
-      for (let i = 1; i <= 7; i++) {
-        const next = hours.find((h) => h.d === (now.getDay() + i) % 7)!;
-        if (next.open) { text = `Closed now. Opens ${i === 1 ? "tomorrow" : next.day} at ${next.open.split("–")[0].trim()}`; break; }
-      }
-    }
-    box.querySelector("[data-open-text]")!.textContent = text;
+    const s = openStatus(hours, new Date());
+    document.querySelector(`[data-hours] [data-d="${s.today}"]`)?.classList.add("is-today");
+    box.querySelector("[data-open-text]")!.textContent = s.text;
+    box.classList.toggle("is-open", s.open);
     box.classList.add("is-set");
   }
 </script>

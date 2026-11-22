@@ -1,5 +1,6 @@
 ---
 import { titleCase } from "../lib/title-case";
+import { noWidow } from "../lib/no-widow";
 // "See Your Business Run on Autopilot": four short simulations of what the automations do, chosen by tabs (owner's
 // motion brief, 2026-11-11). Every business, person, number and time here is made up; no call is placed, no message
 // is sent and nothing is booked: it is a page script stepping through cards that are already on the page.
@@ -100,7 +101,9 @@ const demos: Demo[] = [
 // a demo the catalogue doesn't sell yet links to the quote form instead of a service that doesn't exist
 const linkFor = (d: Demo) => {
   const s = d.svc.map((id) => serviceById[id]).find(Boolean);
-  return s ? { href: `/solutions/#${s.id}`, text: `See ${s.name}`, price: s.price } : { href: `/contact/?want=${d.want}`, text: "Get a Free Quote", price: "" };
+  // (critique round 5) a service with its own monthly price shows it too, as everywhere else on the site: the voice
+  // receptionist's link said only "from $599" and hid the "from $249/month" that comes with it
+  return s ? { href: `/solutions/#${s.id}`, text: `See ${s.name}`, price: s.monthly ? `${s.price} + ${s.monthly}` : s.price } : { href: `/contact/?want=${d.want}`, text: "Get a Free Quote", price: "" };
 };
 const whoName = { caller: "Customer", auto: "Automatic", owner: "Owner" };
 const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true" focusable="false" `);
@@ -116,7 +119,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
     <fieldset class="ap-tabs reveal">
       <legend class="sr-only">Choose a demo</legend>
       {demos.map((d, i) => (
-        <label class="ap-tab"><input type="radio" name="ap-demo" value={d.id} checked={i === 0} /><Icon name={d.icon} /><span>{d.tab}</span></label>
+        <label class="ap-tab"><input type="radio" name="ap-demo" value={d.id} checked={i === 0} /><Icon name={d.icon} /><span>{d.tab.replace("-", "\u2011")}</span></label>
       ))}
     </fieldset>
 
@@ -131,12 +134,12 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
             </div>
             <div class="ap-grid">
               <div class="ap-side">
-                <h3 class="ap-h" id={`ap-${d.id}-h`}>{titleCase(d.tab)}<span>{d.business}</span></h3>
+                <h3 class="ap-h" id={`ap-${d.id}-h`}>{titleCase(d.tab)}<span class="sr-only">, </span><span class="ap-biz">{d.business}</span></h3>
                 <ol class="ap-steps">
                   {d.steps.map((s, i) => (
                     <li>
                       <button type="button" class="ap-step" data-go={i + 1} aria-current={i === 0 ? "step" : "false"} disabled>
-                        <span class="ap-num" aria-hidden="true">{i + 1}</span><span><span class="sr-only">Step {i + 1}: </span>{s}</span>
+                        <span class="ap-num" aria-hidden="true">{i + 1}</span><span><span class="sr-only">Step {i + 1}: </span>{noWidow(s)}</span>
                       </button>
                     </li>
                   ))}
@@ -167,7 +170,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
                   {d.cards.map((c) => (
                     <li class={`ap-card ${c.who}`} data-from={c.step}>
                       <p class="ap-card-label"><Icon name={c.icon} /><span>{c.label}</span><span class="ap-who">{whoName[c.who]}</span></p>
-                      {c.title && <p class="ap-card-title">{c.title}</p>}
+                      {c.title && <p class="ap-card-title">{noWidow(c.title)}</p>}
                       {c.quote && <p class="ap-quote">“{c.quote}”</p>}
                       {c.slots && (
                         <ul class="ap-slots" aria-label="Open times">
@@ -179,6 +182,21 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
                     </li>
                   ))}
                 </ol>
+                {/* (critique round 7: at rest the window was the first card over about 200px of nothing, with a hint that
+                    named a call and a booking even in demos that have neither) the bottom of the window shows how the demo
+                    ends, the real last card, labelled as a preview. It goes once a step plays, and the steps in between stay
+                    hidden until then (approvals 89). Start Demo beside the steps stays the only control (critique round 10:
+                    two Start buttons competed). Hidden from screen readers: the step list already reads every step. */}
+                {(() => { const end = d.cards.reduce((a, c) => (c.step >= a.step ? c : a)); return (
+                  <div class="ap-end" aria-hidden="true">
+                    <p class="ap-end-label"><Icon name="play" /><span>How it ends<span class="ap-end-more">. Start Demo plays every step.</span></span></p>
+                    <div class={`ap-card ${end.who}`}>
+                      <p class="ap-card-label"><Icon name={end.icon} /><span>{end.label}</span><span class="ap-who">{whoName[end.who]}</span></p>
+                      {end.title && <p class="ap-card-title">{noWidow(end.title)}</p>}
+                      {end.lines && <ul class="ap-lines">{end.lines.map((l) => <li>{l}</li>)}</ul>}
+                    </div>
+                  </div>
+                ); })()}
               </div>
             </div>
           </article>
@@ -222,7 +240,9 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
         cur = Math.max(0, Math.min(total, k));
         for (const c of cards) {
           const f = +c.dataset.from!;
-          c.classList.toggle("later", f > Math.max(cur, 1)); // at rest the first step is already filled in (approvals 89)
+          const later = f > Math.max(cur, 1); // at rest the first step is already filled in (approvals 89)
+          c.classList.toggle("later", later);
+          c.toggleAttribute("aria-hidden", later);
           c.classList.toggle("is-new", fresh && f === cur && moving());
         }
         caps.forEach((c) => (c.hidden = +c.dataset.at! !== cur));
@@ -247,7 +267,8 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
         // Before the first press only the first step is shown and the window sits at its top: nothing to measure. Measuring here
         // made the browser lay out the whole page during load, before the first paint (a 220 ms task on a phone).
         if (cur === 0 && !started) { feed.removeAttribute("tabindex"); return; }
-        const windowed = narrow.matches && feed.scrollHeight > feed.clientHeight + 1;
+        // (11-17) the cards sit in a window at every width now (side by side it is as tall as the step list)
+        const windowed = feed.scrollHeight > feed.clientHeight + 1;
         if (windowed && cur > 0) feed.tabIndex = 0; else feed.removeAttribute("tabindex");
         if (!windowed) return;
         const shown = cards.filter((c) => +c.dataset.from! <= cur);
@@ -281,7 +302,16 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
       });
       next.addEventListener("click", () => { begin(); stop(); show(Math.max(1, cur + 1)); bring(); });
       back.addEventListener("click", () => { stop(); show(cur - 1); });
-      reset.addEventListener("click", () => { stop(); done = false; show(0, false); label.textContent = "Start Demo"; });
+      reset.addEventListener("click", () => { stop(); done = false; show(0, false); label.textContent = "Start Demo"; requestAnimationFrame(fitEnd); });
+      // the ending preview shows only where it clears the first card. Measured when the window's size settles (a resize
+      // observer runs after layout, so this adds no layout of its own during load) and again after Replay.
+      const end = root.querySelector<HTMLElement>(".ap-end");
+      const fitEnd = () => {
+        if (!end || cur !== 0) return;
+        const e = end.getBoundingClientRect(), first = cards[0].getBoundingClientRect();
+        if (e.height) root.classList.toggle("end-off", e.top < first.bottom + 16);
+      };
+      if (end && "ResizeObserver" in window) new ResizeObserver(fitEnd).observe(feed);
       steps.forEach((b) => { b.disabled = false; b.addEventListener("click", () => { begin(); stop(); show(+b.dataset.go!); bring(); }); });
 
       root.querySelector<HTMLElement>("[data-controls]")!.hidden = false;
@@ -331,7 +361,7 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
   .ap-grid { display: grid; }
   .ap-side { display: grid; align-content: start; gap: 14px; padding: 18px; border-bottom: 1px solid var(--hairline-soft); }
   .ap-h { font-size: 1.125rem; line-height: 1.3; }
-  .ap-h span { display: block; margin-top: 2px; color: var(--muted); font-size: 0.875rem; font-weight: 500; }
+  .ap-h .ap-biz { display: block; margin-top: 2px; color: var(--muted); font-size: 0.875rem; font-weight: 500; }
   .ap-steps { display: grid; gap: 2px; list-style: none; }
   .ap-step {
     display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 6px 10px; border: 1px solid transparent; border-radius: var(--r-md);
@@ -377,16 +407,20 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
   .ap-card.owner .ap-card-label :global(.icon) { color: var(--ok); }
   .ap-who { margin-left: auto; padding-left: 10px; color: var(--muted); font-weight: 500; }
   .ap-card-title { color: var(--ink); font-weight: 600; }
-  .ap-quote { color: var(--ink); }
+  .ap-quote { padding-block: 2px; color: var(--ink); }
   .ap-lines { display: grid; gap: 2px; margin-top: 4px; list-style: none; font-size: 0.875rem; color: var(--muted); }
   .ap-slots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; list-style: none; }
   .ap-slots li { padding: 5px 10px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); font-size: 0.8125rem; font-weight: 600; color: var(--body); }
   .ap-slots li.on { border-color: var(--button); background: var(--button); color: #fff; }
   .ap-fake-btn { display: inline-block; margin-top: 8px; padding: 6px 14px; border-radius: var(--r-full); background: var(--button); color: #fff; font-size: 0.875rem; font-weight: 600; }
 
-  /* a card still to come keeps its place as a faint outline (its words are hidden from everyone, screen readers too) */
-  .ap-card.later { border-style: dashed; border-color: var(--hairline); background: transparent; }
-  .ap-card.later > * { visibility: hidden; }
+  /* a card still to come keeps its place as a skeleton, so the panel never looks unloaded (2026-11-17): each line of it
+     is a soft bar, its words drawn in no colour (faint words were text nobody could read: they failed contrast). The
+     words stay hidden from screen readers (aria-hidden, set in show()) until its step plays. */
+  /* (critique 11-17, second pass: grey skeleton bars read as a page still loading, dashed outlines before them as a
+     broken wireframe) a card still to come keeps its space, so nothing below jumps as the steps play, but shows
+     nothing: the step list beside it names every step, and the column fills in like a conversation. */
+  .ap-card.later { visibility: hidden; }
   :global(html[data-motion]:not([data-motion="reduced"])) .ap-card.is-new { animation: ap-in var(--dur-3) var(--ease-out) both; }
   @keyframes ap-in { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: none; } }
 
@@ -397,17 +431,47 @@ const pauseIcon = pauseSvg.replace("<svg ", `<svg class="icon" aria-hidden="true
     /* the page already keeps anchors clear of the header (scroll-padding-top); the bottom clears the phone quote bar */
     .ap-demo.ready .ap-stage { scroll-margin-bottom: 92px; }
     .ap-demo.ready .ap-feed {
-      max-height: min(46vh, 26rem); max-height: min(46svh, 26rem); overflow-y: auto; padding: 10px;
-      border: 1px solid var(--hairline-soft); border-radius: var(--r-md); background: var(--bg-2);
+      max-height: min(46vh, 26rem); max-height: min(46svh, 26rem); overflow-y: auto; padding: 12px 2px;
+      /* (11-17) a scroll window, not a card in the panel: hairlines mark where cards slide under its edges */
+      border-block: 1px solid var(--hairline-soft);
       scrollbar-width: thin; scrollbar-color: var(--hairline-strong) transparent;
     }
     .ap-demo.ready.at-start .ap-feed { overflow-y: hidden; }
+    /* the ending preview sits on the window's bottom edge: stage padding + the window's border and padding */
+    .ap-end { left: 20px; right: 20px; bottom: 31px; }
+  }
+  @media (max-width: 479px) {
+    .ap-end { left: 16px; right: 16px; bottom: 27px; }
+    /* (measured at 360-414px) the full card only cleared the first one in 2 of the 4 demos: on a phone the preview is
+       the last card's heading and title, and the label drops its second sentence (the caption above says the same) */
+    .ap-end .ap-lines, .ap-end-more { display: none; }
   }
   @media (min-width: 900px) {
     .ap-grid { grid-template-columns: 300px minmax(0, 1fr); }
     .ap-side { border-bottom: 0; border-right: 1px solid var(--hairline-soft); }
     .ap-stage { padding: 22px 26px; }
+    /* (critique 11-17: side by side, the cards still to come kept their space, so at rest the stage was one card over
+       a tall empty panel) the cards play in a window as tall as the step list beside it, the same window phones use:
+       the panel is only as tall as the step list, and the window follows the newest card. Size containment keeps the
+       cards still to come from making the panel taller. */
+    .ap-demo.ready .ap-stage { display: flex; flex-direction: column; }
+    .ap-demo.ready .ap-feed {
+      flex: 1 1 0; min-height: 12rem; contain: size; overflow-y: auto; align-content: start; padding: 14px 4px 14px 0;
+      border-block: 1px solid var(--hairline-soft);
+      scrollbar-width: thin; scrollbar-color: var(--hairline-strong) transparent;
+    }
+    .ap-demo.ready.at-start .ap-feed { overflow-y: hidden; }
+    .ap-end { left: 26px; right: 30px; bottom: 37px; }
   }
+  .ap-stage { position: relative; }
+  /* how the demo ends, at rest only and only with the player (without JavaScript every card shows anyway). A grid, so
+     the card keeps its side as it does in the window. The script hides it (end-off) on a window too short for it to
+     sit clear of the first card. */
+  .ap-end { display: none; position: absolute; justify-items: end; gap: 8px; pointer-events: none; }
+  .ap-demo.ready.at-start .ap-end { display: grid; }
+  .ap-demo.end-off .ap-end { visibility: hidden; }
+  .ap-end-label { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--muted); font-size: 0.875rem; }
+  .ap-end-label :global(.icon) { flex: none; width: 1.05em; height: 1.05em; color: var(--cyan); }
   @media (max-width: 479px) {
     .ap-tabs { width: 100%; }
     .ap-tab { flex: 1 1 calc(50% - 6px); padding: 0 10px; font-size: 0.875rem; }

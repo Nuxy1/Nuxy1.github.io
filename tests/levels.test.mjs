@@ -80,9 +80,10 @@ test("the finder's answers lead where a visitor would expect", () => {
 
 test("level and add-on prices are the brief's", () => {
   assert.equal(level("signature")?.[2], `"From $3,500"`);
-  assert.equal(level("immersive")?.[2], `"Starting at $6,000"`);
+  assert.equal(level("immersive")?.[2], `"From $6,000"`);
   assert.equal(level("flagship")?.[2], `"Custom quote"`);
   // Business keeps the live $499 / $900 prices from services.ts (owner decision: production pricing is not overwritten)
+  // (owner decision 2026-11-21, approvals row 121: the card shows both prices, "$499 – $900", not "From $499")
   assert.equal(level("business")?.[2], "`${starter} – ${site}`");
   const addOns = Object.fromEntries([...tiers.matchAll(/name: "([^"]+)", price: "([^"]+)"/g)].map((m) => [m[1], m[2]]));
   assert.deepEqual(addOns, {
@@ -208,7 +209,7 @@ test("the five-question finder recommends a level, links to the form with it cho
     assert.equal(await rec.locator("[data-rec-reason]").textContent(), want.reason);
     assert.equal(await page.evaluate(() => document.activeElement?.matches("[data-rec-result]")), true, "focus moves to the result");
     const cta = rec.locator("[data-rec-cta]");
-    assert.equal(await cta.textContent(), "Discuss My Project");
+    assert.equal(await cta.textContent(), "Get a Free Quote");
     assert.equal(await cta.getAttribute("href"), `/contact/?level=${want.level}`);
     await settle(page);
     assert.equal(tab.count("website_recommender_started"), 1);
@@ -248,28 +249,18 @@ test("the five-question finder recommends a level, links to the form with it cho
   }
 });
 
-test("the comparison is a keyboard-usable tab set that counts its first use once", async () => {
+test("the comparison is one table, and the first switch of its phone picker counts once", async () => {
   const tab = await open();
   const { page } = tab;
   try {
     await tab.go("/web-design/");
-    const visible = () => page.$$eval(".cmp-panel", (ps) => ps.filter((p) => !p.hidden && p.offsetHeight > 0).map((p) => p.dataset.level));
-    assert.equal(await page.locator(".cmp-tabs[role=tablist]").isVisible(), true);
-    assert.deepEqual(await visible(), ["signature"], "Signature is shown first");
-    await page.click("#cmp-t-immersive");
-    assert.deepEqual(await visible(), ["immersive"]);
-    assert.equal(await page.getAttribute("#cmp-t-immersive", "aria-selected"), "true");
-    await page.keyboard.press("ArrowRight");
-    assert.deepEqual(await visible(), ["flagship"]);
-    assert.equal(await page.evaluate(() => document.activeElement?.id), "cmp-t-flagship");
-    await page.keyboard.press("ArrowRight");
-    assert.deepEqual(await visible(), ["business"], "arrows wrap around");
-    await page.keyboard.press("End");
-    assert.deepEqual(await visible(), ["flagship"]);
-    await page.keyboard.press("Home");
-    assert.deepEqual(await visible(), ["business"]);
-    assert.equal(await page.getAttribute("#cmp-p-business", "role"), "tabpanel");
-    assert.equal(await page.getAttribute("#cmp-p-business", "aria-labelledby"), "cmp-t-business");
+    assert.equal(await page.locator("#compare .mx-table").count(), 1, "#compare holds the table (level pages link to it)");
+    assert.equal(await page.locator(".cmp-tabs, #expect, #scope").count(), 0, "the meter tabs and the separate timelines section are gone");
+    const rows = await page.locator(".mx-table tbody th").allTextContents();
+    for (const r of ["Timeline", "Revisions", "Price"]) assert.ok(rows.some((t) => t.includes(r)), `the table has a ${r} row`);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.click(".mx-pick label[for=\"mx-signature\"]");
+    await page.click(".mx-pick label[for=\"mx-immersive\"]");
     await settle(page);
     assert.equal(tab.count("tier_comparison_opened"), 1);
     checkBeacons(tab);
@@ -421,10 +412,9 @@ test("without JavaScript every level part still shows its content", async () => 
   const { page } = tab;
   try {
     await tab.go("/web-design/");
-    assert.equal(await page.locator(".cmp-tabs").isVisible(), false);
-    assert.equal(await page.locator(".cmp-panel:visible").count(), 4, "all four comparison panels");
+    assert.equal(await page.locator(".mx-table").isVisible(), true, "the comparison table needs no script");
     assert.equal(await page.locator("[data-rec-static]").isVisible(), true);
-    assert.equal(await page.locator('[data-rec-static] a[href="/contact/?level=unsure"]').textContent(), "Discuss My Project");
+    assert.equal(await page.locator('[data-rec-static] a[href="/contact/?level=unsure"]').textContent(), "Get a Free Quote");
     assert.equal(await page.locator("[data-rec-quiz]").isVisible(), false);
     await page.click('label[for="tl-signature"]');
     assert.equal(await page.isChecked("#tl-signature"), true, "the café switch is plain radios");

@@ -3,6 +3,7 @@ import { titleCase } from "../../lib/title-case";
 // A case study for each working example: the problem, what was built, the messy cases it handles, the demo week as it
 // ran, and the numbers. The business is made up (said at the top); the code and the numbers are real.
 import Base from "../../layouts/Base.astro";
+import { crumbs } from "../../lib/crumbs";
 import Icon from "../../components/Icon.astro";
 import { examples, type Example } from "../../data/examples";
 import { ask, gmail, outlook } from "../../lib/request";
@@ -14,11 +15,14 @@ const { example: e } = Astro.props as { example: Example };
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const others = examples.filter((x) => x.slug !== e.slug);
 ---
-<Base title={`${e.title} · Example · Nuxy Automation`} description={`${e.title}: what goes wrong, what was built and the real output of working, open-source code. The ${e.kind} is made up.`}>
+<!-- Title Case like the page's heading; "· Example" dropped so the longest title (was 68 characters, now 58) fits a search result. The page itself says the business is made up. -->
+<Base title={`${titleCase(e.title)} · Nuxy Automation`} description={`${e.title}: what goes wrong, what was built and the real output of working, open-source code. The ${e.kind} is made up.`}>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(crumbs([["Open-source automations", "/demos/"], [e.tab, `/work/${e.slug}/`]]))} />
   <!-- The video's poster is the largest thing on screen; announcing it in the head lets the browser fetch it first. -->
   <link slot="head" rel="preload" as="image" type="image/webp" href={`${base}/videos/${e.slug}-poster.webp`} fetchpriority="high" />
-  <p class="crumbs"><a href={`${base}/demos/#technical`}>Working examples</a><span aria-hidden="true">/</span>{e.tab}</p>
-  <h1>{titleCase(e.title)}</h1>
+  <p class="crumbs"><a class="tap" href={`${base}/demos/#technical`}>Open-source automations</a><span aria-hidden="true">/</span>{e.tab}</p>
+  <!-- a hyphenated word stays on one line: at 390 px the title broke as "Lead Follow- / Up for a Plumber" -->
+  <h1>{titleCase(e.title).split(/(\S+-\S+)/).map((part, i) => (i % 2 ? <span class="nowrap">{part}</span> : part))}</h1>
   <p class="made-up"><Icon name="sealCheck" /><span><strong>{e.who}</strong> is made up for this example. The code is real and open: <a href="https://github.com/Nuxy1/small-business-automations">read it or run it</a>.</span></p>
 
   <figure id="video" class="video">
@@ -44,13 +48,13 @@ const others = examples.filter((x) => x.slug !== e.slug);
     <figcaption>The demo’s simulated week (<code>npm run demo</code>), word for word.</figcaption>
   </figure>
   <ul class="stats">{e.numbers.map(([n, what]) => <li><strong>{n}</strong><span>{what}</span></li>)}</ul>
-  <p class="speed"><Icon name="lightning" /><span><strong>Speed:</strong> {e.speed} on a desktop PC (<code>npm run bench</code>). Thousands of records take seconds, not hours.</span></p>
+  <p class="speed"><Icon name="lightning" /><span><strong>Speed:</strong> {e.speed} on a desktop PC (<code>npm run bench</code>). Thousands of records take seconds, not&nbsp;hours.</span></p>
 
   <h2>For Your Business</h2>
   <p>{e.fit}</p>
   <aside class="offer" aria-label={`Request ${e.service.name}`}>
     <div><p class="offer-name">{e.service.name}</p><p class="offer-price">{e.service.price}, fixed · 30-day launch watch included</p></div>
-    <a class="button" href={ask(e.service)}>Request this</a>
+    <a class="button" href={ask(e.service)}>Request This Automation</a>
     <p class="alt">or in <a href={gmail(e.service)} target="_blank" rel="noopener">Gmail</a> or <a href={outlook(e.service)} target="_blank" rel="noopener">Outlook</a> · <a href={`${base}/solutions/#${e.service.id}`}>What’s included</a></p>
   </aside>
 
@@ -59,8 +63,9 @@ const others = examples.filter((x) => x.slug !== e.slug);
 </Base>
 
 <style>
-  .crumbs { display: flex; gap: 8px; margin: 0; color: var(--muted); font-size: 0.875rem; }
-  .crumbs a { color: var(--muted); }
+  .crumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; color: var(--muted); font-size: 0.875rem; }
+  .nowrap { white-space: nowrap; }
+  .crumbs a { color: var(--link); }
   .made-up { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 8px; padding: 12px 16px; border-radius: var(--r-md); background: var(--surface); font-size: 0.9375rem; }
   .made-up :global(.icon) { width: 20px; height: 20px; margin-top: 2px; color: var(--ink); }
   .video { margin: 20px 0 8px; }

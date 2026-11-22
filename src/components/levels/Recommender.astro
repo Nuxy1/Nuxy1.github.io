@@ -1,6 +1,6 @@
 ---
 // "Find your website level": five questions, one at a time, then a suggested level with the reason and a
-// "Discuss My Project" button that opens the form with that level chosen. The rules are data/level-finder.ts
+// "Get a Free Quote" button that opens the form with that level chosen. The rules are data/level-finder.ts
 // (also run by tests/levels.test.mjs); this script imports that file only, never the service catalogue.
 // It never turns anyone away: every answer set ends in a level and a way to start. Nothing is sent anywhere; the
 // counts are `website_recommender_started` (first answer) and `website_recommender_completed` (a result shown),
@@ -12,7 +12,7 @@ const pages = Object.fromEntries(levels.map((l) => [l.id, { page: l.page ?? "/we
 <div class="rec panel" data-rec data-levels={JSON.stringify(pages)}>
   <div class="rec-static" data-rec-static>
     <p><strong>Not sure where you fit?</strong> Most local businesses that want calls and bookings do best with Business. If you need to stand out, look at Signature. If the first impression is the whole pitch, Immersive. Tell us about your project and we’ll suggest the level that fits, honestly, even if it’s the smaller one.</p>
-    <a class="button" href="/contact/?level=unsure" data-track="tier_selected">Discuss My Project</a>
+    <a class="button" href="/contact/?level=unsure" data-track="tier_selected">Get a Free Quote</a>
   </div>
 
   <form class="rec-quiz" data-rec-quiz hidden>
@@ -46,7 +46,7 @@ const pages = Object.fromEntries(levels.map((l) => [l.id, { page: l.page ?? "/we
     <p class="rec-reason" data-rec-reason></p>
     <p class="rec-extra">We confirm the right level with you in writing before anything starts. Every level can add automation.</p>
     <div class="rec-actions">
-      <a class="button" href="/contact/?level=unsure" data-rec-cta data-track="tier_selected">Discuss My Project</a>
+      <a class="button" href="/contact/?level=unsure" data-rec-cta data-track="tier_selected">Get a Free Quote</a>
       <a class="text-link" href="/web-design/" data-rec-page>See what it includes<Icon name="arrowRight" /></a>
       <button class="text-link rec-again" type="button" data-rec-again><Icon name="arrowCounterClockwise" />Start again</button>
     </div>

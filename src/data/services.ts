@@ -79,7 +79,7 @@ export const groups: Group[] = [
         costs: "Usually none. Secure https is free on most hosts." }),
       S({ id: "google-profile", icon: "mapTrifold", name: "Google profile setup", price: "$199", priceType: "fixed", status: "active", manage: "none", fits: "all",
         fixes: "A business Google barely shows",
-        text: "Your Google Business Profile claimed or created, with categories, hours, services, your photos and your website and booking links. I walk you through Google’s own verification.",
+        text: "Your Google Business Profile claimed or created, with categories, hours, services, your photos and your website and booking links. We walk you through Google’s own verification.",
         who: "Any local business, especially one that’s new or has no website yet.",
         needs: "A Google account in your name and your business address or service area for Google’s verification.",
         costs: "None: Google Business Profile is free." }),
@@ -341,7 +341,7 @@ export const planTerms: string[] = [
   thirdPartyCosts,
   "Your accounts, data and finished work stay yours, with or without a plan. Existing agreements keep the price and terms already agreed.",
 ];
-export const planNote = "Monitoring runs 24/7: websites are checked every 5 minutes, and automations alert me when a run fails. Fixes start within each plan’s stated reply time, not instantly, and you hear from me when work starts and again when it’s fixed. If a fix waits on someone else (your host, an app’s outage, a change only you can approve), it comes as soon as they allow, with updates until then.";
+export const planNote = "Monitoring runs 24/7: websites are checked every 5 minutes, and automations alert us when a run fails. Fixes start within each plan’s stated reply time, not instantly, and you hear from us when work starts and again when it’s fixed. If a fix waits on someone else (your host, an app’s outage, a change only you can approve), it comes as soon as they allow, with updates until then.";
 
 // What the quote form asks first (brief 4 §8, three more in brief 5, video & creative in the Creative Studio brief):
 // ten plain choices, required. A service page's link names the exact
@@ -428,7 +428,7 @@ export const primary: Primary[] = [
   { id: "ecommerce", icon: "shoppingBag", title: "E-Commerce Stores", text: "A Shopify or Square Online store in your own account, ready to take orders: your products, payments, and pickup or shipping.",
     points: ["Up to 25 products from your photos", "Payments, pickup or shipping set up", "Your store, your account, your billing", "A Shop button on your website"], price: `5 products ${miniStore.price} · 25 products ${serviceById["online-shop"].price}`, href: "/ecommerce/", cta: "E-commerce stores" },
   { id: "automation", icon: "lightning", title: "AI & Business Automation", text: "Every inquiry answered fast, missed calls texted back, bookings with reminders, invoices that send themselves, and AI-drafted replies you approve.",
-    points: ["Built in your own accounts", "Nothing sent without your rules", "Every failure alerts us", "AI drafts, you approve"], price: `One-time setups from ${automationFrom}`, href: "/automation/", cta: "Automation services" },
+    points: ["Built in your own accounts", "Nothing sent without your rules", "We’re alerted if anything fails", "AI drafts, you approve"], price: `One-time setups from ${automationFrom}`, href: "/automation/", cta: "Automation services" },
   { id: "management", icon: "shieldCheck", title: "Optional Website Management", text: "After launch, we can keep your website watched and its renewals on track for a monthly fee. It’s never required.",
     points: ["Website checked every 5 minutes, 24/7", "Domain and security renewals watched", "Billed monthly, cancel any time", "Your website stays yours if you stop"], price: `${care.name}: ${care.price}, optional`, href: "/websites/#ownership", cta: "Website management" },
 ];

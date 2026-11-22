@@ -1,0 +1,182 @@
+---
+// Quillfern's hero: the classic jar photographed on linen with dried fern, set in an arch window (the shape of the
+// jar label). The page's one cinematic moment: soon after the photo arrives the candle catches (a spark at the wick,
+// the lit photo of the same jar dissolving in, the room warming), and the button under it names what it will do next: "Put the candle out" while it burns,
+// "Light the candle" while it is out. Reduced motion and tier 3: nothing lights by itself and the button swaps at once. No JavaScript: the unlit
+// photo, no button. Nothing here is in the way of shopping: both shop buttons come before the light switch, on every
+// screen and in keyboard order.
+import DemoPhoto from "../DemoPhoto.astro";
+import { base } from "../../../data/demos/quillfern";
+import { SIZES, SHIP } from "../../../lib/demo/quillfern-cart";
+
+// the window is narrower than the 2752 x 1536 photo, so the photo is cropped from the sides and drawn at the window's
+// height: about 1020 px wide on desktop and 140% of the screen on phones
+const sizes = "(min-width: 900px) min(1020px, 80vw), 140vw";
+---
+<section class="qf-hero" data-qf-hero aria-labelledby="qf-hero-h">
+  <div class="qf-wrap qf-hero-in">
+    <div class="qf-hero-copy">
+      <h1 id="qf-hero-h">Six scents for the hours you spend at&nbsp;home.</h1>
+      <p class="qf-lead">Coconut-soy wax, cotton wicks and two weeks of curing, poured by hand in small batches. Find the one that smells like your evenings.</p>
+      <div class="qf-hero-ctas">
+        <a class="qf-btn qf-btn-copper" href={`${base}/shop/`}>Shop the six candles</a>
+        <a class="qf-btn qf-btn-line" href={`${base}/shop/#scents`}>Find your scent</a>
+      </div>
+      <ul class="qf-hero-facts qf-ui" role="list">
+        <li><b>From ${SIZES.tin.price}</b> for a travel tin</li>
+        <li><b>Free shipping</b> over ${SHIP.freeOver}</li>
+        <li><b>Pickup</b> always free</li>
+      </ul>
+      <p class="qf-demo-note">Demonstration store: nothing can be bought and no card is asked for.</p>
+    </div>
+
+    <figure class="qf-hero-fig">
+      <div class="qf-hero-frame">
+        <div class="qf-hero-window">
+          <DemoPhoto name="quillfern-hero" priority sizes={sizes} alt="A Quillfern candle in a cream ceramic jar on a linen cloth, its copper lid leaning beside it among sprigs of dried fern and chamomile" class="qf-hero-ph" />
+          <DemoPhoto name="quillfern-hero-lit" sizes={sizes} alt="" class="qf-hero-ph qf-hero-lit" />
+          <span class="qf-hero-spark" aria-hidden="true"></span>
+          <span class="qf-hero-glow" aria-hidden="true"></span>
+        </div>
+      </div>
+      <figcaption>
+        <button type="button" class="qf-light" data-qf-light hidden>
+          <svg viewBox="0 0 16 20" width="14" height="18" aria-hidden="true"><path d="M8 1.5c3 3.2 4.6 6 4.6 8.6a4.6 4.6 0 0 1-9.2 0C3.4 7.5 5 4.7 8 1.5Z" /></svg>
+          <span data-qf-light-label>Light the candle</span>
+        </button>
+        <span class="qf-hero-cap">The classic 8 oz jar, in an AI-generated example photo.</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<style>
+  /* The warm room is its own layer fading by opacity, which the compositor runs, instead of a background-color
+     transition that repainted the whole hero on the main thread every frame for 2.2 s. It ends on the same colour. */
+  .qf-hero { --warm: #f4e6d0; position: relative; background: var(--qf-paper); }
+  .qf-hero::before { content: ""; position: absolute; inset: 0; background: var(--warm); opacity: 0; transition: opacity 2200ms var(--qf-ease); pointer-events: none; }
+  .qf-hero.is-lit::before { opacity: 1; }
+  .qf-hero-in { position: relative; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 5vw, 88px); align-items: center; padding-block: clamp(32px, 5vw, 72px) clamp(56px, 7vw, 104px); }
+  .qf-hero-copy { display: grid; gap: 24px; align-content: center; container-type: inline-size; }
+  .qf-hero h1 { max-width: 11ch; font-size: clamp(2.75rem, 1.4rem + 4.6vw, 5.75rem); }
+  .qf-hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+  .qf-hero-facts { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; padding: 0; list-style: none; font-size: 0.9375rem; color: var(--qf-soft); }
+  .qf-hero-facts b { color: var(--qf-umber); font-weight: 650; }
+
+  .qf-hero-fig { display: grid; gap: 14px; margin: 0; }
+  /* the arch window inside a copper inlay line, both with the jar label's rounded top */
+  .qf-hero-frame { --arch: 999px 999px 10px 10px / 46% 46% 10px 10px; padding: clamp(8px, 1vw, 12px); border: 1px solid var(--qf-copper-line); border-radius: var(--arch); }
+  .qf-hero-window { position: relative; aspect-ratio: 1 / 0.92; border-radius: var(--arch); overflow: hidden; isolation: isolate; background: #e9e0d2; }
+  .qf-hero-window :global(.qf-hero-ph) { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .qf-hero-window :global(.qf-hero-ph img) { object-position: 50% 58%; }
+  .qf-hero-window :global(.qf-hero-lit) { opacity: 0; transition: opacity 600ms ease-out; }
+  .qf-hero.is-lit .qf-hero-window :global(.qf-hero-lit) { opacity: 1; transition: opacity 1300ms cubic-bezier(0.4, 0, 0.2, 1) 160ms; }
+  /* the wick sits at 50% across and 31% down in both photos, whatever the window's width. The spark's soft gradient is
+     a 64px image of it (scripts/quillfern-spark.mjs): drawn as a CSS gradient it made the moment the candle catches
+     block a phone's main thread for up to 150 ms, and the image looks the same within 2 of 255 levels. */
+  .qf-hero-spark { position: absolute; left: 50%; top: 30%; width: 22%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: url("data:image/webp;base64,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") center / 100% 100% no-repeat; opacity: 0; scale: 0.2; pointer-events: none; }
+  .qf-hero.is-catching .qf-hero-spark { animation: qf-spark 1000ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  @keyframes qf-spark { 22% { opacity: 1; scale: 0.7; } 100% { opacity: 0; scale: 2.2; } }
+  /* normal blending needs no separate blend pass over the photo; the colour matches the old soft-light glow within 0.3 of a level */
+  .qf-hero-glow { position: absolute; inset: 0; background: radial-gradient(48% 40% at 50% 34%, rgba(255, 214, 130, 0.12), transparent 72%); opacity: 0; transition: opacity 700ms ease-out; pointer-events: none; }
+  .qf-hero.is-lit .qf-hero-glow { opacity: 1; transition: opacity 2200ms var(--qf-ease) 300ms; }
+
+  .qf-hero-fig figcaption { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; font-family: var(--qf-ui); font-size: 0.875rem; color: var(--qf-mute); }
+  .qf-light { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 14px; border: 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1px var(--qf-copper-line); color: var(--qf-umber); font: 600 0.9375rem var(--qf-ui); cursor: pointer; transition: box-shadow 160ms ease-out, background-color 160ms ease-out, transform 160ms var(--qf-ease); }
+  .qf-light[hidden] { display: none; }
+  .qf-light:hover { box-shadow: inset 0 0 0 1px var(--qf-copper); }
+  .qf-light:active { transform: scale(0.97); }
+  .qf-light svg { fill: none; stroke: var(--qf-copper); stroke-width: 1.4; transition: fill 200ms ease-out; }
+  .qf-hero.is-lit .qf-light { background: var(--qf-cream); }
+  .qf-hero.is-lit .qf-light svg { fill: #e9a25a; stroke: #b4652c; }
+
+  :root[data-tier="3"] .qf-hero, :root[data-tier="3"] .qf-hero::before, :root[data-tier="3"] .qf-hero * { transition: none !important; animation: none !important; }
+  @media (prefers-reduced-motion: reduce) { .qf-hero, .qf-hero::before, .qf-hero * { transition: none !important; animation: none !important; } }
+
+  /* the copy column is taller than the photo on laptops, so its height sets the hero's. The headline is sized by the
+     column's own width, so it reads in three lines at every width from 900 to 2560 px (an 11ch cap gave five at 900
+     and 1920), and capped by the screen's height: "Shop the six candles" then sits on the first screen from 900 x 700
+     to 2560 x 1440 (measured: 567 px at 900 x 700, 644 at 1280 x 720, 661 at 1920 x 1080) */
+  @media (min-width: 900px) {
+    .qf-hero h1 { max-width: none; font-size: min(14cqi, 9.5svh, 5.75rem); }
+    .qf-hero-in { padding-top: min(clamp(32px, 5vw, 72px), 4svh); }
+  }
+  @media (max-width: 899px) {
+    .qf-hero-in { grid-template-columns: 1fr; gap: 24px; padding-top: 16px; }
+    .qf-hero-fig { order: -1; }
+    .qf-hero-window { aspect-ratio: 1 / 0.8; }
+    .qf-hero h1 { max-width: 13ch; }
+  }
+  /* a phone on its side (844 x 390, 568 x 320): the stacked arch filled the whole first screen and put the headline
+     850 px down, so the words go beside a shorter window, as on a laptop */
+  @media (max-width: 899px) and (min-width: 480px) and (max-height: 500px) {
+    .qf-hero-in { grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: 32px; align-items: start; }
+    .qf-hero-fig { order: 0; }
+    .qf-hero-window { aspect-ratio: auto; height: 60svh; }
+    .qf-hero h1 { max-width: none; font-size: min(14cqi, 11svh, 3rem); }
+  }
+  /* stacked (phones, tablets upright): the photo comes first, then the words, and the light switch follows the two
+     shop buttons, in the order a keyboard reaches them, instead of sitting between the photo and the headline. The
+     copy column and the figure step aside (display: contents) so their parts share the one column and can be ordered. */
+  @media (max-width: 479px), (max-width: 899px) and (min-height: 501px) {
+    .qf-hero-copy, .qf-hero-fig, .qf-hero-fig figcaption { display: contents; }
+    .qf-hero-frame, .qf-hero-cap { order: -1; }
+    .qf-hero-cap { margin-top: -12px; }
+    .qf-light { order: 1; justify-self: start; }
+    .qf-hero-facts, .qf-demo-note { order: 2; }
+  }
+  /* upright tablets: at 1 / 0.8 the window alone was 560 px tall at 768 x 1024 and pushed "Shop the six candles" to
+     1096 px, so its height is capped by the screen's. The width is set outright: with an aspect ratio and an auto
+     width, a max-height narrows the window too and the photo stopped short of its copper frame. The window stays near
+     the 1.79 : 1 photo's own shape, so the photo still fills its height and the spark stays on the wick */
+  @media (min-width: 480px) and (max-width: 899px) and (min-height: 501px) {
+    .qf-hero-window { width: 100%; max-height: 36svh; }
+  }
+  /* a shorter window on phones keeps "Shop the six candles" on the first screen. The window takes what the words leave
+     of the screen (about 540 px of it), so tall phones keep the full 1 : 0.68 arch and short ones a lower one, never
+     under 150 px */
+  @media (max-width: 479px) {
+    .qf-hero-window { aspect-ratio: 1 / 0.68; width: 100%; max-height: max(150px, 100svh - 540px); }
+    .qf-hero-in { gap: 18px; }
+    .qf-hero-ctas .qf-btn { flex: 1 1 100%; }
+    .qf-hero-cap { display: none; }
+  }
+  /* short phones (375 x 667): a slightly smaller headline and closer spacing bring the button up with the window */
+  @media (max-width: 479px) and (max-height: 700px) {
+    .qf-hero-in { gap: 14px; }
+    .qf-hero h1 { font-size: 2.375rem; }
+  }
+</style>
+
+<script>
+  import { tier } from "../../../lib/demo/tier";
+
+  const hero = document.querySelector<HTMLElement>("[data-qf-hero]");
+  const btn = hero?.querySelector<HTMLButtonElement>("[data-qf-light]");
+  const lit = hero?.querySelector<HTMLImageElement>(".qf-hero-lit img");
+  const label = btn?.querySelector<HTMLElement>("[data-qf-light-label]");
+  if (hero && btn && lit && label) {
+    const still = () => tier() === 3 || matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let touched = false, swap = 0;
+    const set = (on: boolean, spark = false) => {
+      hero.classList.toggle("is-lit", on);
+      // the button names its next action, so a lit candle never sits beside "Light the candle"; while the photo
+      // crossfades (160 ms + 1300 ms on, 600 ms off) the words change at its midpoint, not before the flame shows
+      clearTimeout(swap);
+      const words = on ? "Put the candle out" : "Light the candle";
+      if (still()) label.textContent = words;
+      else swap = window.setTimeout(() => { label.textContent = words; }, on ? 800 : 300);
+      if (on && spark && !still()) {
+        hero.classList.remove("is-catching"); void hero.offsetWidth; hero.classList.add("is-catching");
+      }
+    };
+    btn.hidden = false;
+    btn.addEventListener("click", () => { touched = true; set(!hero.classList.contains("is-lit"), true); });
+    // the candle catches by itself once, a moment after the lit photo is ready, unless motion is reduced or the
+    // visitor got to the button first
+    if (!still()) {
+      const ready = lit.complete && lit.naturalWidth ? Promise.resolve() : new Promise((r) => lit.addEventListener("load", r, { once: true }));
+      ready.then(() => lit.decode().catch(() => {})).then(() => setTimeout(() => { if (!touched) set(true, true); }, 700));
+    }
+  }
+</script>

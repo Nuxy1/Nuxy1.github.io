@@ -91,7 +91,7 @@ export function estimate(c: Choice): Estimate {
   const to5 = (n: number) => Math.round(n / 5) * 5;
   const lines = [
     { label: `${c.bed === 5 ? "5+" : c.bed} bed, ${c.bath === 4 ? "4+" : c.bath} bath, ${c.sqft.toLocaleString("en-US")} sq ft ${HOMES[c.home].name.toLowerCase()}`, amount: Math.round(base) },
-    ...(c.clean === "standard" ? [] : [{ label: `${CLEANS[c.clean].name} clean (x${CLEANS[c.clean].x})`, amount: Math.round(clean - base) }]),
+    ...(c.clean === "standard" ? [] : [{ label: `${CLEANS[c.clean].name} clean (${CLEANS[c.clean].note.toLowerCase()})`, amount: Math.round(clean - base) }]),
     ...extras,
     ...(off > 0 ? [{ label: `${FREQS[c.freq].name} (${FREQS[c.freq].note.toLowerCase()})`, amount: -Math.round(off) }] : []),
   ];
@@ -100,6 +100,33 @@ export function estimate(c: Choice): Estimate {
   const crew = work > 10 ? 3 : work > 4 ? 2 : 1;
   const hours = Math.max(1.5, Math.round((work / crew) * 2) / 2);
   return { low: to5(mid * 0.92), high: to5(mid * 1.1), mid, lines, hours, crew, morningOnly: work > 6 };
+}
+
+/** the home-type line of the receipt, in words (the townhouse is the base price and prints no line) */
+const HOME_WHY: Record<Home, string> = { house: "House, for stairs and a basement", townhouse: "Townhouse", apartment: "Apartment or condo, all on one floor" };
+
+/** "3 bedrooms", "5+ bedrooms" */
+const many = (n: number, top: number, one: string) => `${n === top ? `${top}+` : n} ${one}${n > 1 ? "s" : ""}`;
+
+/** The same sum as estimate(), one ingredient a line, for the printed receipt (visit, bedrooms, bathrooms, floor area,
+ *  home type, clean, extras, plan). Each amount is the change in the rounded running total, so the lines always add
+ *  up to the rounded middle figure. */
+export function receipt(c: Choice): { label: string; amount: number }[] {
+  const out: { label: string; amount: number }[] = [];
+  let total = 0, shown = 0;
+  const add = (label: string, next: number) => { total = next; const r = Math.round(next); out.push({ label, amount: r - shown }); shown = r; };
+  add("Visit", 60);
+  add(`${many(c.bed, 5, "bedroom")} at $20`, total + 20 * c.bed);
+  add(`${many(c.bath, 4, "bathroom")} at $25`, total + 25 * c.bath);
+  // the floor area reads as "typical" while it is the size we assume for the bedrooms, so an untouched slider is not a formula
+  const typical = c.sqft === typicalSqft(c.bed);
+  add(typical ? `About ${c.sqft.toLocaleString("en-US")} sq ft, usual for ${many(c.bed, 5, "bedroom")}` : `${c.sqft.toLocaleString("en-US")} sq ft of floor`, total + Math.round((c.sqft / 100) * 3));
+  // the lines name the reason, not the rate: the rate is in the price key, the line already shows what it adds
+  if (HOMES[c.home].x !== 1) add(HOME_WHY[c.home], total * HOMES[c.home].x);
+  if (CLEANS[c.clean].x !== 1) add(`${CLEANS[c.clean].name} clean (${CLEANS[c.clean].note.toLowerCase()})`, total * CLEANS[c.clean].x);
+  for (const e of c.extras) add(EXTRAS[e].name, total + EXTRAS[e].add);
+  if (FREQS[c.freq].x !== 1) add(`${FREQS[c.freq].name} (${FREQS[c.freq].note.toLowerCase()})`, total * FREQS[c.freq].x);
+  return out;
 }
 
 /** Choice <-> link query, so "Book this clean" carries the estimate to the booking page. Extras can come as one
@@ -115,19 +142,37 @@ export function fromQuery(search: string): Choice | null {
   return normalise({ home: q.get("home"), bed: q.get("bed"), bath: q.get("bath"), sqft: q.get("sqft") ?? undefined, clean: q.get("clean"), freq: q.get("freq"), extras: q.getAll("extras").join(",") });
 }
 
-export const hoursLabel = (h: number) => `${Math.floor(h)}${h % 1 ? "½" : ""} hour${h === 1 ? "" : "s"}`;
-/** "Deep clean · 3 bed · 2 bath · every 2 weeks" */
+/** the receipt's line above the range: the lines added up, the figure the range is worked from (not a second price,
+ *  so it is not called one). A plan is priced per visit, a one-off clean as a whole */
+export const priceLabel = (f: Freq) => (f === "once" ? "Lines added up, this clean" : "Lines added up, per visit");
+/** the stub's word for the range: "Per visit" or "For this clean" */
+export const perLabel = (f: Freq) => (f === "once" ? "For this clean" : "Per visit");
+
+export const hoursLabel =(h: number) => `${Math.floor(h)}${h % 1 ? "½" : ""} hour${h === 1 ? "" : "s"}`;
+/** "2 cleaners, about 3½ hours" */
+export const crewLabel = (e: Pick<Estimate, "crew" | "hours">) => `${e.crew === 1 ? "1 cleaner" : `${e.crew} cleaners`}, about ${hoursLabel(e.hours)}`;
+/** "Standard clean, 3 bedrooms, 2 bathrooms, every 2 weeks": the plain sentence the pages show */
+export function summary(c: Choice) {
+  return `${CLEANS[c.clean].name} clean, ${many(c.bed, 5, "bedroom")}, ${many(c.bath, 4, "bathroom")}, ${FREQS[c.freq].name.toLowerCase()}`;
+}
+/** "House, 3 bedrooms, 2 bathrooms": the home on its own, for the booking's size line */
+export function homeSize(c: Choice) {
+  return `${HOMES[c.home].name}, ${many(c.bed, 5, "bedroom")}, ${many(c.bath, 4, "bathroom")}`;
+}
+/** "Deep clean · 3 bed · 2 bath · every 2 weeks": the short form the tests pin; the pages show summary() */
 export function describe(c: Choice) {
   return [`${CLEANS[c.clean].name} clean`, `${c.bed === 5 ? "5+" : c.bed} bed`, `${c.bath === 4 ? "4+" : c.bath} bath`, FREQS[c.freq].name.toLowerCase()].join(" · ");
 }
 
 // Arrival windows and the booking calendar: a fixed pattern (no random numbers), so a day always looks the same and
 // the tests can rely on it. Day 0 is the first bookable day (tomorrow, or Monday after a Saturday); Sundays are off.
+// no-break spaces, and a word joiner after the dash (a line may still break between a dash and a no-break space), so
+// a window never splits
 export const WINDOWS = [
-  { id: "8-10", label: "8 – 10 am", morning: true },
-  { id: "10-12", label: "10 am – 12 pm", morning: true },
-  { id: "1-3", label: "1 – 3 pm", morning: false },
-  { id: "3-5", label: "3 – 5 pm", morning: false },
+  { id: "8-10", label: "8\u00a0–\u2060\u00a010\u00a0am", morning: true },
+  { id: "10-12", label: "10\u00a0am\u00a0–\u2060\u00a012\u00a0pm", morning: true },
+  { id: "1-3", label: "1\u00a0–\u2060\u00a03\u00a0pm", morning: false },
+  { id: "3-5", label: "3\u00a0–\u2060\u00a05\u00a0pm", morning: false },
 ] as const;
 export type WindowId = (typeof WINDOWS)[number]["id"];
 /** windows already taken on bookable day n: the third day is full, the rest lose one or two */

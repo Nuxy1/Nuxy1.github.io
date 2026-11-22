@@ -1,0 +1,605 @@
+---
+// Online sign-up for the self-serve monthly plans (business/subscriptions/01-audit-and-plan.md §5): a few questions
+// about the website or automations, then contact details, then the billing service's answer. Built only when
+// data/billing.ts billingCheckout is on; with it off, getStaticPaths returns nothing and no page exists.
+//
+// The browser decides nothing. It posts the answers to /billing/apply (agent src/billing/routes.js), which checks them
+// again with the rules in src/eligibility.js, saves a case and, only for an eligible self-serve plan, returns a one-time
+// checkout link token. "Continue to checkout" posts that token to /billing/checkout, which makes a Stripe Checkout
+// Session from the plan's stored price. No amount, price id or plan rule is sent from here, and none would be trusted.
+// Coming back from Stripe proves nothing: /billing/thanks/ says the payment is being confirmed, never that it is paid.
+//
+// It needs JavaScript (the service answers JSON only, and a GET fallback would put personal details in the URL), so
+// the form stays hidden until the script runs and <noscript> offers the quote form instead.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import { titleCase } from "../../lib/title-case";
+import { planById, planTerms } from "../../data/services";
+import { inbox } from "../../data/site";
+import {
+  billingCheckout, billingUrl, selfServePlans, planAction, disclosure, renewalConsent,
+  websiteQuestions, automationQuestions, workflowLimit, outcomes,
+} from "../../data/billing";
+import type { Question } from "../../data/billing";
+
+export function getStaticPaths() {
+  return billingCheckout ? selfServePlans.map((plan) => ({ params: { plan } })) : [];
+}
+
+const { plan: id } = Astro.params as { plan: string };
+const plan = planById[id];
+const website = plan.kind === "website";
+const questions: Question[] = website ? websiteQuestions : automationQuestions;
+const accessNames = ["accountOwner", "canInvite", "sensitive"];
+const groups = [
+  { title: website ? "About your website" : "About your automations", qs: questions.filter((q) => !accessNames.includes(q.name)), count: !website },
+  { title: "Access and sensitive work", qs: questions.filter((q) => accessNames.includes(q.name)), count: false },
+];
+const limit = workflowLimit[id];
+const names = Object.fromEntries(Object.values(planById).map((p) => [p.id, titleCase(p.name)]));
+const next = Object.fromEntries(Object.entries(planAction).map(([k, a]) => [k, a.href]));
+const title = titleCase(plan.name);
+// The result title is the section's h2, so it follows the site's Title Case headings (DESIGN.md).
+const headed = Object.fromEntries(Object.entries(outcomes).map(([k, o]) => [k, { ...o, title: titleCase(o.title) }]));
+---
+<Base title={`Start ${title} · Nuxy Automation`} description={`Check that ${plan.name} fits, then sign up online.`} noindex wide>
+  <div class="wrap start" data-signup data-endpoint={billingUrl} data-plan={id} data-outcomes={JSON.stringify(headed)} data-names={JSON.stringify(names)} data-next={JSON.stringify(next)} data-limits={JSON.stringify(workflowLimit)}>
+    <header class="start-head">
+      <p class="eyebrow">Monthly plan · {website ? "Website" : "Automations"}</p>
+      <h1>Start {title}</h1>
+      <p class="lead">A few questions first, so you only pay for a plan that fits. Nothing is charged until you check out on Stripe’s secure page.</p>
+    </header>
+
+    <aside class="summary" aria-labelledby="sum-h">
+      <h2 id="sum-h" class="sum-name">{title}</h2>
+      <p class="sum-price"><strong>{plan.amount}</strong> a month</p>
+      <ul class="sum-points" role="list">{plan.points.map((p) => <li><Icon name="check" />{p}</li>)}</ul>
+      <div class="faq sum-more">
+        <details>
+          <summary><span>What’s included</span><Icon name="plus" /></summary>
+          <ul class="sum-points" role="list">{plan.points.map((p) => <li><Icon name="check" />{p}</li>)}</ul>
+        </details>
+      </div>
+      <p class="sum-disclosure"><Icon name="info" />{disclosure}</p>
+      <p class="sum-links"><a href="/policies/#cancel">Cancellations</a> · <a href="/policies/#refunds">Refunds</a> · <a href="/policies/#terms">Terms</a> · <a href="/pricing/#plans">All plans</a></p>
+    </aside>
+
+    <div class="main">
+      <noscript>
+        <div class="nojs">
+          <p><strong>Online sign-up needs JavaScript.</strong> You can still ask for this plan through the quote form, and we’ll reply by email.</p>
+          {/* No icon here: an icon's first use carries its drawing, and noscript content never becomes page elements,
+              so a first use inside it would leave every later envelope on the page blank. */}
+          <a class="button" href={`/contact/?service=${id}`}>Ask about {title}</a>
+        </div>
+      </noscript>
+
+      <form class="signup" hidden data-form novalidate aria-describedby="signup-legend">
+        <p class="legend" id="signup-legend">Every question is required unless marked optional.</p>
+        <input type="hidden" name="plan" value={id} />
+        {/* What still needs an answer, at the top of the form: a failed check scrolls here and focuses it (the
+            visitor sees the count before the first field), and each line jumps to its question. No alert role: the
+            status line below already announces the count. */}
+        <div class="problem err-summary" tabindex="-1" hidden data-summary></div>
+
+        {groups.map((g, i) => (
+          <fieldset class="group">
+            <legend class="group-h"><span class="step" aria-hidden="true">{i + 1}</span><span class="sr-only">Step {i + 1} of {groups.length + 1}: </span>{g.title}</legend>
+            {g.qs.map((q) => (
+              <>
+                <fieldset class="field" id={`q-${q.name}`} aria-describedby={`${q.help ? `h-${q.name} ` : ""}e-${q.name}`}>
+                  <legend>{q.legend}</legend>
+                  {q.help && <p class="help" id={`h-${q.name}`}>{q.help}</p>}
+                  {/* Short answers sit two to a row on phones, so the form isn't one long column. */}
+                  <div class:list={["choices", { short: q.choices.every((c) => c.label.length <= 16) }]}>
+                    {q.choices.map((c) => (
+                      <label><input type={q.many ? "checkbox" : "radio"} name={q.name} value={c.id} required={!q.many} /><span>{c.label}</span></label>
+                    ))}
+                  </div>
+                  <p class="err" id={`e-${q.name}`} data-err={q.name} data-missing={q.many ? "Choose at least one answer." : "Choose one answer."} hidden></p>
+                </fieldset>
+                {/* The count comes after "Are the workflows running today?", which it is checked against. */}
+                {g.count && q.name === "workflowState" && (
+                  <div class="field">
+                    <label for="f-workflowCount">How many workflows should the plan look after?</label>
+                    <input id="f-workflowCount" name="workflowCount" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" required aria-describedby="h-workflowCount o-workflowCount e-workflowCount" />
+                    <p class="help" id="h-workflowCount">{title} covers up to {limit}. A workflow is one automation with one trigger, like “new form, then a reply and an alert”. Enter 0 if none are built yet.</p>
+                    <p class="over" id="o-workflowCount" aria-live="polite" hidden data-over></p>
+                    <p class="err" id="e-workflowCount" data-err="workflowCount" data-missing="Enter how many workflows, as a number." data-problem="Enter a whole number from 0 to 1,000." hidden></p>
+                  </div>
+                )}
+              </>
+            ))}
+          </fieldset>
+        ))}
+
+        <fieldset class="group">
+          <legend class="group-h"><span class="step" aria-hidden="true">{groups.length + 1}</span><span class="sr-only">Step {groups.length + 1} of {groups.length + 1}: </span>Your details</legend>
+          <div class="grid2">
+            <div class="field">
+              <label for="f-name">Your name</label>
+              <input id="f-name" name="name" type="text" autocomplete="name" required maxlength="120" aria-describedby="e-name" />
+              <p class="err" id="e-name" data-err="name" data-missing="Your name is required." hidden></p>
+            </div>
+            <div class="field">
+              <label for="f-email">Email</label>
+              <input id="f-email" name="email" type="email" inputmode="email" autocomplete="email" required maxlength="254" spellcheck="false" aria-describedby="h-email e-email" />
+              <p class="help" id="h-email">Our reply and your receipts go here.</p>
+              <p class="err" id="e-email" data-err="email" data-missing="Your email is required." data-problem="Enter an email address like name@business.com." hidden></p>
+            </div>
+            <div class="field">
+              <label for="f-business">Business name</label>
+              <input id="f-business" name="business" type="text" autocomplete="organization" required maxlength="160" aria-describedby="e-business" />
+              <p class="err" id="e-business" data-err="business" data-missing="Business name is required." hidden></p>
+            </div>
+            <div class="field">
+              <label for="f-website">Website <span class="opt">(optional)</span></label>
+              <input id="f-website" name="website" type="text" inputmode="url" autocomplete="url" maxlength="2048" spellcheck="false" placeholder="example.com" aria-describedby="e-website" />
+              <p class="err" id="e-website" data-err="website" data-problem="Enter a website address like example.com, or leave it empty." hidden></p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-note">Anything we should know <span class="opt">(optional)</span></label>
+            <textarea id="f-note" name="note" rows="3" maxlength="2000" aria-describedby="h-note e-note"></textarea>
+            <p class="help" id="h-note"><Icon name="lockSimple" />Never put passwords, logins or codes here. If the plan goes ahead, you invite us as a user to your own accounts.</p>
+            <p class="err" id="e-note" data-err="note" hidden></p>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button class="button" type="submit" data-submit><span data-label>Check my answers</span><Icon name="arrowRight" /></button>
+          <p class="alt">This step only checks the answers. Nothing is charged.</p>
+          {/* The way out to a person, for a visitor who would rather not answer the questions here. */}
+          <p class="alt talk">Rather talk it through? <a href={`/contact/?service=${id}`}>Ask us about {title}</a> instead.</p>
+        </div>
+        <p class="sr-only" role="status" aria-live="polite" data-status></p>
+        <div class="problem" role="alert" tabindex="-1" hidden data-problem-box></div>
+      </form>
+
+      <section class="result" tabindex="-1" hidden data-result aria-labelledby="r-title">
+        <span class="badge" data-badge><Icon name="checkCircle" /><Icon name="info" /></span>
+        <h2 id="r-title" data-r-title>Your result</h2>
+        <p data-r-body></p>
+        <ul class="reasons" role="list" hidden data-r-reasons></ul>
+        <p class="ref" hidden data-r-ref-line>Your reference: <strong data-r-ref></strong></p>
+
+        <div class="pay" hidden data-pay>
+          <p class="pay-line"><strong>{title}</strong>: {plan.amount} a month. {disclosure}</p>
+          <p class="help" data-after-pay>After you pay, Stripe emails your receipt, we send a welcome email, and you invite us as a user to your accounts. We never ask for a password.</p>
+          <div class="field check">
+            <label for="f-consent"><input id="f-consent" type="checkbox" aria-describedby="e-consent" data-consent /> <span>{renewalConsent}</span></label>
+            <p class="err" id="e-consent" hidden data-consent-err>Tick the box to continue to checkout.</p>
+          </div>
+          <button class="button" type="button" data-checkout><Icon name="lockSimple" /><span data-checkout-label>Continue to secure checkout</span></button>
+          <p class="help" data-expires hidden></p>
+          <p class="err" role="alert" tabindex="-1" hidden data-checkout-err></p>
+        </div>
+
+        <div class="r-actions" data-r-actions>
+          {/* The suggested plan is the way forward, so it is the one primary button. A custom quote gets no
+              "ask for a quote" button: the answers already went to us, and a second request would only duplicate them. */}
+          <a class="button" hidden data-suggest href="/pricing/#plans"><span data-suggest-label></span><Icon name="arrowRight" /></a>
+          <button class="button secondary" type="button" data-edit><Icon name="pencilSimple" />Change my answers</button>
+        </div>
+        <p class="note">Questions? Email <a href={`mailto:${inbox}`}>{inbox}</a> with your reference.</p>
+      </section>
+
+      <div class="faq terms">
+        <details>
+          <summary><span>What every plan includes and excludes</span><Icon name="plus" /></summary>
+          <ul role="list">{planTerms.map((t) => <li>{t}</li>)}</ul>
+        </details>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .start { display: grid; gap: 28px; padding-block: clamp(28px, 5vw, 64px) clamp(56px, 8vw, 96px); }
+  @media (min-width: 960px) {
+    .start { grid-template-columns: minmax(0, 1fr) 340px; column-gap: clamp(32px, 4vw, 56px); align-items: start; }
+    .start-head { grid-column: 1; }
+    .summary { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: calc(var(--nav-h) + 24px); }
+    .main { grid-column: 1; }
+  }
+  .start-head { display: grid; gap: 12px; max-width: 680px; }
+  .start-head h1 { font-size: clamp(2rem, 1.6rem + 2vw, 2.75rem); line-height: 1.1; }
+  .lead { color: var(--body); font-size: 1.0625rem; }
+
+  .summary { display: grid; gap: 12px; padding: 22px; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); }
+  .sum-name { font-size: 1.25rem; }
+  .sum-price { color: var(--muted); }
+  .sum-price strong { margin-right: 4px; color: var(--ink); font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .sum-points { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--hairline-soft); color: var(--body); font-size: 0.9375rem; }
+  .sum-points li, .sum-disclosure, .help { display: flex; gap: 8px; align-items: flex-start; }
+  /* Icon.astro injects the svg with set:html, so scoped selectors can't reach it: :global, as pricing/index.astro does. */
+  .sum-points li > :global(.icon) { flex: none; width: 1.1em; height: 1.1em; margin-top: 0.2em; color: var(--ok); }
+  .sum-disclosure { padding: 12px; border-radius: 10px; background: rgb(var(--blue-rgb) / 0.08); color: var(--body); font-size: 0.875rem; line-height: 1.5; }
+  .sum-disclosure > :global(.icon), .help > :global(.icon) { flex: none; width: 1.05em; height: 1.05em; margin-top: 0.18em; color: var(--muted); }
+  .sum-links { color: var(--muted); font-size: 0.875rem; }
+  /* Phones: the plan's policy links are a row of their own, so each gets a 44px-tall tap area. */
+  @media (max-width: 959px) { .sum-links a { display: inline-flex; align-items: center; min-height: 44px; } }
+  /* Phones: the points fold under "What's included" so the form stays near the top; desktop shows them in the card. */
+  .sum-more { display: none; }
+  @media (max-width: 959px) {
+    .summary > .sum-points { display: none; }
+    .sum-more { display: block; border-top: 1px solid var(--hairline-soft); }
+    .sum-more summary { padding: 12px 0; }
+    .sum-more .sum-points { padding: 0 0 12px; border-top: 0; }
+  }
+
+  .main { display: grid; gap: 24px; min-width: 0; }
+  .nojs { display: grid; gap: 14px; justify-items: start; padding: 20px; border: 1px solid var(--hairline); border-radius: var(--r-lg); }
+  .signup { display: grid; gap: 28px; }
+  .legend { color: var(--muted); font-size: 0.9375rem; }
+  .group { display: grid; gap: 22px; margin: 0; padding: clamp(20px, 3vw, 28px); border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); min-width: 0; }
+  .group-h { display: flex; align-items: center; gap: 12px; padding: 0; color: var(--ink); font-size: 1.125rem; font-weight: 700; }
+  .step { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; border: 1px solid var(--blue-line); color: var(--ink); font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+  .grid2 { display: grid; gap: 20px; }
+  @media (min-width: 640px) { .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .field { display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .field > label, .field > legend { color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
+  .opt { color: var(--muted); font-weight: 400; }
+  .field input:not([type="radio"]):not([type="checkbox"]), .field textarea {
+    width: 100%; min-height: 48px; padding: 11px 14px; border: 1px solid var(--field-line); border-radius: 10px;
+    background: var(--field); color: var(--ink); font-size: 1rem; line-height: 1.4;
+    transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+  }
+  #f-workflowCount { max-width: 160px; font-variant-numeric: tabular-nums; }
+  .field textarea { min-height: 96px; resize: vertical; }
+  .field input:hover, .field textarea:hover { border-color: var(--field-line-hover); }
+  .field input:focus, .field textarea:focus { outline: 2px solid transparent; border-color: var(--blue-line); box-shadow: 0 0 0 3px rgb(var(--blue-rgb) / 0.35); }
+  .field [aria-invalid="true"] { border-color: var(--bad); }
+  .help { color: var(--muted); font-size: 0.875rem; line-height: 1.45; max-width: 72ch; }
+  .err { color: var(--bad); font-size: 0.875rem; font-weight: 500; line-height: 1.45; }
+  .over { max-width: 72ch; padding: 10px 12px; border-radius: 10px; background: rgb(var(--blue-rgb) / 0.08); color: var(--body); font-size: 0.875rem; line-height: 1.45; }
+  fieldset.field { margin: 0; padding: 0; border: 0; min-width: 0; }
+  fieldset.field > legend { padding: 0; margin-bottom: 6px; }
+  .choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); column-gap: 20px; }
+  @media (max-width: 479px) { .choices.short { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; } }
+  .choices label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--body); cursor: pointer; }
+  .field input[type="radio"], .field input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; width: 20px; height: 20px; margin: 0; flex: none;
+    border: 1.5px solid var(--field-line); background: var(--field); cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out;
+  }
+  .field input[type="radio"] { border-radius: 50%; }
+  .field input[type="checkbox"] { border-radius: 5px; }
+  .field input[type="radio"]::before, .field input[type="checkbox"]::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; transform: scale(0); transition: transform 140ms ease-out; }
+  .field input[type="checkbox"]::before { width: 12px; height: 12px; border-radius: 0; clip-path: polygon(13% 47%, 0 62%, 38% 100%, 100% 22%, 86% 9%, 37% 70%); }
+  .field input[type="radio"]:hover, .field input[type="checkbox"]:hover { border-color: var(--field-line-hover); }
+  .field input[type="radio"]:checked, .field input[type="checkbox"]:checked { border-color: var(--blue-line); background: var(--blue); }
+  .field input[type="radio"]:checked::before, .field input[type="checkbox"]:checked::before { transform: scale(1); }
+  .field input[type="radio"]:focus-visible, .field input[type="checkbox"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .field input, .field textarea, .field input::before { transition: none; } }
+  @media (forced-colors: active) { .field input[type="radio"], .field input[type="checkbox"] { appearance: auto; -webkit-appearance: auto; } .field input[type="radio"]::before, .field input[type="checkbox"]::before { display: none; } }
+  fieldset[data-invalid] > legend { color: var(--bad); }
+  .check > label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding-top: 6px; color: var(--body); font-weight: 400; cursor: pointer; }
+  .check input[type="checkbox"] { margin-top: 0.1em; }
+  .check .err { padding-left: 30px; }
+
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  .button[aria-busy="true"] { opacity: 0.8; cursor: progress; }
+  .alt { color: var(--muted); font-size: 0.9375rem; }
+  /* (its own line under the button; the link gets a taller tap area without moving the text) */
+  .talk { flex-basis: 100%; }
+  .talk a { display: inline-block; padding-block: 10px; }
+  .problem { padding: 14px 16px; border: 1px solid var(--bad); border-radius: 10px; color: var(--ink); }
+  .err-summary { outline: none; scroll-margin-top: calc(var(--nav-h) + 16px); }
+  .err-summary:focus-visible { outline: 2px solid var(--focus, currentColor); outline-offset: 3px; }
+  /* (the script builds these lines, so they carry no scope attribute: :global reaches them) */
+  .err-summary :global(p) { margin: 0 0 6px; font-weight: 600; }
+  .err-summary :global(ul) { display: grid; gap: 2px; margin: 0; padding-left: 20px; }
+  /* Each line is a jump link: tall enough to tap without a gap between neighbours. */
+  .err-summary :global(a) { display: inline-block; padding-block: 10px; }
+
+  .result { display: grid; gap: 14px; justify-items: start; padding: clamp(22px, 3vw, 32px); border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel); outline: none; scroll-margin-top: calc(var(--nav-h) + 16px); }
+  .result h2 { font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem); }
+  .result p { overflow-wrap: anywhere; }
+  .badge { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: rgb(var(--blue-rgb) / 0.14); color: var(--ink); }
+  .badge > :global(.icon) { width: 28px; height: 28px; }
+  .badge > :global(.icon + .icon) { display: none; }
+  .result:not([data-decision="eligible"]) .badge > :global(.icon:first-child) { display: none; }
+  .result:not([data-decision="eligible"]) .badge > :global(.icon + .icon) { display: block; }
+  .result[data-decision="eligible"] .badge { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
+  .reasons { display: grid; gap: 6px; padding-left: 1.1em; list-style: disc; color: var(--body); }
+  .ref strong { font-family: var(--mono); letter-spacing: 0.02em; color: var(--ink); }
+  .pay { display: grid; gap: 14px; width: 100%; padding-top: 14px; border-top: 1px solid var(--hairline-soft); }
+  .pay .button { justify-self: start; }
+  .r-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .note { color: var(--muted); }
+  /* Vertical padding on an inline link widens its tap area without moving the line. */
+  .note a { padding-block: 10px; }
+  .terms { color: var(--body); border-top: 1px solid var(--hairline); }
+  .terms ul { display: grid; gap: 8px; padding: 0 0 20px 1.1em; list-style: disc; font-size: 0.9375rem; max-width: 72ch; }
+  @media (max-width: 479px) { .actions .button, .pay .button, .r-actions .button { width: 100%; } }
+</style>
+
+<script>
+  // Client checks are only for quick messages next to each field; the service checks everything again and is the
+  // only one that decides. Outcome wording comes from data/billing.ts (data-outcomes on the root).
+  const root = document.querySelector<HTMLElement>("[data-signup]")!;
+  const form = root.querySelector<HTMLFormElement>("[data-form]")!;
+  const q = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
+  const endpoint = root.dataset.endpoint!;
+  const outcomes: Record<string, { title: string; body: string }> = JSON.parse(root.dataset.outcomes!);
+  const planNames: Record<string, string> = JSON.parse(root.dataset.names!);
+  const nextOf: Record<string, string> = JSON.parse(root.dataset.next!);
+  const result = q("[data-result]");
+  const status = q("[data-status]");
+  const problem = q("[data-problem-box]");
+  const summary = q("[data-summary]");
+  const submit = q<HTMLButtonElement>("[data-submit]");
+  const errs = [...form.querySelectorAll<HTMLElement>("[data-err]")];
+  const EMAIL = /^[^\s@<>"(),;:\\[\]]+@[^\s@<>"'(),;:\\[\]]+\.[a-z]{2,}$/i;
+  const smooth = () => (matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth") as ScrollBehavior;
+  let token = "";
+  form.hidden = false;
+
+  const errFor = (name: string) => errs.find((e) => e.dataset.err === name);
+  const inputs = (name: string) => [...form.querySelectorAll<HTMLInputElement>(`[name="${name}"]`)];
+  const isGroup = (name: string) => inputs(name)[0]?.type === "radio" || inputs(name)[0]?.type === "checkbox";
+  const value = (name: string) => isGroup(name) ? inputs(name).filter((i) => i.checked).map((i) => i.value) : [inputs(name)[0]?.value.trim() ?? ""];
+  const show = (name: string, message: string) => {
+    const e = errFor(name);
+    if (!e) return false;
+    if (isGroup(name)) e.closest("fieldset")!.toggleAttribute("data-invalid", !!message);
+    else inputs(name)[0].setAttribute("aria-invalid", String(!!message));
+    e.textContent = message;
+    e.hidden = !message;
+    return true;
+  };
+  const problemOf = (name: string): string => {
+    const d = errFor(name)!.dataset;
+    const [v] = value(name);
+    if (isGroup(name)) return value(name).length ? "" : d.missing ?? "";
+    if (!v) return d.missing ?? "";
+    if (name === "email" && !EMAIL.test(v)) return d.problem ?? "";
+    if (name === "website" && !/^(https?:\/\/)?[^\s/]+\.[^\s]+$/i.test(v)) return d.problem ?? "";
+    if (name === "workflowCount") {
+      if (!/^\d{1,4}$/.test(v) || Number(v) > 1000) return d.problem ?? "";
+      const state = value("workflowState")[0];
+      if (Number(v) === 0 && state && state !== "not-built") return "0 only fits “Not built yet”. Enter how many there are, or change that answer.";
+    }
+    return "";
+  };
+  // A question's own words (its legend, or its field label), and a jump that puts it in view with focus on it
+  // (the answer already picked in a group, otherwise its first choice).
+  const questionOf = (name: string) => (isGroup(name)
+    ? inputs(name)[0].closest("fieldset")?.querySelector("legend")?.textContent
+    : form.querySelector(`label[for="${inputs(name)[0].id}"]`)?.textContent)?.trim() || name;
+  const jumpTo = (name: string) => {
+    const el = (isGroup(name) && inputs(name).find((i) => i.checked)) || inputs(name)[0];
+    if (!el) return;
+    (el.closest("fieldset, .field") ?? el).scrollIntoView({ block: "center", behavior: smooth() });
+    el.focus({ preventScroll: true });
+  };
+  // true when the answer is fine (the message, if any, is shown either way)
+  const check = (name: string) => { const p = problemOf(name); show(name, p); return !p; };
+  const names = errs.map((e) => e.dataset.err!);
+  for (const name of names) {
+    if (isGroup(name)) inputs(name).forEach((i) => i.addEventListener("change", () => check(name)));
+    else {
+      const el = inputs(name)[0];
+      el.addEventListener("blur", () => el.value.trim() && check(name));
+      el.addEventListener("input", () => el.getAttribute("aria-invalid") === "true" && check(name));
+    }
+  }
+  // "None of these" can't be ticked with anything else: ticking one clears the other.
+  for (const box of inputs("sensitive")) box.addEventListener("change", () => {
+    if (!box.checked) return;
+    for (const other of inputs("sensitive")) if ((box.value === "none") !== (other.value === "none")) other.checked = false;
+  });
+  inputs("workflowState").forEach((i) => i.addEventListener("change", () => inputs("workflowCount")[0]?.value && check("workflowCount")));
+
+  // A count above this plan's limit isn't an error (the service decides), but say so now, with the plan that covers it.
+  const limits: Record<string, number> = JSON.parse(root.dataset.limits!);
+  const over = root.querySelector<HTMLElement>("[data-over]");
+  const overNote = () => {
+    if (!over) return;
+    const v = inputs("workflowCount")[0]?.value.trim() ?? "";
+    const n = /^\d{1,4}$/.test(v) ? Number(v) : 0;
+    const mine = limits[root.dataset.plan!] ?? Infinity;
+    over.hidden = !(n > mine && n <= 1000);
+    if (over.hidden) return over.replaceChildren();
+    const fit = Object.entries(limits).sort((a, b) => a[1] - b[1]).find(([, l]) => l >= n);
+    const link = document.createElement("a");
+    if (fit && nextOf[fit[0]]) {
+      link.href = nextOf[fit[0]];
+      link.textContent = `${planNames[fit[0]]} covers up to ${fit[1]}`;
+      over.replaceChildren(`${n} is more than ${planNames[root.dataset.plan!]} covers (${mine}). `, link, ". You can still send your answers here.");
+    } else {
+      link.href = `/contact/?service=${root.dataset.plan}`;
+      link.textContent = "ask for a written quote";
+      over.replaceChildren(`${n} is more than any monthly plan covers. You can `, link, " instead.");
+    }
+  };
+  inputs("workflowCount")[0]?.addEventListener("input", overNote);
+
+  // Answers kept from a checkout this tab left (see the checkout click below): only this plan's, for an hour, then gone.
+  const KEPT = "nuxy-signup";
+  try {
+    const kept = JSON.parse(sessionStorage.getItem(KEPT) ?? "null");
+    sessionStorage.removeItem(KEPT);
+    if (kept?.plan === root.dataset.plan && Date.now() - kept.at < 3_600_000 && Array.isArray(kept.answers)) {
+      for (const [k, v] of kept.answers as [string, string][]) {
+        const els = inputs(k);
+        if (isGroup(k)) els.forEach((i) => { if (i.value === v) i.checked = true; });
+        else if (els[0]) els[0].value = v;
+      }
+      overNote();
+      status.textContent = "Your earlier answers are filled in.";
+      q("#signup-legend").classList.add("over");
+      q("#signup-legend").textContent = "Your earlier answers are filled in; look them over before you check them again. Every question is required unless marked optional.";
+    }
+  } catch { /* no storage in this browser: the form starts empty */ }
+
+  // The button itself says it's working ("Checking…"), and the status line says the same to screen readers.
+  const busy = (b: HTMLButtonElement, on: boolean, text?: string) => {
+    b.disabled = on;
+    b.setAttribute("aria-busy", String(on));
+    const label = b.querySelector<HTMLElement>("[data-label], [data-checkout-label]");
+    if (label) {
+      label.dataset.idle ??= label.textContent ?? "";
+      label.textContent = on && text ? text : label.dataset.idle;
+    }
+    if (text) status.textContent = text;
+  };
+  async function post(path: string, body: URLSearchParams) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20_000);
+    try {
+      const r = await fetch(`${endpoint}${path}`, { method: "POST", body, headers: { accept: "application/json" }, signal: ctrl.signal, credentials: "omit" });
+      const data = await r.json().catch(() => ({}));
+      return { status: r.status, data };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  const sorry = "We couldn’t reach the sign-up service, so nothing was sent and nothing was charged. Please try again in a minute.";
+  const sorryPay = "We couldn’t open checkout, so nothing was charged. Your answers are saved; please try again in a minute, or email us with your reference.";
+
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    problem.hidden = true;
+    summary.hidden = true;
+    const bad = names.filter((n) => !check(n));
+    if (bad.length) {
+      const count = `${bad.length} answer${bad.length > 1 ? "s need" : " needs"} a look.`;
+      summary.replaceChildren(
+        Object.assign(document.createElement("p"), { textContent: count }),
+        Object.assign(document.createElement("ul"), { role: "list" }),
+      );
+      const list = summary.querySelector("ul")!;
+      for (const n of bad) {
+        const a = Object.assign(document.createElement("a"), { href: `#${isGroup(n) ? `q-${n}` : inputs(n)[0].id}`, textContent: questionOf(n) });
+        a.addEventListener("click", (e) => { e.preventDefault(); jumpTo(n); });
+        const li = document.createElement("li");
+        li.append(a);
+        list.append(li);
+      }
+      summary.hidden = false;
+      summary.scrollIntoView({ block: "start", behavior: smooth() });
+      summary.focus({ preventScroll: true });
+      status.textContent = count;
+      return;
+    }
+    busy(submit, true, "Checking your answers…");
+    try {
+      const { status: code, data } = await post("/apply", new URLSearchParams(new FormData(form) as unknown as Record<string, string>));
+      if (code === 200 && data.ok) return showResult(data);
+      if (code === 400 && data.fields) {
+        const flagged = new Set<string>();
+        // The service's words describe the field ("An email address we can reach you at."), so say it was refused:
+        // "Not accepted: an email address we can reach you at."
+        const refused = (s: string) => { const t = s.trim().replace(/\.$/, ""); return t && `Not accepted: ${t[0].toLowerCase()}${t.slice(1)}.`; };
+        const flag = (k: string, msg: string) => { if (msg && show(k, msg)) flagged.add(k); };
+        for (const [k, msg] of Object.entries<string>(data.fields)) flag(k, refused(msg));
+        for (const line of (data.answers ?? []) as string[]) {
+          const k = line.split(":")[0];
+          if (errFor(k)) flag(k, refused(line.slice(k.length + 1)) || (errFor(k)!.dataset.missing ?? ""));
+        }
+        problem.textContent = flagged.size ? "Please check the highlighted answers." : `${data.message ?? "Some answers weren’t accepted."} Nothing was charged.`;
+        problem.hidden = false;
+        // Take the visitor to the first refused answer (in page order), not to the box by the button.
+        const first = names.find((n) => flagged.has(n));
+        if (first) { inputs(first)[0]?.focus(); return; }
+      } else problem.textContent = data.message ? `${data.message} Nothing was charged.` : sorry;
+      problem.hidden = false;
+      problem.scrollIntoView({ block: "center", behavior: smooth() });
+    } catch {
+      problem.textContent = sorry;
+      problem.hidden = false;
+      problem.scrollIntoView({ block: "center", behavior: smooth() });
+    } finally {
+      busy(submit, false);
+      // The disabled button dropped focus to the page: put it on the message, unless it already went to a field.
+      const at = document.activeElement;
+      if (!problem.hidden && (!at || at === document.body || at === submit)) problem.focus({ preventScroll: true });
+    }
+  });
+
+  function showResult(data: { ref: string; decision: string; reasons: string[]; suggestedPlan?: string; checkout: { token: string; expiresAt: string } | null }) {
+    // "Eligible" with no checkout link (a plan that isn't self-serve) reads as a person checking it first.
+    const payable = data.decision === "eligible" && !!data.checkout;
+    const shown = payable ? "eligible" : data.decision === "eligible" || !outcomes[data.decision] ? "manual_review" : data.decision;
+    result.dataset.decision = shown;
+    q("[data-r-title]").textContent = outcomes[shown].title;
+    const list = q("[data-r-reasons]");
+    list.replaceChildren(...data.reasons.map((r) => Object.assign(document.createElement("li"), { textContent: r })));
+    list.hidden = !data.reasons.length;
+    q("[data-r-ref]").textContent = data.ref;
+    q("[data-r-ref-line]").hidden = !data.ref;
+    token = payable ? data.checkout!.token : "";
+    q("[data-pay]").hidden = !payable;
+    if (payable) {
+      const at = new Date(data.checkout!.expiresAt);
+      const e = q("[data-expires]");
+      e.textContent = isNaN(+at) ? "" : `This checkout link works until ${at.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}.`;
+      e.hidden = !e.textContent;
+    }
+    const sug = q<HTMLAnchorElement>("[data-suggest]");
+    const s = data.suggestedPlan && data.suggestedPlan !== root.dataset.plan ? data.suggestedPlan : "";
+    sug.hidden = !s || !nextOf[s];
+    // Offer "the plan that fits" in words only when its button is there.
+    q("[data-r-body]").textContent = (!sug.hidden && outcomes[shown].withSuggestion) || outcomes[shown].body;
+    // Say where the button goes: a plan's own sign-up, or (for plans that start with a conversation) the contact form.
+    // A plan that starts with a conversation gets the reference too, so the contact form links the two cases.
+    if (s && nextOf[s]) {
+      const to = new URL(nextOf[s], location.href);
+      if (!to.pathname.startsWith("/get-started/") && /^NX-[0-9A-F]{10}$/.test(data.ref)) to.searchParams.set("ref", data.ref);
+      sug.href = to.pathname + to.search + to.hash;
+      sug.querySelector("[data-suggest-label]")!.textContent = `${nextOf[s].startsWith("/get-started/") ? "Start" : "Ask about"} ${planNames[s] ?? "the suggested plan"}`;
+    }
+    form.hidden = true;
+    result.hidden = false;
+    result.focus();
+    result.scrollIntoView({ block: "start", behavior: smooth() });
+  }
+
+  q("[data-edit]").addEventListener("click", () => {
+    result.hidden = true;
+    form.hidden = false;
+    token = "";
+    // "We need a little more detail" comes from an "I'm not sure" answer or a count over the plan's limit: open the
+    // form on the first of those, not on question one.
+    const unsure = result.dataset.decision === "needs_clarification"
+      ? names.find((n) => isGroup(n) && value(n).includes("unknown")) ?? (over && !over.hidden ? "workflowCount" : "")
+      : "";
+    if (unsure) return jumpTo(unsure);
+    q<HTMLElement>("#signup-legend").scrollIntoView({ block: "start", behavior: smooth() });
+    form.querySelector<HTMLElement>("input:not([type=hidden])")?.focus({ preventScroll: true });
+  });
+
+  const pay = q<HTMLButtonElement>("[data-checkout]");
+  const consent = q<HTMLInputElement>("[data-consent]");
+  const consentErr = q("[data-consent-err]");
+  const payErr = q("[data-checkout-err]");
+  consent.addEventListener("change", () => { if (consent.checked) consentErr.hidden = true; });
+  pay.addEventListener("click", async () => {
+    payErr.hidden = true;
+    if (!consent.checked) { consentErr.hidden = false; consent.focus(); return; }
+    if (!token) return;
+    busy(pay, true, "Opening secure checkout…");
+    try {
+      const { status: code, data } = await post("/checkout", new URLSearchParams({ t: token }));
+      if (code === 200 && typeof data.url === "string" && data.url.startsWith("https://checkout.stripe.com/")) {
+        // So "Back to your answers" after a cancelled checkout doesn't mean filling the form in again. The answers
+        // only, never the checkout token; this tab only (sessionStorage), and the thanks page clears it.
+        try {
+          const answers = [...new FormData(form)].filter(([k, v]) => k !== "plan" && typeof v === "string").map(([k, v]) => [k, v]);
+          sessionStorage.setItem(KEPT, JSON.stringify({ plan: root.dataset.plan, at: Date.now(), answers }));
+        } catch { /* storage refused: the cancelled page still links back to the plan */ }
+        location.assign(data.url);
+        return;
+      }
+      payErr.textContent = data.message ?? sorryPay;
+    } catch {
+      payErr.textContent = sorryPay;
+    }
+    payErr.hidden = false;
+    busy(pay, false);
+    payErr.scrollIntoView({ block: "center", behavior: smooth() });
+    payErr.focus({ preventScroll: true });
+  });
+</script>

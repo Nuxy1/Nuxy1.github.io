@@ -9,7 +9,7 @@ repo: small-business-automations
 
 Four working automations for made-up local businesses: booking reminders for a dog groomer, lead follow-up for a plumber, invoice reminders for a cleaning company and review requests for a salon. Each one cleans messy real-world data, never sends the same message twice, never fails silently, and keeps quiet at night. Zero dependencies, Node 20+.
 
-The businesses are invented for the demo: every address ends in `.example` and every phone number is a 555 number, so nothing here can reach a real person.
+The businesses and their customers are invented for the demo and every phone number is a 555 number. The demo sends nothing: each email it writes lands in `demo/outbox/` on your computer, so nothing here can reach a real person.
 
 | Automation | For | What it does |
 |---|---|---|
@@ -26,7 +26,7 @@ npm run demo    # a simulated week of all four; every email lands in demo/outbox
 npm run bench   # 5,000 messy records through each one, timed
 ```
 
-On my PC (a Ryzen 7 desktop), `npm run bench` gives: 5,000 form submissions with repeats, typos and bad emails in under 0.2 s, with no customer emailed twice; a 5,000-row invoice export read and checked in under 0.2 s; 5,000 salon visits in under 0.1 s; and 5,000 bookings confirmed and checked for reminders in under 2 s. Thousands of records take seconds, not hours.
+On our test PC (a Ryzen 7 desktop), `npm run bench` gives: 5,000 form submissions with repeats, typos and bad emails in under 0.2 s, with no customer emailed twice; a 5,000-row invoice export read and checked in under 0.2 s; 5,000 salon visits in under 0.1 s; and 5,000 bookings confirmed and checked for reminders in under 2 s. Thousands of records take seconds, not hours.
 
 The demo prints the week as it happens:
 
@@ -62,7 +62,7 @@ Lead follow-up: Northfield Plumbing Co. (made up)
 
 For a real business the same logic runs inside their own accounts:
 
-- **Their tools' own features first.** If the booking tool, point of sale or accounting app can already send reminders or review requests, I switch those on and set them up properly instead of writing code. Custom code is for what their tools can't do.
+- **Their tools' own features first.** If the booking tool, point of sale or accounting app can already send reminders or review requests, we switch those on and set them up properly instead of writing code. Custom code is for what their tools can't do.
 - **The transport is theirs.** Here, `outbox()` writes each email to a folder. In a client's setup it is their own email account or the tool they already use; the keys, retries and alerts stay the same.
 - **Tested on their messy data first.** A dry run on a copy of their real export, every message read by a person before anything goes live.
 
@@ -72,4 +72,4 @@ For a real business the same logic runs inside their own accounts:
 - The lead server ([lead-follow-up/server.js](https://github.com/Nuxy1/small-business-automations/blob/main/lead-follow-up/server.js)) is a minimal webhook with a shared secret. In production it sits behind HTTPS (Caddy or the host's proxy).
 - Text messages aren't included: they need a paid SMS provider per client, set up in their account.
 
-MIT licence.
+MIT license.

@@ -52,9 +52,9 @@ const id = `qf-sc-${candle.id}`;
     <p class="qf-fine" id={`${id}-diff`} data-qf-diff aria-live="polite">{strongest.length ? `Strongest: ${strongest.join(", ")}.` : ""}</p>
 
     <div class="qf-pyr" aria-label="Scent notes">
-      <div style="--w: 62%"><span class="qf-label">Top</span><b>{candle.notes.top}</b></div>
-      <div style="--w: 81%"><span class="qf-label">Heart</span><b>{candle.notes.heart}</b></div>
-      <div style="--w: 100%"><span class="qf-label">Base</span><b>{candle.notes.base}</b></div>
+      <div style="--w: 62%"><span class="qf-pyr-k">Top</span> <b>{candle.notes.top}</b></div>
+      <div style="--w: 81%"><span class="qf-pyr-k">Heart</span> <b>{candle.notes.heart}</b></div>
+      <div style="--w: 100%"><span class="qf-pyr-k">Base</span> <b>{candle.notes.base}</b></div>
     </div>
 
     <dl class="qf-sc-facts qf-ui">
@@ -87,10 +87,11 @@ const id = `qf-sc-${candle.id}`;
   .qf-sc-side { display: grid; gap: 18px; }
   .qf-sc-compare { max-width: 320px; }
   .qf-pyr { display: grid; justify-items: center; gap: 4px; }
-  .qf-pyr div { display: grid; justify-items: center; gap: 2px; width: var(--w); padding: 12px 10px; background: var(--qf-wax); text-align: center; }
+  /* the tier name reads on the same line as its notes, quieter than them, not as a small label stacked above */
+  .qf-pyr div { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; column-gap: 8px; width: var(--w); padding: 12px 10px; background: var(--qf-cream); box-shadow: inset 0 0 0 1px var(--qf-line); text-align: center; }
   .qf-pyr div:first-child { border-radius: 999px 999px 0 0 / 60% 60% 0 0; padding-top: 18px; }
   .qf-pyr div:last-child { border-radius: 0 0 6px 6px; }
-  .qf-pyr .qf-label { font-size: 0.6875rem; }
+  .qf-pyr-k { font-family: var(--qf-ui); font-size: 0.9375rem; font-weight: 500; font-style: italic; color: var(--qf-soft); }
   .qf-pyr b { font-weight: 560; font-size: 1.125rem; color: var(--qf-umber); }
   .qf-sc-facts div { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--qf-line); font-size: 0.9375rem; }
   .qf-sc-facts dt { font-weight: 650; color: var(--qf-umber); }

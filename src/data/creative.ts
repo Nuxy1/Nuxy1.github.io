@@ -89,6 +89,7 @@ export type CreativeOffer = {
   included: string[];
 };
 const per = (t: CreativeType) => `${t.formats} ${t.formats === 1 ? "format" : "formats"}`;
+// (cards in price order, lowest first: critique round 11)
 export const offers: CreativeOffer[] = [
   {
     id: "video-ads", icon: "filmSlate", name: "AI Video Advertisements",
@@ -102,18 +103,18 @@ export const offers: CreativeOffer[] = [
     included: [`One finished video, ${short.label.toLowerCase()}`, `${per(typeById.ad)} of your choice, such as vertical and widescreen`, `${rules.revisions.included} rounds of revisions`, "Your logo and wording added in editing, so they are spelled and placed correctly"],
   },
   {
-    id: "motion-graphics", icon: "monitorPlay", name: "Motion Graphics & Digital Menus",
-    text: "Moving menus and promotions for the screens in your business, and motion for your website and social posts.",
-    offers: ["Animated restaurant menus", "Promotional displays", "Website motion graphics", "Animated product visuals", "Social media motion graphics"],
-    prices: [{ type: "motion", name: "Per project", note: "starting price, quoted in writing" }],
-    included: [`One finished piece, ${short.label.toLowerCase()}, in ${per(typeById.motion)}`, "Your real menu items and prices, typed in editing so they stay sharp and correct", `${rules.revisions.included} rounds of revisions`, "A file that loops cleanly on a screen"],
-  },
-  {
     id: "product-showcases", icon: "sparkle", name: "Premium Product Showcases",
     text: "A close, cinematic look at one product, for a launch, an online shop page or an ad.",
     offers: ["Cinematic product advertisements", "Product launch visuals", "AI-assisted product demonstrations", "Ecommerce promotional videos"],
     prices: [{ type: "showcase", name: "Per project", note: "starting price, quoted in writing" }],
     included: [`One finished video, ${short.label.toLowerCase()}, in ${per(typeById.showcase)}`, "Made from photos of your real product", `${rules.revisions.included} rounds of revisions`, "No claims about what the product does that you can’t back up"],
+  },
+  {
+    id: "motion-graphics", icon: "monitorPlay", name: "Motion Graphics & Digital Menus",
+    text: "Moving menus and promotions for the screens in your business, and motion for your website and social posts.",
+    offers: ["Animated restaurant menus", "Promotional displays", "Website motion graphics", "Animated product visuals", "Social media motion graphics"],
+    prices: [{ type: "motion", name: "Per project", note: "starting price, quoted in writing" }],
+    included: [`One finished piece, ${short.label.toLowerCase()}, in ${per(typeById.motion)}`, "Your real menu items and prices, typed in editing so they stay sharp and correct", `${rules.revisions.included} rounds of revisions`, "A file that loops cleanly on a screen"],
   },
 ];
 
@@ -179,6 +180,6 @@ export const upsell = {
   text: "Launching a new website or a new offer? We also make short video ads, moving menus and product showcases to go with it, made with AI video tools and finished by a person. It is optional and quoted separately.",
   // (the button says "portfolio" only once the demo videos exist: components/VideoUpsell.astro)
   cta: "See Video & Creative Services",
-  ctaWithDemos: "Explore Our Video Portfolio",
+  ctaWithDemos: "Watch the Concept Films",
   href: "/creative-studio/",
 };

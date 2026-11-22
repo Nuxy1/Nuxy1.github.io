@@ -1,5 +1,6 @@
 ---
 import { titleCase } from "../lib/title-case";
+import { noWidow } from "../lib/no-widow";
 // One service from data/services.ts. `compact` (homepage) shows the problem, what's built and the price; the full
 // card (/solutions/) adds who it suits, what's needed and other companies' costs. `anchor={false}` drops the id, for a
 // card shown a second time on a page or a variant of a service (the "Full rebuild" card on /websites/ asks about new-website).
@@ -28,20 +29,20 @@ const variants = s.variants ?? [];
     </span>
   </div>
   <H class="svc-name">{titleCase(s.name)}</H>
-  <p class="svc-fixes">Fixes: {s.fixes.charAt(0).toLowerCase() + s.fixes.slice(1)}</p>
-  <p class="svc-text">{shownAbove ? "Shown in full just above: what happens, step by step, and what it costs." : s.text}</p>
+  <p class="svc-fixes">Fixes: {noWidow(s.fixes.charAt(0).toLowerCase() + s.fixes.slice(1))}</p>
+  <p class="svc-text">{noWidow(shownAbove ? "Shown in full just above: what happens, step by step, and what it costs." : s.text)}</p>
   {!compact && (
     <dl class="svc-facts">
-      <div><dt>Suits</dt><dd>{s.who}</dd></div>
-      <div><dt>We need from you</dt><dd>{s.needs}</dd></div>
-      <div><dt>Other companies’ costs</dt><dd>{s.costs}</dd></div>
-      <div><dt>After launch</dt><dd>{manageWords(s)}</dd></div>
+      <div><dt>Suits</dt><dd>{noWidow(s.who)}</dd></div>
+      <div><dt>We need from you</dt><dd>{noWidow(s.needs)}</dd></div>
+      <div><dt>Other companies’ costs</dt><dd>{noWidow(s.costs)}</dd></div>
+      <div><dt>After launch</dt><dd>{noWidow(manageWords(s))}</dd></div>
     </dl>
   )}
   {variants.length > 0 && (compact
     ? <p class="svc-also">Also: {variants.map((v) => `${v.name}, ${v.price}`).join("; ")}</p>
     : <ul class="svc-variants" role="list">{variants.map((v) => (
-        <li id={anchor ? v.id : undefined}><p class="svc-variant-name"><strong>{v.name}</strong> <span>{v.price}{v.monthly && ` + ${v.monthly}`}</span></p><p>{v.text}</p></li>
+        <li id={anchor ? v.id : undefined}><p class="svc-variant-name"><strong>{v.name}</strong> <span>{v.price}{v.monthly && ` + ${v.monthly}`}</span></p><p>{noWidow(v.text)}</p></li>
       ))}</ul>)}
   <div class="svc-foot">
     <p class="svc-price"><span class="sr-only">Price: </span>{s.price} <span class="note">{note}</span></p>
@@ -70,7 +71,9 @@ const variants = s.variants ?? [];
   .svc-facts { display: grid; gap: 10px; margin: 6px 0 0; padding-top: 12px; border-top: 1px solid var(--hairline-soft); font-size: 0.875rem; }
   .svc-facts dt { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.02em; }
   .svc-facts dd { margin: 2px 0 0; color: var(--body); }
-  .svc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--hairline-soft); }
+  /* (critique 11-17: a short price shared a row with its link, a longer one stacked, so footers in one row of cards
+     differed) every footer stacks the same way: price, then the link, pinned to the card's bottom */
+  .svc-foot { display: grid; justify-items: start; gap: 4px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--hairline-soft); }
   .svc-price { color: var(--ink); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
   .svc-price .note { font-size: 0.8125rem; font-weight: 500; }
   .svc-foot .text-link { min-height: 44px; }

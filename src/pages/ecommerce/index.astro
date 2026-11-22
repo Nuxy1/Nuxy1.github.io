@@ -10,6 +10,7 @@ import DeviceShot from "../../components/DeviceShot.astro";
 import ServiceCard from "../../components/ServiceCard.astro";
 import { serviceById, variantById, plans, bundle, dollars } from "../../data/services";
 import { demoSiteBySlug } from "../../data/demo-sites";
+import { levelById } from "../../data/tiers";
 import { shopifyPartner } from "../../data/site";
 import type { IconName } from "../../components/Icon.astro";
 
@@ -18,6 +19,10 @@ const mini = variantById["mini-store"];
 const extras = ["store", "gift-cards", "ordering"].map((id) => serviceById[id]);
 const care = plans.find((p) => p.id === "care")!;
 const demo = demoSiteBySlug["quillfern-candles"];
+// (site audit 2026-11-21, critique round 2) the example store is a higher level than the Online shop this page prices,
+// so its caption and its section say which level it shows and what that costs (data/tiers.ts)
+const demoLevel = levelById[demo.tier];
+const demoFrom = demoLevel.price.replace(/^From /, "from ");
 
 // What the online shop includes (brief 4 §7). Store automations are the one paid extra in this list, with its own price.
 const included: { icon: IconName; title: string; text: string }[] = [
@@ -82,7 +87,7 @@ const service = {
           <li><Icon name="lockSimple" /><span>No passwords shared</span></li>
         </ul>
       </div>
-      <DeviceShot slug={demo.slug} />
+      <DeviceShot slug={demo.slug} note={`It shows the ${demoLevel.name} level, a custom-designed shop ${demoFrom}. The Online shop priced here is a theme set up in your own account.`} />
     </div>
   </section>
 
@@ -154,11 +159,11 @@ const service = {
         <img src={`/images/examples/${demo.slug}-desktop.webp`} srcset={`/images/examples/${demo.slug}-desktop-400.webp 400w, /images/examples/${demo.slug}-desktop-640.webp 640w, /images/examples/${demo.slug}-desktop.webp 800w`} sizes="(min-width: 1200px) 600px, (min-width: 1024px) 52vw, calc(100vw - 34px)" alt="" width="800" height="500" loading="lazy" decoding="async" />
       </a>
       <div class="ex-copy">
-        <p class="eyebrow"><Icon name={demo.icon} />{demo.kind} · demonstration</p>
+        <p class="eyebrow"><Icon name={demo.icon} />{demo.kind} · concept demonstration</p>
         <h2 id="example-h">See an Example Store</h2>
         <p>{demo.name} is a made-up business. {demo.summary}</p>
         <ul class="ticks">{demo.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
-        <p class="note"><Icon name="info" />You can fill its cart and try a demo checkout, but it never asks for a card: nothing can be bought, and every page says it’s a demonstration. Your own store runs on Shopify or Square Online, so the details follow what that platform can do.</p>
+        <p class="note"><Icon name="info" />You can fill its cart and try a demo checkout, but it never asks for a card: nothing can be bought, and every page says it’s a demonstration. {demo.name} shows the {demoLevel.name} level, a custom-designed shop {demoFrom} in a written quote. The Online shop priced on this page is a clean theme set up in your own Shopify or Square Online account, so its details follow what that platform can do.</p>
         <a class="button secondary" href={`/examples/${demo.slug}/`} data-track="example_open">Open the example store<Icon name="arrowRight" /></a>
       </div>
     </div>

@@ -1,0 +1,192 @@
+---
+// Lantern Row's hero: the shop at dusk. On load the room is dim and a pool of lamplight starts at the big lantern,
+// travels along the brass lamps to the chairs and then fills the room (about 1.8 s) while the lamps themselves catch
+// and come on, which is what the headline says; the words are held dim until the light reaches them. That is the one
+// orchestrated intro on the site. The lamps stay lit afterwards and breathe slowly. It lives under prefers-reduced-motion:
+// no-preference, so reduced motion, tier 3 and no JavaScript see the finished still from the first paint. Wide screens
+// set the words over the photo; phones and tablets show the photo as a band above them, cropped to keep a chair and
+// the lamps in frame. The "available today" board works without JavaScript.
+import DemoPhoto from "../DemoPhoto.astro";
+import { base, barbers, board, slotLabel } from "../../../data/demos/lantern";
+---
+<section class="lh" aria-labelledby="lr-hero-h">
+  <div class="lh-stage">
+    <div class="lh-frame">
+      <DemoPhoto
+        name="lantern-hero"
+        alt="Inside Lantern Row at dusk: oxblood leather chairs in a row, brass lamps along the mirrors and the street through the back window."
+        sizes="100vw"
+        priority
+        class="lh-photo"
+      />
+      <span class="lh-lamps" aria-hidden="true"></span>
+    </div>
+    <div class="lr-wrap lh-copy">
+      <h1 id="lr-hero-h">The lamps are&nbsp;on.</h1>
+      <p class="lh-lead">Three barbers, five cuts and every price on the wall. Pick a chair and a time online, and we text you a reminder the day before.</p>
+      <div class="lh-ctas" data-dock-cover>
+        <a class="lr-btn lr-btn-ox" href={`${base}/booking/`}>Book a chair</a>
+        <a class="lr-btn lr-btn-line" href={`${base}/services/`}>See the menu</a>
+      </div>
+      <p class="lr-demo-note">Demonstration booking: nothing is reserved or sent.</p>
+    </div>
+    <div class="lh-veil" aria-hidden="true"></div>
+  </div>
+  <div class="lr-wrap lh-board">
+    <aside class="lr-today" aria-labelledby="lr-today-h" data-today>
+      <div class="lr-today-head">
+        <h2 id="lr-today-h"><span data-today-day>Available today</span></h2>
+        <span class="lr-today-dot" aria-hidden="true"></span>
+      </div>
+      <ul role="list" class="lr-today-list">
+        {barbers.map((b) => (
+          <li>
+            <span class="lr-mono" style={`--tone:${b.tone}`} aria-hidden="true">{b.name[0]}</span>
+            <span class="lr-today-name">{b.name}<small>Chair {b.chair}</small></span>
+            {board[b.id].length
+              ? board[b.id].map((t) => <a class="lr-today-time" href={`${base}/booking/?barber=${b.id}&day=0&time=${t}`}>{slotLabel(t)}<span class="sr-only">: book with {b.name}</span></a>)
+              : <span class="lr-today-full">Fully booked</span>}
+          </li>
+        ))}
+      </ul>
+      <a class="lr-link lr-today-wait" href={`${base}/booking/?barber=julian#waitlist`}>Join the cancellation list</a>
+      <p class="lr-today-note">Demo times: the board looks the same every day.</p>
+    </aside>
+  </div>
+</section>
+
+<style>
+  /* the pool of lamplight: its centre and radius, animated as registered properties so they interpolate */
+  @property --lh-cx { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
+  @property --lh-cy { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
+  @property --lh-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
+
+  .lh { position: relative; }
+  /* the stage is a size container so the light's radius can be set in stage widths (cqi) */
+  .lh-stage { position: relative; isolation: isolate; overflow: hidden; background: var(--lr-ink); container-type: inline-size; }
+
+  /* phones and tablets: the photo is a band under the header, cropped to the lamp side so the big lantern and the
+     chairs both stay in frame, fading into the charcoal where the headline starts. The band and the headline are both
+     capped by the screen's height, so a phone on its side still opens on the whole headline. */
+  .lh-frame { position: relative; height: min(clamp(200px, 64vw, 440px), 40svh); overflow: hidden; }
+  .lh-frame :global(.lh-photo) { position: absolute; inset: 0; }
+  .lh-frame :global(.lh-photo img) { object-position: 100% 50%; }
+  .lh-frame::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(0deg, var(--lr-ink) 0%, rgba(18, 17, 16, 0.6) 16%, rgba(18, 17, 16, 0) 42%); }
+  .lh-copy { position: relative; display: grid; justify-items: start; gap: 22px; margin-top: -30px; padding-block: 0 44px; }
+  /* the smallest phones (320 x 568): a slightly shorter band and tighter gaps put Book a chair on the first screen */
+  @media (max-width: 359px) { .lh-frame { height: 180px; } .lh-copy { gap: 18px; } }
+  .lh-copy h1 { max-width: 9.5em; font-size: min(clamp(2.5rem, 12.5vw, 6rem), 14svh); line-height: 0.98; color: var(--lr-cream); text-shadow: 0 2px 30px rgba(0, 0, 0, 0.45); }
+  .lh-lead { max-width: 44ch; font-size: clamp(1.0625rem, 1.4vw, 1.25rem); color: #ddd3c3; }
+  /* the buttons and the demo note sit above the intro's veil (z-index 1): only the room and the headline wait for the
+     light, so Book a chair is at full strength from the first frame */
+  .lh-ctas { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 12px; }
+  .lh-copy .lr-demo-note { position: relative; z-index: 2; background: rgba(18, 17, 16, 0.6); }
+
+  /* the lamps' own light: a warm bloom on each lamp in the photo, on a layer cropped exactly like the photo (an SVG of
+     the photo's 2752 x 1536 size, cover, the same position), so every bloom stays on its lamp at every width. Lamp
+     centres measured on the photo: big lantern 97.7% 19.5%, mirror lamps 59.8-73.4% across at 26-31% down, wall lamps
+     23.8% and 11.3% across. Screen blend, so it only ever adds light. Everyone sees the lamps lit; with motion on they
+     catch during the intro and then breathe. */
+  .lh-lamps {
+    position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+    background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2752 1536' width='2752' height='1536'><defs><radialGradient id='l'><stop offset='0' stop-color='%23ffe4b5' stop-opacity='.8'/><stop offset='.28' stop-color='%23ffbe72' stop-opacity='.34'/><stop offset='.6' stop-color='%23ff9e48' stop-opacity='.1'/><stop offset='1' stop-color='%23ff9e48' stop-opacity='0'/></radialGradient></defs><g fill='url(%23l)'><circle cx='2690' cy='300' r='360'/><circle cx='2020' cy='400' r='240'/><circle cx='2140' cy='380' r='170' opacity='.6'/><circle cx='1890' cy='444' r='160'/><circle cx='1770' cy='444' r='150'/><circle cx='1724' cy='476' r='110' opacity='.8'/><circle cx='1646' cy='470' r='120'/><circle cx='1460' cy='500' r='90' opacity='.6'/><circle cx='656' cy='444' r='170'/><circle cx='310' cy='390' r='170'/><circle cx='180' cy='380' r='230' opacity='.6'/></g></svg>") 100% 50% / cover no-repeat;
+  }
+
+  .lh-board { position: relative; z-index: 2; }
+  .lh-board .lr-today { max-width: 460px; }
+
+  /* wide screens: the photo fills the stage and the words sit on the door side, over a scrim */
+  @media (min-width: 1024px) {
+    .lh-stage { display: grid; align-items: center; min-height: clamp(560px, calc(100svh - 150px), 860px); }
+    .lh-frame { position: absolute; inset: 0; z-index: -2; height: auto; }
+    .lh-frame::after { display: none; }
+    .lh-frame :global(.lh-photo img) { object-position: 60% 50%; }
+    .lh-lamps { background-position: 60% 50%; }
+    .lh-stage::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, rgba(18, 17, 16, 0.94) 0%, rgba(18, 17, 16, 0.82) 30%, rgba(18, 17, 16, 0.3) 52%, rgba(18, 17, 16, 0) 68%), linear-gradient(0deg, rgba(18, 17, 16, 0.55), transparent 30%); }
+    .lh-copy { margin-top: 0; padding-block: 96px; }
+    .lh-copy > * { max-width: 560px; }
+    .lh-board { position: absolute; inset: auto 0 44px 0; margin: 0 auto; pointer-events: none; }
+    .lh-board .lr-today { width: 320px; margin-left: auto; pointer-events: auto; }
+  }
+
+  /* the intro, the site's one orchestrated moment. The room and its words start dim, never hidden (the photo and the
+     headline paint in the first frame, so the headline stays the LCP), and a pool of warm light starts at the big
+     lantern, runs along the mirror lamps to the chairs, then spreads over the headline and fills the room. One layer
+     above the stage does it: transparent inside the pool, charcoal outside. Its centre eases out towards the chairs
+     while it drops late, so the light arcs along the lamp row before it falls to the floor. */
+  .lh-veil { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .lh-veil {
+      display: block; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: radial-gradient(circle var(--lh-r) at var(--lh-cx) var(--lh-cy), rgba(255, 198, 122, 0.2) 0%, rgba(255, 190, 110, 0.07) 20%, rgba(10, 9, 8, 0) 42%, rgba(10, 9, 8, 0.82) 100%);
+      animation: lh-cx-band 1.5s cubic-bezier(0.3, 0.6, 0.3, 1) both, lh-cy-band 1.5s cubic-bezier(0.5, 0, 0.8, 0.6) both, lh-r 1.9s linear both, lh-out 1.9s linear both;
+    }
+    .lh-frame :global(.lh-photo img) { animation: lh-settle 2.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    /* the board is let down from its top edge once the room is lit: a wipe at full strength, never a half-clear panel
+       over the photo. Fill backwards only, so the clip is gone once it lands (the end box already holds the shadow). */
+    .lh-board .lr-today { animation: lh-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.3s backwards; }
+    /* the lamps catch as the light passes them (a quick rise, one dip, then full), settle with the photo, and after the
+       intro breathe between full and 70% over 7 s each way: the room's one sign of life. Opacity on one layer; it rests
+       while the hero is off screen or the tab is hidden (the script below). */
+    .lh-lamps {
+      will-change: opacity;
+      animation: lh-settle 2.4s cubic-bezier(0.16, 1, 0.3, 1) both, lh-lamps-on 1.2s ease-out 0.5s both, lh-lamps-breathe 7s ease-in-out 1.7s infinite alternate;
+    }
+    .lh-stage[data-rest] .lh-lamps { animation-play-state: paused; }
+    /* the site's own motion setting (tier 3) gets the still: lamps lit, nothing moving */
+    :global(:root[data-tier="3"]) .lh-veil { display: none; }
+    :global(:root[data-tier="3"]) .lh-frame :global(.lh-photo img),
+    :global(:root[data-tier="3"]) .lh-lamps,
+    :global(:root[data-tier="3"]) .lh-board .lr-today { animation: none; }
+  }
+  @media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
+    .lh-veil { animation-name: lh-cx-wide, lh-cy-wide, lh-r, lh-out; }
+  }
+  @keyframes lh-lamps-on { 0% { opacity: 0; } 35% { opacity: 0.9; } 48% { opacity: 0.55; } 100% { opacity: 1; } }
+  @keyframes lh-lamps-breathe { from { opacity: 1; } to { opacity: 0.7; } }
+  /* where the lantern and the chairs fall in each layout, as a share of the stage (measured on the 1024 px photo:
+     lantern at 97% 21%, chairs from 43% 47% to 50% 85%) */
+  @keyframes lh-cx-wide { from { --lh-cx: 95%; } to { --lh-cx: 48%; } }
+  @keyframes lh-cy-wide { from { --lh-cy: 17%; } to { --lh-cy: 56%; } }
+  @keyframes lh-cx-band { from { --lh-cx: 95%; } to { --lh-cx: 40%; } }
+  @keyframes lh-cy-band { from { --lh-cy: 8%; } to { --lh-cy: 46%; } }
+  /* small while it travels, then it opens past the farthest corner */
+  @keyframes lh-r { 0% { --lh-r: max(7cqi, 56px); } 20% { --lh-r: max(14cqi, 90px); } 50% { --lh-r: max(26cqi, 130px); } 72% { --lh-r: max(60cqi, 280px); } 100% { --lh-r: 300cqi; } }
+  @keyframes lh-out { 0%, 78% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+  @keyframes lh-settle { from { transform: scale(1.06); } to { transform: none; } }
+  @keyframes lh-rise { from { clip-path: inset(0 0 100% 0); transform: translateY(-6px); } to { clip-path: inset(-40px -70px -100px -70px); transform: none; } }
+
+  /* today's board */
+  .lr-today { position: relative; display: grid; gap: 4px; padding: 18px 20px 14px; background: var(--lr-ink); border: 1px solid var(--lr-line); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5); }
+  .lr-today::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(184, 146, 90, 0.24); pointer-events: none; }
+  .lr-today-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--lr-line); }
+  .lr-today-head h2 { font-family: "Sofia XC", "Arial Narrow", sans-serif; font-size: 1.3125rem; font-weight: 700; letter-spacing: 0.03em; line-height: 1.2; color: var(--lr-brass-2); }
+  .lr-today-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lr-brass-2); box-shadow: 0 0 0 4px rgba(214, 178, 122, 0.16), 0 0 14px rgba(232, 190, 120, 0.7); }
+  .lr-today-list li { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px dotted var(--lr-line); }
+  .lr-mono { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--tone); color: var(--tone); font-family: "Bodoni Moda", Georgia, serif; font-size: 1.125rem; font-weight: 600; border-radius: 50%; }
+  .lr-today-name { display: grid; font-weight: 600; line-height: 1.2; }
+  .lr-today-name small { font-size: 0.9375rem; font-weight: 500; color: var(--lr-mute); }
+  .lr-today-time { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid var(--lr-brass); color: var(--lr-brass-2); font-family: "Sofia XC", sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: 0.03em; text-decoration: none; transition: background-color 160ms ease-out, color 160ms ease-out; }
+  .lr-today-time:hover { background: var(--lr-brass); color: var(--lr-ink); }
+  .lr-today-full { font-family: "Sofia XC", sans-serif; font-weight: 700; font-size: 1.125rem; letter-spacing: 0.03em; color: var(--lr-mute); text-decoration: line-through; text-decoration-color: var(--lr-red); }
+  .lr-today-wait { font-size: 1.125rem; justify-self: start; }
+  .lr-today-note { font-size: 0.9375rem; font-weight: 500; color: var(--lr-mute); }
+</style>
+
+<script>
+  import { boardDay, dayName } from "../../../data/demos/lantern";
+  // the board says which day it shows: today until Marcus's 2:30 has gone, then the next open day
+  const now = new Date();
+  const day = dayName(boardDay(now), now);
+  const label = document.querySelector<HTMLElement>("[data-today-day]");
+  if (label) label.textContent = `Available ${day === "Today" ? "today" : day === "Tomorrow" ? "tomorrow" : day}`;
+
+  // the lamps' breathing (CSS) rests while the hero is off screen or the tab is hidden
+  const stage = document.querySelector<HTMLElement>(".lh-stage");
+  if (stage) {
+    let seen = true;
+    const rest = () => stage.toggleAttribute("data-rest", !seen || document.hidden);
+    if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => { seen = e.isIntersecting; rest(); }).observe(stage);
+    document.addEventListener("visibilitychange", rest);
+  }
+</script>

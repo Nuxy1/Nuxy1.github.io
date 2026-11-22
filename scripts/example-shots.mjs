@@ -21,6 +21,9 @@ const only = process.argv.slice(2);
 const unknown = only.filter((s) => !demoSites.some((d) => d.slug === s));
 if (unknown.length) throw new Error(`not a demo site: ${unknown.join(", ")}`);
 const views = { desktop: { width: 1280, height: 800 }, phone: { width: 390, height: 780 } };
+// (site audit 2026-11-21) The Immersive demo is the exception to reduced motion below: with it, the 3D speaker becomes a
+// flat drawing most visitors never see, so that demo is captured with motion on, once the model has had time to render.
+const fullMotion = new Set(["halvane-audio"]);
 
 const web = await serveDist(join(root, "dist"));
 const browser = await chromium.launch({ executablePath: process.env.BROWSER, headless: true });
@@ -29,11 +32,13 @@ try {
   for (const { slug } of demoSites.filter((d) => !only.length || only.includes(d.slug))) {
     for (const [view, viewport] of Object.entries(views)) {
       // Reduced motion, so anything that fades in is already shown; fonts loaded, so the text is the real face.
-      const context = await browser.newContext({ viewport, deviceScaleFactor: 2, reducedMotion: "reduce" });
+      const motion = fullMotion.has(slug);
+      const context = await browser.newContext({ viewport, deviceScaleFactor: 2, reducedMotion: motion ? "no-preference" : "reduce" });
       const page = await context.newPage();
       const res = await page.goto(`${web.url}/example-sites/${slug}/`, { waitUntil: "networkidle" });
       if (!res?.ok()) throw new Error(`/example-sites/${slug}/ answered ${res?.status()}: build the site first`);
       await page.evaluate(() => document.fonts.ready);
+      if (motion) await page.waitForTimeout(2500);
       const png = join(work, `${slug}-${view}.png`);
       await page.screenshot({ path: png });
       await context.close();

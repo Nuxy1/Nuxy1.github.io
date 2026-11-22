@@ -140,6 +140,10 @@ async function shoot(path, screen) {
     await page.goto(web.url + path, { waitUntil: "load" });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => [...document.images].every((img) => img.complete || img.getBoundingClientRect().top > innerHeight));
+    // (and decoded: a picture with decoding="async" can be complete and still not drawn when the shot is taken)
+    await page.evaluate(() => Promise.all([...document.images].filter((img) => img.getBoundingClientRect().top < innerHeight).map((img) => img.decode().catch(() => {}))));
+    // (then two frames: a large picture drawn small is first scaled roughly and redrawn finely a frame later)
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => done()))));
     return await page.screenshot({ animations: "disabled", caret: "hide" });
   } finally {
     await context.close();

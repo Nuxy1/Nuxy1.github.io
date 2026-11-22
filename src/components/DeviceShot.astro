@@ -8,8 +8,10 @@ interface Props {
   slug: string;
   /** further down a page (the portfolio): load when near, not first */
   lazy?: boolean;
+  /** a sentence after the caption: what the level beside it is built in, or that the example is a different level */
+  note?: string;
 }
-const { slug, lazy = false } = Astro.props;
+const { slug, lazy = false, note } = Astro.props;
 const load = lazy ? { loading: "lazy" as const } : { fetchpriority: "high" as const };
 const demo = demoSiteBySlug[slug];
 const what = demo.project === "E-commerce store" ? "store" : "website";
@@ -26,18 +28,20 @@ const phoneSizes = "(min-width: 1024px) 140px, (min-width: 720px) 175px, 96px";
   <span class="frame phone">
     <img src={`/images/examples/${slug}-phone.webp`} srcset={shotSrcset(slug, "phone")} sizes={phoneSizes} alt="" width="390" height="780" decoding="async" loading={lazy ? "lazy" : undefined} />
   </span>
-  <figcaption><Icon name="info" />Example {what} for a made-up business</figcaption>
+  <figcaption><Icon name="info" /><span>Example {what} for a made-up business{note ? `. ${note}` : ""}</span></figcaption>
 </figure>
 
 <style>
-  .shot { position: relative; margin: 0; padding-right: clamp(40px, 9%, 88px); padding-bottom: 28px; }
+  /* (critique 11-17: on a phone the phone frame sat beside a two-line caption and read as covering it) both frames
+     share one grid cell, the phone pinned to its bottom-right corner, and the caption runs below the pair */
+  .shot { display: grid; grid-template-columns: minmax(0, 1fr); margin: 0; }
+  .desk { grid-area: 1 / 1; margin-right: clamp(40px, 9%, 88px); margin-bottom: 28px; }
   .frame { display: block; border: 1px solid var(--hairline-strong); background: var(--surface-strong); overflow: hidden; box-shadow: var(--shadow); }
   .frame img { display: block; width: 100%; height: auto; }
   .desk { border-radius: 12px; }
   .frame-bar { display: flex; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--hairline); background: var(--panel); }
   .frame-bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--hairline-strong); }
-  .phone { position: absolute; right: 0; bottom: 0; width: clamp(96px, 27%, 180px); border-radius: 18px; border-width: 3px; border-color: var(--hairline); }
-  /* kept clear of the phone, which overlaps the bottom-right corner (on a small screen it would cover the words) */
-  figcaption { display: inline-flex; align-items: flex-start; gap: 6px; max-width: 70%; margin-top: 14px; color: var(--muted); font-size: 0.8125rem; }
+  .phone { grid-area: 1 / 1; justify-self: end; align-self: end; width: clamp(96px, 27%, 180px); border-radius: 18px; border-width: 3px; border-color: var(--hairline); }
+  figcaption { grid-area: 2 / 1; display: flex; align-items: flex-start; gap: 6px; margin-top: 12px; color: var(--muted); font-size: 0.8125rem; }
   figcaption :global(.icon) { flex: none; margin-top: 0.2em; }
 </style>

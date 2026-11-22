@@ -1,9 +1,11 @@
 ---
-// Mossgate's about page: the (invented) team, the standards a customer can hold them to, where and when they work,
-// the questions people ask before a first clean, and a short question form. The form is a demo form
-// (layouts/DemoSite.astro): the browser checks it, then it is cleared and says nothing was sent.
+// Mossgate's about page: the (invented) team, the standards a customer can hold them to, where and when they clean
+// (the towns, the cleaning days and the same four arrival windows the booking page offers), the questions people
+// ask before a first clean, and a short question form. Office hours live in the footer, so they are not repeated.
+// The form is a demo form (layouts/DemoSite.astro): the browser checks it, then it is cleared and says nothing was sent.
 import Shell from "../../../../components/demo/mossgate/Shell.astro";
-import { base, team, faq, hours, area, phone, email, callNote, textNote, emailNote } from "../../../../data/demos/mossgate";
+import { base, team, faq, area, phone, email, callNote, textNote, emailNote } from "../../../../data/demos/mossgate";
+import { WINDOWS } from "../../../../lib/demo/mossgate-estimate";
 
 const standards = [
   { title: "The same cleaner each visit", text: "A recurring home keeps one cleaner, so the notes live in their head and not on a form." },
@@ -13,12 +15,14 @@ const standards = [
   { title: "No door codes online", text: "The website never asks for a code. The office calls to set up a key or a lockbox after you book." },
   { title: "Paid after, not before", text: "The invoice comes after the clean. If a room isn’t right, tell us within a day and we come back for free." },
 ];
+
+// the cleaning week, drawn as a strip; the sentence under it says the same thing for screen readers
+const week = [["Mon", true], ["Tue", true], ["Wed", true], ["Thu", true], ["Fri", true], ["Sat", true], ["Sun", false]] as const;
 ---
 <Shell title="About us" current="about" description="Meet Mossgate's invented cleaning team, read the standards they work to, see the hours and area, and try the demonstration question form. Fictional company: nothing is sent.">
   <section class="mg-section mg-ab-hero">
     <div class="mg-wrap">
       <div class="mg-head">
-        <p class="mg-kicker">About Mossgate</p>
         <h1>Four people, one checklist, the same window every time.</h1>
         <p class="mg-lead">A small team that cleans homes the same way each visit, and tells you when they arrive and when they leave.</p>
         <p class="mg-demo-note">Fictional company: the team, the towns and the answers below are invented for the demonstration.</p>
@@ -30,7 +34,7 @@ const standards = [
             <div>
               <h2>{p.name}</h2>
               <p class="mg-person-role">{p.role}</p>
-              <p>{p.note}</p>
+              <p class="mg-person-note">{p.note}</p>
             </div>
           </li>
         ))}
@@ -41,30 +45,34 @@ const standards = [
   <section class="mg-section mg-ab-std" aria-labelledby="std-h">
     <div class="mg-wrap">
       <div class="mg-head">
-        <p class="mg-label">What you can hold us to</p>
         <h2 id="std-h">Six standards, written down.</h2>
+        <p class="mg-lead">Each one is something you can check after the first clean, and hold us to after that.</p>
       </div>
-      <ol class="mg-std" role="list">
-        {standards.map((s, i) => (
-          <li><span class="mg-std-n mg-num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span><h3>{s.title}</h3><p>{s.text}</p></li>
+      <ul class="mg-std" role="list">
+        {standards.map((s) => (
+          <li><h3>{s.title}</h3><p>{s.text}</p></li>
         ))}
-      </ol>
-      <a class="mg-link" href={`${base}/checklist/`}>Read the room checklist <span aria-hidden="true">→</span></a>
+      </ul>
+      <a class="mg-link" href={`${base}/checklist/`}>Read the room checklist</a>
     </div>
   </section>
 
   <section class="mg-section mg-ab-where" aria-labelledby="where-h">
     <div class="mg-wrap mg-where">
-      <div>
-        <p class="mg-label">Where and when</p>
+      <div class="mg-where-towns">
         <h2 id="where-h">Five towns, six days a week.</h2>
         <ul class="mg-towns" role="list">{area.map((t) => <li>{t}</li>)}</ul>
         <p class="mg-fine">Made-up towns for the demonstration.</p>
       </div>
-      <div class="mg-where-card">
-        <p class="mg-label">Office hours</p>
-        <dl class="mg-ab-hours">{hours.map(([d, h]) => <div><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
-        <p class="mg-fine">Cleans run 8 am to 5 pm, Monday to Saturday.</p>
+      <div class="mg-when">
+        <h3>When cleans run</h3>
+        <ol class="mg-week" aria-hidden="true">{week.map(([d, on]) => <li class={on ? "on" : undefined}>{d}</li>)}</ol>
+        <p>Cleans run 8 am to 5 pm, Monday to Saturday. There are no cleans on Sunday.</p>
+        <h3>Arrival windows</h3>
+        <ul class="mg-wins" role="list">
+          {WINDOWS.map((w) => <li><strong class="mg-num">{w.label}</strong><span>{w.morning ? "Morning" : "Afternoon"}</span></li>)}
+        </ul>
+        <p class="mg-fine">You pick one when you book. Long cleans only fit a morning window.</p>
       </div>
     </div>
   </section>
@@ -72,8 +80,7 @@ const standards = [
   <section class="mg-section mg-ab-faq" aria-labelledby="faq-h">
     <div class="mg-wrap mg-faq-wrap">
       <div class="mg-head">
-        <p class="mg-label">Before your first clean</p>
-        <h2 id="faq-h">Questions people ask.</h2>
+        <h2 id="faq-h">Questions people ask before a first clean.</h2>
       </div>
       <div class="mg-faq">
         {faq.map(([q, a], i) => (
@@ -89,13 +96,12 @@ const standards = [
   <section class="mg-section mg-ab-ask" id="ask" aria-labelledby="ask-h">
     <div class="mg-wrap mg-ask">
       <div class="mg-ask-intro">
-        <p class="mg-label">Talk to the office</p>
         <h2 id="ask-h">Ask Theo anything.</h2>
         <p>Theo answers texts and questions on weekdays, usually within the hour.</p>
         <div class="mg-ask-ways">
-          <a class="mg-btn" href="#call" data-demo-action={callNote}>Call {phone}</a>
-          <a class="mg-btn mg-btn-line" href="#text" data-demo-action={textNote}>Text us</a>
-          <a class="mg-btn mg-btn-line" href="#email" data-demo-action={emailNote}>{email}</a>
+          <a class="mg-btn" href="#ask-h" data-demo-action={callNote}>Call {phone}</a>
+          <a class="mg-link" href="#ask-h" data-demo-action={textNote}>Text us</a>
+          <a class="mg-link" href="#ask-h" data-demo-action={emailNote}>{email}</a>
         </div>
       </div>
       <div class="mg-ask-box">
@@ -124,56 +130,75 @@ const standards = [
 
 <style>
   .mg-ab-hero { padding-top: clamp(40px, 6vw, 80px); }
-  .mg-team { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); margin: 0; padding: 0; list-style: none; }
-  .mg-person { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; padding: 22px; border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
-  .mg-person-mark { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px 18px 18px 6px; background: var(--tone); color: #fff; font-size: 1.5rem; font-weight: 850; }
-  .mg-person h2 { font-size: 1.375rem; color: var(--mg-moss); }
-  .mg-person-role { margin-bottom: 6px; font-size: 0.9375rem; font-weight: 700; color: var(--mg-moss-2); }
-  .mg-person p:last-child { color: var(--mg-soft); }
 
+  /* the team as a roster: a rule over each person, no boxes */
+  .mg-team { display: grid; gap: 28px 32px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); margin: 0; padding: 0; list-style: none; }
+  .mg-person { display: grid; gap: 16px; align-content: start; padding-top: 22px; border-top: 1.5px solid var(--mg-ink); }
+  .mg-person-mark { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px 16px 16px 5px; background: var(--tone); color: var(--mg-paper); font-size: 1.375rem; font-weight: 620; }
+  .mg-person h2 { margin-bottom: 2px; font-size: 1.375rem; font-weight: 620; }
+  .mg-person-role { margin-bottom: 8px; font-size: 0.9375rem; font-weight: 620; color: var(--mg-cobalt); }
+  .mg-person-note { color: var(--mg-soft); max-width: 34ch; }
+  @media (max-width: 619px) { .mg-person { grid-template-columns: auto 1fr; } }
+
+  /* the standards, ticked like the room checklist */
   .mg-ab-std { background: var(--mg-paper); }
-  .mg-std { display: grid; gap: 0 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); margin: 0 0 32px; padding: 0; list-style: none; }
-  .mg-std li { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; padding: 22px 0; border-top: 1px solid var(--mg-line); }
-  .mg-std-n { grid-row: span 2; font-size: 0.9375rem; font-weight: 800; color: var(--mg-clay); }
-  .mg-std h3 { font-size: 1.1875rem; color: var(--mg-moss); }
-  .mg-std p { color: var(--mg-soft); }
+  .mg-std { display: grid; gap: 30px 44px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); margin: 0 0 32px; padding: 0; list-style: none; }
+  .mg-std li { display: grid; grid-template-columns: 22px 1fr; gap: 6px 14px; align-items: start; }
+  .mg-std li::before { content: ""; grid-row: span 2; width: 22px; height: 22px; margin-top: 2px; border-radius: 50%; background: var(--mg-cobalt) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fcfaf7' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 13px no-repeat; }
+  .mg-std h3 { font-size: 1.1875rem; }
+  .mg-std p { color: var(--mg-soft); max-width: 42ch; }
 
-  .mg-where { display: grid; gap: 32px; align-items: start; }
-  @media (min-width: 860px) { .mg-where { grid-template-columns: 1.3fr 1fr; gap: 56px; } }
-  .mg-where h2 { margin: 12px 0 24px; }
-  .mg-towns { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
-  .mg-towns li { padding: 10px 16px; border-radius: 999px; background: var(--mg-mint); color: var(--mg-moss); font-weight: 700; }
-  .mg-where-card { display: grid; gap: 14px; padding: 26px; border-radius: 24px; background: var(--mg-moss); color: #d5e3dc; }
-  .mg-where-card .mg-label { color: var(--mg-clay-2); }
-  .mg-where-card .mg-fine { color: #9fb8ad; }
-  .mg-ab-hours { display: grid; }
-  .mg-ab-hours div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
-  .mg-ab-hours dd { font-weight: 700; color: var(--mg-linen); }
+  /* where and when: the towns as a list, the cleaning week on a paper panel */
+  .mg-where { display: grid; gap: 40px; align-items: start; }
+  @media (min-width: 860px) { .mg-where { grid-template-columns: 1fr 1fr; gap: clamp(48px, 6vw, 88px); } }
+  .mg-where h2 { margin-bottom: 28px; }
+  .mg-towns { display: grid; margin: 0 0 14px; padding: 0; list-style: none; border-top: 1px solid var(--mg-line-2); }
+  .mg-towns li { padding: 12px 0; border-bottom: 1px solid var(--mg-line-2); font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem); font-weight: 400; }
+  .mg-when { display: grid; gap: 14px; padding: clamp(22px, 3.4vw, 36px); border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+  .mg-when h3 { font-size: 1.125rem; }
+  .mg-when h3:not(:first-child) { margin-top: 14px; }
+  .mg-when > p:not(.mg-fine) { color: var(--mg-soft); }
+  .mg-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+  /* calendar cells, not buttons: flat tint, small radius, no edge */
+  .mg-week { gap: 4px; }
+  .mg-week li { display: grid; place-items: center; min-height: 40px; border-radius: 8px; border: 1.5px dashed var(--mg-line-2); color: var(--mg-mute); font-size: 0.875rem; font-weight: 620; }
+  .mg-week li.on { border: 0; background: var(--mg-sky); color: var(--mg-sky-ink); }
+  .mg-wins { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; margin: 0; padding: 0; list-style: none; }
+  .mg-wins li { display: grid; gap: 2px; padding: 12px 0; border-top: 1px solid var(--mg-line); }
+  .mg-wins strong { font-size: 1.0625rem; font-weight: 620; white-space: nowrap; }
+  @media (max-width: 419px) {
+    .mg-wins { grid-template-columns: minmax(0, 1fr); }
+    .mg-wins li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-block: 10px; }
+  }
+  .mg-wins span { font-size: 0.875rem; color: var(--mg-mute); }
 
   .mg-ab-faq { background: var(--mg-paper); }
   .mg-faq-wrap { display: grid; gap: 0 56px; }
   @media (min-width: 1024px) { .mg-faq-wrap { grid-template-columns: 1fr 1.6fr; } .mg-faq-wrap .mg-head { position: sticky; top: 96px; align-self: start; } }
-  .mg-faq { border-top: 1px solid var(--mg-line); }
-  .mg-faq details { border-bottom: 1px solid var(--mg-line); }
-  .mg-faq summary { position: relative; display: block; padding: 20px 44px 20px 0; font-size: 1.125rem; font-weight: 750; color: var(--mg-moss); cursor: pointer; list-style: none; }
+  .mg-faq { border-top: 1px solid var(--mg-line-2); }
+  .mg-faq details { border-bottom: 1px solid var(--mg-line-2); }
+  .mg-faq summary { position: relative; display: block; padding: 20px 44px 20px 0; font-size: 1.125rem; font-weight: 620; cursor: pointer; list-style: none; transition: color 160ms ease-out; }
   .mg-faq summary::-webkit-details-marker { display: none; }
-  .mg-faq summary::after { content: ""; position: absolute; right: 6px; top: 50%; width: 12px; height: 12px; border-right: 2px solid var(--mg-moss-2); border-bottom: 2px solid var(--mg-moss-2); transform: translateY(-70%) rotate(45deg); transition: transform 220ms var(--mg-ease); }
+  .mg-faq summary::after { content: ""; position: absolute; right: 8px; top: 50%; width: 10px; height: 10px; border-right: 2px solid var(--mg-cobalt); border-bottom: 2px solid var(--mg-cobalt); transform: translateY(-70%) rotate(45deg); transition: transform 220ms var(--mg-ease); }
   .mg-faq details[open] summary::after { transform: translateY(-30%) rotate(-135deg); }
-  .mg-faq summary:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; border-radius: 6px; }
+  @media (hover: hover) { .mg-faq summary:hover { color: var(--mg-cobalt); } }
+  .mg-faq summary:focus-visible { outline-offset: 2px; border-radius: 6px; }
   .mg-faq details p { padding: 0 0 22px; max-width: 62ch; color: var(--mg-soft); }
 
   .mg-ask { display: grid; gap: 32px; align-items: start; }
   @media (min-width: 960px) { .mg-ask { grid-template-columns: 1fr 1.1fr; gap: 56px; } }
   .mg-ask-intro { display: grid; gap: 14px; justify-items: start; }
-  .mg-ask-intro p:not(.mg-label) { color: var(--mg-soft); max-width: 44ch; }
-  .mg-ask-ways { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .mg-ask-intro p { color: var(--mg-soft); max-width: 44ch; }
+  .mg-ask-ways { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; margin-top: 8px; }
   .mg-ask-box { display: grid; }
-  .mg-ask-form, .mg-ask-sent { display: grid; gap: 18px; padding: clamp(22px, 4vw, 36px); border-radius: 26px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+  .mg-ask-form, .mg-ask-sent { display: grid; gap: 18px; padding: clamp(22px, 4vw, 36px); border-radius: 22px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
   .mg-ask-form[hidden], .mg-ask-sent[hidden] { display: none; }
-  .mg-ask-form h3 { font-size: 1.5rem; color: var(--mg-moss); }
+  .mg-ask-form h3 { font-size: 1.5rem; }
+  /* two fields only: one column, so the name box keeps its own height */
+  .mg-ask-form .mg-fields { grid-template-columns: minmax(0, 1fr); }
   .mg-ask-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-  .mg-ask-sent { border: 0; background: var(--mg-mint); color: var(--mg-moss); }
-  .mg-ask-sent strong { font-size: 1.375rem; }
+  .mg-ask-sent { background: var(--mg-sky); color: var(--mg-sky-ink); box-shadow: none; }
+  .mg-ask-sent strong { font-size: 1.375rem; font-weight: 620; }
   .mg-ask-sent .mg-btn { justify-self: start; }
   @media (max-width: 479px) { .mg-ask-ways .mg-btn, .mg-ask-actions .mg-btn { flex: 1 1 100%; } }
 </style>

@@ -4,7 +4,7 @@
 //
 // Every price and rule comes from data/creative.ts and the sum is done by data/creative-estimate.ts (tested on its
 // own), the same list the service cards print. The page script gets the rules as data and the arithmetic module; it
-// holds no prices of its own. "Get My Custom Quote" opens the quote form with the choices as a short code in the
+// holds no prices of its own. "Get a Free Quote" opens the quote form with the choices as a short code in the
 // address (?cq=...): the form checks that code against the same rules and works the estimate out again, so a
 // changed address can never put a made-up price in front of the owner. Nothing is sent anywhere from this page.
 // Without JavaScript the starting prices are all still printed and the button opens the quote form.
@@ -126,7 +126,7 @@ const plus = (n: number, each = true) => (n ? `+${usd(n)}${each ? " per video" :
     <p class="ce-total"><span data-total-label>Estimated starting price</span><strong data-total>{priceText(startQuote)}</strong></p>
     <noscript><p class="ce-range">Turn on JavaScript to see this figure change with your choices. Every starting price is in the list above.</p></noscript>
     <p class="ce-range" data-range hidden>The lower figure is a standard video and the higher one is an advanced one. Your written quote settles which.</p>
-    <button class="button wide" type="submit" data-track="cta_creative_estimator">Get My Custom Quote<Icon name="arrowRight" /></button>
+    <button class="button wide" type="submit" data-track="cta_creative_estimator">Get a Free Quote<Icon name="arrowRight" /></button>
     <ul class="ce-notes">
       {estimatorNotes.map((n) => <li>{n}</li>)}
     </ul>

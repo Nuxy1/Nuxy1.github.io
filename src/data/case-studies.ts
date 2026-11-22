@@ -22,7 +22,7 @@ import { staged } from "./staged-case-studies.ts";
 
 export type CaseShot = { src: string; srcset?: string; alt: string; width: number; height: number; caption?: string; device?: "desktop" | "mobile" };
 // `note`: a line shown under the video, for example that a booking in it was made with test data
-export type CaseVideo = { src: string; poster: string; width: number; height: number; label: string; captions?: string; note?: string };
+export type CaseVideo = { src: string; poster: string; width: number; height: number; length?: string; label: string; captions?: string; note?: string };
 export type CaseChecks = { completed: string; permission: string; screenshots: string; details: string; url?: string };
 export type CaseStudyData = {
   slug: string; business: string; industry: string; location?: string;
@@ -64,11 +64,12 @@ export const liveLink = (c: CaseStudyData): string | undefined => (c.url && fill
 // covers his site, not Nuxy's). No address, no dashboard address, no numbers.
 const media = "/media/chrys";
 const desktop = (name: string, alt: string, caption: string) => ({
-  src: `${media}/${name}-1440.webp`, srcset: `${media}/${name}-800.webp 800w, ${media}/${name}-1440.webp 1440w`,
+  // (the 480 and 240 files are the 1440 and 780 ones made smaller with sharp, for the client card on a phone)
+  src: `${media}/${name}-1440.webp`, srcset: `${media}/${name}-480.webp 480w, ${media}/${name}-800.webp 800w, ${media}/${name}-1440.webp 1440w`,
   alt, caption, width: 1440, height: 900, device: "desktop" as const,
 });
 const phone = (name: string, alt: string, caption: string) => ({
-  src: `${media}/${name}-780.webp`, srcset: `${media}/${name}-400.webp 400w, ${media}/${name}-780.webp 780w`,
+  src: `${media}/${name}-780.webp`, srcset: `${media}/${name}-240.webp 240w, ${media}/${name}-400.webp 400w, ${media}/${name}-780.webp 780w`,
   alt, caption, width: 780, height: 1688, device: "mobile" as const,
 });
 
@@ -90,8 +91,8 @@ export const caseStudies: CaseStudyData[] = [
     solution: "A website built around booking. Clients pick a service, a day and an open time, add their details, read the policies and send the request in a few steps, then get an email with a link to manage it. The services and prices are on their own page, written plainly, and the site is set up for local search.",
     features: [
       { icon: "clock", title: "Live availability", text: "Only open times are offered, worked out from his working hours and the bookings already made, so a slot can't be given twice." },
-      { icon: "bellRinging", title: "Reminder emails", text: "Clients get a reminder before the appointment, by email once it is set up at launch." },
-      { icon: "listChecks", title: "Cancellation waitlist", text: "When a service is fully booked, clients can join a waitlist and get an email if a time opens up. It switches on with email at launch." },
+      { icon: "bellRinging", title: "Reminder emails", text: "Clients get a reminder before the appointment, by email." },
+      { icon: "listChecks", title: "Cancellation waitlist", text: "When a service is fully booked, clients can join a waitlist and get an email if a time opens up." },
       { icon: "shieldCheck", title: "Policies before booking", text: "Cancellation, no-show and late rules are shown in the booking steps and acknowledged before a request is sent." },
       { icon: "mapPin", title: "Private location", text: "The exact address is never published: clients are told to message him for it once a booking is confirmed." },
       { icon: "monitor", title: "Run by the barber", text: "He manages his hours, bookings and portfolio himself, from a private dashboard that only he can sign in to." },
@@ -99,7 +100,7 @@ export const caseStudies: CaseStudyData[] = [
     built: ["Online booking with live availability", "Booking management by private link", "Reminder emails and a cancellation waitlist", "Services and prices page", "Mobile-first design", "Local search setup"],
     tech: ["Next.js", "React", "PostgreSQL", "Tailwind CSS", "Installable web app (PWA)"],
     techNote: "Built from code rather than a page builder, so the booking rules, reminders and waitlist work the way his shop does: Next.js and React draw the pages, PostgreSQL keeps the bookings and Tailwind CSS styles them. Clients can also add the site to their phone's home screen and open it like an app.",
-    outcome: "Built and tested: a booking runs from choosing a service to the request-received screen, with the policies agreed to on the way, as the walkthrough above shows. The emails (the booking link, reminders and the waitlist) start once email is set up at launch. The site is not live yet, so no results are claimed here. It goes live once hosting and accounts are set up in the barber's own name, so he will own it outright.",
+    outcome: "Built and tested: a booking runs from choosing a service to the request-received screen, with the policies agreed to on the way, as the walkthrough above shows. The site has been live at its own address since 13 November 2026, with online booking open since 14 November and the booking emails on. It is too new for numbers, so no results are claimed here.",
     shots: [
       desktop("home-desktop", "The Chrysfadezzz home page on a computer: the heading “Precision. Style. Confidence.” in white serif type on black, with gold How to Book and See the Work buttons.", "Home page"),
       phone("home-phone", "The Chrysfadezzz home page on a phone: the same heading, the gold How to Book button, and the starting price of $30.", "Home page on a phone"),
@@ -111,21 +112,24 @@ export const caseStudies: CaseStudyData[] = [
       phone("book-confirmed-phone", "The Request received screen on a phone, with a reference number and a note that the exact location is private.", "Booking: request received"),
     ],
     video: {
-      src: `${media}/walkthrough.mp4`, poster: `${media}/poster-1280.webp`, width: 1280, height: 800,
+      src: `${media}/walkthrough.mp4`, poster: `${media}/poster-1280.webp`, width: 1280, height: 800, length: "1:04",
       label: "Walkthrough of the Chrysfadezzz website, 64 seconds, no sound: the home page, the services, a booking from start to finish, then the same on a phone.",
       captions: `${media}/walkthrough.vtt`,
       note: "The booking pictures and this video were made on a test copy of the site with made-up details. No real appointment was booked.",
     },
+    url: "https://chrysfadezzz.com/",
     lead: { id: "portfolio-chrys", label: "Portfolio — CHRYS" },
     replaces: "noctis-skin",
     // The barber's yes, relayed by Nuxy's owner on 13 November 2026 (business/site-upgrade/approvals.md item 94).
-    // No live link: his site is not live yet (item 95). The page says neither "sold" nor "gift" (item 97).
-    consent: "Chrysfadezzz (the barber) said yes to his name, his town (Faribault, Minnesota), the 8 screenshots, the 64-second walkthrough and this text; relayed by Nuxy's owner on 13 November 2026.",
+    // The live link: his yes relayed on 17 November 2026 ("I have approval on everything from him", item 95); the site
+    // answered at that address the same day. The page says neither "sold" nor "gift" (item 97).
+    consent: "Chrysfadezzz (the barber) said yes to his name, his town (Faribault, Minnesota), the 8 screenshots, the 64-second walkthrough and this text, relayed by Nuxy's owner on 13 November 2026, and to a link to his live website, relayed on 17 November 2026.",
     checks: {
-      completed: "Built and tested by 13 November 2026 (the CHRYS project's docs/STATUS.md); not launched yet, as the page says: it goes live once his hosting and accounts are set up in his name.",
+      completed: "Built and tested by 13 November 2026 (the CHRYS project's docs/STATUS.md); live at its own domain since 13 November 2026, with online booking open since 14 November (docs/STATUS.md).",
       permission: "His yes was relayed by Nuxy's owner on 13 November 2026 (\"his yes covered everything\") and is recorded in business/site-upgrade/approvals.md, item 94.",
       screenshots: "The barber approved the 8 screenshots and the walkthrough shown here (made with test data only); relayed by Nuxy's owner, 13 November 2026.",
       details: "The barber approved this wording: his name, town, services and the card text; relayed by Nuxy's owner, 13 November 2026.",
+      url: "The barber agreed to a link to his live website; relayed by Nuxy's owner on 17 November 2026 (approvals.md item 95).",
     },
   },
 ];

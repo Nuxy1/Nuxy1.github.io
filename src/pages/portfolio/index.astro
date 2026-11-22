@@ -17,9 +17,9 @@ import VideoTeasers from "../../components/VideoTeasers.astro";
 import { demos } from "../../data/creative";
 import { demosReady } from "../../data/cinematic";
 import { isStaged, replacedDemos, shownCases } from "../../data/case-studies";
-import { demoSites } from "../../data/demo-sites";
+import { demoSites as allDemoSites, listedServices } from "../../data/demo-sites";
 import { examples } from "../../data/examples";
-import { serviceById } from "../../data/services";
+import { serviceById, variantById } from "../../data/services";
 import { levelById } from "../../data/tiers";
 
 const repo = "https://github.com/Nuxy1/small-business-automations";
@@ -32,10 +32,16 @@ const videos = demos.filter((d) => !replacedDemos.has(d.id)).length;
 // the video demos are listed here only when all three have real, checked files (the same rule as the gallery)
 const hasVideo = demosReady(demos.map((d) => d.id));
 const isStore = (project: string) => project === "E-commerce store";
+// (critique round 7) a Business card's service line said only "New website ($900)": it now gives both website prices,
+// as the Business level's "$499 – $900" does, so the two never seem to disagree
+const svcPrice = (id: string) => id === "new-website"
+  ? `${serviceById["new-website"].price} up to 4 pages, ${variantById["starter-website"].price} for one page` : serviceById[id].price; // its own price first (tests/pricing.test.mjs §5)
 const where = (id: string) => (id === "new-website" ? "/websites/#new-website" : id === "online-shop" ? "/ecommerce/" : `/solutions/#${id}`);
+const shown = ["business", "signature", "immersive"] as const;
+// (critique 11-17) in level order, like the filter: the made-up barber is no longer right under the real one
+const demoSites = [...allDemoSites].sort((a, b) => shown.indexOf(a.tier as (typeof shown)[number]) - shown.indexOf(b.tier as (typeof shown)[number]));
 const sites = demoSites.filter((d) => !isStore(d.project)).length;
 const stores = demoSites.length - sites;
-const shown = ["business", "signature", "immersive"] as const;
 const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
 const version = (d: (typeof demoSites)[number]) => isStore(d.project)
   ? d.tier === "business" ? "Built in your own Shopify or Square Online account" : "A custom-designed theme on your own Shopify store"
@@ -71,35 +77,38 @@ const ld = [
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: `${site}/` },
-      { "@type": "ListItem", position: 2, name: "Portfolio", item: `${site}/portfolio/` },
+      { "@type": "ListItem", position: 2, name: "Our Work", item: `${site}/portfolio/` },
     ],
   },
 ];
 const count = (n: number, one: string, many: string) => `${["no", "one", "two", "three", "four", "five", "six"][n] ?? n} ${n === 1 ? one : many}`;
 ---
-<Base title={clients.length === 0 ? "Portfolio: Concept Websites and a Store · Nuxy Automation" : "Portfolio: Client Work, Concept Websites and a Store · Nuxy Automation"} description={`${clients.length === 0 ? "" : `Real client work (${clients.map((c) => c.business).join(", ")}), plus `}${clients.length === 0 ? "Concept" : "concept"} websites and a store for made-up businesses${clients.length === 0 ? ", by website level" : ""}: a landscaper, a barber, a cleaner, a candle shop and a speaker brand.`} wide>
+<Base title={clients.length === 0 ? "Portfolio: Concept Websites and a Store · Nuxy Automation" : "Portfolio: Client Work and Concept Websites · Nuxy Automation"} description={`${clients.length === 0 ? "" : `Real client work (${clients.map((c) => c.business).join(", ")}), plus `}${clients.length === 0 ? "Concept" : "concept"} websites and a store for made-up businesses${clients.length === 0 ? ", by website level" : ""}: a landscaper, a barber, a cleaner, a candle shop and a speaker brand.`} wide>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />
   <section class="pf-hero">
     <div class="wrap pf-grid">
       <div>
-        <p class="eyebrow">Portfolio</p>
+        <p class="eyebrow">Our work</p>
         <h1>{clients.length === 0 ? "Concept Demonstrations You Can Click Through" : "Client Projects and Concept Demonstrations You Can Click Through"}</h1>
-        <p class="lead">{count(sites, "business website", "business websites").replace(/^\w/, (c) => c.toUpperCase())} and {count(stores, "online store", "online stores")}, each built for a made-up business so you can see the layout, features and finish we aim for. Open any of them on a computer or a phone, and try the forms.</p>
+        {/* (critique 11-17: two sentences, so "each built for a made-up business" can't be read as covering the client) */}
+        <p class="lead">{clients.length > 0 && `${count(clients.length, "real client website", "real client websites").replace(/^\w/, (c) => c.toUpperCase())} ${clients.length === 1 ? "comes" : "come"} first. Then `}{clients.length > 0 ? count(sites, "business website", "business websites") : count(sites, "business website", "business websites").replace(/^\w/, (c) => c.toUpperCase())} and {count(stores, "online store", "online stores")}, each built for a made-up business so you can see the layout, features and finish we aim for. Open any of them on a computer or a phone, and try the forms.</p>
         {clients.length === 0 ? (
           <p class="made-up"><Icon name="info" /><span><strong>These are concept demonstrations, not client projects.</strong> Every business on this page is made up and labeled that way. There are no reviews or results here, because examples have none to show.</span></p>
         ) : (
-          <p class="made-up"><Icon name="info" /><span><strong>Client projects and examples are kept apart.</strong> {anyStaged ? "The client projects are real businesses. This preview is published only once each client approves it in writing." : "The client projects are real and shown with each client's permission."} Every example business below them is made up and labeled that way.</span></p>
+          <p class="made-up"><Icon name="info" /><span><strong>{clients.length === 1 ? "The client project and the examples are kept apart." : "Client projects and examples are kept apart."}</strong> {clients.length === 1
+            ? (anyStaged ? "The client project is a real business. This preview is published only once the client approves it in writing." : "The client project is real and shown with the client's permission.")
+            : (anyStaged ? "The client projects are real businesses. This preview is published only once each client approves it in writing." : "The client projects are real and shown with each client's permission.")} Every example business below {clients.length === 1 ? "it" : "them"} is made up and labeled that way.</span></p>
         )}
       </div>
       <nav class="jump" aria-labelledby="jump-h">
         <h2 id="jump-h" class="jump-h">On This Page</h2>
         <ul role="list">
-          {clients.length > 0 && <li><a href="#clients"><Icon name="briefcase" /><span><strong>Client projects</strong><span>{anyStaged ? "Real work, staged for the client's approval" : "Real work, shown with permission"}</span></span></a></li>}
+          {clients.length > 0 && <li><a href="#clients"><Icon name="briefcase" /><span><strong>Client Projects</strong><span>{anyStaged ? "Real work, staged for the client's approval" : "Real work, shown with permission"}</span></span></a></li>}
           {demoSites.map((d) => (
             <li data-tier={d.tier}><a href={`#${d.slug}`}><Icon name={d.icon} /><span><strong>{d.name}</strong><span>{d.project}</span></span></a></li>
           ))}
-          {hasVideo && <li><a href="#video"><Icon name="filmSlate" /><span><strong>Video concept demonstrations</strong><span>{count(videos, "short video", "short videos").replace(/^\w/,(c) => c.toUpperCase())} for made-up brands</span></span></a></li>}
-          <li><a href="#technical"><Icon name="githubLogo" /><span><strong>Interactive experiments</strong><span>{count(examples.length, "working automation", "working automations").replace(/^\w/, (c) => c.toUpperCase())}</span></span></a></li>
+          {hasVideo && <li><a href="#video"><Icon name="filmSlate" /><span><strong>Concept Films</strong><span>{count(videos, "concept film", "concept films").replace(/^\w/,(c) => c.toUpperCase())}</span></span></a></li>}
+          <li><a href="#technical"><Icon name="githubLogo" /><span><strong>Open-Source Automations</strong><span>{count(examples.length, "working automation", "working automations").replace(/^\w/, (c) => c.toUpperCase())}</span></span></a></li>
         </ul>
       </nav>
     </div>
@@ -109,9 +118,9 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
     <section class="section" id="clients" aria-labelledby="clients-h">
       <div class="wrap">
         <div class="section-head">
-          <p class="eyebrow">Real client projects</p>
-          <h2 id="clients-h">Work for Real Businesses</h2>
-          <p>{anyStaged ? "Real websites for real businesses. This is a staged preview: a project goes live here only once its client approves it in writing." : "Each one is shown with the client's permission."}</p>
+          <p class="eyebrow">{clients.length === 1 ? "Real client project" : "Real client projects"}</p>
+          <h2 id="clients-h">{clients.length === 1 ? "Work for a Real Business" : "Work for Real Businesses"}</h2>
+          <p>{anyStaged ? "Real websites for real businesses. This is a staged preview: a project goes live here only once its client approves it in writing." : clients.length === 1 ? "Shown with the client's permission." : "Each one is shown with the client's permission."}</p>
         </div>
         <div class="clients">{clients.map((c) => <CaseStudy study={c} />)}</div>
       </div>
@@ -123,12 +132,14 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
       <div class="section-head">
         <p class="eyebrow">Concept demonstrations</p>
         <h2 id="concepts-h">Made-Up Businesses, Real Websites</h2>
-        <p>Fictional projects built to show what each website level can do. Each one is a working site you can open and try, and none of them is a client.</p>
+        <p>Each one shows what a website level can do, and each is a working site you can open and try.</p>
       </div>
-      <div class="pf-filter" role="group" aria-label="Show examples by website level" data-pf-filter hidden>
-        <button type="button" data-tier="all" aria-pressed="true">All levels</button>
-        {shown.map((t) => <button type="button" data-tier={t} aria-pressed="false">{levelById[t].name}</button>)}
-        <p class="pf-flag">Flagship work is planned one project at a time: <a href="/contact/?level=flagship" data-track="tier_selected">discuss a custom project</a>.</p>
+      <div class="pf-tools" data-pf-tools hidden>
+        <div class="pf-filter" role="group" aria-label="Show examples by website level" data-pf-filter>
+          <button type="button" data-tier="all" aria-pressed="true">All levels</button>
+          {shown.map((t) => <button type="button" data-tier={t} aria-pressed="false">{levelById[t].name}</button>)}
+        </div>
+        <p class="pf-flag"><span data-pf-count></span> There is no Flagship example here: Flagship work is planned one project at a time, so <a href="/contact/?level=flagship" data-track="tier_selected">discuss a custom project</a>.</p>
       </div>
       {demoSites.map((d, i) => {
         const store = isStore(d.project);
@@ -136,25 +147,28 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
           <article class:list={["case", { flip: i % 2 === 1 }]} id={d.slug} data-tier={d.tier} aria-labelledby={`${d.slug}-h`}>
             <div class="case-shot"><DeviceShot slug={d.slug} lazy={i > 0} /></div>
             <div class="case-copy">
-              <p class="case-kind"><Icon name={d.icon} />{d.kind} · concept demonstration<a class="case-tier" href={levelById[d.tier].page}><span class="case-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps[levelById[d.tier].complexity] }}></i>)}</span>{levelById[d.tier].name}</a></p>
+              {/* (site audit 2026-11-21, critique round 3) the level chip carries the level's price, so it is read before the
+                  features; the facts below drop "Industry", which repeated this line word for word */}
+              <p class="case-kind"><Icon name={d.icon} />{d.kind} · concept demonstration<a class="case-tier tap" href={levelById[d.tier].page}><span class="case-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps[levelById[d.tier].complexity] }}></i>)}</span>{levelById[d.tier].name}<span class="case-price">{d.tier === "business" && store ? serviceById["online-shop"].price : levelById[d.tier].price}</span></a></p>
               <h3 id={`${d.slug}-h`}>{d.name}</h3>
               <p class="case-sum">{d.summary}</p>
-              <dl class="case-facts">
-                <div><dt>Industry</dt><dd>{d.kind}</dd></div>
+              <details class="case-more"><summary>Project details<Icon name="caretDown" /></summary><dl class="case-facts">
                 <div><dt>Project</dt><dd>{d.project}</dd></div>
-                <div><dt>Level</dt><dd><a href={levelById[d.tier].page}>{levelById[d.tier].name}</a> · {levelById[d.tier].complexity.toLowerCase()} complexity</dd></div>
+                <div><dt>Level</dt><dd><a class="tap" href={levelById[d.tier].page}>{levelById[d.tier].name}</a> · {levelById[d.tier].complexity.toLowerCase()}{"\u00a0"}complexity</dd></div>
                 <div><dt>Your version</dt><dd>{version(d)}</dd></div>
-              </dl>
+              </dl></details>
               <h4 class="case-h3">Features</h4>
               <ul class="ticks case-ticks">{d.shows.map((s) => <li><Icon name="check" />{s}</li>)}</ul>
-              <p class="case-svc">Services it shows: {d.services.map((id, j) => (
-                <>{j > 0 && ", "}<a href={where(id)}>{serviceById[id].name}</a> ({serviceById[id].price})</>
+              <p class="case-svc">Optional services it shows, each priced on its own: {listedServices(d).map((id, j) => (
+                <>{j > 0 && ", "}<a href={where(id)}>{serviceById[id].name}</a> ({svcPrice(id)})</>
               ))}</p>
+              {store && d.tier !== "business" && <p class="case-svc">Need something simpler? An <a href={where("online-shop")}>online shop</a> in your own Square Online or Shopify account is {serviceById["online-shop"].price}.</p>}
               {store && <p class="case-note"><Icon name="lockSimple" /><span>Its cart and checkout work as a demo, but no card is ever asked for: nothing can be bought.</span></p>}
               <div class="case-actions">
-                <a class="button" href={`/examples/${d.slug}/`} data-track="example_open">View Project</a>
-                <a class="button secondary" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the full {store ? "store" : "site"}</a>
+                <a class="button secondary" href={`/example-sites/${d.slug}/`} data-track="example_full">Open the Demo {store ? "Store" : "Site"}</a>
+                <a class="button secondary" href={`/examples/${d.slug}/`} data-track="example_open">Computer &amp; Phone View</a>
               </div>
+              <p class="case-back"><a href="#jump-h">Back to the list<Icon name="arrowUp" /></a></p>
             </div>
           </article>
         );
@@ -165,7 +179,7 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
   {hasVideo && (
     <section class="section" id="video" aria-labelledby="video-h">
       <div class="wrap">
-        <VideoTeasers level={2} headingId="video-h" title="Video concept demonstrations" />
+        <VideoTeasers level={2} headingId="video-h" title="Concept Films" />
       </div>
     </section>
   )}
@@ -173,9 +187,9 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
   <section class="section band" id="technical" aria-labelledby="technical-h">
     <div class="wrap">
       <div class="section-head">
-        <p class="eyebrow">Interactive experiments</p>
+        <p class="eyebrow">Technical work</p>
         <h2 id="technical-h">Automations, with the Code</h2>
-        <p>Technical work, kept apart from the website concepts: {count(examples.length, "working automation", "working automations")}, published as open source with automated tests and plain-English docs. Each example page walks through a made-up business’s week.</p>
+        <p>Technical work, kept apart from the website concepts: {count(examples.length, "working automation", "working automations")}, published as open source with automated tests and plain-English docs. Each example page walks through a sample business’s week, start to finish.</p>
       </div>
       <ul class="tech grid-2" role="list">
         {examples.map((e) => (
@@ -211,53 +225,130 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
 
 <style>
   .pf-hero { padding-block: clamp(40px, 6vw, 80px) clamp(8px, 2vw, 24px); }
-  .pf-hero h1 { max-width: 20ch; font-size: clamp(2.125rem, 1.5rem + 2.6vw, 3.25rem); }
+  .pf-hero h1 { max-width: 20ch; font-size: clamp(2rem, 1.4rem + 2.6vw, 3.25rem); }
   .pf-hero .lead { margin-top: 18px; max-width: 62ch; }
   .made-up { display: flex; gap: 10px; align-items: flex-start; max-width: 72ch; margin-top: 24px; padding: 14px 16px; border: 1px solid var(--hairline); border-radius: var(--r-md, 12px); background: var(--panel); color: var(--body); font-size: 0.9375rem; }
   .made-up :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
   .made-up strong { color: var(--ink); }
-  .pf-grid { display: grid; gap: 32px; }
-  @media (min-width: 960px) { .pf-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: 56px; align-items: end; } }
+  .pf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  @media (min-width: 960px) { .pf-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: 56px; align-items: start; } }
   .jump-h { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .jump ul { display: grid; gap: 2px; margin: 10px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--hairline); }
   .jump li { border-bottom: 1px solid var(--hairline); }
   .clients { display: grid; gap: 20px; }
+  /* (2026-11-17 critique) the client work follows the intro closely, so a 1440x900 screen shows the start of it */
+  .pf-hero + #clients { padding-top: clamp(24px, 3vw, 40px); }
+  /* on a computer the index is the names alone in a tighter list; each section repeats its own description */
+  @media (min-width: 960px) {
+    .jump strong + span { display: none; }
+    .jump a { min-height: 40px; padding-block: 6px; }
+  }
   .jump a { display: flex; gap: 12px; align-items: center; min-height: 52px; padding: 8px 4px; color: var(--ink); text-decoration: none; }
   .jump a:hover strong { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
   .jump a :global(.icon) { flex: none; color: var(--cyan); }
   .jump a > span { display: grid; }
   .jump strong { font-size: 0.9375rem; font-weight: 600; }
   .jump strong + span { color: var(--muted); font-size: 0.8125rem; }
-
-  .cases .wrap { display: grid; gap: clamp(56px, 8vw, 104px); }
-  .case { display: grid; gap: 28px; align-items: center; scroll-margin-top: 16px; }
-  @media (min-width: 960px) {
-    .case { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 56px; }
-    .case.flip .case-shot { order: 2; }
+  /* On a phone the index is the names alone: each section repeats its own description, and the list stays one screen. */
+  /* (2026-11-17) on a phone the index is one row of chips that scrolls sideways, so the work starts about a screen
+     sooner; the page itself never scrolls sideways */
+  @media (max-width: 639px) {
+    .jump strong + span { display: none; }
+    .jump ul { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; margin-inline: -16px; padding: 2px 48px 4px 16px; border-top: 0; }
+    /* (critique 11-17) the row ran off the screen's edge with nothing to say it scrolls: the right edge fades, and the
+       end padding lets the last chip scroll clear of the fade */
+    .jump ul { mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); scroll-snap-type: x proximity; scroll-padding-inline: 16px; }
+    .jump li { flex: none; border-bottom: 0; scroll-snap-align: start; }
+    .jump a { min-height: 44px; padding: 0 14px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); white-space: nowrap; }
+    .jump a :global(.icon) { width: 18px; height: 18px; }
   }
-  .case-kind { display: inline-flex; align-items: center; gap: 8px; color: var(--cyan); font-size: 0.875rem; font-weight: 600; }
-  .case h3 { margin-top: 8px; font-size: clamp(1.625rem, 1.3rem + 1.2vw, 2.125rem); }
+
+  /* (critique 11-17, round 9) two sections' padding stacked into a 227px gap between the client card and the concepts:
+     the client section hands the space to the next one, so the gap is one section's padding */
+  #clients { padding-bottom: 0; }
+  .cases .wrap { --case-gap: clamp(48px, 6vw, 80px); display: grid; gap: var(--case-gap); }
+  .case { display: grid; gap: 28px; align-items: center; scroll-margin-top: 16px; }
+  /* (critique 11-17: a centred picture beside a taller column left a dead band above and below it, so the entries
+     read far apart) on a computer the picture starts level with the name and stays in view while its column is read */
+  @media (min-width: 960px) {
+    .case { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 56px; align-items: start; }
+    .case.flip .case-shot { order: 2; }
+    .case-shot { position: sticky; top: 96px; }
+  }
+  /* (critique round 5: on a phone the phone frame covered the right end of Halvane's headline) under 480px the phone
+     overlaps the computer by 20px instead of a quarter of its width, so the pair sits side by side and neither page's
+     headline is hidden */
+  @media (max-width: 479px) {
+    .case-shot :global(.desk) { margin-right: calc(clamp(96px, 27%, 180px) - 20px); }
+  }
+  /* (critique round 6: the level pill sat beside the kind on the wider text column and dropped under it on the
+     narrower one, so the names of neighbouring concepts started at different heights) the icon and kind share the
+     first row and the pill always takes the row under them, on every concept and at every width */
+  .case-kind { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px 8px; color: var(--cyan); font-size: 0.875rem; font-weight: 600; }
+  .case-kind .case-tier { grid-column: 1 / -1; justify-self: start; margin-left: 0; }
+  .case h3 { margin-top: 8px; font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
   .case-sum { margin-top: 12px; color: var(--body); max-width: 56ch; }
-  .case-facts { display: grid; gap: 10px; margin-top: 20px; padding-block: 14px; border-block: 1px solid var(--hairline); }
+  .case-facts { display: grid; gap: 10px; padding-block: 14px; border-block: 1px solid var(--hairline); }
+  /* (site audit 2026-11-21, critique round 4) on a phone each concept's facts fold under one "Project details" line, so
+     the concepts read as a picture and its features instead of a spec table each. A computer shows the facts open with
+     no toggle; a browser without ::details-content shows the toggle there too, so the facts are always reachable. */
+  .case-more { margin-top: 20px; }
+  .case-more > summary { display: flex; align-items: center; gap: 8px; min-height: 48px; border-top: 1px solid var(--hairline); color: var(--ink); font-size: 0.9375rem; font-weight: 600; cursor: pointer; list-style: none; }
+  .case-more:not([open]) > summary { border-bottom: 1px solid var(--hairline); }
+  .case-more > summary::-webkit-details-marker { display: none; }
+  .case-more > summary:hover { color: var(--link); }
+  .case-more > summary :global(.icon) { margin-left: auto; width: 16px; height: 16px; color: var(--muted); transition: transform 200ms var(--ease); }
+  .case-more[open] > summary :global(.icon) { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .case-more > summary :global(.icon) { transition: none; } }
+  @supports selector(::details-content) {
+    @media (min-width: 640px) {
+      .case-more > summary { display: none; }
+      .case-more::details-content { content-visibility: visible; }
+    }
+  }
+  /* a way back to the index from deep in the list, on a phone only (a computer keeps the index beside the intro) */
+  .case-back { display: none; }
+  @media (max-width: 639px) {
+    .case-back { display: flex; margin-top: 8px; }
+    .case-back a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--link); font-size: 0.9375rem; font-weight: 600; }
+    .case-back :global(.icon) { width: 1em; height: 1em; }
+    /* the chips above index the page, so a phone skips the level filter and keeps the Flagship line */
+    .pf-tools .pf-filter, .pf-tools [data-pf-count] { display: none; }
+    /* (critique round 5) with the filter gone the Flagship line is all that is left, and it sat 80px under the intro
+       (the head's margin plus the list's gap): it now follows the intro as its last line, 40px down */
+    .pf-tools:not([hidden]) { margin-top: calc(var(--case-gap) * -1 + 8px); }
+  }
   .case-facts div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 12px; }
   .case-facts dt { color: var(--muted); font-size: 0.875rem; font-weight: 600; }
   .case-facts dd { margin: 0; color: var(--ink); font-size: 0.9375rem; }
   .case-h3 { margin-top: 20px; font-size: 1rem; }
   .case-ticks { margin-top: 10px; color: var(--body); }
   .case-svc { margin-top: 16px; color: var(--muted); font-size: 0.9375rem; }
+  /* a service name never breaks inside itself ("follow- / up" at 390, audit 11-21); the list still wraps between them */
+  .case-svc a { white-space: nowrap; }
   .case-note { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; color: var(--body); font-size: 0.9375rem; }
   .case-note :global(.icon) { flex: none; margin-top: 0.2em; color: var(--cyan); }
   .case-tier { display: inline-flex; align-items: center; gap: 8px; margin-left: 4px; padding: 2px 10px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); color: var(--ink); font-size: 0.8125rem; text-decoration: none; }
   .case-tier:hover { border-color: var(--link); }
+  .case-price { color: var(--body); font-weight: 600; }
+  .case-price::before { content: "·" / ""; margin-right: 8px; color: var(--muted); font-weight: 400; }
   .case-steps { display: inline-grid; grid-template-columns: repeat(4, 10px); gap: 2px; }
   .case-steps i { height: 4px; border-radius: 2px; background: var(--hairline-strong); }
   .case-steps i.on { background: var(--link); }
   .case-facts a { color: var(--link); }
-  .pf-filter:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .pf-tools:not([hidden]) { display: grid; gap: 12px; }
+  .pf-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  /* (critique 11-17) four chips don't fit one phone row; wrapping left "Immersive" alone on the second line, so a
+     narrow screen gets an even two-by-two grid */
+  @media (max-width: 519px) { .pf-filter { display: grid; grid-template-columns: 1fr 1fr; } }
   .pf-filter button { min-height: 44px; padding: 0 16px; border: 1px solid var(--hairline); border-radius: var(--r-full); background: var(--panel); color: var(--body); font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: border-color 150ms var(--ease), background-color 150ms var(--ease); }
   .pf-filter button:hover { border-color: var(--hairline-strong); color: var(--ink); }
-  .pf-filter button[aria-pressed="true"] { border-color: var(--button); background: var(--button); color: #fff; }
-  .pf-flag { flex-basis: 100%; margin-top: 4px; color: var(--muted); font-size: 0.9375rem; }
+  /* (site audit 2026-11-21, critique round 4) the chosen level is a lighter chip with a doubled blue edge, not the
+     filled blue that marks the next step everywhere else */
+  .pf-filter button[aria-pressed="true"] { border-color: var(--blue-line); background: var(--surface-strong); color: var(--ink); box-shadow: inset 0 0 0 1px var(--blue-line); }
+  /* (critique 11-17) the filter belongs to the list under it: half the section gap, not the full one */
+  .pf-tools:not([hidden]) + .case { margin-top: calc(var(--case-gap) / -2); }
+  .pf-flag { margin: 0; color: var(--muted); font-size: 0.9375rem; }
   .pf-flag a { color: var(--link); }
   .case-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
   @media (max-width: 479px) { .case-actions .button { width: 100%; } }
@@ -277,11 +368,19 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
 
 <script>
   // Filter the examples by website level. Hidden examples (and their "On this page" links) are hidden outright, and
-  // the picture side alternates again over the ones still showing.
-  const bar = document.querySelector<HTMLElement>("[data-pf-filter]");
-  if (bar) {
+  // the picture side alternates again over the ones still showing. A count after the buttons says what is showing; it
+  // becomes a live region only after its first text, so a screen reader hears each change but not the page load.
+  const tools = document.querySelector<HTMLElement>("[data-pf-tools]");
+  const bar = tools?.querySelector<HTMLElement>("[data-pf-filter]");
+  const count = tools?.querySelector<HTMLElement>("[data-pf-count]");
+  if (tools && bar) {
     const cases = [...document.querySelectorAll<HTMLElement>("article.case[data-tier]")];
     const links = [...document.querySelectorAll<HTMLElement>(".jump li[data-tier]")];
+    const say = (tier: string, n: number) => {
+      if (!count) return;
+      const name = bar.querySelector<HTMLButtonElement>(`button[data-tier="${tier}"]`)?.textContent?.trim();
+      count.textContent = tier === "all" ? `Showing all ${n} examples.` : `Showing ${n} ${name} example${n === 1 ? "" : "s"}.`;
+    };
     const set = (tier: string) => {
       bar.querySelectorAll<HTMLButtonElement>("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tier === tier)));
       let n = 0;
@@ -291,6 +390,7 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
         if (on) c.classList.toggle("flip", n++ % 2 === 1);
       }
       for (const l of links) l.hidden = !(tier === "all" || l.dataset.tier === tier);
+      say(tier, n);
     };
     bar.addEventListener("click", (e) => {
       const b = (e.target as Element).closest<HTMLButtonElement>("button[data-tier]");
@@ -298,6 +398,14 @@ const count = (n: number, one: string, many: string) => `${["no", "one", "two", 
       set(b.dataset.tier!);
       (window as unknown as { nuxyTrack?: (e: string) => void }).nuxyTrack?.("portfolio_tier_filter");
     });
-    bar.hidden = false;
+    // (site audit 2026-11-21) a phone hides the filter, so turning a phone upright never leaves examples hidden with no
+    // button to bring them back
+    const phone = matchMedia("(max-width: 639px)");
+    phone.addEventListener("change", () => {
+      if (phone.matches && bar.querySelector<HTMLButtonElement>('button[aria-pressed="true"]')?.dataset.tier !== "all") set("all");
+    });
+    say("all", cases.length);
+    tools.hidden = false;
+    count?.setAttribute("role", "status");
   }
 </script>

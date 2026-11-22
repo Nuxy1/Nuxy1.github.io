@@ -16,10 +16,11 @@ export const AXES: { id: Axis; name: string }[] = [
 
 export type SizeId = "tin" | "8oz" | "12oz";
 export const SIZE_IDS: SizeId[] = ["tin", "8oz", "12oz"];
-export const SIZES: Record<SizeId, { name: string; label: string; price: number; hours: number }> = {
-  tin: { name: "Travel tin", label: "4 oz tin", price: 14, hours: 20 },
-  "8oz": { name: "Classic jar", label: "8 oz jar", price: 26, hours: 45 },
-  "12oz": { name: "Large jar", label: "12 oz jar", price: 34, hours: 70 },
+/** `fits`: the room each size suits, shown on the size choice so "which size?" is answered where it is asked */
+export const SIZES: Record<SizeId, { name: string; label: string; price: number; hours: number; fits: string }> = {
+  tin: { name: "Travel tin", label: "4 oz tin", price: 14, hours: 20, fits: "For a desk or bath" },
+  "8oz": { name: "Classic jar", label: "8 oz jar", price: 26, hours: 45, fits: "For a bedroom" },
+  "12oz": { name: "Large jar", label: "12 oz jar", price: 34, hours: 70, fits: "For a living room" },
 };
 
 export type Candle = {

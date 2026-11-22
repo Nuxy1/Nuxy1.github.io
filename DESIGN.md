@@ -42,6 +42,28 @@ typography:
     fontWeight: 650
     lineHeight: 1.12
     letterSpacing: "-0.03em"
+  feature:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(2rem, 1.4rem + 2.6vw, 3.25rem)"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "-0.03em"
+  sub-section:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.5rem, 1.2rem + 1.2vw, 2rem)"
+    fontWeight: 650
+    lineHeight: 1.15
+    letterSpacing: "-0.025em"
+  card-head:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.25rem"
+    fontWeight: 650
+    lineHeight: 1.2
+  card-head-lg:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.375rem"
+    fontWeight: 650
+    lineHeight: 1.2
   card-title:
     fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.1875rem"
@@ -57,6 +79,21 @@ typography:
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.5
+  small:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
+    lineHeight: 1.5
+  label:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.75rem"
+    fontWeight: 600
+    letterSpacing: "0.06em"
+  label-sm:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.6875rem"
+    fontWeight: 600
+    letterSpacing: "0.06em"
   eyebrow:
     fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.8125rem"
@@ -174,7 +211,7 @@ rules under "Halvane 3D" in Motion. "Make everything 3D" stays a don't.
 - Prices use tabular figures where they line up in tables.
 - Headings on Nuxy's own pages are in Title Case (approvals 85, 2026-11-13): small words (a, an, the, and, or, for,
   to, of, in, on, with, from...) stay lower case unless first or last; a one-sentence heading has no full stop, a
-  heading of two sentences keeps both ("Build Smarter. Grow Faster."). The made-up demo businesses keep their own style.
+  heading of two sentences keeps both ("Websites That Stand Out. Systems That Save You Time."). The made-up demo businesses keep their own style.
 
 ### Working type scale (as built, rem at a 16px root)
 
@@ -205,6 +242,8 @@ New text uses one of these steps; sizes outside them (a few 1.3125 and 1.625rem)
 
 - Content sits in `.wrap`: max 1200px, side gutter 16px on phones up to 40px.
 - Sections breathe: `.section` padding 64-112px; `.section-head` holds the eyebrow, h2 and one-line intro.
+  Exception: a case study (`/portfolio/<slug>/`, `/work/<slug>/`) is read top to bottom like an article, so its
+  sections carry a plain h2 with no eyebrow; the eyebrow is for pages a visitor scans (home, services, portfolio index).
 - Built phone first and checked at 320, 375, 390, 768, 1024, 1440 and 1920px wide, with no sideways scroll at any width.
 - The header is 64px tall on every page at every width. Below 900px its links fold into the phone menu; from 900px
   they sit in a row with the Services dropdown; the "Get a Free Quote" button shows from 768px.
@@ -217,7 +256,7 @@ New text uses one of these steps; sizes outside them (a few 1.3125 and 1.625rem)
 
 | Page | Job |
 |---|---|
-| `/` | In this order: hero ("Build Smarter. Grow Faster.", two buttons, starting prices), what we do (two service categories), the four website levels, example work, the automation demos, how it works, the handover summary, why Nuxy, a short FAQ, one final next step with the callback link |
+| `/` | In this order (owner's site audit brief, 2026-11-21): hero ("Websites That Stand Out. Systems That Save You Time.", Get a Free Quote and Explore Our Work, starting prices), what we do (three kinds of work, each with its starting price), our work (client projects first, then the concept strip), the four website levels, one automation demo, why Nuxy, the handover summary, one final next step (quote, callback, email, and the questions at /pricing/#faq). No FAQ or video teasers on home: they live on /pricing/#faq and the Creative Studio |
 | `/handover/` | How a finished website is handed over, for someone who has never owned one: the steps, what Nuxy does and what the client does, the two account arrangements, other companies' costs, care plans, asking for changes, leaving or moving later. Written from `src/data/handover.ts`, `services.ts` and `/policies/`. **New: publishing it needs the owner's yes.** It says nothing about a client portal: none is live (`handoverPortal = false` in `src/data/site.ts`, and a test fails the build if a page speaks of one) |
 | `/websites/` | Website building: own-it-outright vs optional monthly care, what you own, ownership promises |
 | `/get-a-website/` | Short landing page for businesses without a website; links to the demo websites |
@@ -226,7 +265,7 @@ New text uses one of these steps; sizes outside them (a few 1.3125 and 1.625rem)
 | `/website-security/` | Free website health consultation, repairs at a fixed written price, and security assessments only with the owner's written authorization |
 | `/web-design/` | The four website levels (Business, Signature, Immersive, Flagship): the level cards, the comparison tabs, the expectation matrix, the three-levels café, the five-question finder, add-ons, "Why does immersive cost more?", package boundaries, timelines and the levels FAQ |
 | `/business-websites/`, `/signature-websites/`, `/immersive-websites/` | One page per level (`LevelPage.astro`): who it suits, what's included, what's not, timeline and revisions, add-ons, the other levels. There is no Flagship page: Flagship is a written scope, reached from `/contact/?level=flagship` |
-| `/portfolio/` | "Our Work", in three kinds kept apart: client projects (`#clients`, shown only when an entry passes every check in `case-studies.ts`: none today), concept demonstrations (`#concepts`: the example websites and the store, each for a made-up business and labelled so, plus the three video concepts), and interactive experiments (`#technical`: the open-source automations) |
+| `/portfolio/` | "Our Work", in three kinds kept apart: client projects (`#clients`, shown only when an entry passes every check in `case-studies.ts`: Chrysfadezzz since 13 November 2026, with no live link until he agrees to one), concept demonstrations (`#concepts`: the example websites and the store, each for a made-up business and labelled so, plus the three video concepts), and open-source automations (`#technical`, with their code and docs; named "Interactive experiments" until 2026-11-21) |
 | `/portfolio/<slug>/` | One client project (`[slug].astro`), built only for an entry that passes `publishable()`; Chrysfadezzz (CHRYS) is published there since 13 November 2026 (indexable, canonical, CreativeWork JSON-LD); the stage build (`npm run build:stage`, `stage/case-studies.ts`, empty now) adds any client still waiting on a yes, with a "Staged preview, not published" note, `noindex` and no JSON-LD. Hero: tags, name, summary, buttons, then on a phone the cover and the facts, all on one left edge; an "On this page" index of the sections (the `/handover/` pill pattern), with a "Back to the sections" link after the closing band; the seven sections the brief names; a Design Showcase (phone and computer frames from `CaseFrame.astro`, each a link to its full file, opened in a `<dialog>` viewer that always shows the whole picture, with caption, "3 of 8", arrows, keys and swipe; closing returns focus to the picture that opened it); a walkthrough video that loads nothing until played; the closing quote band with the entry's lead source |
 | `/solutions/` | Every service, grouped, with search and filters (all services visible without JavaScript) |
 | `/pricing/` | Published one-time prices, the monthly plans, bundle discount, FAQ |
@@ -399,8 +438,9 @@ is counted.
 
 Buttons counted since the conversion upgrade: `cta_header` and `cta_menu` (the header and phone-menu quote
 buttons), `cta_hero`, `cta_services`, `cta_home_security`, `cta_portfolio`,
-`cta_pricing_preview`, `cta_tiers_quote`, `cta_final`, `cta_sticky` (home page), `cta_estimator` and
-`estimator_use` (the estimator: the button, and the first tick per page view), `cta_portfolio_quote` and
+`cta_tiers_quote`, `cta_final`, `cta_sticky` (home page; `cta_pricing_preview` went with the home
+page's "See all pricing" link in critique round 5), `cta_estimator` and
+`estimator_use` (the estimator: the button, and the first tick per page view), `cta_docs` (the quote button that ends each docs page), `cta_portfolio_quote` and
 `portfolio_demos` (`/portfolio/`). None carries what was ticked, typed or chosen: the estimator's choices travel
 only in the address of the quote form, in the visitor's own browser. `tests/pages.test.mjs` checks that.
 
@@ -408,7 +448,7 @@ Counted since the Creative Studio brief: `cta_creative_quote`, `cta_creative_est
 `cta_creative_portfolio` (the page's buttons), `cta_creative_video_ads`, `cta_creative_motion_graphics` and
 `cta_creative_product_showcases` (the quote button under each kind of video work), `cta_creative_estimator` (the
 estimator's button), `creative_demo_play` and `cta_creative_similar` (the demo gallery), `cta_video_upsell` (the
-video block on `/websites/` and `/automation/`), `cta_home_creative` (the home page's line about video work), `cta_video_teasers` and `video_teaser_card` (the strip of three demo posters under the home page's service cards and on `/portfolio/`: its button and its cards).
+video block on `/websites/` and `/automation/`), `cta_home_creative` (the home page's line about video work), `cta_video_teasers` and `video_teaser_card` (the strip of demo posters on `/portfolio/`, which left home in the 2026-11-21 site audit: its button and its cards).
 Counted since the site improvement brief (2026-11): `cta_explore_work` (the hero's second button, which replaced
 `cta_see_working`), `cta_cat_websites` and `cta_cat_automation` (the two service categories), `cta_levels_compare`
 (the website levels strip), `cta_handover` (the home page's handover section), `cta_final_callback` (the callback
@@ -425,7 +465,7 @@ only when a client entry passes `publishable()` and the client agreed to a link 
 entries today it is on no page.
 Counted since the website levels brief: `tier_viewed` (a level page opens; once per page view),
 `tier_selected` (a level's button, the finder's "Discuss My Project" and the portfolio's custom-project link),
-`tier_comparison_opened` (the first tab change in the comparison), `website_recommender_started` (the finder's
+`tier_comparison_opened` (the first level switch in the comparison table's phone picker on /web-design/), `website_recommender_started` (the finder's
 first answer) and `website_recommender_completed` (a result shown), `portfolio_tier_filter` (each change of the
 portfolio's level filter), `immersive_demo_opened` (the Halvane card on `/immersive-websites/`), `contact_started`
 (the form's first answer) and `contact_completed` (the form sent). None says which level, answer or filter was

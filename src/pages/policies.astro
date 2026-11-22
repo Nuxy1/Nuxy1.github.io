@@ -18,7 +18,7 @@ const pageData = {
 <Base title="Policies · Nuxy Automation" description="Refunds, monthly plan cancellations, terms of service and privacy for Nuxy Automation.">
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(pageData)} />
   <h1>Policies</h1>
-  <p class="lead">Plain-language terms for working with Nuxy Automation, a one-person business in Faribault, Minnesota. Questions: <a href={`mailto:${contact}`}>{contact}</a>.</p>
+  <p class="lead">Plain-language terms for working with Nuxy Automation, a one-person business in Faribault, Minnesota. The rest of the site says “we”; these terms say “I”, because one person makes and keeps every promise in them. Questions: <a href={`mailto:${contact}`}>{contact}</a>.</p>
   <p>Last updated {callbackForm ? "November 13, 2026" : "November 11, 2026"}.</p>
 
   <h2 id="refunds">Refunds</h2>
@@ -35,7 +35,7 @@ const pageData = {
   <ul>
     {planTerms.map((t) => <li>{t}</li>)}
     <li>Plans are billed monthly in advance by Stripe. Cancel from the link in your receipt email or by emailing me, and you’re never charged again.</li>
-    <li>Months already paid aren’t refunded part-way.</li>
+    <li>Months already paid aren’t refunded&nbsp;part-&#8288;way.</li>
     <li>Planned time away is announced to plan clients in writing beforehand.</li>
   </ul>
 

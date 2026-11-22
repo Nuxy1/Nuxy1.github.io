@@ -1,5 +1,6 @@
 ---
 import { titleCase } from "../../lib/title-case";
+import { noWidow } from "../../lib/no-widow";
 const an = (name: string) => (/^[AEIOU]/i.test(name) ? "an" : "a");
 // One website level's page (/business-websites/, /signature-websites/, /immersive-websites/): what it is for, the
 // price, what it includes, the meters, where it ends, the timeline and revisions, proof (the page's own slot), the
@@ -67,7 +68,7 @@ const ld = [
   <section class:list={["lp-hero", `lp-${id}`]}>
     <div class="wrap lp-hero-grid">
       <div>
-        <p class="eyebrow"><a href="/web-design/">Website levels</a> · {String(n).padStart(2, "0")} {l.name}</p>
+        <p class="eyebrow"><a class="tap" href="/web-design/">Website levels</a> · {String(n).padStart(2, "0")} {l.name}</p>
         <h1>{titleCase(h1)}</h1>
         <p class="lead">{lead}</p>
         <div class="lp-actions">
@@ -81,7 +82,7 @@ const ld = [
         <p class="lp-note">{l.priceNote}</p>
         <dl class="lp-facts">
           <div><dt>Timeline</dt><dd>{l.timeline}</dd></div>
-          <div><dt>Revisions</dt><dd>{l.revisions}</dd></div>
+          <div><dt>Revisions</dt><dd>{noWidow(l.revisions)}</dd></div>
           <div><dt>Complexity</dt><dd>{l.complexity}</dd></div>
         </dl>
       </aside>
@@ -177,7 +178,7 @@ const ld = [
         </div>
         <div class="cta-actions">
           <a class="button" href={l.href} data-track="tier_selected">{l.cta}</a>
-          <a class="button secondary" href="/web-design/#finder">Find your level</a>
+          <a class="button secondary" href="/web-design/#finder">Find Your Level</a>
         </div>
       </div>
     </div>
@@ -222,6 +223,7 @@ const ld = [
   .lp-adds strong { color: var(--ink); font-weight: 600; }
   .lp-adds b { flex: none; color: var(--ink); font-weight: 600; white-space: nowrap; }
   .lp-adds + .note { margin-top: 12px; }
+  .lp-adds + .note a { white-space: nowrap; }
   .lp-principle { color: var(--ink); font-style: italic; }
 </style>
 

@@ -24,11 +24,14 @@ const gallery = demosReady(demos.map((d) => d.id));
 </section>
 
 <style>
-  .vu { display: grid; gap: 16px 24px; align-items: center; padding: clamp(20px, 3vw, 32px); }
-  @media (min-width: 860px) { .vu { grid-template-columns: auto minmax(0, 1fr) auto; } }
-  .vu-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
+  /* (critique 11-17) the icon sits beside the words at every width, never stacked above the heading as a tile */
+  .vu { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px 18px; align-items: start; padding: clamp(20px, 3vw, 32px); }
+  .vu .button { grid-column: 1 / -1; justify-self: start; }
+  @media (min-width: 860px) { .vu { grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px 24px; align-items: center; } .vu .button { grid-column: auto; } }
+  .vu-icon { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--accent-soft); color: var(--link); }
   .vu-icon :global(.icon) { width: 24px; height: 24px; }
   .vu h2 { font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem); }
-  .vu p { margin-top: 6px; max-width: 70ch; color: var(--body); }
+  /* (site audit 2026-11-21) 70ch ran 90 characters a line in Inter; 60ch runs 77 */
+  .vu p { margin-top: 6px; max-width: 60ch; color: var(--body); }
   @media (max-width: 479px) { .vu .button { justify-self: stretch; } }
 </style>

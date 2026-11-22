@@ -1,5 +1,5 @@
-// Fernway Lawn & Landscape: a fictional landscaping company (data/demo-sites.ts). Every name, place, price, person
-// and quote here is invented for the demonstration; the towns are made up and labelled so on the map.
+// Fernway Lawn & Landscape: a fictional landscaping company (data/demo-sites.ts). Every name, place, price and
+// person here is invented for the demonstration; the towns are made up and labelled so on the map.
 import { SERVICES, type ServiceId } from "../../lib/demo/fernway-quote";
 
 export const base = "/example-sites/fernway-lawn";
@@ -21,13 +21,13 @@ export const hours = [
   ["Sunday", "Closed (snow calls only)"],
 ] as const;
 
-export const serviceCopy: Record<ServiceId, { included: string[]; season: string; art: string }> = {
-  mowing: { included: ["Mow at the right height for the season", "String-trim fences, beds and posts", "Blow clippings off drive and walks"], season: "April – October", art: "mow" },
-  cleanup: { included: ["Leaves raked from lawn and beds", "Dead perennials cut back", "Gutters at ground level cleared"], season: "April and October", art: "leaf" },
-  mulch: { included: ["Beds weeded and edged by spade", "Weed barrier where it's needed", "Two inches of shredded hardwood"], season: "May – June", art: "bed" },
-  hedge: { included: ["Sides and top shaped with hand shears", "Inside dead wood thinned", "Cuttings raked and hauled"], season: "June and September", art: "hedge" },
-  planting: { included: ["A short plan you approve first", "Plants chosen for sun, soil and deer", "Planted, mulched and watered in"], season: "May – September", art: "plant" },
-  snow: { included: ["Drive and walks after 2 inches", "Steps shovelled by hand", "Ice melt on request"], season: "November – March", art: "snow" },
+export const serviceCopy: Record<ServiceId, { included: string[]; season: string; photo: string; alt: string }> = {
+  mowing: { included: ["Mow at the right height for the season", "String-trim fences, beds and posts", "Blow clippings off drive and walks"], season: "April – October", photo: "fernway-mow", alt: "A mower crossing a freshly striped lawn" },
+  cleanup: { included: ["Leaves raked from lawn and beds", "Dead perennials cut back", "Gutters at ground level cleared"], season: "April and October", photo: "fernway-leaves", alt: "Raked leaf piles on a tarp at the edge of a lawn" },
+  mulch: { included: ["Beds weeded and edged by spade", "Weed barrier where it’s needed", "Two inches of shredded hardwood"], season: "May – June", photo: "fernway-beds", alt: "A fresh bed of dark mulch along a house wall" },
+  hedge: { included: ["Sides and top shaped with hand shears", "Inside dead wood thinned", "Cuttings raked and hauled"], season: "June and September", photo: "fernway-hedge", alt: "A row of boxwood hedges trimmed square" },
+  planting: { included: ["A short plan you approve first", "Plants chosen for sun, soil and deer", "Planted, mulched and watered in"], season: "May – September", photo: "fernway-plant", alt: "Trays of perennials beside a freshly dug bed" },
+  snow: { included: ["Drive and walks after 2 inches", "Steps shovelled by hand", "Ice melt on request"], season: "November – March", photo: "fernway-snow", alt: "A concrete front walk shovelled clear of snow, with ice melt scattered on it" },
 };
 export const serviceList = (Object.keys(SERVICES) as ServiceId[]).map((id) => ({ id, ...SERVICES[id], ...serviceCopy[id] }));
 
@@ -41,12 +41,6 @@ export const towns = [
   { id: "oak-hollow", name: "Oak Hollow", x: 196, y: 52, miles: 19, minutes: 31, days: "Mon" },
 ] as const;
 
-export const testimonials = [
-  { quote: "The text the night before is the best part. I know the gate needs to be open and the dog inside.", who: "Homeowner, weekly mowing", where: "Alder Bend" },
-  { quote: "Sent three photos on Sunday, had a price Monday morning and a crew on Wednesday.", who: "Homeowner, fall cleanup", where: "Millbrook Flats" },
-  { quote: "Same two people every week, and they noticed the sprinkler head before I did.", who: "Homeowner, seasonal plan", where: "Quarry Hill" },
-];
-
 export const faqs = [
   ["Do you need to see the yard before quoting?", "Usually not. A few photos and the lot size are enough for most jobs. For large properties or new plantings we book a 15-minute visit."],
   ["What if it rains on my day?", "We text you the evening before with the new day. Mowing moves to the next dry day; nothing is skipped without a message."],
@@ -56,8 +50,8 @@ export const faqs = [
 ] as const;
 
 export const projects = [
-  { id: "backyard", title: "Overgrown backyard to a weekly lawn", place: "Alder Bend", work: ["First cut and haul-away", "Edged beds", "Weekly mowing"], time: "One day, then weekly", art: "backyard" },
-  { id: "front-bed", title: "Bare front bed, planted and mulched", place: "Quarry Hill", work: ["Bed shaped", "12 perennials, 3 shrubs", "Shredded hardwood mulch"], time: "Two days", art: "bed" },
-  { id: "fall", title: "Fall cleanup before the first snow", place: "Millbrook Flats", work: ["Leaves off lawn and beds", "Perennials cut back", "Last mow"], time: "Half a day", art: "fall" },
-  { id: "hedge", title: "Shaggy hedge row, shaped by hand", place: "Sorrel Creek", work: ["40 ft of boxwood", "Dead wood thinned", "Cuttings hauled"], time: "Five hours", art: "hedge" },
+  { id: "backyard", service: "mowing", size: "medium", town: "alder-bend", cta: "Estimate weekly mowing", title: "Overgrown backyard to a weekly lawn", place: "Alder Bend", work: ["First cut and haul-away", "Edged beds", "Weekly mowing"], time: "One day, then weekly", month: 4, photo: "fernway-after", alt: "A tidy backyard with a striped lawn, edged beds and two wooden chairs" },
+  { id: "front-bed", service: "planting", size: "small", town: "quarry-hill", cta: "Estimate a planted bed", title: "Bare front bed, planted and mulched", place: "Quarry Hill", work: ["Bed shaped", "12 perennials, 3 shrubs", "Shredded hardwood mulch"], time: "Two days", month: 5, photo: "fernway-beds", alt: "A front bed edged by spade and covered in dark shredded mulch" },
+  { id: "fall", service: "cleanup", size: "medium", town: "millbrook", cta: "Estimate a fall cleanup", title: "Fall cleanup before the first snow", place: "Millbrook Flats", work: ["Leaves off lawn and beds", "Perennials cut back", "Last mow"], time: "Half a day", month: 10, photo: "fernway-leaves", alt: "Leaves raked onto a tarp at the edge of a cleared lawn" },
+  { id: "hedge", service: "hedge", size: "medium", town: "sorrel-creek", cta: "Estimate hedge trimming", title: "Shaggy hedge row, shaped by hand", place: "Sorrel Creek", work: ["40 ft of boxwood", "Dead wood thinned", "Cuttings hauled"], time: "Five hours", month: 6, photo: "fernway-hedge", alt: "A boxwood hedge row cut square by hand" },
 ] as const;

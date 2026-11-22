@@ -14,7 +14,7 @@ export function checkPhoto(f: PhotoLike, count = 0): string | null {
   if (count >= PHOTO_LIMIT) return `Five photos at most, so ${f.name} was left out.`;
   const typeOk = f.type ? TYPES.has(f.type.toLowerCase()) : false;
   // Windows often reports no type for HEIC, so a known name with an empty type is accepted
-  if (!NAMES.test(f.name) || (f.type && !typeOk)) return `${f.name} isn't a JPEG, PNG, WebP or HEIC photo.`;
+  if (!NAMES.test(f.name) || (f.type && !typeOk)) return `${f.name} isn’t a JPEG, PNG, WebP or HEIC photo.`;
   if (f.size > PHOTO_BYTES) return `${f.name} is over 10 MB.`;
   if (f.size === 0) return `${f.name} is empty.`;
   return null;

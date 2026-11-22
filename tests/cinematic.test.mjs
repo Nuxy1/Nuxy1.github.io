@@ -30,6 +30,9 @@ const noFixture = hasFixture ? false : "dist-fixture/ is not built (see the head
 const playwright = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE || "playwright-core");
 const engine = playwright[process.env.ENGINE || "chromium"];
 const PAGE = "/creative-studio/";
+// (the Creative Studio hero shows stills from the films, not a loop, once the films are there; the loop behaviour is
+// tested on a page whose hero always has one)
+const LOOP_PAGE = "/automation/", LOOP_ID = "automation";
 const MEDIA = /\/media\/[^?]+\.(mp4|webm)$/;
 
 let browser, web, fix;
@@ -80,7 +83,7 @@ test("the published build holds exactly the video files the manifest lists, each
   const listed = [];
   const add = (f) => f && listed.push(f);
   for (const item of [...Object.values(manifest.loops), ...Object.values(manifest.demos)]) {
-    for (const cut of [item, item.vertical].filter(Boolean)) { add(cut.poster); add(cut.posterMobile); (cut.sources ?? []).forEach(add); (cut.mobile ?? []).forEach(add); }
+    for (const cut of [item, item.vertical].filter(Boolean)) { add(cut.poster); add(cut.posterMobile); add(cut.posterMobile?.phone); (cut.sources ?? []).forEach(add); (cut.mobile ?? []).forEach(add); }
     add(item.captions);
   }
   for (const f of listed) {
@@ -216,7 +219,7 @@ test("without JavaScript the page reads in full, no code travels, and the figure
 // From the estimator to the quote form
 // ---------------------------------------------------------------------------------------------------------------
 
-test("Get My Custom Quote carries the choices to the quote form, which works the price out again", async () => {
+test("Get a Free Quote (estimator) carries the choices to the quote form, which works the price out again", async () => {
   const { page, context, errors } = await open(web, PAGE);
   await page.selectOption("#ce-videos", "2");
   await pick(page, "ce-duration", rules.durations[1].id);
@@ -336,7 +339,7 @@ test("no video file is asked for on the reduced or light motion level, or on a d
     "data saver, even after choosing Standard": { motion: "standard", init: saver },
   };
   for (const [name, options] of Object.entries(cases)) {
-    const { page, context, media, errors } = await open(fix, PAGE, options);
+    const { page, context, media, errors } = await open(fix, LOOP_PAGE, options);
     await settle(page);
     assert.deepEqual(media, [], name);
     const s = await loopState(page);
@@ -346,15 +349,15 @@ test("no video file is asked for on the reduced or light motion level, or on a d
     assert.deepEqual(errors, [], name);
     await context.close();
   }
-  const { page, context } = await open(fix, PAGE, { motion: "auto", init: weak });
+  const { page, context } = await open(fix, LOOP_PAGE, { motion: "auto", init: weak });
   assert.equal(await page.getAttribute("html", "data-motion"), "light");
   await context.close();
 });
 
 test("on the standard level the loop plays silently as decoration: one small file, the phone cut on a phone", { skip: noFixture }, async () => {
-  const fx = JSON.parse(readFileSync(fixtureManifest, "utf8")).loops["creative-studio"];
+  const fx = JSON.parse(readFileSync(fixtureManifest, "utf8")).loops[LOOP_ID];
   for (const [width, height, want] of [[1280, 900, fx.sources], [390, 800, fx.mobile ?? fx.sources]]) {
-    const { page, context, media, errors } = await open(fix, PAGE, { width, height });
+    const { page, context, media, errors } = await open(fix, LOOP_PAGE, { width, height });
     await playing(page);
     assert.deepEqual([...new Set(media)], [want[0].src], `${width}px`);
     const s = await loopState(page);
@@ -365,7 +368,7 @@ test("on the standard level the loop plays silently as decoration: one small fil
 });
 
 test("the loop stops when it leaves the screen, when the tab is hidden and when the visitor picks Reduced", { skip: noFixture }, async () => {
-  const { page, context } = await open(fix, PAGE);
+  const { page, context } = await open(fix, LOOP_PAGE);
   await playing(page);
   const paused = (yes) => until(page, (yes) => document.querySelector("[data-cine] video").paused === yes, yes);
   await page.evaluate(() => scrollTo({ top: document.body.scrollHeight, behavior: "instant" }));
@@ -387,18 +390,58 @@ test("the loop stops when it leaves the screen, when the tab is hidden and when 
   await context.close();
 });
 
+test("the visitor's pause button stops the loop for good (WCAG 2.2.2), works by keyboard, and never shows over a still", { skip: noFixture }, async () => {
+  const toggle = "[data-cine-toggle]";
+  const state = (page) => page.evaluate((s) => { const b = document.querySelector(s); const v = document.querySelector("[data-cine] video"); return { hidden: b?.hidden ?? true, pressed: b?.getAttribute("aria-pressed"), paused: v?.paused ?? true, size: b && !b.hidden ? [b.offsetWidth, b.offsetHeight] : null }; }, toggle);
+  const { page, context } = await open(fix, LOOP_PAGE);
+  await playing(page);
+  await until(page, (s) => !document.querySelector(s).hidden, toggle);
+  let now = await state(page);
+  assert.equal(now.pressed, "false");
+  assert.deepEqual(now.size, [44, 44], "the button is the site's 44px touch size");
+  await page.click(toggle);
+  await until(page, () => document.querySelector("[data-cine] video").paused, null);
+  now = await state(page);
+  assert.equal(now.pressed, "true");
+  assert.equal(now.hidden, false, "a paused loop keeps its button so the visitor can start it again");
+  // scrolling away and back must not restart a loop the visitor stopped
+  await page.evaluate(() => scrollTo({ top: document.body.scrollHeight, behavior: "instant" }));
+  await page.waitForTimeout(500);
+  await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+  await page.waitForTimeout(1200);
+  assert.equal((await state(page)).paused, true, "the loop stays stopped after scrolling away and back");
+  await page.focus(toggle);
+  await page.keyboard.press("Enter");
+  await until(page, () => !document.querySelector("[data-cine] video").paused, null);
+  assert.equal((await state(page)).pressed, "false");
+  await context.close();
+  // the button follows the video: none over the still that Reduced shows, and present wherever a cut really plays
+  // (this loop has a phone cut, so a phone gets one)
+  for (const [options, plays] of [[{ motion: "reduced" }, false], [{ width: 390, height: 844 }, true]]) {
+    const { page, context } = await open(fix, LOOP_PAGE, options);
+    if (plays) await playing(page); else await page.waitForTimeout(1500);
+    const s = await state(page);
+    assert.equal(s.paused, !plays);
+    assert.equal(s.hidden, !plays, `the button shows only while a video plays (${JSON.stringify(options)})`);
+    await context.close();
+  }
+});
+
 // ---------------------------------------------------------------------------------------------------------------
 // Backdrops: the loop behind the words of the home, websites, automation and security heroes
 // ---------------------------------------------------------------------------------------------------------------
 
 const BACKDROPS = { "/": "hero", "/websites/": "web-development", "/automation/": "automation", "/website-security/": "security" };
 const backdrop = ".cine-host > .cine.backdrop";
+// (a hero whose words stack over its clip below this width shows no clip there: websites/index.astro, site audit 2026-11-21)
+const STACKED = { "/websites/": 1024 };
+const clipless = (path, width) => width < (STACKED[path] ?? 0);
 
-// Reads a screenshot's pixels in an empty page: its brightest pixel, and, given a second picture of the same size,
-// how far the two are apart.
-async function pixels(context, png, other) {
+// Reads a screenshot's pixels in an empty page: its brightest pixel, the brightest pixel inside each of the given
+// boxes ([x, y, w, h] in the picture), and, given a second picture of the same size, how far the two are apart.
+async function pixels(context, png, other, boxes = []) {
   const page = await context.newPage();
-  const out = await page.evaluate(async ([a, b]) => {
+  const out = await page.evaluate(async ([a, b, boxes]) => {
     const read = async (b64) => {
       const img = new Image();
       img.src = "data:image/png;base64," + b64;
@@ -421,17 +464,29 @@ async function pixels(context, png, other) {
         if (d > 2) differ++;
       }
     }
-    return { size: [A.width, A.height], sameSize: !B || (A.width === B.width && A.height === B.height), rgb, far, differ };
-  }, [png.toString("base64"), other ? other.toString("base64") : null]);
+    const under = boxes.map(([x, y, w, h]) => {
+      let best = -1, at = [0, 0, 0];
+      for (let j = Math.max(0, Math.floor(y)); j < Math.min(A.height, Math.ceil(y + h)); j++)
+        for (let k = Math.max(0, Math.floor(x)); k < Math.min(A.width, Math.ceil(x + w)); k++) {
+          const i = (j * A.width + k) * 4;
+          const l = 0.2126 * lin(A.data[i]) + 0.7152 * lin(A.data[i + 1]) + 0.0722 * lin(A.data[i + 2]);
+          if (l > best) { best = l; at = [A.data[i], A.data[i + 1], A.data[i + 2]]; }
+        }
+      return at;
+    });
+    return { size: [A.width, A.height], sameSize: !B || (A.width === B.width && A.height === B.height), rgb, far, differ, under };
+  }, [png.toString("base64"), other ? other.toString("base64") : null, boxes]);
   await page.close();
   return out;
 }
 const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
 const contrast = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
 
-// Every piece of text in the hero that has no solid surface of its own under it, with its colour and size.
+// Every piece of text in the hero that has no solid surface of its own under it, with its colour, size and box
+// (in the hero's own coordinates, as in a screenshot of the hero).
 const wordsOverBackdrop = (page) => page.$eval(".cine-host", (host) => {
   const out = [];
+  const origin = host.getBoundingClientRect();
   const nums = (s) => (s.match(/[\d.]+/g) || []).map(Number);
   for (const el of host.querySelectorAll("*")) {
     if (el.closest(".cine")) continue;
@@ -446,7 +501,9 @@ const wordsOverBackdrop = (page) => page.$eval(".cine-host", (host) => {
     }
     if (covered) continue;
     const c = nums(s.color);
-    out.push({ text: text.slice(0, 40), color: c.slice(0, 3), alpha: c[3] ?? 1, size: parseFloat(s.fontSize), weight: Number(s.fontWeight) || 400 });
+    const r = el.getBoundingClientRect();
+    out.push({ text: text.slice(0, 40), color: c.slice(0, 3), alpha: c[3] ?? 1, size: parseFloat(s.fontSize), weight: Number(s.fontWeight) || 400,
+      box: [r.left - origin.left, r.top - origin.top, r.width, r.height] });
   }
   return out;
 });
@@ -457,12 +514,36 @@ test("each division hero plays its own clip behind the words, out of reach of th
     for (const [width, height, want] of [[1280, 900, loops[id].sources], [390, 844, loops[id].mobile ?? loops[id].sources]]) {
       const name = `${path} at ${width}px`;
       const { page, context, media, errors } = await open(fix, path, { width, height });
-      await until(page, (sel) => { const v = document.querySelector(sel + " video"); return v && !v.paused && v.currentTime > 0 && v.parentElement.classList.contains("on"); }, backdrop);
-      assert.deepEqual([...new Set(media)], [want[0].src], name);
+      if (clipless(path, width)) {
+        // no clip behind stacked words: the box is not drawn, no video is fetched (also after the loops start), no pause button
+        await page.waitForTimeout(3500);
+        const gone = await page.$eval(backdrop, (el) => ({ display: getComputedStyle(el).display, sources: el.querySelector("video").childElementCount, toggle: el.nextElementSibling?.hidden ?? true }));
+        assert.deepEqual(gone, { display: "none", sources: 0, toggle: true }, name);
+        assert.deepEqual(media, [], name);
+        assert.deepEqual(errors, [], name);
+        await context.close();
+        continue;
+      }
+      if (want.length) {
+        await until(page, (sel) => { const v = document.querySelector(sel + " video"); return v && !v.paused && v.currentTime > 0 && v.parentElement.classList.contains("on"); }, backdrop);
+        assert.deepEqual([...new Set(media)], [want[0].src], name);
+      } else {
+        // a still at this width (manifest stillBelow, an empty phone list): its picture shows and no video is fetched,
+        // also after the moment the loops start
+        await page.waitForTimeout(3500);
+        const still = await page.$eval(backdrop, (el) => ({ img: el.querySelector("img").currentSrc.split("/").pop(), sources: el.querySelector("video").childElementCount, on: el.classList.contains("on") }));
+        // (the phone still comes in two widths, picked by srcset: at 390px and 1x the 880px one, scripts/encode-cinematic.mjs)
+        const mobile = loops[id].posterMobile;
+        assert.deepEqual(still, { img: (width < 600 && mobile.phone ? mobile.phone : mobile).src.split("/").pop(), sources: 0, on: false }, name);
+        assert.deepEqual(media, [], name);
+      }
       const s = await page.$eval(backdrop, (el) => {
         const cs = getComputedStyle(el), v = el.querySelector("video"), box = el.getBoundingClientRect(), host = el.parentElement.getBoundingClientRect();
+        // (a frame may run past the hero's edge, as the home one does on purpose, only where the hero clips it)
+        const hs = getComputedStyle(el.parentElement), clips = (o) => o === "hidden" || o === "clip";
         return { loops: document.querySelectorAll("[data-cine]").length, hidden: el.getAttribute("aria-hidden"), pointer: cs.pointerEvents, z: cs.zIndex, position: cs.position,
-          muted: v.muted, controls: v.controls, tab: v.tabIndex, inside: box.left >= host.left - 1 && box.right <= host.right + 1 && box.top >= host.top - 1 && box.bottom <= host.bottom + 1,
+          muted: v.muted, controls: v.controls, tab: v.tabIndex,
+          inside: (clips(hs.overflowX) || (box.left >= host.left - 1 && box.right <= host.right + 1)) && (clips(hs.overflowY) || (box.top >= host.top - 1 && box.bottom <= host.bottom + 1)),
           sideways: document.documentElement.scrollWidth - innerWidth };
       });
       assert.deepEqual(s, { loops: 1, hidden: "true", pointer: "none", z: "-1", position: "absolute", muted: true, controls: false, tab: -1, inside: true, sideways: 0 }, name);
@@ -501,19 +582,22 @@ test("the words over a backdrop stay readable on a pure white frame, and a black
   for (const path of Object.keys(BACKDROPS)) {
     for (const [width, height] of [[1440, 900], [1024, 768], [390, 844]]) {
       const name = `${path} at ${width}px`;
+      if (clipless(path, width)) continue; // (no clip there, nothing behind the words: the test above checks it is not drawn)
       const { page, context } = await open(fix, path, { width, height });
       await page.waitForSelector(backdrop);
       const words = await wordsOverBackdrop(page);
       assert.ok(words.length > 3, `${name}: found the hero's words`);
       const shot = () => page.locator(".cine-host").first().screenshot({ animations: "disabled" });
       await frame(page, "white");
-      const white = await pixels(context, await shot());
-      for (const w of words) {
-        const colour = w.color.map((v, i) => Math.round(v * w.alpha + white.rgb[i] * (1 - w.alpha)));
+      // (measured under each word's own box: a hero may show its picture at full strength beside the words, never under them)
+      const white = await pixels(context, await shot(), null, words.map((w) => w.box));
+      words.forEach((w, n) => {
+        const bg = white.under[n];
+        const colour = w.color.map((v, i) => Math.round(v * w.alpha + bg[i] * (1 - w.alpha)));
         const need = w.size >= 24 || (w.size >= 18.66 && w.weight >= 700) ? 3 : 4.5;
-        const got = contrast(colour, white.rgb);
-        assert.ok(got >= need, `${name}: "${w.text}" (${w.size}px, rgb ${colour}) has ${got.toFixed(2)}:1 over the brightest backdrop pixel rgb ${white.rgb}; needs ${need}:1`);
-      }
+        const got = contrast(colour, bg);
+        assert.ok(got >= need, `${name}: "${w.text}" (${w.size}px, rgb ${colour}) has ${got.toFixed(2)}:1 over the brightest backdrop pixel under it, rgb ${bg}; needs ${need}:1`);
+      });
       await frame(page, "black");
       const black = await shot();
       await frame(page, "none");
@@ -563,14 +647,14 @@ test("pressing play opens one video with its own controls and captions; Escape s
   const fx = JSON.parse(readFileSync(fixtureManifest, "utf8")).demos;
   const { page, context, media, errors } = await open(fix, PAGE);
   const id = demos[0].id, link = card(id);
-  // With the hero loop on screen and running, an opened player stops it; closing the player lets it carry on.
-  await playing(page);
+  // With all three films there, the hero shows a still from each instead of a loop: nothing else plays beside the player.
+  assert.equal(await page.$$eval(".cs-reel-shot img", (imgs) => imgs.filter((i) => i.complete && i.naturalWidth > 0).length), 3, "the hero shows three film stills");
+  assert.equal(await page.$("[data-cine]"), null, "no loop in the hero once the films are there");
   await page.$eval(link, (a) => a.click());
   await opened(page);
-  assert.deepEqual(await page.$$eval("video", (vs) => vs.filter((v) => !v.paused).map((v) => v.closest("dialog") !== null)), [true], "one video plays: the loop behind has stopped");
+  assert.deepEqual(await page.$$eval("video", (vs) => vs.filter((v) => !v.paused).map((v) => v.closest("dialog") !== null)), [true], "one video plays: the player's");
   await page.keyboard.press("Escape");
   await until(page, () => !document.querySelector("[data-demo-player]").open);
-  await playing(page);
 
   await show(page, link);
   await page.focus(link);
@@ -588,7 +672,8 @@ test("pressing play opens one video with its own controls and captions; Escape s
   assert.match(similar, new RegExp(`^/contact/\\?want=${creativeWant}&${quoteParam}=[a-z0-9.~-]+$`));
 
   await page.keyboard.press("Escape");
-  await until(page, () => !document.querySelector("[data-demo-player]").open);
+  // (the dialog shuts at once; its close event, which lets the file go, follows a moment later)
+  await until(page, () => { const d = document.querySelector("[data-demo-player]"); return !d.open && !d.querySelector("video source"); });
   const closed = await playerState(page);
   assert.deepEqual([closed.sources, closed.paused, closed.tracks.length], [0, true, 0], "the file is let go");
   assert.equal(await page.evaluate((sel) => document.activeElement === document.querySelector(sel), link), true, "focus is back on the play button");

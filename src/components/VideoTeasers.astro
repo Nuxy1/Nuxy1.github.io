@@ -1,13 +1,13 @@
 ---
 import { titleCase } from "../lib/title-case";
-// The three concept-demonstration videos, shown as small posters where a visitor looks first: under the home
-// page's service cards and on /portfolio/. Without this they were only on /creative-studio/, several screens
-// down, and a visitor who looked for them anywhere else did not find them.
+// The concept-demonstration videos (data/creative.ts, less any a shown client project replaces), shown as small posters on
+// /portfolio/ (since the owner's site audit brief, 2026-11-21, the home page links to the Creative Studio from its "what we
+// do" note instead). Without this they were only on /creative-studio/, several screens down.
 //
 // Each card is a plain link to the gallery on /creative-studio/: nothing plays here and no video file is
 // requested. Each card carries the "Fictional concept demonstration" label, so the label goes wherever the demo
 // does and a made-up brand is never shown as a client. No price is printed (creative prices are on
-// /creative-studio/ only). It renders nothing unless all three demos have real, checked files.
+// /creative-studio/ only). It renders nothing unless every demo in data/creative.ts has real, checked files.
 // A demo that a shown client project takes the place of (`replaces` in data/case-studies.ts) is left out here; it stays
 // on /creative-studio/ and its files stay. The default intro names only the demos shown.
 import Icon from "./Icon.astro";
@@ -25,14 +25,14 @@ const items = demos.filter((d) => !replacedDemos.has(d.id)).map((d) => ({ d, m: 
 const kind: Record<string, string> = { "vantage-motors": "a supercar advert", "ember-oak": "a luxury stay advert", "noctis-skin": "a fragrance showcase" };
 const kinds = items.map(({ d }) => kind[d.id] ?? d.category.toLowerCase());
 const listed = kinds.length > 1 ? `${kinds.slice(0, -1).join(", ")} and ${kinds.at(-1)}` : (kinds[0] ?? "");
-const intro = `${listed.charAt(0).toUpperCase()}${listed.slice(1)}, each for a made-up brand. Made with AI video tools and finished by a person. Open one to watch it in the Creative Studio.`;
+const intro = `${listed.charAt(0).toUpperCase()}${listed.slice(1)}, each for a made-up brand. Made with AI video tools and finished by a person. ${items.length < demos.length ? `Open one to watch it, or see all ${demos.length} in the Creative Studio.` : "Open one to watch it in the Creative Studio."}`;
 const ready = demosReady(demos.map((d) => d.id));
 const href = "/creative-studio/#portfolio";
-// A card shows the poster small (132 px wide on a phone, a third of the page on a computer), so the browser is offered
+// A card shows the poster small (132 px wide on a phone, up to 548 px on a computer, measured in round 12), so the browser is offered
 // the small file too and takes the full poster only where the card is really that big. A 9:16 poster is drawn whole
 // inside the 16:9 box, so it is narrower still. Both pictures of a tall card ask for the same file: one request.
 const thumbs = (m: DemoCut) => (m.posterMobile ? `${m.posterMobile.src} ${m.posterMobile.width ?? Math.round(m.width * 0.3125)}w, ${m.poster.src} ${m.poster.width ?? Math.round(m.width * 0.75)}w` : undefined);
-const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width ? "(min-width: 720px) 120px, 75px" : "(min-width: 720px) 360px, 132px");
+const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width ? "(min-width: 1200px) 175px, (min-width: 720px) 15vw, 75px" : "(min-width: 1200px) 548px, (min-width: 720px) 45vw, 132px");
 ---
 {ready && (
   <div class="vt reveal">
@@ -71,7 +71,7 @@ const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width 
   .vt-intro { max-width: 70ch; }
   .vt-intro h3 { font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem); }
   /* (the home page passes its own paragraph in: a slotted element carries the page's scope, not this component's) */
-  .vt-intro :global(p:not(.eyebrow)) { margin-top: 8px; color: var(--body); }
+  .vt-intro :global(p:not(.eyebrow)) { margin-top: 8px; max-width: 64ch; color: var(--body); }
   @media (max-width: 479px) { .vt-head .button { flex: 1 1 100%; } }
 
   .vt-grid { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
@@ -102,7 +102,7 @@ const shown = (m: DemoCut) => (!m.posterMobile ? undefined : m.height > m.width 
 
   .vt-body { display: grid; gap: 4px; padding: 12px 14px; }
   @media (min-width: 720px) { .vt-body { padding: 16px 20px 18px; } }
-  .vt-label { color: var(--cyan); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .vt-label { color: var(--cyan); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .vt-title { font-size: 1.0625rem; letter-spacing: 0.02em; }
   .vt-cat { color: var(--muted); font-size: 0.875rem; }
   @media (min-width: 720px) { .vt-title { font-size: 1.1875rem; } }

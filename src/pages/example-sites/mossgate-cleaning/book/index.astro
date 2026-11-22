@@ -1,14 +1,15 @@
 ---
-// Mossgate booking (a demonstration: nothing is booked, stored or sent). Five steps: the clean (carried from the
-// estimate's link, ?home=house&bed=3&clean=deep..., and changeable here), the day, the arrival window, the details
-// and a review; it ends with "Demo clean requested." and what a real build would do next. The calendar is a fixed
+// Mossgate booking (a demonstration: nothing is booked, stored or sent). Five steps: the town and the clean (carried
+// from the estimate's link, ?home=house&bed=3&clean=deep..., and changeable here; an estimate link still opens on this
+// step, so the town is always asked before a day), the day, the arrival window, the details and a review; it ends
+// with "Demo clean requested." and what a real build would do next. The calendar is a fixed
 // made-up pattern (lib/demo/mossgate-estimate.ts): the third day is full, and a long clean only fits a morning window.
 // The days come from the visitor's own clock, so the script labels them; without JavaScript every step shows at once.
 import Shell from "../../../../components/demo/mossgate/Shell.astro";
 import DemoComplete from "../../../../components/demo/DemoComplete.astro";
-import { base } from "../../../../data/demos/mossgate";
-import { HOMES, CLEANS, BEDS, BATHS, WINDOWS, DEFAULT, estimate, describe, hoursLabel, toQuery } from "../../../../lib/demo/mossgate-estimate";
-import { range } from "../../../../lib/demo/money";
+import { base, area } from "../../../../data/demos/mossgate";
+import { HOMES, CLEANS, FREQS, EXTRAS, BEDS, BATHS, WINDOWS, DEFAULT, estimate, summary, homeSize, crewLabel, toQuery } from "../../../../lib/demo/mossgate-estimate";
+import { range, usd } from "../../../../lib/demo/money";
 
 const steps = ["Clean", "Day", "Window", "Details", "Review"];
 const e0 = estimate(DEFAULT);
@@ -26,63 +27,97 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
 <Shell title="Book a clean" current="book" description="Try Mossgate's demonstration booking: confirm your clean, pick a day and an arrival window, and see what a real system would send next. Fictional company: nothing is booked or sent.">
   <section class="mg-section mg-b-sec">
     <div class="mg-wrap">
-      <div class="mg-head">
-        <p class="mg-kicker">Book a clean</p>
+      <div class="mg-head mg-b-head">
         <h1 id="b-h">Pick a day. We’ll bring everything.</h1>
         <p class="mg-lead">Confirm the clean, choose a two-hour arrival window, and you’re done. Nothing is charged until after the clean.</p>
-        <p class="mg-demo-note">Demonstration booking: nothing is booked, and nothing you type is sent or kept.</p>
+        <p class="mg-demo-note">Demonstration booking: the open windows follow a fixed pattern, nothing is booked, and nothing you type is sent or kept.</p>
       </div>
 
       <div class="mg-b" data-b-wrap>
         <form class="mg-b-form" method="dialog" data-mg-book aria-labelledby="b-h">
           <ol class="mg-b-prog" data-progress role="list" aria-label="Steps">
-            {steps.map((s, i) => <li><button type="button"><span aria-hidden="true">{i + 1}</span>{s}</button></li>)}
+            {steps.map((s, i) => <li><button type="button"><span aria-hidden="true">{i + 1}</span>{s}<small data-answer></small></button></li>)}
           </ol>
           <p class="sr-only" data-step-status aria-live="polite"></p>
           <p class="mg-b-mini" data-b-mini aria-hidden="true"></p>
 
           <fieldset class="mg-b-step" data-step aria-labelledby="b1-h">
             <h2 id="b1-h" data-step-title>Your clean</h2>
-            <div class="mg-b-picks mg-b-cleans">
-              {entries(CLEANS).map(([id, c]) => (
-                <label class="mg-pick left"><input type="radio" name="clean" value={id} checked={id === DEFAULT.clean} required /><span>{c.name} clean<small>{c.note}</small></span></label>
-              ))}
+            <p class="mg-b-from" data-b-from hidden>Carried over from your estimate. Change anything here.</p>
+            <!-- the town comes first, so a home outside the five towns hears it before picking a day. Just the town: a
+                 street address is never asked for or kept. "Somewhere else" has no value and the page script marks it
+                 invalid (the browser's required check stops only the first option) -->
+            <div class="mg-field mg-b-town">
+              <label for="b-town">Which town is the home in?</label>
+              <select id="b-town" name="town" required autocomplete="address-level2" aria-describedby="b-town-hint b-town-out" data-error="Choose the town the clean is in to continue.">
+                <option value="" selected>Choose your town</option>
+                {area.map((t) => <option value={t}>{t}</option>)}
+                <option value="" data-outside>Somewhere else</option>
+              </select>
+              <small id="b-town-hint">Just the town. The website never asks for your street address.</small>
+              <p class="mg-b-out" id="b-town-out" data-b-outside aria-live="polite"></p>
             </div>
-            <div class="mg-fields mg-b-home">
-              <label class="mg-field"><span>Home</span>
-                <select name="home">{entries(HOMES).map(([id, h]) => <option value={id} selected={id === DEFAULT.home}>{h.name}</option>)}</select>
-              </label>
-              <label class="mg-field"><span>Bedrooms</span>
-                <select name="bed">{BEDS.map((n) => <option value={n} selected={n === DEFAULT.bed}>{n === 5 ? "5 or more" : n}</option>)}</select>
-              </label>
-              <label class="mg-field"><span>Bathrooms</span>
-                <select name="bath">{BATHS.map((n) => <option value={n} selected={n === DEFAULT.bath}>{n === 4 ? "4 or more" : n}</option>)}</select>
-              </label>
+            <fieldset class="mg-b-set"><legend>Kind of clean</legend>
+              <div class="mg-b-picks mg-b-cleans">
+                {entries(CLEANS).map(([id, c]) => (
+                  <label class="mg-pick left"><input type="radio" name="clean" value={id} checked={id === DEFAULT.clean} required data-error="Choose a kind of clean to continue." /><span>{c.name}<small>{c.note}</small></span></label>
+                ))}
+              </div>
+            </fieldset>
+            <!-- only a standard clean repeats; the others are one visit, and the script says so in place of the choice -->
+            <fieldset class="mg-b-set" data-b-freq><legend>How often</legend>
+              <div class="mg-b-n mg-b-freqs">{entries(FREQS).map(([id, f]) => <label class="mg-pick"><input type="radio" name="freq" value={id} checked={id === DEFAULT.freq} /><span>{f.name}{f.note && <small>{f.note}</small>}</span></label>)}</div>
+            </fieldset>
+            <p class="mg-fine" data-b-once hidden></p>
+            <!-- the home size is asked on the estimate, so here it is one line with a way to change it; without
+                 JavaScript the questions stay open -->
+            <div class="mg-b-size" data-b-size-row hidden>
+              <p><span data-b-size-label>Priced for a typical home</span> <strong data-b-size>{homeSize(DEFAULT)}</strong></p>
+              <button class="mg-b-size-btn" type="button" aria-expanded="true" aria-controls="b-home" data-b-size-btn>Change home size or extras</button>
+            </div>
+            <!-- the same pill buttons as the estimate, so the same questions look and work the same on both pages. The
+                 extras are named "extra": the hidden "extras" field below carries the list the price reads -->
+
+            <div class="mg-b-home" id="b-home">
+              <fieldset class="mg-b-set mg-b-set-home"><legend>Home</legend>
+                <div class="mg-b-n mg-b-homes">{entries(HOMES).map(([id, h]) => <label class="mg-pick"><input type="radio" name="home" value={id} checked={id === DEFAULT.home} /><span>{h.name}</span></label>)}</div>
+              </fieldset>
+              <fieldset class="mg-b-set"><legend>Bedrooms</legend>
+                <div class="mg-b-n">{BEDS.map((n) => <label class="mg-pick"><input type="radio" name="bed" value={n} checked={n === DEFAULT.bed} aria-label={n === 5 ? "5 or more bedrooms" : `${n} bedroom${n > 1 ? "s" : ""}`} /><span class="mg-num">{n === 5 ? "5+" : n}</span></label>)}</div>
+              </fieldset>
+              <fieldset class="mg-b-set"><legend>Bathrooms</legend>
+                <div class="mg-b-n">{BATHS.map((n) => <label class="mg-pick"><input type="radio" name="bath" value={n} checked={n === DEFAULT.bath} aria-label={n === 4 ? "4 or more bathrooms" : `${n} bathroom${n > 1 ? "s" : ""}`} /><span class="mg-num">{n === 4 ? "4+" : n}</span></label>)}</div>
+              </fieldset>
+              <fieldset class="mg-b-set mg-b-set-home"><legend>Extras <span class="mg-legend-sub">optional</span></legend>
+                <div class="mg-b-picks mg-picks-x">
+                  {Object.entries(EXTRAS).map(([id, x]) => (
+                    <label class="mg-pick left mg-extra">
+                      <input type="checkbox" name="extra" value={id} data-b-extra />
+                      <span><span class="mg-extra-row">{x.name}<b class="mg-num" data-extra-add>+{usd(x.add)}</b></span><small data-extra-note>{x.note}</small></span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
             </div>
             <input type="hidden" name="sqft" value="" />
             <input type="hidden" name="extras" value="" />
-            <input type="hidden" name="freq" value={DEFAULT.freq} />
-            <div class="mg-b-quote">
-              <p><span class="mg-num" data-b-range>{range(e0.low, e0.high)}</span> per clean</p>
-              <p class="mg-fine" data-b-quote-sub>{describe(DEFAULT)} · {e0.crew} cleaners, about {hoursLabel(e0.hours)}</p>
-              <a class="mg-link" href={`${base}/estimate/?${toQuery(DEFAULT)}`} data-b-est>Change size, extras or plan on the estimate</a>
-            </div>
+            <a class="mg-link mg-b-est" href={`${base}/estimate/?${toQuery(DEFAULT)}`} data-b-est>Set the floor area on the estimate</a>
             <p class="mg-err" id="b-err-1" data-step-error role="alert"></p>
             <div class="mg-b-nav"><button class="mg-btn" type="button" data-next>Continue</button></div>
           </fieldset>
 
           <fieldset class="mg-b-step" data-step aria-labelledby="b2-h">
             <h2 id="b2-h" data-step-title>Which day?</h2>
-            <p class="mg-b-from" data-b-from hidden>Your clean is carried over from your estimate. Use Back to change it.</p>
-            <div class="mg-b-picks mg-b-days">
+            <!-- the script sorts the days into weeks, each under a heading with its dates, and marks the first free day -->
+            <div class="mg-b-picks mg-b-days" data-b-days>
               {Array.from({ length: 10 }, (_, i) => (
                 <label class="mg-pick left">
-                  <input type="radio" name="day" value={String(i)} required data-error="Pick a day." />
-                  <span><span data-day-name>{i === 0 ? "First working day" : `Working day ${i + 1}`}</span><small><span data-day-date></span> <span data-day-count></span></small></span>
+                  <input type="radio" name="day" value={String(i)} required data-error="Choose a day to continue." />
+                  <span><span data-day-name>{i === 0 ? "First working day" : `Working day ${i + 1}`}</span><small><span data-day-date></span><span data-day-count></span></small><small class="mg-b-first" data-day-first hidden>First free day</small></span>
                 </label>
               ))}
             </div>
-            <p class="mg-fine">Monday to Saturday. Demonstration calendar: the open windows follow a fixed pattern.</p>
+            <p class="mg-fine">Monday to Saturday.</p>
             <p class="mg-err" id="b-err-2" data-step-error role="alert"></p>
             <div class="mg-b-nav"><button class="mg-btn mg-btn-line" type="button" data-back>Back</button><button class="mg-btn" type="button" data-next>Continue</button></div>
           </fieldset>
@@ -92,7 +127,7 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
             <p class="mg-b-sub" data-b-win-sub></p>
             <div class="mg-b-picks mg-b-wins">
               {WINDOWS.map((w) => (
-                <label class="mg-pick left"><input type="radio" name="win" value={w.id} required data-error="Pick an arrival window, or go back and choose another day." /><span>{w.label}<small data-win-note>{w.morning ? "Morning" : "Afternoon"}</small></span></label>
+                <label class="mg-pick left"><input type="radio" name="win" value={w.id} required data-error="Choose an arrival window to continue, or go back and pick another day." /><span>{w.label}<small data-win-note>{w.morning ? "Morning" : "Afternoon"}</small></span></label>
               ))}
             </div>
             <p class="mg-b-alert" data-b-morning hidden>A clean this size takes most of the day, so it starts in a morning window.</p>
@@ -103,12 +138,12 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
           <fieldset class="mg-b-step" data-step aria-labelledby="b4-h">
             <h2 id="b4-h" data-step-title>Your details</h2>
             <div class="mg-fields">
-              <label class="mg-field"><span>First name</span><input name="name" required autocomplete="given-name" maxlength="40" data-error="Add a first name, or press “Use sample details”." /></label>
-              <label class="mg-field"><span>Mobile number</span><input name="mobile" type="tel" inputmode="tel" required autocomplete="tel-national" maxlength="20" placeholder="(507) 555-0100" data-error="Add a 10-digit mobile number, or press “Use sample details”." /><small>For the confirmation and on-the-way texts. In this demo nothing is sent.</small></label>
+              <label class="mg-field"><span>First name</span><input name="name" required autocomplete="given-name" maxlength="40" data-error="Enter your first name, or press “Use sample details”." /></label>
+              <label class="mg-field"><span>Mobile number</span><input name="mobile" type="tel" inputmode="tel" required autocomplete="tel-national" maxlength="20" placeholder="(507) 555-0100…" data-error="Enter a mobile number for the texts, or press “Use sample details”." /><small>For the confirmation and on-the-way texts. In this demo nothing is sent.</small></label>
               <label class="mg-field mg-field-wide"><span>How do we get in?</span>
                 <select name="access">{access.map((a, i) => <option value={a} selected={i === 0}>{a}</option>)}</select>
               </label>
-              <label class="mg-field mg-field-wide"><span>Notes <em>optional</em></span><textarea name="notes" rows="3" maxlength="300" placeholder="Pets, parking, rooms to skip…" aria-describedby="b-notes-hint"></textarea><small id="b-notes-hint">Please don’t write door or alarm codes here. On a real booking the office calls to set up access.</small></label>
+              <label class="mg-field mg-field-wide"><span>Notes <em>optional</em></span><textarea name="notes" rows="3" maxlength="300" autocomplete="off" placeholder="Pets, parking, rooms to skip…" aria-describedby="b-notes-hint"></textarea><small id="b-notes-hint">Please don’t write door or alarm codes here. On a real booking the office calls to set up access.</small></label>
             </div>
             <p class="mg-err" id="b-err-4" data-step-error role="alert"></p>
             <div class="mg-b-nav">
@@ -119,62 +154,75 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
           </fieldset>
 
           <fieldset class="mg-b-step" data-step aria-labelledby="b5-h">
-            <h2 id="b5-h" data-step-title>Check and confirm</h2>
+            <h2 id="b5-h" data-step-title>Check the details</h2>
             <dl class="mg-b-review" data-b-review></dl>
-            <p class="mg-fine">Demonstration pricing only. Nothing is charged before the clean; move it for free up to a day ahead.</p>
+            <p class="mg-fine">Nothing is charged before the clean, and you can move it for free up to a day ahead.</p>
             <p class="mg-err" id="b-err-5" data-step-error role="alert"></p>
-            <div class="mg-b-nav"><button class="mg-btn mg-btn-line" type="button" data-back>Back</button><button class="mg-btn mg-btn-clay" type="submit">Request demo clean</button></div>
+            <div class="mg-b-nav"><button class="mg-btn mg-btn-line" type="button" data-back>Back</button><button class="mg-btn" type="submit">Request demo clean</button></div>
           </fieldset>
         </form>
 
         <aside class="mg-b-side" aria-labelledby="b-side-h">
-          <div class="mg-b-ticket">
-            <p class="mg-label" id="b-side-h">Your clean</p>
-            <p class="mg-b-t-range mg-num" data-b-sum="range">{range(e0.low, e0.high)}</p>
+          <div class="mg-receipt-wrap"><div class="mg-receipt mg-b-ticket">
+            <div class="mg-rc-top">
+              <h2 id="b-side-h">Your clean</h2>
+              <p>Mossgate Home Cleaning booking</p>
+            </div>
             <dl class="mg-b-sum">
-              <div><dt>Clean</dt><dd data-b-sum="clean">{describe(DEFAULT)}</dd></div>
-              <div><dt>Crew</dt><dd data-b-sum="crew">{e0.crew} cleaners, about {hoursLabel(e0.hours)}</dd></div>
-              <div><dt>Day</dt><dd data-b-sum="day">Not picked</dd></div>
-              <div><dt>Arrival</dt><dd data-b-sum="win">Not picked</dd></div>
+              <div><dt>Clean</dt><dd data-b-sum="clean">{summary(DEFAULT)}</dd></div>
+              <div><dt>Crew</dt><dd data-b-sum="crew">{crewLabel(e0)}</dd></div>
+              <div><dt>Day</dt><dd data-b-sum="day">Not picked yet</dd></div>
+              <div><dt>Arrival</dt><dd data-b-sum="win">Not picked yet</dd></div>
             </dl>
-            <p class="mg-b-disclaim">Demonstration booking: nothing is reserved or charged.</p>
-          </div>
+            <p class="mg-rc-total"><span>Example price, per clean</span><strong class="mg-num" data-b-sum="range">{range(e0.low, e0.high)}</strong></p>
+          </div></div>
         </aside>
       </div>
 
-      <DemoComplete id="b-done" heading="Demo clean requested." lead="Nothing was booked, saved or sent. Your name, number and notes were cleared from the page." flow={flow} restart="Book another clean" />
+      <DemoComplete id="b-done" variant="receipt" issuer="Mossgate Home Cleaning" docTitle="Booking receipt" heading="Demo clean requested." lead="Nothing was booked, saved or sent. Your name, number and notes were cleared from the page." docFoot="Demonstration receipt. No team was booked and nothing will be charged." flow={flow} again="Book the same clean again" againClass="mg-btn" restart="Book a different clean" restartClass="mg-btn mg-btn-line" />
     </div>
   </section>
 </Shell>
 
 <style>
   .mg-b-sec { padding-top: clamp(40px, 6vw, 80px); }
+  .mg-b-head { margin-bottom: clamp(28px, 4vw, 44px); }
   .mg-b { display: grid; gap: 28px; align-items: start; }
-  @media (min-width: 1024px) { .mg-b { grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; } .mg-b-side { position: sticky; top: 96px; } }
-  .mg-b-form { container: bform / inline-size; display: grid; gap: 22px; padding: clamp(20px, 4vw, 40px); border-radius: 26px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
+  @media (min-width: 1024px) { .mg-b { grid-template-columns: minmax(0, 1fr) 360px; gap: 48px; } .mg-b-side { position: sticky; top: 96px; } }
+  .mg-b-form { container: bform / inline-size; display: grid; gap: 22px; padding: clamp(20px, 4vw, 40px); border-radius: 24px; background: var(--mg-paper); box-shadow: 0 0 0 1px var(--mg-line); }
 
+  /* the steps as a meter that fills from the left, like the estimate filling in: answered steps sit on a sky band, the
+     open one is the cobalt head of the fill, the rest wait on linen. Every short label stays on screen down to a 320px
+     phone, and the answers join them when the form is wide */
   .mg-b-prog { display: none; }
-  .mg-b-form.is-stepped .mg-b-prog { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
-  .mg-b-prog li { flex: 1 0 auto; }
-  .mg-b-prog button { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--mg-linen); color: var(--mg-mute); font: inherit; font-size: 0.875rem; font-weight: 700; white-space: nowrap; cursor: pointer; transition: background-color 200ms ease-out, color 200ms ease-out; }
-  .mg-b-prog button span { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--mg-paper); font-size: 0.8125rem; }
+  .mg-b-form.is-stepped .mg-b-prog { display: flex; margin: 0; padding: 3px; list-style: none; border-radius: 999px; background: var(--mg-linen); box-shadow: inset 0 0 0 1px var(--mg-line); }
+  .mg-b-prog li { display: flex; flex: 1 1 auto; min-width: 0; }
+  .mg-b-prog li:first-child { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+  .mg-b-prog li.done, .mg-b-prog li:has(> button > [data-answer]:not(:empty)) { background: var(--mg-sky); }
+  .mg-b-prog li:is(.done, :has(> button > [data-answer]:not(:empty))):is(:last-child, :has(+ li:not([aria-current]) > button > [data-answer]:empty)) { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+  .mg-b-prog li[aria-current] { --l: transparent; --r: transparent; background: linear-gradient(to right, var(--l) 50%, var(--r) 50%); }
+  .mg-b-prog li.done + li[aria-current] { --l: var(--mg-sky); }
+  .mg-b-prog li[aria-current]:has(+ li > button > [data-answer]:not(:empty)) { --r: var(--mg-sky); }
+  .mg-b-prog button { display: grid; align-content: center; justify-items: center; width: 100%; min-height: 44px; padding: 2px 8px; border: 0; border-radius: 999px; background: none; color: var(--mg-mute); font: inherit; font-size: 0.875rem; font-weight: 620; line-height: 1.2; white-space: nowrap; cursor: pointer; transition: background-color 220ms var(--mg-ease), color 220ms var(--mg-ease); }
+  .mg-b-prog button > span { display: none; }
   .mg-b-prog button:disabled { cursor: default; }
-  .mg-b-prog li:not(.done):not([aria-current]) button:disabled { opacity: 0.6; }
-  .mg-b-prog li.done button { background: var(--mg-mint); color: var(--mg-moss-2); }
-  .mg-b-prog li.done button:hover { background: var(--mg-sage); }
-  .mg-b-prog li[aria-current] button { background: var(--mg-moss); color: var(--mg-linen); opacity: 1; }
-  .mg-b-prog li[aria-current] button span { background: var(--mg-clay-2); color: var(--mg-moss); }
-  .mg-b-prog button:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
-  @container bform (max-width: 679px) { .mg-b-prog button { font-size: 0; gap: 0; padding: 0; } .mg-b-prog li[aria-current] button { font-size: 0.875rem; gap: 8px; padding: 0 14px 0 10px; } .mg-b-prog li { flex: 1 1 36px; } .mg-b-prog li[aria-current] { flex: 0 0 auto; } }
-  @container bform (max-width: 299px) { .mg-b-prog li, .mg-b-prog li[aria-current] { flex: 1 1 0; min-width: 0; } .mg-b-prog li[aria-current] button { font-size: 0; gap: 0; padding: 0; } }
+  .mg-b-prog li.done button, .mg-b-prog button:has(> [data-answer]:not(:empty)) { color: var(--mg-sky-ink); }
+  .mg-b-prog li[aria-current] button { background: var(--mg-cobalt); color: #fff; }
+  .mg-b-prog button:not(:disabled):hover { text-decoration: underline; text-underline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { .mg-b-prog button { transition: none; } }
+  .mg-b-prog [data-answer] { display: none; }
+  @container bform (min-width: 680px) {
+    .mg-b-prog [data-answer]:not(:empty) { display: block; max-width: 14ch; overflow: hidden; text-overflow: ellipsis; font-size: 0.8125rem; font-weight: 450; }
+  }
+  @container bform (max-width: 459px) { .mg-b-prog button { padding-inline: 4px; font-size: 0.8125rem; } }
 
   .mg-b-mini { display: none; }
-  @media (max-width: 1023px) { .mg-b-form.is-stepped .mg-b-mini:not(:empty) { display: block; padding: 10px 14px; border-radius: 12px; background: var(--mg-mint); color: var(--mg-moss); font-size: 0.9375rem; font-weight: 600; } }
+  @media (max-width: 1023px) { .mg-b-form.is-stepped .mg-b-mini:not(:empty) { display: block; padding: 10px 14px; border-radius: 12px; background: var(--mg-sky); color: var(--mg-sky-ink); font-size: 0.9375rem; font-weight: 600; } }
 
   .mg-b-step { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
   .mg-b-step + .mg-b-step { padding-top: 28px; border-top: 1px solid var(--mg-line); }
   .mg-b-form.is-stepped .mg-b-step + .mg-b-step { padding-top: 0; border-top: 0; }
-  .mg-b-step h2 { font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.125rem); color: var(--mg-moss); outline: none; }
+  .mg-b-step h2 { font-size: clamp(1.625rem, 1.2rem + 1.4vw, 2.25rem); outline: none; }
   :root[data-tier="1"] .mg-b-form.is-stepped .mg-b-step:not([hidden]), :root[data-tier="2"] .mg-b-form.is-stepped .mg-b-step:not([hidden]) { animation: mg-b-in 280ms var(--mg-ease) both; }
   @keyframes mg-b-in { from { opacity: 0; transform: translateY(8px); } }
 
@@ -184,13 +232,45 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
   .mg-b-days { grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
   .mg-b-wins { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
   .mg-b-picks .mg-pick > span { min-height: 64px; }
-  .mg-b-home { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  @media (max-width: 479px) { .mg-b-home { grid-template-columns: 1fr 1fr; } .mg-b-home .mg-field:first-child { grid-column: 1 / -1; } }
-  .mg-b-from, .mg-b-alert { padding: 10px 14px; border-radius: 12px; background: var(--mg-mint); color: var(--mg-moss); font-weight: 600; }
-  .mg-b-alert { background: var(--mg-clay-soft); color: #6d2f1c; }
-  .mg-b-quote { display: grid; gap: 4px; justify-items: start; padding: 16px 18px; border-radius: 16px; background: var(--mg-linen); }
-  .mg-b-quote > p:first-child { color: var(--mg-soft); }
-  .mg-b-quote > p:first-child span { font-size: 1.5rem; font-weight: 850; color: var(--mg-moss); letter-spacing: -0.02em; }
+  /* the weeks are made by the script, so they carry no scope attribute: each is a group of its own grid of days under
+     a heading that gives its dates. Without JavaScript the days stay one flat grid */
+  .mg-b-days.is-weeks { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .mg-b-days :global(.mg-b-wk) { display: grid; gap: 10px; min-width: 0; }
+  .mg-b-days :global(.mg-b-wk-h) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; font-weight: 620; }
+  .mg-b-days :global(.mg-b-wk-h span) { font-weight: 450; font-size: 0.9375rem; color: var(--mg-mute); font-variant-numeric: tabular-nums; }
+  .mg-b-days :global(.mg-b-wk-days) { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
+  .mg-b-days small { font-variant-numeric: tabular-nums; }
+  /* the first day with a window left for this clean */
+  .mg-b-days .mg-b-first { font-weight: 650; color: var(--mg-cobalt); }
+  .mg-b-days .mg-b-first[hidden] { display: none; }
+  .mg-b-town select { max-width: 420px; }
+  .mg-b-out { max-width: 60ch; padding: 10px 14px; border-radius: 12px; background: var(--mg-linen); box-shadow: inset 0 0 0 1px var(--mg-line-2); color: var(--mg-ink); font-size: 0.9375rem; font-weight: 600; }
+  .mg-b-out:empty { display: none; }
+  .mg-b-home { display: grid; gap: 18px; }
+  @media (min-width: 620px) { .mg-b-home { grid-template-columns: 1.25fr 1fr; column-gap: 28px; } .mg-b-set-home { grid-column: 1 / -1; } }
+  .mg-b-set { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .mg-b-set legend { float: left; width: 100%; margin: 0 0 8px; padding: 0; font-weight: 600; font-size: 0.9375rem; color: var(--mg-ink); }
+  /* five bedroom pills fit on one row down to a 320px phone (5 x 42 + 4 x 6 = 234px of the 248px there) */
+  .mg-b-n { display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(42px, 1fr)); }
+  .mg-b-n .mg-num { font-size: 1.125rem; }
+  .mg-b-homes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* below 360px three home names no longer fit side by side ("Townhouse" touched its border), so they stack */
+  @media (max-width: 359px) { .mg-b-homes { grid-template-columns: 1fr; } }
+  .mg-b-homes .mg-pick > span { font-size: 0.9375rem; line-height: 1.2; }
+  .mg-b-from, .mg-b-alert { padding: 10px 14px; border-radius: 12px; background: var(--mg-sky); color: var(--mg-sky-ink); font-weight: 600; }
+  .mg-b-alert { background: var(--mg-linen); color: var(--mg-ink); box-shadow: inset 0 0 0 1px var(--mg-line-2); }
+  /* the plan pills carry a saving under the name, so they get more room than the number pills; at 320px two fit a row */
+  .mg-b-freqs { grid-template-columns: repeat(auto-fit, minmax(min(100%, 112px), 1fr)); }
+  .mg-b-freqs .mg-pick > span { padding-inline: 8px; font-size: 0.9375rem; line-height: 1.2; }
+  /* the home size as one line, the way the estimate left it; "Change home size or extras" opens the same pills as there */
+  .mg-b-size { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 16px; padding: 10px 16px; border-radius: 14px; background: var(--mg-linen); }
+  .mg-b-size p { display: grid; gap: 2px; }
+  .mg-b-size p span { font-size: 0.875rem; color: var(--mg-mute); }
+  .mg-b-size strong { font-weight: 650; }
+  .mg-b-size-btn { min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--mg-cobalt); font: inherit; font-weight: 650; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 5px; cursor: pointer; }
+  .mg-b-size-btn:hover { color: var(--mg-cobalt-2); text-decoration-thickness: 2.5px; }
+  .mg-b-size-btn:focus-visible { outline: 3px solid var(--mg-cobalt); outline-offset: 2px; border-radius: 6px; }
+  .mg-b-est { justify-self: start; }
   .mg-b-sub { color: var(--mg-soft); }
   .mg-b-sub:empty { display: none; }
   .mg-b-nav { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
@@ -198,28 +278,42 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
   @media (max-width: 479px) { .mg-b-nav .mg-btn { flex: 1 1 auto; padding-inline: 18px; } .mg-b-nav [data-back] { margin-right: 0; } }
   .mg-field em { font-style: normal; font-weight: 500; color: var(--mg-mute); }
 
-  .mg-b-review { display: grid; border-top: 1px solid var(--mg-line); }
-  .mg-b-review div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--mg-line); }
-  .mg-b-review dt { color: var(--mg-mute); }
-  .mg-b-review dd { font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+  /* the rows are built by the script, so they need :global to be styled at all. Set as the cleaner's checklist: a
+     cobalt tick for every answer given, an empty circle for one still missing */
+  .mg-b-review { display: grid; margin: 0; border-top: 2px solid var(--mg-ink); }
+  .mg-b-review :global(div) { display: grid; grid-template-columns: 22px 7.5rem 1fr auto; gap: 4px 14px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--mg-line); }
+  .mg-b-review :global(div::before) { content: ""; align-self: center; width: 22px; height: 22px; border-radius: 50%; background: var(--mg-cobalt) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fcfaf7' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 13px no-repeat; }
+  .mg-b-review :global(div.is-open::before) { background: none; box-shadow: inset 0 0 0 1.5px var(--mg-line-2); }
+  .mg-b-review :global(div.is-open dd) { font-weight: 500; color: var(--mg-soft); }
+  .mg-b-review :global(dt) { color: var(--mg-mute); font-size: 0.9375rem; }
+  .mg-b-review :global(dd) { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+  .mg-b-review :global(button) { min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--mg-cobalt); font: inherit; font-size: 0.9375rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .mg-b-review :global(button:hover) { color: var(--mg-ink); }
+  /* the price and the crew follow from the answers and sit on the ticket beside the form, so a wide screen lists only
+     what was answered; a phone has no ticket and keeps every row */
+  @media (min-width: 1024px) { .mg-b-review :global(div[data-ticket]) { display: none; } }
+  @media (max-width: 479px) {
+    .mg-b-review :global(div) { grid-template-columns: 22px 1fr auto; grid-template-areas: "t k btn" "t v v"; }
+    .mg-b-review :global(div::before) { grid-area: t; align-self: start; margin-top: 11px; }
+    .mg-b-review :global(dt) { grid-area: k; }
+    .mg-b-review :global(dd) { grid-area: v; }
+    .mg-b-review :global(div > :last-child) { grid-area: btn; }
+  }
 
-  .mg-b-ticket { display: grid; gap: 14px; padding: 26px; border-radius: 24px; background: var(--mg-moss); color: #d5e3dc; }
-  .mg-b-ticket .mg-label { color: var(--mg-clay-2); }
-  .mg-b-t-range { font-size: 2.25rem; font-weight: 850; letter-spacing: -0.03em; line-height: 1; color: var(--mg-linen); }
-  .mg-b-sum { display: grid; border-top: 1px solid rgba(255, 255, 255, 0.14); }
-  .mg-b-sum div { display: grid; gap: 2px; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-  .mg-b-sum dt { font-size: 0.8125rem; color: #9fb8ad; }
-  .mg-b-sum dd { font-weight: 700; color: var(--mg-linen); }
-  .mg-b-disclaim { font-size: 0.875rem; color: #9fb8ad; }
+  .mg-b-sum { display: grid; padding-top: 4px; }
+  .mg-b-sum div { display: grid; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--mg-line); }
+  .mg-b-sum div:last-child { border-bottom: 0; }
+  .mg-b-sum dt { font-size: 0.8125rem; color: var(--mg-mute); }
+  .mg-b-sum dd { font-weight: 600; }
   @media (max-width: 1023px) { .mg-b-side { display: none; } }
 </style>
 
 <script>
   import { stepper, firstInvalid, flag, type Stepper } from "../../../../lib/demo/stepper";
-  import { showComplete, onRestart } from "../../../../lib/demo/complete";
-  import { normalise, fromQuery, toQuery, estimate, describe, hoursLabel, typicalSqft, bookingDays, takenWindows, WINDOWS, DEFAULT, type Choice } from "../../../../lib/demo/mossgate-estimate";
-  import { range } from "../../../../lib/demo/money";
-  import { base } from "../../../../data/demos/mossgate";
+  import { showComplete, onRestart, onAgain } from "../../../../lib/demo/complete";
+  import { normalise, fromQuery, toQuery, estimate, summary, homeSize, crewLabel, typicalSqft, bookingDays, takenWindows, WINDOWS, CLEANS, EXTRAS, DEFAULT, type Choice, type Extra } from "../../../../lib/demo/mossgate-estimate";
+  import { range, usd } from "../../../../lib/demo/money";
+  import { base, areaText } from "../../../../data/demos/mossgate";
 
   const form = document.querySelector<HTMLFormElement>("[data-mg-book]");
   if (form) {
@@ -230,25 +324,64 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
     const radios = (n: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${n}"]`)];
     const val = (n: string) => radios(n).find((r) => r.checked)?.value ?? "";
     const field = <T extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(n: string) => form.elements.namedItem(n) as T;
-    const sqft = field<HTMLInputElement>("sqft"), extras = field<HTMLInputElement>("extras"), freq = field<HTMLInputElement>("freq");
+    const sqft = field<HTMLInputElement>("sqft"), extras = field<HTMLInputElement>("extras");
     const name = field<HTMLInputElement>("name"), mobile = field<HTMLInputElement>("mobile"), notes = field<HTMLTextAreaElement>("notes"), access = field<HTMLSelectElement>("access");
+    const town = field<HTMLSelectElement>("town"), outside = $("[data-b-outside]");
+    const fromNote = $("[data-b-from]"), freqSet = $<HTMLFieldSetElement>("[data-b-freq]"), onceNote = $("[data-b-once]");
+    const homeBox = $("#b-home"), sizeRow = $("[data-b-size-row]"), sizeBtn = $<HTMLButtonElement>("[data-b-size-btn]");
 
     // the floor area only comes with a link that gave one; otherwise it follows the bedrooms
-    let sqftGiven = false;
+    let sqftGiven = false, fromEstimate = false, sizeTouched = false;
     const choice = (): Choice => normalise({
-      home: field<HTMLSelectElement>("home").value, bed: field<HTMLSelectElement>("bed").value, bath: field<HTMLSelectElement>("bath").value,
-      sqft: sqftGiven ? sqft.value : typicalSqft(+field<HTMLSelectElement>("bed").value), clean: val("clean"), freq: freq.value, extras: extras.value,
+      home: val("home"), bed: val("bed"), bath: val("bath"),
+      sqft: sqftGiven ? sqft.value : typicalSqft(+val("bed")), clean: val("clean"), freq: val("freq"), extras: extras.value,
     });
+    const pick = (n: string, v: string) => { const r = radios(n).find((x) => x.value === v); if (r) r.checked = true; };
+    // the extras the visitor ticked, as on the estimate: one the clean already includes shows ticked and disabled (so
+    // it is neither priced nor listed twice), and their own pick comes back if they switch to a lighter clean
+    const extraBoxes = [...form.querySelectorAll<HTMLInputElement>("[data-b-extra]")];
+    const picked = new Set<string>();
+    const drawExtras = () => {
+      const c = CLEANS[val("clean") as keyof typeof CLEANS] ?? CLEANS.standard;
+      for (const x of extraBoxes) {
+        const included = c.includes.includes(x.value as Extra);
+        x.disabled = included;
+        x.checked = included || picked.has(x.value);
+        const box = x.closest("label")!;
+        $("[data-extra-add]", box).textContent = included ? "Included" : `+${usd(EXTRAS[x.value as Extra].add)}`;
+        $("[data-extra-note]", box).textContent = included ? `Part of a ${c.name.toLowerCase()} clean` : EXTRAS[x.value as Extra].note;
+      }
+      extras.value = [...picked].join(",");
+    };
+    const extrasText = (c: Choice) => c.extras.map((x) => EXTRAS[x].name.toLowerCase()).join(", ");
+    // only a standard clean repeats: for the others the plan question gives way to one plain line
+    const drawFreq = () => {
+      const c = CLEANS[val("clean") as keyof typeof CLEANS] ?? CLEANS.standard;
+      freqSet.hidden = freqSet.disabled = !c.repeat;
+      onceNote.hidden = c.repeat;
+      onceNote.textContent = c.repeat ? "" : `A ${c.name.toLowerCase()} clean is a single visit. Repeat visits are booked as a standard clean.`;
+    };
+    // the home size shows as one line; the button opens the same pills as the estimate (a disclosure, so focus stays put)
+    const openHome = (open: boolean) => {
+      homeBox.hidden = !open;
+      sizeBtn.setAttribute("aria-expanded", String(open));
+      sizeBtn.textContent = open ? "Done" : "Change home size or extras";
+    };
+    sizeBtn.addEventListener("click", () => openHome(homeBox.hidden));
     const applyStart = () => {
       const c = fromQuery(location.search);
       sqftGiven = !!c && new URLSearchParams(location.search).has("sqft");
+      fromEstimate = !!c; sizeTouched = false;
       const s = c ?? DEFAULT;
-      field<HTMLSelectElement>("home").value = s.home;
-      field<HTMLSelectElement>("bed").value = String(s.bed);
-      field<HTMLSelectElement>("bath").value = String(s.bath);
-      const r = radios("clean").find((x) => x.value === s.clean); if (r) r.checked = true;
-      sqft.value = String(s.sqft); extras.value = s.extras.join(","); freq.value = s.freq;
-      $("[data-b-from]").hidden = !c;
+      pick("home", s.home); pick("bed", String(s.bed)); pick("bath", String(s.bath)); pick("clean", s.clean); pick("freq", s.freq);
+      sqft.value = String(s.sqft);
+      picked.clear();
+      for (const x of s.extras) picked.add(x);
+      fromNote.hidden = !c;
+      sizeRow.hidden = false;
+      openHome(false);
+      drawFreq();
+      drawExtras();
     };
 
     const short = (d: Date) => {
@@ -260,21 +393,49 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
     /** the windows still open on day n for this clean: a long clean only fits a morning start */
     const openWins = (n: number, morningOnly: boolean) => WINDOWS.filter((w) => !takenWindows(n).includes(w.id) && (w.morning || !morningOnly));
 
+    // the ten days come in weeks, each a group under a heading with its dates ("Next week Dec 1 – 6"), so next Monday is
+    // never read as this one. The radios keep one name, so the arrow keys still move through all ten
+    const monday = (d: Date) => { const m = new Date(d.getFullYear(), d.getMonth(), d.getDate()); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; };
+    const weekNames = ["This week", "Next week", "The week after"];
+    const dateLabel = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const weeks = new Map<number, HTMLLabelElement[]>();
     radios("day").forEach((r, i) => {
       const box = r.closest("label")!;
       $("[data-day-name]", box).textContent = short(days[i]);
-      $("[data-day-date]", box).textContent = days[i].toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      $("[data-day-date]", box).textContent = dateLabel(days[i]);
+      const w = Math.round((monday(days[i]).getTime() - monday(now).getTime()) / 6048e5);
+      weeks.set(w, [...(weeks.get(w) ?? []), box]);
     });
+    const daysBox = $("[data-b-days]");
+    let firstDay = 0;
+    daysBox.replaceChildren(...[...weeks].map(([w, boxes], k) => {
+      const from = days[firstDay], to = days[firstDay + boxes.length - 1];
+      firstDay += boxes.length;
+      const group = document.createElement("div"), head = document.createElement("p"), dates = document.createElement("span"), list = document.createElement("div");
+      group.className = "mg-b-wk"; group.setAttribute("role", "group"); group.setAttribute("aria-labelledby", `b-wk-${k}`);
+      head.className = "mg-b-wk-h"; head.id = `b-wk-${k}`;
+      head.textContent = weekNames[w] ?? `Week of ${monday(from).toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
+      dates.textContent = from === to ? dateLabel(from) : from.getMonth() === to.getMonth() ? `${dateLabel(from)} – ${to.getDate()}` : `${dateLabel(from)} – ${dateLabel(to)}`;
+      head.append(" ", dates);
+      list.className = "mg-b-wk-days";
+      list.append(...boxes);
+      group.append(head, list);
+      return group;
+    }));
+    daysBox.classList.add("is-weeks");
 
     const winSub = $("[data-b-win-sub]"), morning = $("[data-b-morning]");
     const draw = () => {
       const e = estimate(choice());
+      let firstFree = -1;
       radios("day").forEach((r, i) => {
         const n = openWins(i, e.morningOnly).length;
         r.disabled = n === 0;
         if (r.disabled) r.checked = false;
-        $("[data-day-count]", r.closest("label")!).textContent = n ? `· ${n} open` : "· Full";
+        else if (firstFree < 0) firstFree = i;
+        $("[data-day-count]", r.closest("label")!).textContent = n ? `, ${n} open` : ", full";
       });
+      radios("day").forEach((r, i) => { $("[data-day-first]", r.closest("label")!).hidden = i !== firstFree; });
       const day = val("day");
       morning.hidden = !e.morningOnly;
       radios("win").forEach((r) => {
@@ -296,53 +457,101 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
     };
     const facts = () => {
       const c = choice(), e = estimate(c), day = val("day"), win = val("win");
-      return { c, e, range: range(e.low, e.high), crew: `${e.crew === 1 ? "1 cleaner" : `${e.crew} cleaners`}, about ${hoursLabel(e.hours)}`, day: day === "" ? "" : short(days[+day]), longDay: day === "" ? "" : long(days[+day]), win: winLabel(win) };
+      return { c, e, range: range(e.low, e.high), crew: crewLabel(e), day: day === "" ? "" : short(days[+day]), longDay: day === "" ? "" : long(days[+day]), win: winLabel(win) };
     };
     const sync = () => {
       const f = facts();
-      $("[data-b-range]").textContent = f.range;
-      $("[data-b-quote-sub]").textContent = `${describe(f.c)} · ${f.crew}`;
+      $("[data-b-size]").textContent = f.c.extras.length ? `${homeSize(f.c)}. Extras: ${extrasText(f.c)}` : homeSize(f.c);
+      $("[data-b-size-label]").textContent = fromEstimate || sizeTouched ? "Your home" : "Priced for a typical home";
       $<HTMLAnchorElement>("[data-b-est]").href = `${base}/estimate/?${toQuery(f.c)}`;
       sumOut("range").textContent = f.range;
-      sumOut("clean").textContent = describe(f.c);
+      sumOut("clean").textContent = summary(f.c);
       sumOut("crew").textContent = f.crew;
-      sumOut("day").textContent = f.longDay || "Not picked";
-      sumOut("win").textContent = f.win || "Not picked";
-      mini.textContent = [`${f.range} · ${describe(f.c).split(" · ")[0]}`, f.day, f.win].filter(Boolean).join(" · ");
-      const rows: [string, string][] = [
-        ["Clean", describe(f.c)], ["Estimate", `${f.range} per clean (demonstration pricing)`], ["Crew", f.crew],
-        ["When", f.longDay && f.win ? `${f.longDay}, arriving ${f.win}` : ""], ["Access", access.value],
-        ["Name", name.value.trim()], ["Mobile", phoneLabel(mobile.value)], ["Notes", notes.value.trim() || "None"],
+      sumOut("day").textContent = f.longDay || "Not picked yet";
+      sumOut("win").textContent = f.win || "Not picked yet";
+      // the phone's one-line reminder of the clean so far: "Standard clean, $185–$220. Tomorrow at 8 – 10 am"
+      mini.textContent = [`${CLEANS[f.c.clean].name} clean, ${f.range}`, f.day && (f.win ? `${f.day} at ${f.win}` : f.day)].filter(Boolean).join(". ");
+      // [label, answer, the step that changes it (-1: follows from another answer, and is on the ticket)]
+      const rows: [string, string, number][] = [
+        ["Town", town.value, 0], ["Clean", summary(f.c), 0], ["Extras", extrasText(f.c) || "None", 0],
+        ["Price", `${f.range} ${f.c.freq === "once" ? "for the clean" : "a visit"}, paid after the clean`, -1], ["Crew", f.crew, -1],
+        ["When", f.longDay && f.win ? `${f.longDay}, arriving ${f.win}` : "", 1],
+        ["Contact", [name.value.trim(), phoneLabel(mobile.value)].filter(Boolean).join(", "), 3], ["Access", access.value, 3],
+        ["Notes", notes.value.trim() || "None", 3],
       ];
-      review.replaceChildren(...rows.map(([k, v]) => {
+      review.replaceChildren(...rows.map(([k, v, step]) => {
         const row = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd");
         dt.textContent = k; dd.textContent = v || "Not given";
+        row.classList.toggle("is-open", !v);
+        if (step < 0) row.dataset.ticket = "";
         row.append(dt, dd);
+        if (step >= 0) {
+          const b = document.createElement("button");
+          b.type = "button"; b.dataset.edit = String(step);
+          b.textContent = "Change"; b.setAttribute("aria-label", `Change ${k.toLowerCase()}`);
+          row.append(b);
+        } else row.append(document.createElement("span"));
         return row;
       }));
     };
 
-    const checkMobile = () => { const n = mobile.value.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").length; mobile.setCustomValidity(mobile.value && n !== 10 ? "Add a 10-digit mobile number." : ""); };
+    // every message says how to fix the field; flag() (lib/demo/stepper) shows the field's data-error
+    const mobileMissing = "Enter a mobile number for the texts, or press “Use sample details”.";
+    const checkMobile = () => {
+      const n = mobile.value.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").length;
+      const wrong = mobile.value.trim() !== "" && n !== 10;
+      mobile.setCustomValidity(wrong ? "Enter a mobile number with 10 digits, like (507) 555-0100." : "");
+      mobile.dataset.error = wrong ? "Enter a mobile number with 10 digits, like (507) 555-0100." : mobileMissing;
+    };
     mobile.addEventListener("input", checkMobile);
+    // the clean has to be in one of the five towns: "Somewhere else" names them at once, under the field
+    const checkTown = () => {
+      const away = !!town.selectedOptions[0]?.hasAttribute("data-outside");
+      outside.textContent = away ? `We only clean in ${areaText}. Choose one of those towns to book this clean.` : "";
+      town.dataset.error = away ? "Choose one of the five towns we clean in to continue." : "Choose the town the clean is in to continue.";
+      // the browser counts only the first, placeholder option as missing, so "Somewhere else" is made invalid here
+      town.setCustomValidity(away ? town.dataset.error : "");
+      // flag() adds the step's error line to the field's description and keeps the hint and the town note; while the
+      // field is flagged, a new choice that is still outside the area rewrites that line
+      const err = town.getAttribute("aria-invalid") === "true" ? town.getAttribute("aria-describedby")?.split(" ").find((id) => id.startsWith("b-err")) : undefined;
+      if (err) document.getElementById(err)!.textContent = town.dataset.error;
+    };
     form.addEventListener("change", (e) => {
-      const n = (e.target as HTMLInputElement).name;
-      if (n === "clean" || n === "home" || n === "bed" || n === "bath" || n === "day") draw();
+      const t = e.target as HTMLInputElement, n = t.name;
+      if (n === "extra" && !t.disabled) { if (t.checked) picked.add(t.value); else picked.delete(t.value); }
+      // an extra adds time as well as money, so it can move a clean to a morning-only start like the size does
+      const clean = n === "clean" || n === "freq", size = n === "home" || n === "bed" || n === "bath" || n === "extra";
+      if (n === "clean" || n === "extra") drawExtras();
+      if (clean || size || n === "day") draw();
+      if (n === "clean") drawFreq();
+      if (size) sizeTouched = true;
+      // the note stops saying "carried over" once the clean itself is changed (picking the town does not change it)
+      if (clean || size) fromNote.hidden = true;
+      if (n === "town") checkTown();
       sync();
     });
     form.addEventListener("input", sync);
 
     applyStart();
     draw();
+    checkTown();
     let steps: Stepper | undefined;
     steps = stepper(form, {
       check: (i) => (i === 2 && !radios("win").some((r) => !r.disabled) ? "No windows left that day for this clean. Go back and pick another day." : null),
+      // what each passed step says in the tracker
+      answer: (i) => {
+        const f = facts();
+        return [`${CLEANS[f.c.clean].name} clean`, f.day, f.win, field<HTMLInputElement>("name").value.trim()][i] ?? "";
+      },
       onStep: () => sync(),
     });
     sync();
-    // arriving from the estimate, the clean is already chosen: start on the day
-    if (fromQuery(location.search)) steps.go(1, false);
-    // the note on the day step stops saying "carried over" once the clean itself is changed
-    $("[data-step]").addEventListener("change", () => { $("[data-b-from]").hidden = true; });
+    // arriving from the estimate the clean is already chosen, but the first step still asks the town, so every booking
+    // hears "we don't clean there" before it picks a day
+    review.addEventListener("click", (e) => {
+      const b = (e.target as Element).closest<HTMLButtonElement>("[data-edit]");
+      if (b) steps!.go(Number(b.dataset.edit));
+    });
 
     $("[data-b-sample]").addEventListener("click", () => {
       name.value = "Sam";
@@ -361,17 +570,33 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
       }
       const f = facts();
       showComplete(done, [
-        ["Clean", describe(f.c)],
-        ["Estimate", `${f.range} per clean, charged after the clean (demonstration pricing)`],
+        ["Clean", summary(f.c)],
+        ["Extras", extrasText(f.c)],
         ["When", `${f.longDay}, arriving ${f.win}`],
+        ["Town", town.value],
         ["Name", name.value.trim()],
         ["Confirmation text", "Would go to the number you gave. Nothing was sent."],
+        ["Payment", "After the clean (demonstration pricing)"],
+        ["Estimate per clean", f.range, "total"],
       ], [wrap]);
-      // nothing personal is kept: the details go as soon as the summary is shown
+      // nothing personal is kept: the details go as soon as the summary is shown. The town stays (one of five, never
+      // an address), so "Book the same clean again" can go straight to the next day
       name.value = "";
       mobile.value = "";
       notes.value = "";
+      checkMobile();
       sync();
+    });
+
+    // a regular's next visit: the town, the clean, the home and the extras stay; the day and the window are picked
+    // again, and the details asked again (they were cleared). It opens on the day, with the clean step marked done
+    onAgain(done, () => {
+      wrap.hidden = false;
+      for (const r of [...radios("day"), ...radios("win")]) r.checked = false;
+      draw();
+      sync();
+      steps!.reset(false);
+      steps!.go(1);
     });
 
     onRestart(done, () => {
@@ -379,8 +604,10 @@ const access = ["I’ll be home", "Key in a lockbox (the office calls to set it 
       wrap.hidden = false;
       applyStart();
       draw();
+      checkTown();
+      checkMobile();
       sync();
-      steps!.go(0);
+      steps!.reset();
     });
   }
 </script>

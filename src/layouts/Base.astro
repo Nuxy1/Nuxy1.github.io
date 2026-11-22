@@ -31,8 +31,8 @@ const path = Astro.url.pathname;
 const serviceNav: [string, string][] = [
   ["AI & Business Automation", "/automation/"],
   ["AI Voice Receptionist", "/automation/#voice"],
-  ["Business Websites", "/websites/"],
-  ["Website Levels", "/web-design/"],
+  ["Websites", "/websites/"],
+  ["Website Levels & Prices", "/web-design/"],
   ["E-Commerce", "/ecommerce/"],
   ["Website Repairs & Security", "/website-security/"],
   ["Video & Creative Studio", "/creative-studio/"],
@@ -45,6 +45,10 @@ const nav: [string, string][] = [
   ["About", "/about/"],
 ];
 const current = (href: string) => (href === "/" ? path === "/" : !href.includes("#") && path.startsWith(href));
+// (critique round 6: on a demo's computer and phone view nothing in the menu was marked) a page that belongs to a
+// section without sitting under its address marks that section's item as "true" (the item for its own page stays "page")
+const within: Record<string, string[]> = { "/portfolio/": ["/examples/", "/work/"] };
+const mark = (href: string) => (current(href) ? "page" : (within[href] ?? []).some((p) => path.startsWith(p)) ? "true" : undefined);
 const inServices = serviceNav.some(([, href]) => current(href)) || ["/get-a-website/", "/business-websites/", "/signature-websites/", "/immersive-websites/"].some((p) => path.startsWith(p));
 
 // The old one-page site's anchors (outreach emails link to /#<service id>): sent on to where each now lives.
@@ -112,10 +116,10 @@ const isHome = path === "/";
                 </ul>
               </details>
             </li>
-            {nav.map(([name, href]) => <li><a class="nav-link" href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
+            {nav.map(([name, href]) => <li><a class="nav-link" href={href} aria-current={mark(href)}>{name}</a></li>)}
           </ul>
         </nav>
-        <a class="button small head-cta" href="/contact/" data-track="cta_header">Get a Free Quote</a>
+        <a class="button small head-cta" href="/contact/" data-track="cta_header" aria-current={current("/contact/") ? "page" : undefined}><span><span class="hc-get">Get a </span>Free Quote</span></a>
         <details class="menu" data-menu>
           <summary aria-label="Menu"><Icon name="list" /><Icon name="x" /></summary>
           <div class="menu-panel">
@@ -125,7 +129,7 @@ const isHome = path === "/";
             </ul>
             <p class="menu-label" id="menu-more">Nuxy</p>
             <ul aria-labelledby="menu-more">
-              {[...nav, ["Contact", "/contact/"]].map(([name, href]) => <li><a href={href} aria-current={current(href) ? "page" : undefined}>{name}</a></li>)}
+              {[...nav, ["Contact", "/contact/"]].map(([name, href]) => <li><a href={href} aria-current={mark(href)}>{name}</a></li>)}
             </ul>
             <a class="button" href="/contact/" data-track="cta_menu">Get a Free Quote</a>
           </div>
@@ -149,8 +153,8 @@ const isHome = path === "/";
             <div>
               <h2>Services</h2>
               <ul>
-                <li><a href="/websites/">Business websites</a></li>
-                <li><a href="/web-design/">Website levels</a></li>
+                <li><a href="/websites/">Websites</a></li>
+                <li><a href="/web-design/">Website levels &amp; prices</a></li>
                 <li><a href="/websites/#redesign">Website redesign</a></li>
                 <li><a href="/handover/">How handover works</a></li>
                 <li><a href="/ecommerce/">E-commerce stores</a></li>
@@ -173,10 +177,10 @@ const isHome = path === "/";
             <div>
               <h2>See the Work</h2>
               <ul>
-                <li><a href="/portfolio/">Portfolio</a></li>
+                <li><a href="/portfolio/">Our work</a></li>
                 <li><a href="/demos/">Live demos</a></li>
-                <li><a href="/demos/#technical">Technical projects</a></li>
-                <li><a href="/docs/">Docs</a></li>
+                <li><a href="/demos/#technical">Open-source automations</a></li>
+                <li><a href="/docs/">Developer docs</a></li>
               </ul>
             </div>
           </nav>
@@ -329,6 +333,8 @@ const isHome = path === "/";
   h3 { font-size: 1.1875rem; }
   h4 { font-size: 1.0625rem; }
   p { margin: 0; text-wrap: pretty; }
+  /* (captions and list items wrap the same way, so none of them ends on one word alone) */
+  figcaption, li, dd { text-wrap: pretty; }
   a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
   a:hover { color: var(--ink); }
   strong { color: var(--ink); font-weight: 600; }
@@ -342,6 +348,10 @@ const isHome = path === "/";
   .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .skip { position: absolute; left: 16px; top: -80px; z-index: 100; padding: 10px 16px; border-radius: var(--r-sm); background: var(--ink); color: var(--bg); font-weight: 600; }
   .skip:focus { top: 12px; }
+  /* (critique round 5) a standalone text link or small pill shorter than 44px (a breadcrumb, a level pill): an
+     invisible band 44px tall, centred on it, takes the tap, so a thumb need not land on a 20px line; nothing moves */
+  .tap { position: relative; }
+  .tap::after { content: ""; position: absolute; left: -4px; right: -4px; top: calc(50% - 22px); height: 44px; }
 
   /* Buttons */
   .button {
@@ -369,7 +379,7 @@ const isHome = path === "/";
   .band { background: var(--bg-2); border-block: 1px solid var(--hairline-soft); }
   .section-head { max-width: 720px; margin-bottom: clamp(32px, 4vw, 48px); }
   .section-head.center { margin-inline: auto; text-align: center; }
-  .section-head p:not(.eyebrow) { margin-top: 14px; font-size: 1.125rem; color: var(--muted); }
+  .section-head p:not(.eyebrow) { margin-top: 14px; max-width: 64ch; font-size: 1.125rem; color: var(--muted); }
   .eyebrow { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; color: var(--cyan); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .panel { background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--r-lg); }
   .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-full); background: rgb(var(--cyan-rgb) / 0.1); color: var(--cyan); font-size: 0.8125rem; font-weight: 600; line-height: 1.3; }
@@ -386,7 +396,9 @@ const isHome = path === "/";
   @media (min-width: 1024px) { .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
   /* Questions (a list of details) and the closing call-to-action band, shared by the service and pricing pages */
-  .faq-wrap { max-width: 860px; }
+  /* (site audit 2026-11-21, critique round 3) the FAQ keeps the page's left edge like every other section, and only the
+     questions are held to a reading width: a centred 860px box put its heading ~170px in from the headings above it */
+  .faq-wrap > .faq { max-width: 780px; }
   .faq { display: grid; margin-top: 24px; border-top: 1px solid var(--hairline); }
   .faq details { border-bottom: 1px solid var(--hairline); }
   .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; min-height: 44px; color: var(--ink); font-weight: 600; cursor: pointer; list-style: none; }
@@ -414,14 +426,16 @@ const isHome = path === "/";
   .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 650; font-size: 1.0625rem; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
   .brand:hover { color: var(--ink); }
   /* (the logo file has 16 px of clear space around it for its glow: the negative margin lines the symbol up with the page edge) */
-  .brand-logo { display: block; width: auto; height: 44px; margin-left: -6px; }
-  .foot-logo { height: 56px; margin-left: -8px; }
+  /* the picture has a clear margin round the mark: these pull the solid mark (measured, not the faint glow) onto the
+     page's text edge (critique round 7: the footer logo sat about 3px left of the text under it) */
+  .brand-logo { display: block; width: auto; height: 44px; margin-left: -5px; }
+  .foot-logo { height: 56px; margin-left: -7px; }
   @media (max-width: 559px) { .site-head .brand-logo { height: 40px; } }
   .nav { display: none; margin-left: auto; }
   .nav-list { display: flex; gap: 4px; list-style: none; }
   .nav-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--r-sm); color: var(--body); font-size: 0.9375rem; font-weight: 500; text-decoration: none; white-space: nowrap; transition: color var(--dur-1) ease, background-color var(--dur-1) ease; }
   .nav-link:hover { color: var(--ink); background: rgb(var(--silver-rgb) / 0.08); }
-  .nav-link[aria-current="page"], .nav-link.is-current { color: var(--ink); background: rgb(var(--silver-rgb) / 0.1); }
+  .nav-link[aria-current], .nav-link.is-current { color: var(--ink); background: rgb(var(--silver-rgb) / 0.1); }
   /* Services: a short list under its button */
   .drop { position: relative; }
   .drop > summary { cursor: pointer; list-style: none; user-select: none; }
@@ -440,7 +454,19 @@ const isHome = path === "/";
   .drop-panel a[aria-current="page"] { color: var(--cyan); }
   .drop-panel li:last-child { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--hairline); }
   .head-cta { display: none; margin-left: auto; }
-  .menu { margin-left: auto; } /* (phones: the quote button is in the menu, so the menu button takes the right edge) */
+  /* (critique round 5) on the quote page itself the header button is the page you are on, not a call to act: it drops to
+     the outline style, so the form's own submit button is the one filled button in view */
+  .head-cta[aria-current="page"] { background: transparent; border-color: var(--hairline-strong); color: var(--ink); box-shadow: none; }
+  .head-cta[aria-current="page"]:hover { background: rgb(var(--silver-rgb) / 0.08); border-color: var(--field-line-hover); color: var(--ink); }
+  .menu { margin-left: auto; } /* (under 360 px the quote button is only in the menu, so the menu button takes the right edge) */
+  /* phones from 360 px: a short "Free Quote" beside the menu button, so the main action is one tap from anywhere on a
+     long page (critique round 11) */
+  @media (min-width: 360px) and (max-width: 559px) {
+    .head-row { gap: 8px; }
+    .head-cta { display: inline-flex; padding: 0 14px; }
+    .head-cta .hc-get { display: none; }
+    .menu { margin-left: 0; }
+  }
   .menu > summary { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-sm); border: 1px solid var(--hairline); color: var(--ink); cursor: pointer; list-style: none; }
   .menu > summary::-webkit-details-marker { display: none; }
   .menu > summary .icon { width: 22px; height: 22px; }
@@ -454,7 +480,7 @@ const isHome = path === "/";
   .menu-panel ul { list-style: none; display: grid; margin-bottom: 16px; }
   .menu-label { padding-top: 8px; color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
   .menu-panel li a { display: flex; align-items: center; min-height: 48px; color: var(--ink); font-size: 1.0625rem; font-weight: 500; text-decoration: none; border-bottom: 1px solid var(--hairline-soft); }
-  .menu-panel li a[aria-current="page"] { color: var(--cyan); }
+  .menu-panel li a[aria-current] { color: var(--cyan); }
   .menu-panel .button { width: 100%; }
   @media (min-width: 560px) { .head-cta { display: inline-flex; } .menu { margin-left: 0; } }
   .brand, .head-cta { flex: none; white-space: nowrap; }
@@ -490,12 +516,53 @@ const isHome = path === "/";
   .lead { font-size: 1.1875rem; color: var(--body); }
   .page blockquote { margin-left: 0; padding: 4px 0 4px 18px; border-left: 3px solid var(--hairline-strong); color: var(--muted); }
   code { font-family: var(--mono); font-size: 0.875em; padding: 2px 6px; border-radius: 6px; background: var(--surface-strong); color: var(--ink); }
-  pre { overflow-x: auto; position: relative; padding: 16px 18px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg-deep); font-size: 0.875rem; line-height: 1.55; }
+  /* (critique round 5) a code block wider than its box shows the same soft edge as a docs table on each side that has
+     more to see; the covers in the block's own colour scroll with the code and hide the edge at each end */
+  pre {
+    overflow-x: auto; position: relative; padding: 16px 18px; border: 1px solid var(--hairline); border-radius: var(--r-md); font-size: 0.875rem; line-height: 1.55;
+    background:
+      linear-gradient(to right, var(--bg-deep) 40%, rgb(6 10 18 / 0)) left / 32px 100% no-repeat local,
+      linear-gradient(to left, var(--bg-deep) 40%, rgb(6 10 18 / 0)) right / 32px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgb(var(--silver-rgb) / 0.3), rgb(var(--silver-rgb) / 0)) left / 12px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgb(var(--silver-rgb) / 0.3), rgb(var(--silver-rgb) / 0)) right / 12px 100% no-repeat scroll,
+      var(--bg-deep);
+  }
+  /* (site audit 2026-11-21, critique round 3) A code block wider than a phone shows the same soft edge as the docs tables
+     on each side that has more to see. The covers are the code theme's own background (github-dark-default, which Shiki
+     sets inline), so they move with the code and hide an edge once it is scrolled to that end. */
+  pre.astro-code {
+    background-image:
+      linear-gradient(to right, #0d1117 40%, rgb(13 17 23 / 0)),
+      linear-gradient(to left, #0d1117 40%, rgb(13 17 23 / 0)),
+      radial-gradient(farthest-side at 0 50%, rgb(var(--silver-rgb) / 0.45), rgb(var(--silver-rgb) / 0)),
+      radial-gradient(farthest-side at 100% 50%, rgb(var(--silver-rgb) / 0.45), rgb(var(--silver-rgb) / 0));
+    background-position: left, right, left, right;
+    background-size: 36px 100%, 36px 100%, 14px 100%, 14px 100%;
+    background-repeat: no-repeat;
+    background-attachment: local, local, scroll, scroll;
+  }
   pre code { padding: 0; background: none; font-size: inherit; }
   /* inline code that wraps keeps padding and rounded ends on every line; Doc.astro marks short code .whole and
      hyphenated words in longer code .nobr, so code never breaks at a hyphen */
   :not(pre) > code { -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-  code.whole, code .nobr { white-space: nowrap; }
+  code.whole, code .nobr, .glue { white-space: nowrap; }
+  /* (critique round 7: on a phone the code blocks ran off the right edge, and the soft edge sat under the text where
+     nobody saw it) under 600px a code block wraps instead of scrolling: a wrapped line continues indented, so each
+     line of the original still reads as one. CSS only, so copied code is unchanged. */
+  @media (max-width: 599px) {
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+    /* (critique round 11) --lead is the line's own indent (Doc.astro): a continuation sits 3ch in from the line's text */
+    pre .line { display: inline-block; width: 100%; padding-left: calc((var(--lead, 0) + 3) * 1ch); text-indent: calc((var(--lead, 0) + 3) * -1ch); }
+  }
+  /* (critique round 10: at 1440 a demo's printed output was cut at the reading column's edge while the right of the
+     page stood empty) on a wide screen a code block wider than the column grows to the right, up to 48px from the
+     window's edge, and scrolls only past that; a narrow block keeps the column's width */
+  @media (min-width: 1100px) {
+    .page > pre { width: max-content; min-width: 100%; max-width: calc(50vw + 50% - 48px); }
+  }
+  /* (critique round 9) Doc.astro keeps an email address or hyphenated word in a code block whole; under 360px an
+     address can be wider than the line, so there it may break again rather than push the block sideways */
+  @media (max-width: 359px) { pre .nobr { white-space: inherit; } }
   .table-wrap { position: relative; overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
   th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hairline); }
@@ -509,7 +576,11 @@ const isHome = path === "/";
   .foot-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
   .foot-cols h2 { margin-bottom: 10px; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
   .foot-cols ul { list-style: none; }
-  .foot-cols a { display: inline-flex; align-items: center; min-height: 36px; color: var(--body); text-decoration: none; }
+  /* (critique round 7: on a phone a link that wraps to two lines lost its spacing, so the rows ran 30/36px) the space
+     above and below each link is padding, so a wrapped link keeps the same gap to its neighbours as a one-line link */
+  .foot-cols a { display: inline-flex; align-items: center; min-height: 36px; padding-block: 6px; color: var(--body); text-decoration: none; }
+  /* (critique 11-17, round 9) 36px is fine for a mouse; on a touch screen each footer link is a 44px target */
+  @media (pointer: coarse) { .foot-cols a { min-height: 44px; padding-block: 10px; } }
   .foot-cols a:hover { color: var(--ink); text-decoration: underline; }
   .legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--hairline-soft); color: var(--muted); font-size: 0.875rem; }
   .legal p { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }

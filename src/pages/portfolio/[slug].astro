@@ -15,6 +15,7 @@ import CaseFrame from "../../components/CaseFrame.astro";
 import { isStaged, liveLink, publishable, shownCases } from "../../data/case-studies";
 import type { CaseStudyData } from "../../data/case-studies";
 import { titleCase } from "../../lib/title-case";
+import { noWidow } from "../../lib/no-widow";
 import { existsSync, statSync } from "node:fs";
 
 export function getStaticPaths() {
@@ -88,8 +89,8 @@ const ld = staged ? [] : [
     <div class="wrap">
       <nav class="crumbs" aria-label="Breadcrumbs">
         <ol>
-          <li><a href="/">Home</a></li>
-          <li><a href="/portfolio/">Our Work</a></li>
+          <li><a class="tap" href="/">Home</a></li>
+          <li><a class="tap" href="/portfolio/">Our Work</a></li>
           <li><span aria-current="page" translate="no">{c.business}</span></li>
         </ol>
       </nav>
@@ -105,8 +106,10 @@ const ld = staged ? [] : [
           <div class="cs-actions">
             {c.video && <a class="button" href="#walkthrough" data-track="case_study_walkthrough"><Icon name="play" />Watch the Walkthrough</a>}
             <a class:list={["button", { secondary: Boolean(c.video) }]} href={quote} data-track="cta_case_quote">Get a Free Quote</a>
-            {link && <a class="button secondary" href={link} target="_blank" rel="noopener" data-track="case_study_live">Visit Live Website<span class="sr-only"> (opens in a new tab)</span><Icon name="arrowUpRight" /></a>}
           </div>
+          {/* (critique 11-17, round 9) a third button wrapped onto a row of its own at 1440; the live site is a plain
+              link under the two buttons instead, so the row stays one row and the quote stays the main action */}
+          {link && <p class="cs-live"><a class="text-link" href={link} target="_blank" rel="noopener" data-track="case_study_live">Visit Live Website<span class="sr-only"> (opens in a new tab)</span><Icon name="arrowUpRight" /></a></p>}
         </div>
         <CaseCover study={c} eager zoom />
       </div>
@@ -176,7 +179,7 @@ const ld = staged ? [] : [
                 {phones.map((s) => (
                   <figure class="reveal">
                     <CaseFrame shot={s} sizes={phoneSizes} zoom />
-                    {s.caption && <figcaption>{s.caption}</figcaption>}
+                    {s.caption && <figcaption>{noWidow(s.caption)}</figcaption>}
                   </figure>
                 ))}
               </div>
@@ -189,7 +192,7 @@ const ld = staged ? [] : [
                 {desktops.map((s, i) => (
                   <figure class="reveal">
                     <CaseFrame shot={s} sizes={desktops.length % 2 === 1 && i === 0 ? leadSizes : pairSizes} zoom />
-                    {s.caption && <figcaption>{s.caption}</figcaption>}
+                    {s.caption && <figcaption>{noWidow(s.caption)}</figcaption>}
                   </figure>
                 ))}
               </div>
@@ -200,11 +203,16 @@ const ld = staged ? [] : [
               <h3 class="cs-sub"><Icon name="play" />Walkthrough</h3>
               <figure>
                 <CaseFrame device="desktop">
+                  <div class="cs-player">
                   <video controls playsinline preload="none" loading="lazy" poster={c.video.poster} width={c.video.width} height={c.video.height} aria-label="Walkthrough video">
                     <source src={c.video.src} type="video/mp4" />
                     {c.video.captions && <track kind="captions" src={c.video.captions} srclang="en" label="English" default />}
                     <a href={c.video.src} download>Download the walkthrough (MP4{videoMB ? `, ${videoMB} MB` : ""})</a>
                   </video>
+                  {/* (critique 11-17: before it plays, the browser's own bar read "0:00", since nothing is loaded yet) with
+                      script, the poster shows one play button and the native controls come back once it starts */}
+                  <button class="cs-play" type="button" hidden data-play><Icon name="play" /><span>Play the walkthrough</span>{c.video.length && <span class="cs-len">{c.video.length}</span>}</button>
+                  </div>
                 </CaseFrame>
                 <figcaption>
                   <span>{c.video.label}</span>
@@ -223,10 +231,11 @@ const ld = staged ? [] : [
           <div class="cs-viewer-tools">
             <button class="cs-viewer-btn" type="button" data-step="-1" aria-label="Previous picture"><Icon name="caretLeft" /></button>
             <button class="cs-viewer-btn" type="button" data-step="1" aria-label="Next picture"><Icon name="caretRight" /></button>
+            <button class="cs-viewer-btn" type="button" data-zoom aria-pressed="false" aria-label="Zoom in to read the page" hidden><Icon name="magnifyingGlass" /></button>
             <button class="cs-viewer-btn" type="button" data-close aria-label="Close the picture" autofocus><Icon name="x" /></button>
           </div>
         </div>
-        <p class="cs-viewer-hint">Swipe sideways to see the whole page.</p>
+        <p class="cs-viewer-hint">Swipe to step through the pictures. The magnifier zooms in so you can read the page.</p>
         <p class="cs-viewer-keys">Left and Right arrow keys step through the pictures. Esc closes.</p>
         <div class="cs-viewer-pic" data-pic></div>
         <p class="sr-only" aria-live="polite" data-live></p>
@@ -235,12 +244,20 @@ const ld = staged ? [] : [
         // "Watch the Walkthrough" scrolls to the video and starts it (it has no sound), instead of only jumping there
         const walk = document.querySelector<HTMLVideoElement>("#walkthrough video");
         document.querySelectorAll<HTMLAnchorElement>('a[href="#walkthrough"]').forEach((a) => a.addEventListener("click", () => { walk?.play().catch(() => {}); }));
+        const playBtn = document.querySelector<HTMLButtonElement>("[data-play]");
+        if (walk && playBtn) {
+          const started = () => { walk.controls = true; playBtn.hidden = true; };
+          walk.controls = false;
+          playBtn.hidden = false;
+          walk.addEventListener("play", started, { once: true });
+          playBtn.addEventListener("click", () => { started(); walk.focus(); walk.play().catch(() => {}); });
+        }
         // Opens a cover or showcase picture's largest file in the viewer instead of on its own, with its caption as the
         // title and "3 of 8" beside it. Focus starts on Close. The arrow buttons, the Left and Right keys and (on a touch
         // screen) a sideways swipe step through every picture; Escape, the close button or a
         // click on the dimmed page closes it, and focus goes back to the picture last shown. On a narrow screen a computer
-        // shot is shown at full width in a strip that scrolls sideways and starts at the content, so it is really larger
-        // than on the page. A new-tab or modified click still opens the file itself.
+        // shot first fits the screen (the whole picture, and a swipe steps); the magnifier draws it at a readable width in a
+        // strip that scrolls sideways and starts at the content, and there a swipe pans (critique round 11). A new-tab or modified click still opens the file itself.
         const own = (src: string) => /^\/media\/[a-z0-9/-]+\.webp$/.test(src);
         const narrow = window.matchMedia("(max-width: 759.98px)");
         for (const dialog of document.querySelectorAll<HTMLDialogElement>("[data-shot-viewer]")) {
@@ -251,7 +268,16 @@ const ld = staged ? [] : [
           const live = dialog.querySelector<HTMLElement>("[data-live]")!;
           const links = [...document.querySelectorAll<HTMLAnchorElement>("a.cf-zoom")].filter((l) => own(l.getAttribute("href") ?? "") && l.querySelector("img"));
           if (links.length < 2) dialog.querySelectorAll<HTMLElement>("[data-step]").forEach((b) => (b.hidden = true));
+          const zoomBtn = dialog.querySelector<HTMLButtonElement>("[data-zoom]")!;
           let at = 0;
+          // the sideways strip (zoomed) can be scrolled by keyboard too
+          const setZoom = (on: boolean) => {
+            dialog.classList.toggle("zoomed", on);
+            zoomBtn.setAttribute("aria-pressed", String(on));
+            zoomBtn.setAttribute("aria-label", on ? "Fit the picture to the screen" : "Zoom in to read the page");
+            if (on) { pic.tabIndex = 0; pic.setAttribute("role", "region"); pic.setAttribute("aria-label", "Picture, scrolls sideways"); }
+            else { pic.removeAttribute("tabindex"); pic.removeAttribute("role"); pic.removeAttribute("aria-label"); }
+          };
           const show = (i: number) => {
             at = (i + links.length) % links.length;
             const link = links[at], from = link.querySelector("img")!;
@@ -270,10 +296,9 @@ const ld = staged ? [] : [
             count.textContent = links.length > 1 ? `${at + 1} of ${links.length}` : "";
             const wide = from.width > from.height;
             dialog.classList.toggle("tall", !wide);
-            // the sideways strip can be scrolled by keyboard too
-            const pans = wide && narrow.matches;
-            if (pans) { pic.tabIndex = 0; pic.setAttribute("role", "region"); pic.setAttribute("aria-label", "Picture, scrolls sideways"); }
-            else { pic.removeAttribute("tabindex"); pic.removeAttribute("role"); pic.removeAttribute("aria-label"); }
+            // every picture opens fitted; the magnifier is offered for a computer shot on a narrow screen
+            zoomBtn.hidden = !(wide && narrow.matches);
+            setZoom(false);
             toContent();
           };
           // a sideways strip starts where the site's content column begins, about a tenth of the way across a
@@ -298,6 +323,7 @@ const ld = staged ? [] : [
               toContent();
             });
           });
+          zoomBtn.addEventListener("click", () => { setZoom(!dialog.classList.contains("zoomed")); toContent(); });
           const step = (by: number) => { show(at + by); live.textContent = `${cap.textContent}, ${count.textContent}`; };
           dialog.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((b) => b.addEventListener("click", () => step(Number(b.dataset.step))));
           dialog.addEventListener("keydown", (e) => {
@@ -370,12 +396,12 @@ const ld = staged ? [] : [
       <div class="cta-band reveal">
         <div>
           <h2>{titleCase("Want a website built for your business?")}</h2>
-          <p>From booking systems to custom business websites, NUXY builds digital experiences around the way your business operates.</p>
+          <p>From online booking to fully custom sites, we build each website around the way your business already works.</p>
           <a class="cs-levels" href="/web-design/" data-track="cta_case_levels">Compare website levels and prices<Icon name="arrowRight" /></a>
         </div>
         <div class="cta-actions">
           <a class="button" href={quote} data-track="cta_case_quote_end">Get a Free Quote</a>
-          <a class="button secondary" href="/portfolio/" data-track="cta_case_portfolio">See the full portfolio<Icon name="arrowRight" /></a>
+          <a class="button secondary" href="/portfolio/" data-track="cta_case_portfolio">See All Our Work<Icon name="arrowRight" /></a>
         </div>
       </div>
     </div>
@@ -403,6 +429,7 @@ const ld = staged ? [] : [
     .cs-grid { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
     .cs-copy { display: contents; }
     .cs-copy > .cs-actions { order: 1; }
+    .cs-copy > .cs-live { order: 1; }
     .cs-grid > :global(.cover) { order: 2; margin-top: 32px; }
     .cs-copy > .cs-facts { order: 3; margin-top: 28px; }
   }
@@ -426,6 +453,8 @@ const ld = staged ? [] : [
   .cs-delivered { display: grid; gap: 4px; }
   .cs-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
   @media (max-width: 479px) { .cs-actions .button { width: 100%; } }
+  .cs-live { margin-top: 8px; }
+  .cs-live a { min-height: 44px; color: var(--link); }
 
   /* the hero already ends with its own padding: the story starts closer under it */
   .cs-story.section { padding-top: clamp(24px, 4vw, 48px); }
@@ -460,6 +489,31 @@ const ld = staged ? [] : [
   .cs-phones { display: grid; gap: 20px 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (min-width: 760px) { .cs-phones { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   .cs-video { scroll-margin-top: 16px; }
+  .cs-player { position: relative; }
+  .cs-player video { display: block; width: 100%; height: auto; }
+  /* (critique 11-17, round 8) the poster is now the film's opening frame (the home page, taken from walkthrough.mp4 with
+     ffmpeg), not a mid-booking screen, and Play sits in the empty lower-right corner */
+  .cs-play {
+    /* (round 9) centred, Play covered the poster's headline: it sits at the lower right, the one empty corner of the
+       opening frame (the lower left holds the shop's prices), where a player keeps its controls */
+    position: absolute; right: clamp(12px, 3%, 24px); bottom: clamp(12px, 4%, 28px); display: inline-flex; align-items: center; gap: 10px;
+    min-height: 52px; padding: 0 22px 0 18px; border: 1px solid rgb(255 255 255 / 0.22); border-radius: var(--r-full);
+    background: rgb(2 5 12 / 0.78); color: var(--ink); font: inherit; font-weight: 650; cursor: pointer;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.45); transition: background-color 160ms ease-out, border-color 160ms ease-out;
+  }
+  .cs-play[hidden] { display: none; }
+  .cs-play span { white-space: nowrap; }
+  /* (critique 11-17, round 8) at rest nothing said how long the film is: the length rides on the button */
+  .cs-len { padding-left: 10px; border-left: 1px solid rgb(255 255 255 / 0.28); color: var(--body); font-weight: 500; font-variant-numeric: tabular-nums; }
+  /* (critique 11-17, round 7) at rest the poster's own gold "Send booking request" button read as a second control
+     beside Play: a scrim dims the poster until the video starts, so Play is the one bright thing on it */
+  .cs-player:has(.cs-play:not([hidden]))::after { content: ""; position: absolute; inset: 0; background: rgb(2 5 12 / 0.55); pointer-events: none; }
+  .cs-play { z-index: 1; }
+  @media (max-width: 599px) { .cs-play { min-height: 44px; padding: 0 16px 0 13px; gap: 8px; font-size: 0.9375rem; } }
+  .cs-play :global(.icon) { width: 1.25em; height: 1.25em; color: var(--cyan); }
+  @media (hover: hover) { .cs-play:hover { border-color: var(--blue-line); background: rgb(2 5 12 / 0.9); } }
+  .cs-play:active { scale: 0.97; }
+  .cs-play:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
   .cs-video video::cue { font-size: 0.8em; background: rgb(2 5 12 / 0.8); }
   .cs-video:focus { outline: none; }
   /* The frame clips anything outside it, so the video's own focus ring sits just inside the edge. */
@@ -490,15 +544,16 @@ const ld = staged ? [] : [
   /* a picture that doesn't scroll sideways keeps the sideways swipe for stepping; scrolling up and down and pinch zoom
      still work (the narrow-screen strip below gives the sideways pan back to scrolling) */
   .cs-viewer-pic { touch-action: pan-y pinch-zoom; }
-  /* on a narrow screen a computer shot is drawn at a readable width in a strip that scrolls sideways */
+  /* on a narrow screen a computer shot fits first; zoomed, it is drawn at a readable width in a strip that scrolls sideways */
   @media (max-width: 759.98px) {
     /* a smaller title on a phone, the count under it; the caption may take three lines so the longest one is whole */
     .cs-viewer-head h2 { display: grid; gap: 2px; font-size: 0.9375rem; }
     .cs-viewer-head h2 [data-cap] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
     .cs-viewer-count { font-size: 0.8125rem; }
     .cs-viewer:not(.tall) .cs-viewer-hint { display: block; }
-    .cs-viewer:not(.tall) .cs-viewer-pic { overflow-x: auto; overscroll-behavior-x: contain; touch-action: auto; }
-    .cs-viewer:not(.tall) .cs-viewer-pic :global(img) { width: 1100px; max-width: none; max-height: none; margin: 0; }
+    .cs-viewer.zoomed .cs-viewer-pic { overflow-x: auto; overscroll-behavior-x: contain; touch-action: auto; }
+    .cs-viewer.zoomed .cs-viewer-pic :global(img) { width: 1100px; max-width: none; max-height: none; margin: 0; }
+    .cs-viewer-btn[aria-pressed="true"] { border-color: var(--focus); color: var(--focus); }
   }
 
   .cs-close { display: grid; gap: clamp(32px, 5vw, 56px); }

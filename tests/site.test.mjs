@@ -65,13 +65,15 @@ test("the build has every page, and the made-up data matches the pages", () => {
   for (const e of examples) assert.ok(pages.has(`/work/${e.slug}/`), e.slug);
 });
 
-test("every demo card offers two links, Live Demo and View Project, each named for its demo and pointing at a real page", () => {
+// (critique 11-17) "View Project" is the real client case study's button only; demo cards say what each link opens
+test("every demo card offers two links, Open the Demo Site and Computer & Phone View, each named for its demo and pointing at a real page", () => {
   for (const u of ["/demos/"]) { // the one page that shows all four default demos (Halvane, the Immersive concept, is left out of default lists)
     const html = pages.get(u);
     for (const d of demoSites.filter((x) => x.tier !== "immersive")) {
-      const live = html.match(new RegExp(`<a class="demo-act demo-live"[^>]*href="/example-sites/${d.slug}/"[^>]*>Live Demo<span class="sr-only"[^>]*>: ([^<]+)<`));
-      assert.ok(live, `${u} Live Demo for ${d.slug}`);
-      assert.match(html, new RegExp(`href="/examples/${d.slug}/"[^>]*>View Project<span class="sr-only"`), `${u} View Project for ${d.slug}`);
+      const live = html.match(new RegExp(`<a class="demo-act demo-live"[^>]*href="/example-sites/${d.slug}/"[^>]*>Open the Demo Site<span class="sr-only"[^>]*>: ([^<]+)<`));
+      assert.ok(live, `${u} Open the Demo Site for ${d.slug}`);
+      assert.match(html, new RegExp(`href="/examples/${d.slug}/"[^>]*>Computer &amp; Phone View<span class="sr-only"`), `${u} Computer & Phone View for ${d.slug}`);
+      assert.doesNotMatch(html, new RegExp(`href="/examples/${d.slug}/"[^>]*>View Project<`), `${u}: View Project is kept for client case studies`);
       assert.doesNotMatch(html, new RegExp(`<a class="demo-act[^>]*href="/examples/${d.slug}/#features"`), `${u} has no third card link for ${d.slug} (approvals 91)`);
     }
   }
@@ -217,7 +219,11 @@ test("demo pages opt in to view transitions before any stylesheet, with the inli
   const hash = "'sha256-" + createHash("sha256").update("@view-transition{navigation:auto}").digest("base64") + "'";
   for (const u of demoUrls) {
     const h = pages.get(u), head = h.slice(0, h.indexOf("</head>"));
-    assert.ok(head.indexOf(optIn) > 0 && head.indexOf(optIn) < head.indexOf("<link rel=\"stylesheet\""), `${u}: opt-in first`);
+    // the page's own CSS is inlined (astro.config.mjs, build.inlineStylesheets), so "any stylesheet" is the first other
+    // <style> block or a <link rel="stylesheet">, and at least one must come after the opt-in
+    const at = head.indexOf(optIn);
+    const sheets = [...head.matchAll(/<style[^>]*>|<link rel="stylesheet"/g)].map((m) => m.index).filter((i) => i !== at);
+    assert.ok(at > 0 && sheets.length > 0 && sheets.every((i) => i > at), `${u}: opt-in first`);
     assert.ok(/content-security-policy" content="[^"]*style-src [^;"]*/.exec(h)?.[0].includes(hash), `${u}: hash in the CSP`);
   }
 });

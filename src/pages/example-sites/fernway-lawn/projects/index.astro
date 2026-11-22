@@ -1,40 +1,61 @@
 ---
-// Fernway's example projects: four before/after pairs you can drag to compare. The pictures are drawn illustrations
-// (components/demo/fernway/ProjectArt.astro), each tagged "Example transformation"; no real customer or yard.
+// Fernway's example projects: one before/after pair you can drag to compare (the backyard), then three finished jobs.
+// Every photo is an AI-generated example (docs/demo-photo-assets.md), tagged as such; no real customer or yard.
 import Shell from "../../../../components/demo/fernway/Shell.astro";
-import ProjectArt from "../../../../components/demo/fernway/ProjectArt.astro";
+import DemoPhoto from "../../../../components/demo/DemoPhoto.astro";
 import BeforeAfter from "../../../../components/demo/BeforeAfter.astro";
 import { base, projects } from "../../../../data/demos/fernway";
+
+const [lead, ...others] = projects;
+// the other jobs read as a dated log of the season, in the order they were done
+const rest = [...others].sort((a, b) => a.month - b.month);
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+// each job opens the estimate already set to its service, a yard of its size and its town
+const quote = (p: (typeof projects)[number]) => `${base}/quote/?service=${p.service}&size=${p.size}&town=${p.town}`;
 ---
-<Shell title="Projects" current="projects" description="Four example before-and-after landscaping transformations from Fernway, a fictional lawn care company in a Nuxy Automation demonstration. Drag each picture to compare.">
-  <section class="fw-section fw-p-hero" aria-labelledby="p-h">
+<Shell title="Projects" current="projects" description="Example landscaping jobs from Fernway, a fictional lawn care company in a Nuxy Automation demonstration: a before-and-after backyard you can drag to compare, and three finished jobs.">
+  <section class="fw-section fw-p-hero" aria-labelledby="p-h" data-bar-clear>
     <div class="fw-wrap">
       <div class="fw-head">
-        <p class="fw-kicker">Projects</p>
-        <h1 id="p-h">Drag the line on any yard.</h1>
-        <p class="fw-lead">Four kinds of job we do every season. Each picture is an illustrated example, not a customer’s home.</p>
+        <h1 id="p-h">Four jobs from a Fernway season.</h1>
+        <p class="fw-lead">One backyard you can drag to compare, and three finished jobs. Every photo is an AI-generated example, not a customer’s home.</p>
       </div>
     </div>
   </section>
 
   <section class="fw-section fw-p-list" aria-label="Example projects">
     <div class="fw-wrap">
-      <ol class="fw-p-grid" role="list">
-        {projects.map((p, i) => (
-          <li class="fw-p fw-rise" style={`--d:${(i % 2) * 90}ms`}>
-            <BeforeAfter label={p.title} tag="Example transformation" start={i % 2 ? 58 : 42}>
-              <ProjectArt slot="before" art={p.art} state="before" />
-              <ProjectArt slot="after" art={p.art} state="after" />
-            </BeforeAfter>
-            <div class="fw-p-body">
-              <p class="fw-fine">{p.place} · {p.time}</p>
-              <h2>{p.title}</h2>
-              <ul class="fw-checks" role="list">{p.work.map((w) => <li>{w}</li>)}</ul>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <p class="fw-demo-note fw-p-note">Illustrated example transformations. Fernway and the towns named are fictional.</p>
+      <article class="fw-p-lead" aria-labelledby="p-lead-h" data-bar-clear>
+        <BeforeAfter label={lead.title} tag="Example images" start={46}>
+          <DemoPhoto slot="before" name="fernway-before" alt="The backyard before: long grass with bare patches, leaf litter and overgrown beds along the fence" sizes="(min-width: 1024px) 60vw, calc(100vw - 40px)" priority />
+          <DemoPhoto slot="after" name={lead.photo} alt={lead.alt} sizes="(min-width: 1024px) 60vw, calc(100vw - 40px)" />
+        </BeforeAfter>
+        <div class="fw-p-body">
+          <h2 id="p-lead-h">{lead.title}</h2>
+          <p class="fw-fine">{lead.place}. {lead.time}.</p>
+          <ul class="fw-checks" role="list">{lead.work.map((w) => <li>{w}</li>)}</ul>
+          <a class="fw-btn" href={quote(lead)}>{lead.cta}</a>
+        </div>
+      </article>
+
+      <section class="fw-p-log" aria-labelledby="p-log-h">
+        <h2 id="p-log-h">The rest of the season</h2>
+        <ol class="fw-p-rows" role="list">
+          {rest.map((p) => (
+            <li class="fw-p-row">
+              <p class="fw-p-when fw-display">{MONTHS[p.month - 1]}</p>
+              <DemoPhoto name={p.photo} alt={p.alt} sizes="(min-width: 900px) 220px, 96px" />
+              <div class="fw-p-what">
+                <h3>{p.title}</h3>
+                <p class="fw-fine">{p.place}. {p.time}.</p>
+              </div>
+              <ul class="fw-checks fw-p-work" role="list">{p.work.map((w) => <li>{w}</li>)}</ul>
+              <a class="fw-link fw-p-go" href={quote(p)}>{p.cta}</a>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <p class="fw-demo-note fw-p-note">AI-generated example photos. Fernway and the towns named are fictional.</p>
     </div>
   </section>
 
@@ -51,13 +72,37 @@ import { base, projects } from "../../../../data/demos/fernway";
 
 <style>
   .fw-p-hero { background: var(--fw-cream); padding-bottom: clamp(24px, 4vw, 40px); }
-  .fw-p-hero h1 { font-size: clamp(2.25rem, 5.4vw, 4rem); }
+  .fw-p-hero h1 { font-size: clamp(2.25rem, 5.4vw, 4rem); max-width: 16ch; }
   .fw-p-list { background: linear-gradient(var(--fw-cream), var(--fw-paper) 240px); padding-top: clamp(16px, 3vw, 32px); }
-  .fw-p-grid { display: grid; gap: clamp(28px, 4vw, 48px) 28px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
-  .fw-p { display: grid; gap: 18px; align-content: start; }
-  .fw-p :global(.ba) { --ba-radius: 26px; --ba-handle-ink: #173826; --ba-label-bg: rgba(19, 32, 26, 0.75); }
-  .fw-p-body { display: grid; gap: 10px; padding-inline: 4px; }
-  .fw-p-body h2 { font-size: clamp(1.375rem, 2.4vw, 1.75rem); }
-  .fw-p-note { margin-top: 28px; }
+
+  /* the backyard leads, wide, with its notes beside it; the other three jobs sit under it as a quieter row */
+  .fw-p-lead { display: grid; gap: 24px 48px; align-items: center; }
+  @media (min-width: 1024px) { .fw-p-lead { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+  .fw-p-lead :global(.ba) { --ba-radius: var(--fw-radius); --ba-handle-ink: #1f3a2b; --ba-label-bg: rgba(19, 32, 26, 0.75); }
+  .fw-p-body { display: grid; gap: 12px; justify-items: start; }
+  .fw-p-body h2 { font-size: clamp(1.625rem, 3vw, 2.25rem); }
+  .fw-p-body .fw-btn { margin-top: 8px; }
+
+  /* the other jobs, as a season's log: month, photo, the job, what was done. On phones the photo is a square at the
+     left and the words stack beside it; from 900px each job is one ruled row, the month standing in the margin */
+  .fw-p-log { margin-top: clamp(56px, 8vw, 104px); }
+  .fw-p-log h2 { font-size: clamp(1.625rem, 3vw, 2.25rem); }
+  .fw-p-rows { margin-top: clamp(16px, 2.4vw, 28px); border-bottom: 1px solid var(--fw-line); }
+  .fw-p-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); grid-template-areas: "pic when" "pic what" "pic work" "pic go"; gap: 8px 18px; align-items: start; padding-block: 24px; border-top: 1px solid var(--fw-line); }
+  .fw-p-when { grid-area: when; font-size: 1.125rem; color: var(--fw-forest); }
+  .fw-p-row :global(.demo-photo) { grid-area: pic; aspect-ratio: 1; border-radius: 12px; }
+  .fw-p-what { grid-area: what; display: grid; gap: 4px; }
+  .fw-p-what h3 { font-size: 1.25rem; line-height: 1.1; }
+  .fw-p-work { grid-area: work; margin-top: 4px; }
+  .fw-p-go { grid-area: go; justify-self: start; background-size: 100% 1px; }
+  @media (min-width: 900px) {
+    .fw-p-row { grid-template-columns: 9rem 220px minmax(0, 1.2fr) minmax(0, 1fr); grid-template-areas: "when pic what work" "when pic go work"; grid-template-rows: auto 1fr; gap: 10px clamp(20px, 2.6vw, 40px); padding-block: 28px; }
+    .fw-p-when { font-size: clamp(1.75rem, 2.4vw, 2.25rem); line-height: 1; }
+    .fw-p-row :global(.demo-photo) { aspect-ratio: 3 / 2; border-radius: var(--fw-radius); }
+    .fw-p-what h3 { font-size: 1.375rem; }
+    .fw-p-work { margin-top: 0; }
+    .fw-p-go { align-self: end; }
+  }
+  .fw-p-note { margin-top: 32px; }
   .fw-end { padding-top: 0; background: var(--fw-paper); }
 </style>

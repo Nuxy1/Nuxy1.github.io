@@ -39,7 +39,10 @@ export function makeFixture(force = false) {
   };
   const encode = (...args) => execFileSync(process.execPath, [join(root, "scripts", "encode-cinematic.mjs"), ...args, "--out", media, "--manifest", fixtureManifest], { stdio: ["ignore", "ignore", "inherit"] });
 
-  LOOPS.forEach((id, i) => encode("loop", id, master(id, { hue: i * 60 }), "--length", "6.5"));
+  // (the home hero, like the real one, shows a portrait still under 1024px instead of a video)
+  const still = join(masters, "hero-portrait.png");
+  ffmpeg(["-f", "lavfi", "-i", `testsrc2=size=1080x1920:rate=1:duration=1${label("hero-portrait")}`, "-frames:v", "1", still]);
+  LOOPS.forEach((id, i) => encode("loop", id, master(id, { hue: i * 60 }), "--length", "6.5", ...(id === "hero" ? ["--phone-still", still] : [])));
   const captions = join(masters, "captions.vtt");
   writeFileSync(captions, "WEBVTT\n\n00:00.000 --> 00:03.000\nTest pattern captions\n\n00:03.000 --> 00:06.000\nSecond caption\n");
   encode("demo", "vantage-motors", master("vantage-motors", { seconds: 8, hue: 200, sound: true }), "--captions", captions, "--vertical", master("vantage-motors-v", { w: 1080, h: 1920, seconds: 8, hue: 200, sound: true }));

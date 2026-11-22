@@ -1,27 +1,38 @@
 ---
 import { titleCase } from "../../lib/title-case";
 // /web-design/: the website levels hub. Four levels (Business, Signature, Immersive, Flagship) with what each one is
-// for, the price, what it looks like (the same made-up café at three levels, then three concept projects), the
-// comparison meters, the expectation matrix, why immersive work costs more, the add-ons, where each level ends with
-// its timeline and revisions, automation that plugs into any level, the five-question level finder and the FAQ.
+// for, the price, what it looks like (the same made-up café at three levels, then three concept projects), one
+// comparison table (timeline, revisions and price included), why immersive work costs more, the add-ons, automation
+// that plugs into any level, the five-question level finder and six questions. (2026-11-17: the meter tabs, the
+// separate timelines section and five questions the table already answers were cut; each level page keeps its meters,
+// its boundaries and its own questions.)
 // Every word about a level comes from data/tiers.ts, the one place its prices live (tests/levels.test.mjs pins them).
 // The anchors #levels, #compare, #finder and #add-ons are linked from the level pages; keep them.
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import DemoSites from "../../components/DemoSites.astro";
 import LevelRail from "../../components/levels/LevelRail.astro";
-import LevelCompare from "../../components/levels/LevelCompare.astro";
 import LevelMatrix from "../../components/levels/LevelMatrix.astro";
 import Recommender from "../../components/levels/Recommender.astro";
 import ThreeLevels from "../../components/levels/ThreeLevels.astro";
-import { levels, addOns, fitsLabel, boundaries, costReasons, levelFaqs, principle, flows } from "../../data/tiers";
+import { levels, addOns, fitsLabel, costReasons, levelFaqs, principle, flows } from "../../data/tiers";
 import { serviceById } from "../../data/services";
+import { shotSrcset } from "../../data/demo-sites";
 
 const site = "https://nuxyautomation.com";
 const url = `${site}/web-design/`;
 const title = "Website Design Levels: Business to Immersive · Nuxy Automation";
 const description = "Four website levels, from a fast Business site to an immersive 3D experience: what each one includes, costs and takes, and a quiz to find yours.";
 const where = (id: string) => `/solutions/#${id}`;
+// the six questions the rest of this page does not already answer (the visible list and its FAQPage data are the same)
+const faqs = levelFaqs.filter((f) => f.hub);
+// The hero's picture: one concept demo per level, stepping up like the levels do (real screenshots of the live demos
+// further down, no extra file). Decorative: the caption names them and says they are made-up businesses.
+const steps = [
+  { slug: "fernway-lawn", level: "Business" },
+  { slug: "lantern-row-barbers", level: "Signature" },
+  { slug: "halvane-audio", level: "Immersive" },
+];
 
 const ld = [
   {
@@ -60,7 +71,7 @@ const ld = [
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: levelFaqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    mainEntity: faqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
   },
 ];
 ---
@@ -68,14 +79,28 @@ const ld = [
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />
 
   <section class="wd-hero">
-    <div class="wrap">
+    <div class="wrap wd-hero-grid">
+      <div class="wd-hero-copy">
       <p class="eyebrow">Website levels</p>
       <h1>Pick the Website Your Business Actually Needs</h1>
       <p class="lead">Four levels, from a fast site that brings in calls to a launch people remember. Each one has a clear price, a timeline and a list of what it includes, so you can see what the money buys before we talk.</p>
       <div class="wd-actions">
-        <a class="button" href="#finder">Find your level</a>
-        <a class="button secondary" href="#compare">Compare the levels</a>
+        <a class="button" href="#finder">Find Your Level</a>
+        <a class="button secondary" href="#compare">Compare the Levels</a>
       </div>
+      </div>
+      <figure class="wd-ladder">
+        <div class="wd-ladder-stage">
+          {steps.map((st, i) => (
+            <div class={`wd-step s${i + 1}`}>
+              <span class="wd-step-bar" aria-hidden="true"><i></i><i></i><i></i></span>
+              <img src={`/images/examples/${st.slug}-desktop-640.webp`} srcset={shotSrcset(st.slug, "desktop")} sizes="(min-width: 1024px) 330px, 56vw" alt="" width="800" height="500" loading="eager" decoding="async" fetchpriority={i === 2 ? "high" : "low"} />
+              <span class="wd-step-level">{st.level}</span>
+            </div>
+          ))}
+        </div>
+        <figcaption>Three of our concept demos, one per level. Made-up businesses; <a href="#concepts">open them below</a>.</figcaption>
+      </figure>
       <p class="wd-principle">{principle}</p>
     </div>
   </section>
@@ -99,7 +124,7 @@ const ld = [
         <p>The same made-up coffee shop, built three ways. Switch between them to see what changes: the words stay, the motion and depth step up.</p>
       </div>
       <ThreeLevels />
-      <h3 class="wd-sub">Concept Projects at Each Level</h3>
+      <h3 class="wd-sub" id="concepts">Concept Projects at Each Level</h3>
       <DemoSites only={["fernway-lawn", "lantern-row-barbers", "halvane-audio"]} level="h4" />
     </div>
   </section>
@@ -109,19 +134,10 @@ const ld = [
       <div class="section-head">
         <p class="eyebrow">Compare</p>
         <h2 id="compare-h">How the Levels Compare</h2>
-        <p>Six things that change from level to level, each on a four-step scale: Basic, Enhanced, Advanced, Bespoke.</p>
-      </div>
-      <LevelCompare />
-    </div>
-  </section>
-
-  <section class="section tight" id="expect" aria-labelledby="expect-h">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">What to expect</p>
-        <h2 id="expect-h">What Each Level Includes</h2>
+        <p>What each level includes, how long it takes, how many rounds of changes it has and what it costs, side by side.</p>
       </div>
       <LevelMatrix />
+      <p class="note wd-rev">Revision rounds are named in the written plan. Changes beyond them are quoted before they start, never added to the bill afterwards. What a level leaves out is listed on its own page.</p>
     </div>
   </section>
 
@@ -155,30 +171,7 @@ const ld = [
     </div>
   </section>
 
-  <section class="section band" id="scope" aria-labelledby="scope-h">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Good to know</p>
-        <h2 id="scope-h">Timelines, Revisions and Where Each Level Ends</h2>
-        <p>So the quote holds no surprises. Anything outside a level is available at another level or as an add-on.</p>
-      </div>
-      <div class="wd-scope">
-        {levels.map((l) => (
-          <article class="wd-scope-item" aria-labelledby={`sc-${l.id}`}>
-            <h3 id={`sc-${l.id}`}>{titleCase(l.name)}</h3>
-            <dl>
-              <div><dt>Timeline</dt><dd>{l.timeline}</dd></div>
-              <div><dt>Revisions</dt><dd>{l.revisions}</dd></div>
-              <div><dt>Not included</dt><dd><ul role="list">{boundaries[l.id].map((b) => <li>{b}</li>)}</ul></dd></div>
-            </dl>
-          </article>
-        ))}
-      </div>
-      <p class="note wd-rev">Every level has a set number of revision rounds, named in the written plan. Changes beyond them are quoted before they start, never added to the bill afterwards.</p>
-    </div>
-  </section>
-
-  <section class="section" id="automation" aria-labelledby="auto-h">
+  <section class="section band" id="automation" aria-labelledby="auto-h">
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Works at every level</p>
@@ -198,7 +191,7 @@ const ld = [
     </div>
   </section>
 
-  <section class="section band" id="finder" aria-labelledby="finder-h">
+  <section class="section" id="finder" aria-labelledby="finder-h">
     <div class="wrap wd-two">
       <div>
         <p class="eyebrow">Find your website level</p>
@@ -209,11 +202,11 @@ const ld = [
     </div>
   </section>
 
-  <section class="section" id="faq" aria-labelledby="faq-h">
+  <section class="section band" id="faq" aria-labelledby="faq-h">
     <div class="wrap faq-wrap">
       <h2 id="faq-h">Questions About Website Levels</h2>
       <div class="faq">
-        {levelFaqs.map((f) => (
+        {faqs.map((f) => (
           <details>
             <summary>{f.q}<Icon name="plus" /></summary>
             <p>{f.a}</p>
@@ -231,7 +224,7 @@ const ld = [
           <p>Within one business day you’ll get a written plan: the level we’d suggest, what we’d build, the price and the timeline. If a smaller level does the job, we’ll say so.</p>
         </div>
         <div class="cta-actions">
-          <a class="button" href="/contact/?level=unsure" data-track="tier_selected">Discuss My Project</a>
+          <a class="button" href="/contact/?level=unsure" data-track="tier_selected">Get a Free Quote</a>
           <a class="button secondary" href="/contact/?level=flagship" data-track="tier_selected">Discuss a Custom Project</a>
         </div>
       </div>
@@ -242,9 +235,39 @@ const ld = [
 <style>
   .wd-hero { padding-block: clamp(40px, 6vw, 88px) clamp(20px, 3vw, 40px); }
   .wd-hero h1 { max-width: 17ch; }
+  .wd-hero-grid { display: grid; gap: clamp(36px, 5vw, 56px); grid-template-areas: "copy" "ladder" "principle"; }
+  .wd-hero-copy { grid-area: copy; }
+  .wd-ladder { grid-area: ladder; }
+  .wd-principle { grid-area: principle; }
+  /* On a phone the pictures come straight after the buttons; on a computer they sit beside the copy and the quote. */
+  @media (min-width: 1024px) { .wd-hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); grid-template-areas: "copy ladder" "principle ladder"; row-gap: 28px; align-items: center; } .wd-principle { align-self: start; } }
+  /* Three browser frames climbing to the right, the front one highest: the levels as a staircase. */
+  .wd-ladder { margin: 0; max-width: 560px; }
+  .wd-ladder-stage { position: relative; aspect-ratio: 10 / 9; }
+  .wd-step { position: absolute; width: 58%; overflow: hidden; border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: var(--panel); box-shadow: var(--shadow); }
+  .wd-step.s1 { left: 0; top: 60%; }
+  .wd-step.s2 { left: 21%; top: 30%; }
+  .wd-step.s3 { left: 42%; top: 0; border-color: rgb(var(--blue-rgb) / 0.55); }
+  .wd-step-bar { display: flex; gap: 5px; padding: 7px 10px; border-bottom: 1px solid var(--hairline); }
+  .wd-step-bar i { width: 6px; height: 6px; border-radius: 50%; background: var(--hairline-strong); }
+  /* Each shot is cropped to its hero band, so a step covers only the top corner of the one below it. */
+  .wd-step img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; object-position: top; }
+  .wd-step-level { position: absolute; left: 10px; bottom: 10px; padding: 3px 10px; border: 1px solid var(--hairline-strong); border-radius: var(--r-full); background: rgb(var(--bg-rgb) / 0.88); color: var(--ink); font-size: 0.8125rem; font-weight: 650; }
+  /* phones: no overlap (critique round 11 saw level chips over the demo headlines at 206 px wide). The top level runs
+     the full width, the other two share a row under it, and each level name sits under its picture. */
+  @media (max-width: 639.98px) {
+    .wd-ladder-stage { aspect-ratio: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .wd-step { position: static; width: auto; display: flex; flex-direction: column; }
+    .wd-step.s3 { grid-column: 1 / -1; order: -1; }
+    .wd-step-level { position: static; align-self: flex-start; margin: 8px 10px 10px; }
+  }
+  .wd-ladder figcaption { margin-top: 14px; color: var(--muted); font-size: 0.8125rem; }
+  .wd-ladder figcaption a { color: var(--link); }
+  .wd-ladder figcaption a:hover { color: var(--ink); }
   .wd-hero .lead { margin-top: 20px; max-width: 60ch; }
   .wd-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
-  .wd-principle { margin-top: 28px; max-width: 60ch; padding-left: 16px; border-left: 2px solid var(--hairline-strong); color: var(--ink); font-style: italic; }
+  @media (max-width: 479px) { .wd-actions .button { flex: 1 1 100%; } }
+  .wd-principle { margin: 0; max-width: 60ch; padding-left: 16px; border-left: 2px solid var(--hairline-strong); color: var(--ink); font-style: italic; }
   .wd-sub { margin: clamp(48px, 6vw, 72px) 0 20px; font-size: 1.375rem; }
 
   .wd-two { display: grid; gap: 32px; }
@@ -265,16 +288,7 @@ const ld = [
   .wd-adds b { margin-top: 6px; color: var(--ink); font-weight: 650; }
   .wd-adds small { color: var(--muted); font-size: 0.875rem; }
 
-  .wd-scope { display: grid; gap: 20px; }
-  @media (min-width: 720px) { .wd-scope { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (min-width: 1200px) { .wd-scope { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-  .wd-scope-item { padding-top: 14px; border-top: 2px solid var(--hairline-strong); }
-  .wd-scope-item h3 { font-size: 1.25rem; }
-  .wd-scope-item dl { margin: 10px 0 0; display: grid; gap: 12px; }
-  .wd-scope-item dt { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-  .wd-scope-item dd { margin: 2px 0 0; color: var(--body); font-size: 0.9375rem; }
-  .wd-scope-item ul { list-style: none; display: grid; gap: 4px; }
-  .wd-rev { margin-top: 24px; max-width: 72ch; }
+  .wd-rev { margin-top: 24px; max-width: 64ch; } /* (72ch of "0" fitted about 85 real letters a line, too long to read) */
 
   .wd-flows { list-style: none; display: grid; gap: 16px; }
   @media (min-width: 1024px) { .wd-flows { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

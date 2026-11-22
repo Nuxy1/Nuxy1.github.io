@@ -53,7 +53,25 @@ const points = c?.card?.highlights ?? c?.built ?? [];
      are links): the border brightens instead */
   .cs:hover, .cs:focus-within { border-color: var(--blue-line); }
   .cs-cover { display: block; color: inherit; }
-  @media (min-width: 960px) { .cs { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); } }
+  /* On a computer the copy column is taller than the two frames, so the frames stand on a stage that fills their
+     whole column: a darker floor with one soft light from below, instead of floating in empty card. */
+  @media (min-width: 960px) {
+    /* (critique 11-17: the client's site was drawn too small to read) a wider stage, a slimmer frame of floor and a
+       slimmer phone column, so the computer picture takes most of the card; the phone still stands beside it */
+    /* (critique 11-17, round 9: beside the copy the client's computer shot was 432px wide on a 619x544 stage, smaller
+       than a made-up demo's 444px) the stage takes the card's full width and the copy sits under it in two columns:
+       the computer shot is about 700px wide, the largest work on the page, and both buttons fit on one row */
+    .cs { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .cs-cover :global(.cover) { width: 100%; max-width: 840px; margin-inline: auto; grid-template-columns: minmax(0, 1fr) clamp(96px, 16%, 130px); gap: 16px; }
+    .cs-cover {
+      display: grid; align-items: center; padding: clamp(20px, 3vw, 40px);
+      border: 1px solid var(--hairline); border-radius: var(--r-md);
+      background: radial-gradient(70% 55% at 50% 100%, rgb(var(--blue-rgb) / 0.16), transparent 70%), rgb(var(--bg-rgb) / 0.55);
+    }
+    .cs-copy { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); column-gap: 56px; align-items: start; }
+    .cs-copy > * { grid-column: 1; }
+    .cs-copy > .cs-ticks { grid-column: 2; grid-row: 1 / span 5; align-self: center; margin: 0; }
+  }
 
   .cs-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
   .cs-real { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 10px; border: 1px solid var(--blue-line); border-radius: var(--r-full); background: var(--accent-soft); color: var(--ink); font-size: 0.8125rem; font-weight: 600; }

@@ -3,7 +3,7 @@
 // estimate. The range comes from lib/demo/fernway-quote.ts (the same function the hero's quick estimate uses) and
 // updates as the visitor answers. Photos are checked and previewed in the browser only; nothing is sent or stored.
 import Shell from "../../../../components/demo/fernway/Shell.astro";
-import ServiceArt from "../../../../components/demo/fernway/ServiceArt.astro";
+import DemoPhoto from "../../../../components/demo/DemoPhoto.astro";
 import DemoComplete from "../../../../components/demo/DemoComplete.astro";
 import { serviceList, towns } from "../../../../data/demos/fernway";
 import { SIZES, FREQUENCIES, EXTRAS, CUSTOM_MIN, CUSTOM_MAX, estimate, type Frequency, type ExtraId } from "../../../../lib/demo/fernway-quote";
@@ -13,6 +13,12 @@ const steps = ["Service", "Property", "How often", "Extras", "Photos & details"]
 const freqIds = Object.keys(FREQUENCIES) as Frequency[];
 const extraIds = Object.keys(EXTRAS) as ExtraId[];
 const first = estimate({ service: "mowing", size: "medium", frequency: "weekly", extras: [] });
+// each yard-size card carries what that size would cost for the answers so far (the script keeps it current)
+const sizePrice = (k: keyof typeof SIZES) => { const e = estimate({ service: "mowing", size: k, frequency: "weekly", extras: [] }); return `${range(e.low, e.high)} ${e.per}`; };
+// "Somewhere else" stops the form at the property step, not at the end: the note under the menu names the towns, and
+// Next says what to do
+const townList = `${towns.slice(0, -1).map((t) => t.name).join(", ")} and ${towns.at(-1)!.name}`;
+const outsideMsg = `Fernway can’t quote outside its area. Choose a town from the list to see your estimate.`;
 const flow = [
   { title: "A lead lands in the CRM", text: "Your answers, photos and the range become one record, tagged by town and service, so nothing sits in an inbox." },
   { title: "The owner gets a text", text: "A short summary with the photos and a one-tap reply to send the firm price from the truck." },
@@ -24,8 +30,7 @@ const flow = [
   <section class="fw-section fw-q-sec" aria-labelledby="q-h">
     <div class="fw-wrap">
       <div class="fw-head fw-q-head">
-        <p class="fw-kicker">Free estimate</p>
-        <h1 id="q-h">A price range in about a minute.</h1>
+        <h1 id="q-h">A free estimate, as a price range, in about a minute.</h1>
         <p class="fw-lead">Five short steps. The range updates as you go, and the crew would confirm a firm price by text.</p>
         <p class="fw-demo-note">Demonstration estimator: example pricing, and nothing you enter leaves this page.</p>
       </div>
@@ -33,10 +38,10 @@ const flow = [
       <div class="fw-q" data-q-wrap>
         <form class="fw-q-form" method="dialog" data-fw-quote aria-labelledby="q-h">
           <ol class="fw-q-prog" data-progress role="list" aria-label="Steps">
-            {steps.map((s, i) => <li><button type="button"><span aria-hidden="true">{i + 1}</span>{s}</button></li>)}
+            {steps.map((s, i) => <li><button type="button"><span aria-hidden="true">{i + 1}</span><span class="fw-q-pn">{s}</span><small data-answer></small></button></li>)}
           </ol>
-          <p class="sr-only" data-step-status aria-live="polite"></p>
-          <p class="fw-q-mini" data-q-mini aria-hidden="true">Estimate so far: <strong data-q-mini-range>{range(first.low, first.high)}</strong> <span data-q-mini-per>{first.per}</span></p>
+          <p class="sr-only fw-q-now" data-step-status aria-live="polite"></p>
+          <p class="fw-q-mini" data-q-mini aria-hidden="true" data-impeccable-ignore="hard-offset-shadow">Estimate so far: <strong data-q-mini-range>{range(first.low, first.high)}</strong> <span data-q-mini-per>{first.per}</span></p>
 
           <fieldset class="fw-q-step" data-step aria-labelledby="q1-h">
             <h2 id="q1-h" data-step-title>What do you need?</h2>
@@ -44,7 +49,7 @@ const flow = [
               {serviceList.map((s) => (
                 <label class="fw-q-opt fw-q-svc-opt">
                   <input type="radio" name="service" value={s.id} required checked={s.id === "mowing"} />
-                  <ServiceArt art={s.art} size={52} />
+                  <DemoPhoto name={s.photo} alt="" sizes="56px" />
                   <span><strong>{s.name}</strong><small>{s.blurb}</small></span>
                 </label>
               ))}
@@ -61,29 +66,29 @@ const flow = [
                 <label class="fw-q-opt fw-q-size">
                   <input type="radio" name="size" value={k} required checked={k === "medium"} />
                   <span class="fw-q-size-pic" data-size={k} aria-hidden="true"><i></i></span>
-                  <span><strong>{SIZES[k].label}</strong><small>{SIZES[k].hint}</small></span>
+                  <span><strong>{SIZES[k].label}</strong><small>{SIZES[k].hint}</small><b class="fw-q-size-price" data-size-price={k}>{sizePrice(k)}</b></span>
                 </label>
               ))}
               <label class="fw-q-opt fw-q-size">
                 <input type="radio" name="size" value="custom" required />
                 <span class="fw-q-size-pic" data-size="custom" aria-hidden="true"><i></i></span>
-                <span><strong>Custom</strong><small>I know the square footage</small></span>
+                <span><strong>Custom</strong><small>I know the square footage</small><b class="fw-q-size-price">Priced from your lot size</b></span>
               </label>
             </div>
             <label class="fw-field fw-q-sqft" data-q-sqft hidden>
               <span>Lawn and beds, in square feet</span>
-              <input name="sqft" type="number" inputmode="numeric" min={CUSTOM_MIN} max={CUSTOM_MAX} step="100" required disabled placeholder="e.g. 15000" data-error={`Enter a lot size from ${CUSTOM_MIN.toLocaleString("en-US")} to ${CUSTOM_MAX.toLocaleString("en-US")} sq ft, in hundreds.`} />
+              <input name="sqft" type="number" inputmode="numeric" min={CUSTOM_MIN} max={CUSTOM_MAX} step="100" required disabled placeholder="e.g. 15000…" data-error={`Enter a lot size from ${CUSTOM_MIN.toLocaleString("en-US")} to ${CUSTOM_MAX.toLocaleString("en-US")} sq ft, in hundreds.`} />
               <small class="fw-fine">Between {CUSTOM_MIN.toLocaleString("en-US")} and {CUSTOM_MAX.toLocaleString("en-US")} sq ft. Half an acre is about 21,800.</small>
             </label>
             <label class="fw-field fw-q-town">
               <span>Which town?</span>
-              <select name="town" required data-error="Choose your town to see if it is in our area.">
+              <select name="town" required data-error="Choose your town to see if it is in our area." data-outside={outsideMsg}>
                 <option value="">Choose your town</option>
                 {towns.map((t) => <option value={t.id}>{t.name}</option>)}
                 <option value="outside">Somewhere else</option>
               </select>
             </label>
-            <p class="fw-fine fw-q-outside" data-q-outside hidden>That’s outside the 25-mile area. A real Fernway site would offer a waitlist for nearby towns here.</p>
+            <p class="fw-fine fw-q-outside" data-q-outside hidden>Fernway works a 25-mile area: {townList}. A real Fernway site would offer a waitlist for other towns here.</p>
             <p class="fw-q-err" id="q-err-2" data-step-error role="alert"></p>
             <div class="fw-q-nav"><button class="fw-btn fw-btn-ghost" type="button" data-back>Back</button><button class="fw-btn" type="button" data-next>Next: how often</button></div>
           </fieldset>
@@ -130,13 +135,13 @@ const flow = [
             <p class="fw-q-err" data-q-photo-err aria-live="polite"></p>
             <div class="fw-fields fw-q-details">
               <label class="fw-field"><span>First name</span><input name="name" required autocomplete="given-name" maxlength="40" data-error="Add a first name, or press “Use sample details”." /></label>
-              <label class="fw-field"><span>Gate, pets or anything we should know (optional)</span><input name="notes" maxlength="200" /></label>
+              <label class="fw-field"><span>Gate, pets or anything we should know (optional)</span><input name="notes" maxlength="200" autocomplete="off" /></label>
             </div>
+            <p class="fw-q-sample"><button class="fw-btn fw-btn-ghost fw-btn-sm" type="button" data-q-sample>Use sample details</button></p>
             <p class="fw-fine">A real form would also ask for a phone number to text the firm price. This demo leaves it out so nothing personal is typed.</p>
             <p class="fw-q-err" id="q-err-5" data-step-error role="alert"></p>
             <div class="fw-q-nav">
               <button class="fw-btn fw-btn-ghost" type="button" data-back>Back</button>
-              <button class="fw-btn fw-btn-ghost" type="button" data-q-sample>Use sample details</button>
               <button class="fw-btn fw-btn-lime" type="submit">See my estimate</button>
             </div>
           </fieldset>
@@ -144,23 +149,30 @@ const flow = [
 
         <aside class="fw-q-side" aria-labelledby="q-est-h" data-q-side>
           <div class="fw-q-est">
-            <p class="fw-q-est-k" id="q-est-h">Your estimate</p>
+            <p class="fw-q-est-k" id="q-est-h">Example estimate</p>
             <p class="fw-q-range" aria-live="polite" aria-atomic="true"><strong data-q-range>{range(first.low, first.high)}</strong> <span data-q-per>{first.per}</span></p>
             <p class="fw-q-extra-line" data-q-total>{first.monthly ? `About ${range(first.monthly.low, first.monthly.high)} a month` : ""}</p>
             <dl class="fw-q-sum">
-              <div><dt>Service</dt><dd data-q-sum="service">Lawn mowing</dd></div>
-              <div><dt>Yard</dt><dd data-q-sum="size">Medium</dd></div>
-              <div><dt>How often</dt><dd data-q-sum="frequency">Weekly</dd></div>
-              <div><dt>Extras</dt><dd data-q-sum="extras">None</dd></div>
+              {/* each answered row gets a Change link back to its step (shown once that step has been passed) */}
+              {[["Service", "service", "Lawn mowing"], ["Yard", "size", "Medium"], ["How often", "frequency", "Weekly"], ["Extras", "extras", "None"]].map(([dt, k, v], i) => (
+                <div><dt>{dt}</dt><dd><span data-q-sum={k}>{v}</span><button type="button" class="fw-q-chg" data-q-go={i} aria-label={`Change ${dt.toLowerCase()}`} hidden>Change</button></dd></div>
+              ))}
             </dl>
             <ul class="fw-q-notes" role="list" data-q-notes></ul>
-            <p class="fw-q-disclaim">This is a demonstration estimate and is not an actual quote.</p>
           </div>
-          <p class="fw-fine fw-q-why">Example pricing for demonstration purposes. Ranges widen with size because yards vary; a real crew narrows it from your photos.</p>
+          <div class="fw-q-how">
+            <p class="fw-q-how-h">How the range is worked out</p>
+            <ul role="list">
+              <li>Your yard’s size sets the base price.</li>
+              <li>For mowing and trimming, a seasonal plan costs least per visit and a one-time visit the most.</li>
+              <li>Each extra adds a set amount, scaled to the yard.</li>
+            </ul>
+            <p>It stays a range, rounded to $5, because no yard is priced unseen. A real crew narrows it from your photos.</p>
+          </div>
         </aside>
       </div>
 
-      <DemoComplete id="q-done" lead="This is a demonstration estimate and is not an actual quote." flow={flow} restart="Start a new estimate" />
+      <DemoComplete id="q-done" variant="ticket" issuer="Fernway Lawn & Landscape" docTitle="Estimate request" heading="Demo estimate written up." lead="This is a demonstration estimate and is not an actual quote." docFoot="Demonstration copy. Nothing was sent to Fernway and no crew was booked." flow={flow} restart="Start a new estimate" restartClass="fw-btn fw-btn-ghost" />
     </div>
   </section>
 </Shell>
@@ -170,8 +182,7 @@ const flow = [
   .fw-q-head { max-width: 720px; }
   /* wide screens: heading left, the words right, so the estimator starts near the top of the screen */
   @media (min-width: 1024px) {
-    .fw-q-head { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "k ." "h l" "h n"; column-gap: clamp(40px, 6vw, 96px); align-items: end; margin-bottom: 40px; }
-    .fw-q-head .fw-kicker { grid-area: k; }
+    .fw-q-head { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "h l" "h n"; column-gap: clamp(40px, 6vw, 96px); align-items: end; margin-bottom: 40px; }
     .fw-q-head h1 { grid-area: h; }
     .fw-q-head .fw-lead { grid-area: l; }
     .fw-q-head .fw-demo-note { grid-area: n; justify-self: start; }
@@ -181,24 +192,45 @@ const flow = [
   @media (min-width: 1024px) { .fw-q { grid-template-columns: minmax(0, 1fr) 340px; gap: 36px; } }
   .fw-q-form { container: qform / inline-size; display: grid; gap: 22px; padding: clamp(20px, 4vw, 40px); border-radius: 30px; background: #fff; box-shadow: 0 0 0 1px var(--fw-line), 0 24px 50px rgba(19, 32, 26, 0.07); }
 
+  /* the steps as a work order on the season calendar's track (home page): one bar per step, moss once done and gold on
+     the open one with the calendar's "now" mark at its left edge, the step's answer written under its bar */
   .fw-q-prog { display: none; }
-  .fw-q-form.is-stepped .fw-q-prog { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: -4px -4px 0; padding: 4px; }
-  .fw-q-prog li { flex: 1 0 auto; }
-  .fw-q-prog button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--fw-paper); color: var(--fw-soft); font: inherit; font-size: 0.875rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
-  .fw-q-prog button span { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px var(--fw-line); font-size: 0.75rem; }
+  .fw-q-form.is-stepped .fw-q-prog { display: flex; gap: 3px; margin: 0; padding: 0; list-style: none; }
+  .fw-q-prog li { flex: 1 1 0; min-width: 0; }
+  .fw-q-prog button { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 12px auto; gap: 6px; align-items: baseline; width: 100%; min-height: 48px; padding: 2px 0; border: 0; background: none; color: var(--fw-soft); font: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.25; text-align: start; white-space: nowrap; cursor: pointer; }
+  .fw-q-prog button > span[aria-hidden] { font-size: 0.8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .fw-q-prog button::after { content: ""; grid-column: 1 / -1; grid-row: 2; align-self: stretch; background: var(--fw-cream); box-shadow: inset 0 0 0 1px var(--fw-line); transition: background-color 220ms var(--fw-ease), box-shadow 220ms var(--fw-ease); }
+  .fw-q-prog li:first-child button::after { border-radius: 999px 0 0 999px; }
+  .fw-q-prog li:last-child button::after { border-radius: 0 999px 999px 0; }
   .fw-q-prog button:disabled { cursor: default; }
-  .fw-q-prog li:not(.done):not([aria-current]) button:disabled { opacity: 0.6; }
-  .fw-q-prog li.done button { color: var(--fw-forest); }
-  .fw-q-prog li.done button span { background: var(--fw-moss); color: #fff; box-shadow: none; }
-  .fw-q-prog li[aria-current] button { background: var(--fw-forest); color: #fff; opacity: 1; }
-  .fw-q-prog li[aria-current] button span { background: var(--fw-lime); color: var(--fw-forest); box-shadow: none; }
-  /* only the open step keeps its label when the form is too narrow for all five (phones, and beside the estimate at 1024) */
-  @container qform (max-width: 759px) { .fw-q-prog button { font-size: 0; gap: 0; justify-content: center; padding: 0; } .fw-q-prog li[aria-current] button { font-size: 0.875rem; gap: 8px; padding: 0 12px; } .fw-q-prog li { flex: 1 1 44px; } .fw-q-prog li[aria-current] { flex: 0 0 auto; } }
-  /* the smallest phones: numbers only, the open step's heading names it */
-  @container qform (max-width: 299px) { .fw-q-prog { gap: 4px; } .fw-q-prog li, .fw-q-prog li[aria-current] { flex: 1 1 0; min-width: 0; } .fw-q-prog li[aria-current] button { font-size: 0; gap: 0; padding: 0; } }
+  .fw-q-prog li.done button, .fw-q-prog li[aria-current] button, .fw-q-prog button:has(> [data-answer]:not(:empty)) { color: var(--fw-forest); }
+  .fw-q-prog li.done button::after, .fw-q-prog button:has(> [data-answer]:not(:empty))::after { background: var(--fw-moss); box-shadow: none; }
+  .fw-q-prog li[aria-current] button { font-weight: 750; }
+  .fw-q-prog li[aria-current] button::after { background: var(--fw-lime); box-shadow: inset 3px 0 0 var(--fw-forest); }
+  .fw-q-prog button:not(:disabled):hover { text-decoration: underline; text-decoration-color: var(--fw-leaf); text-underline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { .fw-q-prog button::after { transition: none; } }
+  .fw-q-prog [data-answer] { display: none; }
+  .fw-q-prog [data-answer]:not(:empty) { display: block; grid-column: 1 / -1; grid-row: 3; overflow: hidden; text-overflow: ellipsis; color: var(--fw-soft); font-size: 0.8125rem; font-weight: 500; }
+  /* when the form is too narrow for five labels (phones, and beside the estimate at 1024), the steps keep their numbers
+     and the live status line under them shows where you are ("Step 2 of 5: Property"); passed answers wait for the
+     summary */
+  @container qform (max-width: 759px) {
+    /* the names stay in each button for screen readers, hidden from view */
+    .fw-q-prog .fw-q-pn { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+    .fw-q-prog [data-answer]:not(:empty) { display: none; }
+    .fw-q-form.is-stepped .fw-q-now { position: static; width: auto; height: auto; margin: -10px 0 0; overflow: visible; clip: auto; white-space: normal; font-size: 0.9375rem; font-weight: 650; color: var(--fw-forest); }
+  }
 
   .fw-q-mini { display: none; }
-  @media (max-width: 1023px) { .fw-q-form.is-stepped .fw-q-mini { display: block; padding: 10px 14px; border-radius: 12px; background: var(--fw-lime-2); color: var(--fw-forest); font-size: 0.9375rem; } }
+  /* on phones and tablets the estimate card sits below the form, so this line stays in view under the sticky header
+     (72px) while a long step is scrolled. It docks flush to the header, and a band of the form's white around it (the
+     first shadow, white on the white form, so it never shows as a shadow; the detector's hard-offset rule is waived on
+     the element for that reason) masks the option cards scrolling under it, so no card's title shows half-cut beside or above it.
+     Controls scroll to just below it when focused. */
+  @media (max-width: 1023px) {
+    .fw-q-form.is-stepped .fw-q-mini { display: block; position: sticky; top: 73px; z-index: 5; padding: 10px 14px; border-radius: 12px; background: var(--fw-lime-2); color: var(--fw-forest); font-size: 0.9375rem; box-shadow: 0 -12px 0 8px #fff, 0 10px 18px -12px rgba(19, 32, 26, 0.45); }
+    .fw-q-form.is-stepped :is(input, select, textarea, button) { scroll-margin-top: 140px; }
+  }
 
   .fw-q-step { display: grid; gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; }
   .fw-q-step + .fw-q-step { padding-top: 28px; border-top: 1px solid var(--fw-line); }
@@ -218,9 +250,10 @@ const flow = [
   .fw-q-opt:active:not(:has(input:disabled)) { transform: scale(0.99); }
 
   .fw-q-svc { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
-  .fw-q-svc-opt :global(.fw-art) { flex: none; }
+  .fw-q-svc-opt :global(.demo-photo) { flex: none; width: 56px; height: 56px; border-radius: 10px; }
   .fw-q-sizes { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
   .fw-q-size { flex-direction: column; align-items: start; }
+  .fw-q-size-price { margin-top: 6px; color: var(--fw-forest); font-size: 0.9375rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   .fw-q-size-pic { display: grid; place-items: end start; width: 56px; height: 40px; border-radius: 8px; background: #e6e2cf; overflow: hidden; }
   .fw-q-size-pic i { display: block; background: var(--fw-moss); border-radius: 4px 4px 0 0; }
   .fw-q-size-pic[data-size="small"] i { width: 30%; height: 45%; }
@@ -242,37 +275,47 @@ const flow = [
   .fw-q-thumbs:empty { display: none; }
   .fw-q-thumbs li { position: relative; display: grid; gap: 4px; }
   .fw-q-thumbs img, .fw-q-thumbs .fw-q-nopic { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; background: var(--fw-sand); }
-  .fw-q-nopic { display: grid; place-items: center; padding: 8px; font-size: 0.75rem; text-align: center; color: var(--fw-soft); }
-  .fw-q-thumbs small { font-size: 0.75rem; color: var(--fw-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fw-q-nopic { display: grid; place-items: center; padding: 8px; font-size: 0.8125rem; text-align: center; color: var(--fw-soft); }
+  .fw-q-thumbs small { font-size: 0.8125rem; color: var(--fw-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fw-q-thumbs button { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(19, 32, 26, 0.8); color: #fff; cursor: pointer; }
   .fw-q-details { margin-top: 4px; }
   .fw-q-err { color: #a3361b; font-weight: 600; font-size: 0.9375rem; }
   .fw-q-err:empty { display: none; }
-  .fw-q-nav { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 6px; }
+  .fw-q-sample { margin-top: -4px; }
+  /* Back always sits beside Next (or the last step's submit), on phones too: Back takes its own width, the forward
+     button the rest of the row */
+  .fw-q-nav { display: flex; gap: 10px; padding-top: 6px; }
   .fw-q-nav [data-next], .fw-q-nav [type="submit"] { margin-left: auto; }
-  @media (max-width: 479px) { .fw-q-nav .fw-btn { flex: 1 1 auto; } .fw-q-nav [type="submit"] { flex-basis: 100%; } }
+  @media (max-width: 479px) { .fw-q-nav [data-next], .fw-q-nav [type="submit"] { flex: 1 1 auto; } }
   .fw-q-form:not(.is-stepped) .fw-q-nav [data-next], .fw-q-form:not(.is-stepped) .fw-q-nav [data-back] { display: none; }
 
   .fw-q-side { display: grid; gap: 14px; }
   @media (min-width: 1024px) { .fw-q-side { position: sticky; top: 96px; } }
   .fw-q-est { display: grid; gap: 14px; padding: 26px; border-radius: 26px; background: var(--fw-forest); color: #e6eee4; }
-  .fw-q-est-k { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fw-lime); }
+  .fw-q-est-k { font-size: 1rem; font-weight: 700; color: var(--fw-lime); }
   .fw-q-range strong { display: block; font-family: "Bricolage Grotesque", sans-serif; font-size: clamp(2.25rem, 4vw, 2.75rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
-  .fw-q-range strong.bump { animation: fw-bump 360ms var(--fw-ease); }
-  @keyframes fw-bump { 40% { transform: scale(1.04); color: var(--fw-lime); } }
   .fw-q-range span { color: #bcd0bb; }
   .fw-q-extra-line { font-weight: 600; color: var(--fw-lime); }
   .fw-q-extra-line:empty { display: none; }
   .fw-q-sum { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.14); }
-  .fw-q-sum div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.9375rem; }
+  .fw-q-sum div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-width: 0; font-size: 0.9375rem; }
   .fw-q-sum dt { color: #9fb59e; }
-  .fw-q-sum dd { text-align: right; font-weight: 600; color: #fff; }
+  .fw-q-sum dd { display: flex; justify-content: flex-end; align-items: baseline; gap: 10px; text-align: right; font-weight: 600; color: #fff; }
+  /* 44 px tall like every other button on the site (DESIGN.md), the hidden ones too, so a row keeps its height when
+     its link turns on */
+  .fw-q-chg { flex: none; min-height: 44px; padding: 4px 6px; border: 0; border-radius: 4px; background: none; color: var(--fw-lime); font: inherit; font-size: 0.875rem; font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; cursor: pointer; }
+  .fw-q-chg:hover { text-decoration-thickness: 2px; }
+  .fw-q-chg:focus-visible { outline: 2px solid var(--fw-lime); outline-offset: 2px; }
+  /* the open step's link and the steps not reached yet keep their room, so the values don't shift */
+  .fw-q-chg.is-off { visibility: hidden; }
   .fw-q-notes { display: grid; gap: 6px; font-size: 0.875rem; color: #d7e4bf; }
   .fw-q-notes:empty { display: none; }
-  .fw-q-disclaim { padding: 10px 12px; border-radius: 12px; background: rgba(201, 226, 101, 0.14); color: #eef5d6; font-size: 0.875rem; font-weight: 600; }
-  .fw-q-why { padding-inline: 6px; }
+  .fw-q-how { display: grid; gap: 8px; padding: 4px 6px 0; font-size: 0.875rem; line-height: 1.5; color: var(--fw-soft); }
+  .fw-q-how-h { font-size: 0.9375rem; font-weight: 700; color: var(--fw-forest); }
+  .fw-q-how ul { display: grid; gap: 4px; }
+  .fw-q-how li { position: relative; padding-left: 16px; }
+  .fw-q-how li::before { content: ""; position: absolute; left: 2px; top: 0.6em; width: 6px; height: 6px; border-radius: 50%; background: var(--fw-moss); }
 
-  .fw-q-sec :global(.dc) { --dc-accent: #173826; --dc-on-accent: #fff; --dc-panel: #f1f4e6; --dc-radius: 28px; margin-top: 8px; }
   .fw-q-sec :global(.dc h2) { font-family: "Bricolage Grotesque", sans-serif; }
 </style>
 
@@ -293,6 +336,7 @@ const flow = [
     const rangeEl = side.querySelector<HTMLElement>("[data-q-range]")!;
     let photos: { file: File; url: string | null }[] = [];
     let last = "";
+    let wanted: Frequency = "weekly";
 
     const val = (name: string) => (form.querySelector<HTMLInputElement>(`input[name=${name}]:checked`)?.value ?? "");
     const read = () => ({
@@ -315,7 +359,10 @@ const flow = [
         hint.textContent = ok ? FREQUENCIES[f].hint : `Not offered for ${SERVICES[q.service].short.toLowerCase()}`;
         if (!ok && input.checked) { input.checked = false; moved = FREQUENCIES[f].label; }
       }
-      if (!val("frequency")) {
+      // the visitor's own pick comes back as soon as the service offers it again
+      const back = form.querySelector<HTMLInputElement>(`[data-freq="${wanted}"] input`)!;
+      if (!back.disabled) back.checked = true;
+      else if (!val("frequency")) {
         const firstOk = form.querySelector<HTMLInputElement>(`[data-freq="${SERVICES[q.service].freqs[0]}"] input`)!;
         firstOk.checked = true;
       }
@@ -330,8 +377,17 @@ const flow = [
       const custom = q.size === "custom";
       sqftWrap.hidden = !custom;
       sqft.disabled = !custom;
-      $("[data-q-outside]").hidden = town.value !== "outside";
+      checkTown();
     };
+    // "Somewhere else" is a real answer the form can't take: it blocks Next on the property step with its own message
+    function checkTown() {
+      const away = town.value === "outside";
+      $("[data-q-outside]").hidden = !away;
+      town.setCustomValidity(away ? (town.dataset.outside ?? "") : "");
+    }
+    // set before flag() adds its own listeners, so the error line clears on the same change that picks a covered town
+    town.addEventListener("input", checkTown);
+    town.addEventListener("change", checkTown);
 
     const update = () => {
       sync();
@@ -349,21 +405,51 @@ const flow = [
       sum("frequency", FREQUENCIES[q.frequency].label);
       sum("extras", q.extras.length ? q.extras.map((e) => EXTRAS[e].name.split(" (")[0]).join(", ") : "None");
       side.querySelector("[data-q-notes]")!.replaceChildren(...est.notes.map((n) => Object.assign(document.createElement("li"), { textContent: n })));
+      // what each yard size would come to with the service, frequency and extras picked so far
+      for (const p of form.querySelectorAll<HTMLElement>("[data-size-price]")) {
+        const e = estimate({ ...q, size: p.dataset.sizePrice as Size, customSqft: 0 });
+        p.textContent = `${range(e.low, e.high)} ${e.per}`;
+      }
       $("[data-q-mini-range]").textContent = text;
       $("[data-q-mini-per]").textContent = est.per;
-      if (text !== last && last) { rangeEl.classList.remove("bump"); void rangeEl.offsetWidth; rangeEl.classList.add("bump"); }
+      // a small pulse when the range changes; none under reduced motion or on the lowest effects tier
+      if (text !== last && last && !matchMedia("(prefers-reduced-motion: reduce)").matches && document.documentElement.dataset.tier !== "3") {
+        rangeEl.animate([{ transform: "scale(1)", color: "#fff" }, { transform: "scale(1.04)", color: "#e2c36b", offset: 0.4 }, { transform: "scale(1)", color: "#fff" }], { duration: 360, easing: "cubic-bezier(0.2, 0.7, 0.2, 1)" });
+      }
       last = text;
       return { q, est };
     };
 
-    // links from the services pages and the hero: ?service=mowing&size=medium
+    // links from the services and projects pages and the hero: ?service=mowing&size=medium&town=alder-bend
     const params = new URLSearchParams(location.search);
     const pre = (name: string, v: string | null) => { if (v) { const r = form.querySelector<HTMLInputElement>(`input[name=${name}][value="${CSS.escape(v)}"]`); if (r) r.checked = true; } };
     pre("service", params.get("service"));
     pre("size", params.get("size"));
+    const preTown = params.get("town");
+    if (preTown && [...town.options].some((o) => o.value === preTown)) town.value = preTown;
 
-    const steps = stepper(form);
-    form.addEventListener("change", update);
+    // the estimate card's Change links: one per answered step, hidden on the open step and on steps not reached yet
+    const chg = [...side.querySelectorAll<HTMLButtonElement>("[data-q-go]")];
+    let far = 0;
+    const paintChg = (at: number) => chg.forEach((b) => {
+      const n = Number(b.dataset.qGo);
+      b.hidden = false;
+      b.classList.toggle("is-off", n > far || n === at); // visibility: hidden, so out of the tab order too
+    });
+    const steps = stepper(form, {
+      // what each passed step says in the tracker
+      answer: (i) => {
+        const q = read();
+        return [SERVICES[q.service].short, sizeText(q), FREQUENCIES[q.frequency].label, q.extras.length ? `${q.extras.length} added` : "None"][i] ?? "";
+      },
+      onStep: (i) => { far = Math.max(far, i); paintChg(i); },
+    });
+    for (const b of chg) b.addEventListener("click", () => steps.go(Number(b.dataset.qGo)));
+    form.addEventListener("change", (e) => {
+      const t = e.target as HTMLInputElement;
+      if (t.name === "frequency" && t.checked) wanted = t.value as Frequency;
+      update();
+    });
     form.addEventListener("input", (e) => { if ((e.target as HTMLElement).matches("input[name=sqft]")) update(); });
     update();
 
@@ -377,7 +463,7 @@ const flow = [
           img.src = p.url; img.alt = `Your photo ${i + 1}: ${p.file.name}`; img.width = 120; img.height = 120;
           li.append(img);
         } else {
-          li.append(Object.assign(document.createElement("span"), { className: "fw-q-nopic", textContent: "No preview in this browser; it would still be attached." }));
+          li.append(Object.assign(document.createElement("span"), { className: "fw-q-nopic", textContent: "No preview here; it is still attached." }));
         }
         li.append(Object.assign(document.createElement("small"), { textContent: p.file.name }));
         const rm = document.createElement("button");
@@ -409,7 +495,7 @@ const flow = [
       const nm = $<HTMLInputElement>("input[name=name]");
       nm.value = "Sam"; nm.dispatchEvent(new Event("input"));
       $<HTMLInputElement>("input[name=notes]").value = "Side gate, friendly dog";
-      if (!town.value) { town.value = "alder-bend"; update(); }
+      if (!town.value || town.value === "outside") { town.value = "alder-bend"; update(); }
       form.querySelector<HTMLButtonElement>("button[type=submit]")!.focus();
     });
 
@@ -426,9 +512,9 @@ const flow = [
       const townName = town.options[town.selectedIndex]?.text ?? "";
       const extra = est.season ? `, ${range(est.season.low, est.season.high)} for the season` : est.monthly ? `, about ${range(est.monthly.low, est.monthly.high)} a month` : "";
       showComplete(done, [
-        ["Demonstration estimate", `${range(est.low, est.high)} ${est.per}${extra}`],
+        ["Demonstration estimate", `${range(est.low, est.high)} ${est.per}${extra}`, "lead"],
         ["Service", SERVICES[q.service].name],
-        ["Yard", `${sizeText(q)} · ${townName}`],
+        ["Yard", `${sizeText(q)}, in ${townName}`],
         ["How often", FREQUENCIES[q.frequency].label],
         ["Extras", q.extras.length ? q.extras.map((x) => EXTRAS[x].name).join(", ") : "None"],
         ["Photos", photos.length ? `${photos.length} previewed, none uploaded` : "None"],
@@ -441,10 +527,12 @@ const flow = [
 
     onRestart(done, () => {
       form.reset();
+      wanted = "weekly";
       document.querySelector<HTMLElement>("[data-q-wrap]")!.hidden = false;
       last = "";
+      far = 0;
       update();
-      steps.go(0);
+      steps.reset();
     });
   }
 </script>

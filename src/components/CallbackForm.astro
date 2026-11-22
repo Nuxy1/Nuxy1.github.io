@@ -102,6 +102,8 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
       <a class="button" href={`mailto:${inbox}?subject=${encodeURIComponent("Callback request")}`} data-cb-mailto><Icon name="envelopeSimple" />Email it instead</a>
       <button class="button secondary" type="button" data-cb-retry><Icon name="arrowCounterClockwise" />Back to the form</button>
     </div>
+    <!-- (critique round 9: the email button does nothing on a computer with no email app) -->
+    <p class="note">If nothing opens, write to <span class="glue">{inbox}</span> with your name and number.</p>
   </div>
 </div>
 
@@ -121,7 +123,7 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
   .field textarea { min-height: 96px; resize: vertical; }
   .field input:hover, .field textarea:hover { border-color: var(--field-line-hover); }
   .field input:focus, .field textarea:focus { outline: 2px solid transparent; /* (shows in forced-colors mode) */ border-color: var(--blue-line); box-shadow: 0 0 0 3px rgb(var(--blue-rgb) / 0.35); }
-  .field [aria-invalid="true"] { border-color: var(--bad); }
+  .field [aria-invalid="true"], .field input[aria-invalid="true"]:not([type="radio"]):not([type="checkbox"]) { border-color: var(--bad); } /* (critique round 9: outranks the input rule above) */
   .help { color: var(--muted); font-size: 0.875rem; line-height: 1.45; }
   .err { color: var(--bad); font-size: 0.875rem; font-weight: 500; line-height: 1.45; }
   fieldset.field { margin: 0; padding: 0; border: 0; min-width: 0; }
@@ -129,6 +131,13 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
   fieldset.radios { display: flex; flex-wrap: wrap; column-gap: 24px; row-gap: 0; }
   .radios .err, .radios .help { flex-basis: 100%; }
   .radios label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--body); cursor: pointer; }
+  /* (critique round 5: at 390 the options wrapped unevenly, two on one line and one alone on the next) on a phone they
+     sit in even columns: what the call is about one per line, the times of day two per line where both fit */
+  @media (max-width: 479px) {
+    fieldset.radios { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr)); column-gap: 16px; }
+    #cb-reason { grid-template-columns: minmax(0, 1fr); }
+    .radios .err, .radios .help { grid-column: 1 / -1; }
+  }
   /* Radios and checkboxes drawn in the palette (the native ones come out warm grey on a dark page). Still real inputs:
      keyboard, form posting and screen readers are unchanged, and forced-colors mode gets the native control back. */
   .field input[type="radio"], .field input[type="checkbox"] {

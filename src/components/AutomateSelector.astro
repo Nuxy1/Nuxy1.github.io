@@ -1,5 +1,6 @@
 ---
 import { titleCase } from "../lib/title-case";
+import { noWidow } from "../lib/no-widow";
 // "What Do You Want to Automate?": the visitor picks a goal and sees the three services that fit it best (owner's
 // motion brief, 2026-11-11). It is a fixed list per goal, not an AI request: each list names catalogue ids in order
 // of fit, an id that isn't in the catalogue is skipped, and every name, price and fact comes from data/services.ts.
@@ -24,8 +25,9 @@ const goals: Goal[] = [
 type Svc = Service & { monthly?: string };
 const picks = goals.map((g) => ({ ...g, services: g.ids.map((id) => serviceById[id] as Svc | undefined).filter((s): s is Svc => Boolean(s)).slice(0, 3) }));
 const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+const { band = false } = Astro.props as { band?: boolean };
 ---
-<section class="as section" id="what-to-automate" aria-labelledby="as-h">
+<section class:list={["as section", { band }]} id="what-to-automate" aria-labelledby="as-h">
   <div class="wrap">
     <div class="section-head reveal">
       <p class="eyebrow">Find your fit</p>
@@ -52,18 +54,19 @@ const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
                   {k === 0 && <span class="chip">Best fit</span>}
                 </div>
                 <h4 class="as-name">{titleCase(s.name)}</h4>
-                <p class="as-fixes">Fixes: {lower(s.fixes)}</p>
-                <p class="as-text">{s.text}</p>
+                {/* (critique 11-17) name, what it fixes and the price only: the full description is already on this page
+                    or one click away under "See details", and repeating it in every list made the page read twice */}
+                <p class="as-fixes">Fixes: {noWidow(lower(s.fixes))}</p>
                 <details class="as-more">
                   <summary>What’s involved<span class="sr-only">: {s.name}</span><Icon name="caretDown" /></summary>
                   <dl>
-                    <div><dt>Suits</dt><dd>{s.who}</dd></div>
-                    <div><dt>We need from you</dt><dd>{s.needs}</dd></div>
-                    <div><dt>Other companies’ costs</dt><dd>{s.costs}</dd></div>
+                    <div><dt>Suits</dt><dd>{noWidow(s.who)}</dd></div>
+                    <div><dt>We need from you</dt><dd>{noWidow(s.needs)}</dd></div>
+                    <div><dt>Other companies’ costs</dt><dd>{noWidow(s.costs)}</dd></div>
                   </dl>
                 </details>
                 <div class="as-foot">
-                  <p class="as-price"><span class="sr-only">Price: </span>{s.price}{s.monthly ? <span class="note"> + {s.monthly}</span> : <span class="note">{s.addon ? " add-on" : " one-time"}</span>}</p>
+                  <p class="as-price"><span class="sr-only">Price: </span>{s.price}{s.monthly ? <span class="note"> + {s.monthly}, month&nbsp;to&nbsp;month</span> : <span class="note">{s.addon ? " add-on" : " one-time"}</span>}</p>
                   <div class="as-links">
                     <a class="text-link" href={`/solutions/#${s.id}`} data-track="service_details">See details<span class="sr-only">: {s.name}</span></a>
                     <a class={`button small${k === 0 ? "" : " secondary"}`} href={`/contact/?service=${s.id}`} data-track="cta_selector">Get a Free Quote<span class="sr-only">: {s.name}</span></a>
@@ -114,6 +117,7 @@ const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
     display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 22px;
     border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--panel);
   }
+  .as-more { margin-top: auto; }
   /* a hidden list's cards wait faded, then come in one after another when their goal is picked */
   :global(html[data-motion]:not([data-motion="reduced"])) .as-card { transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out); }
   :global(html[data-motion]:not([data-motion="reduced"])) .as-panel .as-card { opacity: 0; transform: translateY(10px); }
@@ -132,7 +136,6 @@ const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
   .as-icon :global(.icon) { width: 22px; height: 22px; }
   .as-name { font-size: 1.125rem; }
   .as-fixes { color: var(--cyan); font-size: 0.875rem; font-weight: 500; }
-  .as-text { color: var(--body); font-size: 0.9375rem; }
 
   .as-more { border-top: 1px solid var(--hairline-soft); }
   .as-more summary {

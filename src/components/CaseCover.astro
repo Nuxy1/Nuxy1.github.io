@@ -19,9 +19,14 @@ interface Props {
 const { study: c, eager = false, zoom = false } = Astro.props;
 const desk = c.shots?.find((s) => s.device === "desktop");
 const phone = c.shots?.find((s) => s.device === "mobile");
-// How wide each frame is drawn (the card and the project page's top share one layout): the phone is 24% of the
-// column, 96px to 140px; the computer takes the rest, less the gap (about 460px at most).
-const deskSizes = "(min-width: 1200px) 460px, (min-width: 960px) 38vw, calc(100vw - 148px)";
+// How wide each frame is drawn: the phone is 24% of the column, 96px to 140px; the computer takes the rest, less the
+// gap. The card sits in a narrower column than the project page's top, so each has its own list. Measured computer
+// widths, card: 136px at 320 wide, 227 at 412, 443 at 720, 592 at 900; from 960 the card's stage spans the card
+// (round 9): 675 at 1024, 696 at 1440. Project page:
+// 178, 269, 501, 666, 356, 426. (An overstated width made phones fetch the 800px file for a 227px picture.)
+const deskSizes = zoom
+  ? "(min-width: 1200px) 430px, (min-width: 960px) 35vw, (min-width: 600px) calc(92vw - 160px), calc(100vw - 142px)"
+  : "(min-width: 960px) 690px, (min-width: 600px) calc(82vw - 148px), calc(100vw - 184px)";
 const phoneSizes = "(min-width: 600px) 140px, 96px";
 ---
 {desk && (

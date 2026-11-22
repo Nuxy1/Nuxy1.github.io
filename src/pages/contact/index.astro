@@ -9,6 +9,16 @@ import InquiryForm from "../../components/InquiryForm.astro";
 import CallbackForm from "../../components/CallbackForm.astro";
 import { calMinutes, calUrl, callbackForm, inbox } from "../../data/site";
 import { ask, gmail, outlook } from "../../lib/request";
+import { faqs, variantById, automationFrom } from "../../data/services";
+
+// (critique round 6: at 1440 the side column ended a screen above the form, and the page never said what things cost
+// or how paying works) the starting prices and three answers from the pricing page's questions, word for word
+const websiteFrom = variantById["starter-website"].price;
+const quick = ["How do I pay?", "Are there costs from other companies?", "What if I change my mind?"].map((q) => {
+  const found = faqs.find(([x]) => x === q);
+  if (!found) throw new Error(`contact: the question "${q}" is no longer in data/services.ts faqs`);
+  return found;
+});
 
 const next = [
   ["We read it", "A person reads every request. There is no sales sequence to sit through."],
@@ -33,13 +43,37 @@ const pageData = {
       <div class="contact-main">
         <p class="eyebrow">Free quote</p>
         <h1 id="contact-title">Tell Us What You Need</h1>
-        <p class="lead">A new website, a Shopify store, an automation or a fix to what you have. We reply within one business day with a written plan and a fixed price.</p>
-        <div class="panel form-panel">
-          <InquiryForm />
+        <p class="lead">A new website, an online store, an automation or care for the site you have. Tell us about it, and we’ll reply in writing.</p>
+        <!-- (site audit 2026-11-21, critique: on a phone the callback came after the whole quote form, and the aside
+        offered it a second time; now both ways are named here, before the first field)
+        (owner decision 2026-11-21: one form at a time) With JavaScript the two links become tabs and only the chosen
+        form shows; the quote form is chosen first, /contact/#callback opens the callback form, and a form keeps what was
+        typed in it when the visitor switches. Without JavaScript both forms show, one below the other, and the links jump. -->
+        {callbackForm && (
+          <ul class="ways" aria-label="Two ways to start" data-ways>
+            <li><a href="#quote-form" id="way-quote" data-way="quote"><Icon name="pencilSimple" /><span><strong>Write it down</strong> A few short questions, just below</span></a></li>
+            <li><a href="#callback" id="way-callback" data-way="callback"><Icon name="phone" /><span><strong>Request a callback</strong> Leave your number; we call or text</span></a></li>
+          </ul>
+        )}
+        <div class="way-panel" id="quote-panel" data-way-panel="quote">
+          <!-- (site audit 2026-11-21, critique round 3) what happens next sat in the side column, so on a phone it came
+          after both forms: it now sits in the main column at every width, right above the form it explains, and the lead
+          no longer says the same thing first. The two ways stay above it so a phone still shows them in the first screen. -->
+          <section class="steps" aria-labelledby="steps-h">
+            <h2 id="steps-h">What Happens Next</h2>
+            <ol class="next">
+              {next.map(([title, text], i) => (
+                <li><span class="num" aria-hidden="true">{i + 1}</span><div><h3>{titleCase(title)}</h3><p>{text}</p></div></li>
+              ))}
+            </ol>
+          </section>
+          <div class="panel form-panel" id="quote-form">
+            <InquiryForm />
+          </div>
         </div>
 
         {callbackForm && (
-          <section class="callback" id="callback" aria-labelledby="callback-title">
+          <section class="callback way-panel" id="callback" data-way-panel="callback" aria-labelledby="callback-title">
             <h2 id="callback-title">Rather Talk on the Phone?</h2>
             <p class="lead">Leave your number and the time of day that suits you, and we’ll call or text you back about it. This asks for a call; it doesn’t set a time.</p>
             <div class="panel form-panel">
@@ -50,23 +84,6 @@ const pageData = {
       </div>
 
       <aside class="contact-aside" aria-label="About your request">
-        <div class="aside-block">
-          <h2>What Happens Next</h2>
-          <ol class="next">
-            {next.map(([title, text], i) => (
-              <li><span class="num" aria-hidden="true">{i + 1}</span><div><h3>{titleCase(title)}</h3><p>{text}</p></div></li>
-            ))}
-          </ol>
-        </div>
-
-        {callbackForm && (
-          <div class="aside-block">
-            <h2>Prefer a Phone Call?</h2>
-            <p>Ask for a callback and tell us the time of day that suits you. It’s a request: we call or text you back, and nothing is booked.</p>
-            <a class="button secondary small" href="#callback"><Icon name="phone" />Request a callback</a>
-          </div>
-        )}
-
         <div class="aside-block">
           <h2>Prefer Email?</h2>
           <p>Write to <a href={ask()}>{inbox}</a>. If nothing opens when you click, use <a href={gmail()} target="_blank" rel="noopener">Gmail</a> or <a href={outlook()} target="_blank" rel="noopener">Outlook</a> in your browser.</p>
@@ -89,33 +106,134 @@ const pageData = {
           </ul>
           <p class="fine"><a href="/policies/#privacy">Privacy policy</a></p>
         </div>
+
+        <!-- (critique round 7) last, so on a computer it can stay beside the long form (see .aside-follow); the answers
+             share a name, so opening one closes the other and the block always fits the screen -->
+        <div class="aside-block aside-follow">
+          <h2>Prices and Paying</h2>
+          <p>Websites from {websiteFrom}, one-time. Automations from {automationFrom}. The exact price is in your written plan.</p>
+          <div class="faq aside-faq">
+            {quick.map(([q, a]) => (
+              <details name="contact-prices">
+                <summary><span>{q}</span><Icon name="plus" /></summary>
+                <p>{a}</p>
+              </details>
+            ))}
+          </div>
+          <p class="fine"><a href="/pricing/#faq">More questions about prices and paying</a></p>
+        </div>
       </aside>
     </div>
   </section>
 </Base>
 
+<script>
+  // One form at a time (owner decision 2026-11-21): the two links above the forms become tabs (WAI-ARIA tabs pattern,
+  // selection follows focus). Hidden forms stay in the page, so nothing typed is lost. No imports, so Astro writes this
+  // into the page and /contact/ still loads one script file (tests/cinematic.test.mjs counts them).
+  const list = document.querySelector<HTMLElement>("[data-ways]");
+  if (list) {
+    const tabs = [...list.querySelectorAll<HTMLAnchorElement>("[data-way]")];
+    const panelOf = (t: HTMLElement) => document.querySelector<HTMLElement>(`[data-way-panel="${t.dataset.way}"]`)!;
+    list.setAttribute("role", "tablist");
+    list.dataset.tabs = "";
+    for (const li of list.children) li.setAttribute("role", "presentation");
+    for (const t of tabs) {
+      const p = panelOf(t);
+      t.setAttribute("role", "tab");
+      t.setAttribute("aria-controls", p.id);
+      p.setAttribute("role", "tabpanel");
+      p.setAttribute("aria-labelledby", t.id);
+    }
+    const show = (t: HTMLAnchorElement, focus = false) => {
+      for (const x of tabs) {
+        const on = x === t;
+        x.setAttribute("aria-selected", String(on));
+        x.tabIndex = on ? 0 : -1;
+        panelOf(x).hidden = !on;
+      }
+      if (focus) t.focus();
+      // the address says which form is open, so a reload or a shared link opens the same one; no jump
+      history.replaceState(history.state, "", t.dataset.way === "callback" ? "#callback" : location.pathname + location.search);
+    };
+    const byHash = () => tabs.find((t) => t.getAttribute("href") === location.hash);
+    const first = byHash() ?? tabs[0];
+    show(first);
+    if (first !== tabs[0]) {
+      // a link to /contact/#callback lands with the two choices in view, not just under them: they stop where every
+      // anchor on the site stops (Base.astro's scroll-padding-top), and the intro's last line stays under the header
+      const p = panelOf(first);
+      p.style.scrollMarginTop = `${p.getBoundingClientRect().top - list.getBoundingClientRect().top}px`;
+      p.scrollIntoView({ block: "start", behavior: "instant" });
+    }
+    list.addEventListener("click", (e) => {
+      const t = (e.target as Element).closest<HTMLAnchorElement>("[data-way]");
+      if (!t) return;
+      e.preventDefault();
+      show(t);
+    });
+    list.addEventListener("keydown", (e) => {
+      const i = tabs.indexOf(document.activeElement as HTMLAnchorElement);
+      if (i < 0) return;
+      const n = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: tabs.length - 1, " ": i }[e.key];
+      if (n === undefined) return;
+      e.preventDefault();
+      show(tabs[(n + tabs.length) % tabs.length], true);
+    });
+    addEventListener("hashchange", () => { const t = byHash(); if (t) show(t); });
+  }
+</script>
+
 <style>
   .contact { padding-top: clamp(40px, 6vw, 72px); }
   .contact-grid { display: grid; gap: clamp(40px, 5vw, 64px); align-items: start; }
   @media (min-width: 1024px) { .contact-grid { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); } }
-  .contact h1 { font-size: clamp(2rem, 1.4rem + 2.6vw, 3rem); }
   .contact .lead { margin-top: 16px; max-width: 60ch; color: var(--muted); }
-  .form-panel { margin-top: clamp(28px, 4vw, 40px); padding: clamp(20px, 4vw, 36px); }
+  .form-panel { margin-top: clamp(28px, 4vw, 40px); padding: clamp(20px, 4vw, 36px); scroll-margin-top: 16px; }
+  .ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px; margin: 24px 0 0; padding: 0; list-style: none; }
+  .ways a { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; align-items: start; min-height: 44px; padding: 14px 16px; border: 1px solid var(--hairline); border-radius: var(--r-md); color: var(--muted); text-decoration: none; font-size: 0.875rem; line-height: 1.45; transition: border-color 160ms ease-out, background-color 160ms ease-out; }
+  .ways a:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .ways strong { display: block; color: var(--ink); font-size: 1rem; font-weight: 600; }
+  .ways :global(.icon) { width: 22px; height: 22px; margin-top: 1px; color: var(--link); }
+  /* as tabs (the script above): the open form's card is tinted with a doubled blue edge, the same "chosen" mark as the
+     portfolio's level filter; hovering the other one only colors its edge */
+  .ways a[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .ways a[aria-selected="false"]:hover { background: transparent; }
   .callback { margin-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
+  .ways[data-tabs] ~ .callback { margin-top: clamp(28px, 3vw, 36px); }
   .callback h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); }
   .callback .form-panel { margin-top: clamp(20px, 3vw, 28px); }
-  .contact-aside { display: grid; gap: 32px; }
-  @media (min-width: 1024px) { .contact-aside { position: sticky; top: 96px; padding-top: 8px; } }
+  .contact-aside { display: flex; flex-direction: column; gap: 32px; }
+  @media (min-width: 1024px) { .contact-aside { padding-top: 8px; } }
+  /* (critique round 7) the whole column (650-750px) only fit tall screens, so a 1280x800 or 1536x730 laptop got a short
+     column beside a long form. Now the column runs the form's full height and only its last block, prices and paying
+     (about 310-520px with one answer open), stays in view, which fits any screen 640px tall or more. A flex column,
+     not a grid: a grid would hold the block inside its own row. */
+  @media (min-width: 1024px) { .contact-aside { align-self: stretch; } }
+  @media (min-width: 1024px) and (min-height: 640px) { .aside-follow { position: sticky; top: 96px; } }
   .aside-block { display: grid; gap: 12px; padding-bottom: 32px; border-bottom: 1px solid var(--hairline); }
   .aside-block:last-child { padding-bottom: 0; border-bottom: 0; }
   .aside-block h2 { font-size: 1.125rem; letter-spacing: -0.01em; }
   .aside-block p { color: var(--body); font-size: 0.9375rem; line-height: 1.6; overflow-wrap: anywhere; }
   .aside-block .button { justify-self: start; }
-  .next { display: grid; gap: 18px; margin: 4px 0 0; padding: 0; list-style: none; }
-  .next li { display: grid; grid-template-columns: 32px 1fr; gap: 14px; align-items: start; }
-  .num { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft); color: var(--link); font-size: 0.875rem; font-weight: 650; }
-  .next h3 { font-size: 1rem; font-weight: 600; }
-  .next p { margin-top: 4px; color: var(--muted); }
+  .aside-faq { margin-top: 0; }
+  .aside-faq summary { padding: 12px 0; font-size: 0.9375rem; }
+  .aside-faq details p { padding-bottom: 14px; }
+  /* the three steps: stacked on a phone. (critique round 7: three columns left each step about 190px wide, five or six
+     lines tall) From 640px each step is one row, its heading on the left and its text beside it. */
+  .steps { margin-top: clamp(28px, 3vw, 36px); padding-top: 18px; border-top: 1px solid var(--hairline); }
+  .steps h2 { color: var(--muted); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .next { display: grid; gap: 14px; margin: 14px 0 0; padding: 0; list-style: none; }
+  @media (min-width: 640px) {
+    .next { gap: 16px; }
+    /* (critique round 8) the title column fits the longest step title on two lines (121px), not 208px of air */
+    .next li > div { display: grid; grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr); gap: 4px 24px; }
+    .next li > div p { margin-top: 0; }
+  }
+  .next li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .num { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--link); font-size: 0.8125rem; font-weight: 650; }
+  .next h3 { font-size: 0.9375rem; font-weight: 600; line-height: 1.35; }
+  .next p { margin-top: 4px; color: var(--muted); font-size: 0.875rem; line-height: 1.5; }
   .ticks.small { font-size: 0.9375rem; }
   .fine { font-size: 0.875rem; }
 </style>

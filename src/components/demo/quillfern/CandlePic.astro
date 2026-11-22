@@ -1,0 +1,45 @@
+---
+// One candle's picture. Its studio photo when there is one (quillfern-<id> in data/demo-photos.json); otherwise its
+// paper label set in type: a deliberate stand-in, never a borrowed photo. Adding a photo needs no code change: put the
+// master in assets/cinematic/demos/quillfern-<id>.png and run node scripts/demo-photos.mjs (docs/demo-photo-assets.md).
+import DemoPhoto from "../DemoPhoto.astro";
+import photos from "../../../data/demo-photos.json";
+import type { Candle } from "../../../lib/demo/quillfern-cart";
+
+interface Props { candle: Candle; sizes: string; class?: string; priority?: boolean; decorative?: boolean }
+const { candle: c, sizes, class: cls, priority = false, decorative = false } = Astro.props;
+
+// what each generated photo actually shows (checked against the files)
+const shows: Record<string, string> = {
+  "cedar-evening": "lit, in a cream ceramic jar on an oak board, with cedar shavings, half a bergamot, a vanilla pod and its copper lid",
+  "amber-hearth": "in a cream ceramic jar on linen, with curls of orange peel, cinnamon sticks, a piece of amber resin and its copper lid",
+  "rain-garden": "in a cream ceramic jar on a wet slate, with rain-spotted leaves, a bundle of vetiver root and its copper lid",
+  "vanilla-linen": "lit, in a cream ceramic jar on a folded white napkin, with a twist of lemon peel and a vanilla pod",
+  "forest-cabin": "in a cream ceramic jar on a weathered oak board, with a sprig of fir, a curl of birch bark, two small spruce cones and its copper lid",
+  "quiet-morning": "lit, in a cream ceramic jar on linen, with a small dish of white tea leaves, a ripe pear and its copper lid",
+};
+const name = `quillfern-${c.id}`;
+const has = name in photos;
+---
+{has
+  ? <DemoPhoto name={name} alt={decorative ? "" : `${c.name} ${shows[c.id] ?? "in a cream ceramic jar"}`} sizes={sizes} priority={priority} class:list={["qf-pic", cls]} />
+  : (
+    <div class:list={["qf-pic", "qf-lc", cls]} style={`--label:${c.label};--glass:${c.glass}`} role={decorative ? undefined : "img"} aria-label={decorative ? undefined : `${c.name} label: ${c.notes.top}, ${c.notes.heart} and ${c.notes.base}`} aria-hidden={decorative ? "true" : undefined}>
+      <span class="qf-lc-label">
+        <span class="qf-lc-brand">Quillfern</span>
+        <span class="qf-lc-name">{c.name}</span>
+        <span class="qf-lc-notes">{c.notes.top}<br />{c.notes.heart}<br />{c.notes.base}</span>
+      </span>
+    </div>
+  )}
+
+<style>
+  /* the stand-in: the candle's own arch label, flat on parchment, at the photo's square size */
+  .qf-lc { display: grid; place-items: center; aspect-ratio: 1; background: radial-gradient(90% 70% at 50% 100%, color-mix(in srgb, var(--glass) 22%, #efe4d2), #efe4d2 70%); container-type: inline-size; }
+  .qf-lc-label { display: grid; justify-items: center; align-content: center; gap: 4cqi; width: 54%; aspect-ratio: 3 / 4; padding: 10cqi 6cqi 6cqi; border-radius: 999px 999px 4px 4px / 42% 42% 4px 4px; background: var(--label); box-shadow: inset 0 0 0 1px rgba(45, 34, 28, 0.14), 0 1px 0 rgba(255, 255, 255, 0.5), 0 18px 40px -24px rgba(45, 34, 28, 0.5); color: #2d221c; text-align: center; }
+  .qf-lc-brand { font-family: var(--qf-ui); font-size: max(0.6875rem, 3cqi); font-weight: 600; letter-spacing: 0.02em; color: #6e5040; }
+  .qf-lc-name { font-size: max(1.125rem, 7cqi); font-weight: 520; line-height: 1.02; letter-spacing: -0.02em; font-variation-settings: "SOFT" 100, "WONK" 1; text-wrap: balance; }
+  .qf-lc-notes { font-size: max(0.75rem, 3.4cqi); font-style: italic; line-height: 1.45; color: #5e5047; }
+  /* too small for the notes to be read: the label keeps only the name */
+  @container (max-width: 259px) { .qf-lc-label { width: 64%; gap: 6px; padding: 18% 8px 10px; } .qf-lc-notes { display: none; } }
+</style>

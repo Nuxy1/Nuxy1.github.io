@@ -8,9 +8,9 @@ export type ExtraId = "edging" | "cleanup" | "mulch" | "trimming" | "bagging" | 
 type Unit = "visit" | "job" | "season";
 
 export const SIZES: Record<Exclude<Size, "custom">, { label: string; sqft: number; hint: string }> = {
-  small: { label: "Small", sqft: 5000, hint: "Up to 5,000 sq ft · a city lot" },
-  medium: { label: "Medium", sqft: 12000, hint: "5,000–12,000 sq ft · a typical suburban yard" },
-  large: { label: "Large", sqft: 22000, hint: "12,000–22,000 sq ft · about half an acre" },
+  small: { label: "Small", sqft: 5000, hint: "Up to 5,000 sq ft, a city lot" },
+  medium: { label: "Medium", sqft: 12000, hint: "5,000–12,000 sq ft, a typical suburban yard" },
+  large: { label: "Large", sqft: 22000, hint: "12,000–22,000 sq ft, about half an acre" },
 };
 export const CUSTOM_MIN = 1000, CUSTOM_MAX = 200000;
 
@@ -49,19 +49,22 @@ export type Quote = { low: number; high: number; per: string; season?: { low: nu
 
 const r5 = (n: number) => Math.round(n / 5) * 5;
 
-/** How big the yard is, as a factor of a medium yard (custom sizes interpolate between and beyond the presets). */
+/** How big the yard is, as a factor of a medium yard. Custom sizes follow the curve between and beyond the presets,
+ *  but a lot under a small yard is priced as a small yard (the smallest visit still has a minimum), and an empty
+ *  custom size counts as medium until the lot size is typed, so the range never drops to a price no one charges. */
 export function sizeFactor(size: Size, customSqft = 0): number {
-  const sqft = size === "custom" ? Math.min(CUSTOM_MAX, Math.max(CUSTOM_MIN, customSqft || 0)) : SIZES[size].sqft;
+  const sqft = size !== "custom" ? SIZES[size].sqft : customSqft ? Math.min(CUSTOM_MAX, Math.max(SIZES.small.sqft, customSqft)) : SIZES.medium.sqft;
   return Math.pow(sqft / SIZES.medium.sqft, 0.62);
 }
 
-/** The base price for the service at this size: presets use the price sheet, custom sizes follow the curve. */
+/** The base price for the service at this size: presets use the price sheet, custom sizes follow the curve and never
+ *  go below the small-yard price. */
 function basePrice(s: ServiceId, size: Size, customSqft = 0): number {
   const b = SERVICES[s].base;
   if (size === "small") return b[0];
   if (size === "medium") return b[1];
   if (size === "large") return b[2];
-  return b[1] * sizeFactor("custom", customSqft);
+  return Math.max(b[0], b[1] * sizeFactor("custom", customSqft));
 }
 
 export const allowed = (s: ServiceId, f: Frequency) => SERVICES[s].freqs.includes(f);
@@ -103,4 +106,10 @@ export function estimate(q: QuoteInput): Quote {
     out.monthly = { low: r5(out.low * perMonth), high: r5(out.high * perMonth) };
   }
   return out;
+}
+
+/** The "From" price a page prints for a service at a preset yard size: the lowest the estimator quotes for it, over
+ *  the frequencies the service is offered at, before extras. Pages read it from here so they agree with the estimate. */
+export function fromPrice(service: ServiceId, size: Exclude<Size, "custom"> = "small"): number {
+  return Math.min(...SERVICES[service].freqs.map((frequency) => estimate({ service, size, frequency, extras: [] }).low));
 }

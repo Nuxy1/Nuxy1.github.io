@@ -271,9 +271,9 @@ test("demo websites: their forms send nothing and say so, and their call/text bu
   const tab = await open({ width: 390 });
   const { page } = tab;
   try {
-    // multi-page demos keep their plain demo form on an inner page (Lantern Row: the cancellation list; Mossgate: the
-    // question form on the about page)
-    const formPage = { "lantern-row-barbers": "booking/", "mossgate-cleaning": "about/" };
+    // multi-page demos keep their plain demo form on an inner page (Lantern Row: the cancellation list, which opens
+    // from a #waitlist link; Mossgate: the question form on the about page)
+    const formPage = { "lantern-row-barbers": "booking/#waitlist", "mossgate-cleaning": "about/" };
     for (const d of demoSites) {
       await go(page, `/example-sites/${d.slug}/${formPage[d.slug] ?? ""}`);
       const forms = page.locator("form[data-demo-form]");
@@ -496,6 +496,31 @@ test("a docs table wider than a phone scrolls in its own named box, which Tab re
   }
 });
 
+test("a docs table of three or more columns stacks on a phone, each cell under its column's name (critique round 5)", async () => {
+  const tab = await open({ width: 390 });
+  try {
+    await go(tab.page, "/docs/small-business-automations/");
+    const read = () => tab.page.$eval(".table-scroll", (box) => {
+      const td = box.querySelector("tbody td:nth-child(2)");
+      return { fits: box.scrollWidth <= box.clientWidth, display: getComputedStyle(td).display, label: getComputedStyle(td, "::before").content, name: td.dataset.label, head: box.querySelectorAll("th")[1].textContent.trim(), role: box.querySelector("table").getAttribute("role"), cells: box.querySelectorAll("[role=cell]").length, tds: box.querySelectorAll("td").length };
+    });
+    const phone = await read();
+    assert.equal(phone.fits, true, "nothing scrolls sideways");
+    assert.equal(phone.display, "block");
+    assert.equal(phone.name, phone.head, "each cell is named after its column");
+    assert.equal(phone.label, `"${phone.head}"`, "the name shows above the cell");
+    assert.equal(phone.role, "table", "still a table to a screen reader");
+    assert.equal(phone.cells, phone.tds);
+    await tab.page.setViewportSize({ width: 1440, height: 900 });
+    const wide = await read();
+    assert.equal(wide.display, "table-cell", "a wide screen keeps the table");
+    assert.equal(wide.label, "none");
+    assert.deepEqual(tab.errors, []);
+  } finally {
+    await tab.context.close();
+  }
+});
+
 // ---- The motion upgrade (owner's brief, 2026-11-11): motion setting, hero core, simulated demos, goal picker ----
 
 test("the footer's Motion choice: Reduced stops everything and is remembered; a device asking for reduced motion can only keep still", async () => {
@@ -527,14 +552,22 @@ test("the footer's Motion choice: Reduced stops everything and is remembered; a 
 });
 
 test("without JavaScript: the hero's parts, the simulated demos and the goal picker still work, and every demo says it is made up", async () => {
-  const tab = await open({ width: 390, javaScriptEnabled: false });
+  // the parts diagram is shown from 640px up (2026-11-17: on a phone the work follows the copy), so it is tried on a tablet
+  const tab = await open({ width: 1024, javaScriptEnabled: false });
   const { page } = tab;
   const shown = (sel, key) => page.locator(`${sel}:visible`).evaluateAll((els, k) => els.map((e) => e.getAttribute(k)), key);
   try {
-    await go(page, "/");
+    await go(page, "/automation/"); // the parts diagram moved here from the home page (2026-11-17)
     assert.deepEqual(await shown(".panel[data-part]", "data-part"), ["leads"]);
     await page.locator(".node", { hasText: "Booking" }).click();
     assert.deepEqual(await shown(".panel[data-part]", "data-part"), ["booking"]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await page.locator("#how-it-fits").isVisible(), false, "on a phone the diagram is skipped");
+    await page.setViewportSize({ width: 1024, height: 844 });
+
+    await go(page, "/");
+    assert.equal(await page.locator("[data-core]").count(), 0, "the home page no longer carries the parts diagram");
+    await page.setViewportSize({ width: 390, height: 844 });
 
     const demos = await page.locator("#autopilot .ap-demo").allTextContents();
     assert.equal(demos.length, 4);
@@ -563,12 +596,15 @@ test("simulated demos: Play steps through on its own, Pause holds, the end stops
     const demo = page.locator("#ap-voice");
     await demo.scrollIntoViewIfNeeded();
     assert.match(await caption(), /Press start/);
-    // at rest the first step is already filled in, and the later ones wait as empty outlines (approvals 89)
-    const rest = await demo.locator(".ap-card:not(.later)").evaluateAll((els) => els.map((e) => e.dataset.from));
+    // at rest the first step is already filled in (approvals 89), and the later ones keep their space, unseen (critique 11-17)
+    // the step list only: the "How it ends" preview under it (critique round 7) is a copy of the last card, not a step
+    const rest = await demo.locator(".ap-feed .ap-card:not(.later)").evaluateAll((els) => els.map((e) => e.dataset.from));
     assert.ok(rest.length > 0 && rest.every((f) => f === "1"), "only the first step's cards show before Start");
     assert.ok((await demo.locator(".ap-card.later").count()) > 0, "the later steps wait");
+    assert.ok(await demo.locator(".ap-end").isVisible(), "at rest the window shows how the demo ends");
     await demo.locator("[data-play]").click();
     assert.match(await caption(), /^Step 1 of 6/);
+    assert.ok(!(await demo.locator(".ap-end").isVisible()), "the ending preview goes once a step plays");
     await page.waitForTimeout(2900);
     assert.match(await caption(), /^Step 2 of 6/, "it moves on by itself");
     await demo.locator("[data-play]").click(); // pause
@@ -591,7 +627,7 @@ test("simulated demos on a phone: the cards play in a window that keeps the newe
   // measured in the page: where the window, the newest card and the phone quote bar sit
   const measure = (page) => page.evaluate(() => {
     const d = document.querySelector("#ap-voice"), feed = d.querySelector(".ap-feed"), f = feed.getBoundingClientRect();
-    const last = [...d.querySelectorAll(".ap-card:not(.later)")].at(-1)?.getBoundingClientRect();
+    const last = [...feed.querySelectorAll(".ap-card:not(.later)")].at(-1)?.getBoundingClientRect();
     const bar = document.querySelector("[data-sticky]"), b = bar.getBoundingClientRect();
     return {
       section: Math.round(document.querySelector("#autopilot").getBoundingClientRect().height), y: Math.round(scrollY),
@@ -637,14 +673,25 @@ test("simulated demos on a phone: the cards play in a window that keeps the newe
     }
   }
 
-  // two columns: no window, no extra keyboard stop, the whole feed in the page as before
-  const wide = await open({ width: 1440 });
+  // two columns (critique 11-17): the cards play in a window as tall as the step list beside it, so the panel never
+  // stands empty and tall at rest; the window scrolls to the newest card and is a keyboard stop once it holds cards
+  const wide = await open({ width: 1440, reducedMotion: "reduce" });
   try {
     await go(wide.page, "/");
-    await wide.page.locator("#ap-voice [data-play]").click();
-    await wide.page.waitForTimeout(400);
+    const heights = () => wide.page.evaluate(() => {
+      const d = document.querySelector("#ap-voice");
+      return [d.querySelector(".ap-side"), d.querySelector(".ap-stage")].map((e) => Math.round(e.getBoundingClientRect().height));
+    });
+    const [side, stage] = await heights();
+    assert.ok(Math.abs(side - stage) <= 1, `the stage (${stage}px) is as tall as the step list (${side}px)`);
+    const rest = await measure(wide.page);
+    assert.deepEqual([rest.overflow, rest.tabindex], ["hidden", null], "at rest the window doesn't scroll and isn't a keyboard stop");
+    const next = wide.page.locator("#ap-voice [data-next]");
+    while (await next.isEnabled()) { await next.dispatchEvent("click"); await wide.page.waitForTimeout(150); }
     const m = await measure(wide.page);
-    assert.deepEqual([m.scrolls, m.overflow, m.tabindex], [false, "visible", null]);
+    assert.deepEqual([m.scrolls, m.overflow, m.tabindex], [true, "auto", "0"]);
+    assert.ok(m.newest[0] >= m.win[0] - 1 && m.newest[1] <= m.win[1] + 1, "the last card is inside the window");
+    assert.equal(m.section, rest.section, "playing the demo changes no height");
   } finally {
     await wide.context.close();
   }
@@ -667,8 +714,8 @@ test("the goal picker and the hero show only catalogue services, with their cata
       assert.equal(c.name.toLowerCase(), byId[c.id].name.toLowerCase()); // shown in Title Case (approvals 85)
       assert.ok(c.price.includes(byId[c.id].price), `${c.id}: ${c.price}`);
     }
-    await go(page, "/"); // the hero's list of services
-    assert.ok((await page.locator(".panel-svc").count()) > 0, "the hero lists services");
+    await go(page, "/automation/"); // the parts diagram's links to services (on /automation/ since 2026-11-17)
+    assert.ok((await page.locator(".panel-svc").count()) > 0, "the parts diagram lists services");
     for (const a of await page.$$eval(".panel-svc", (els) => els.map((e) => ({ id: e.getAttribute("href").split("#")[1], text: e.textContent })))) {
       assert.ok(byId[a.id], a.id);
       assert.ok(a.text.includes(byId[a.id].price), `${a.id}: ${a.text}`);
@@ -697,7 +744,7 @@ test("header: Services, Pricing, Live Demos, Our Work, About and one quote butto
     await drop.locator("summary").click();
     assert.equal(await isOpen(), true);
     const links = await drop.locator("a").evaluateAll((as) => as.map((a) => ({ name: a.textContent.trim(), href: a.getAttribute("href"), h: a.getBoundingClientRect().height })));
-    assert.deepEqual(links.map((l) => l.name), ["AI & Business Automation", "AI Voice Receptionist", "Business Websites", "Website Levels", "E-Commerce", "Website Repairs & Security", "Video & Creative Studio", "All Services"]);
+    assert.deepEqual(links.map((l) => l.name), ["AI & Business Automation", "AI Voice Receptionist", "Websites", "Website Levels & Prices", "E-Commerce", "Website Repairs & Security", "Video & Creative Studio", "All Services"]);
     for (const l of links) {
       const [path, hash] = l.href.split("#");
       assert.ok(urls.includes(path), `${l.name} -> ${l.href}`);
@@ -970,7 +1017,7 @@ test("phone quote button: absent at the top, shown mid-page clear of the header,
     await go(page, "/");
     await page.waitForTimeout(300);
     assert.equal(await on(), false, "not shown on arrival");
-    await at("#how", true, "shown while reading how it works");
+    await at("#handover", true, "shown while reading the handover");
     await page.waitForTimeout(400); // (its fade)
     const m = await page.evaluate(() => {
       const r = (e) => e.getBoundingClientRect(), bar = document.querySelector("[data-sticky]");
@@ -989,11 +1036,11 @@ test("phone quote button: absent at the top, shown mid-page clear of the header,
     // (hidden means out of the keyboard's way too)
     assert.equal(await page.locator("[data-sticky]").evaluate((b) => getComputedStyle(b).visibility), "hidden");
     // dismissed: gone now, and still gone after a reload in the same visit
-    await at("#how", true, "back mid-page");
+    await at("#handover", true, "back mid-page");
     await page.locator("[data-sticky-close]").click();
     assert.equal(await on(), false);
     await page.reload({ waitUntil: "load" });
-    await page.evaluate(() => document.getElementById("how").scrollIntoView());
+    await page.evaluate(() => document.getElementById("handover").scrollIntoView());
     await page.waitForTimeout(600);
     assert.equal(await on(), false, "stays closed for the visit");
     assert.deepEqual(tab.outside, []);
@@ -1005,7 +1052,7 @@ test("phone quote button: absent at the top, shown mid-page clear of the header,
   for (const options of [{ width: 1440, height: 900 }, { width: 390, height: 780, javaScriptEnabled: false }]) {
     const other = await open(options);
     try {
-      await go(other.page, "/#how");
+      await go(other.page, "/#handover");
       await other.page.waitForTimeout(400);
       assert.equal(await other.page.locator("[data-sticky]").evaluate((b) => getComputedStyle(b).display), "none", JSON.stringify(options));
     } finally {
@@ -1021,7 +1068,9 @@ test("the homepage in its new order: one h1, the sections in the brief's sequenc
     await go(page, "/");
     assert.equal(await page.locator("h1").count(), 1);
     const order = await page.locator("main > section[id], main > section[data-final]").evaluateAll((ss) => ss.map((s) => s.id || "final"));
-    const want = ["what-we-do", "website-levels", "portfolio", "autopilot", "how", "handover", "why-nuxy", "home-faq", "final"];
+    // Owner's site audit brief 2026-11-21 (replaces 11-17's "real work straight after the hero"): the kinds of work and their
+    // starting prices first, then real work, the website levels, one automation demo, why Nuxy, the handover and one next step.
+    const want = ["what-we-do", "portfolio", "website-levels", "autopilot", "why-nuxy", "handover", "final"];
     assert.deepEqual(order.filter((id) => want.includes(id)), want);
     // headings go h1 > h2 > h3 without skipping a level
     const levels = await page.locator("main :is(h1, h2, h3, h4)").evaluateAll((hs) => hs.map((h) => Number(h.tagName[1])));
@@ -1044,6 +1093,51 @@ test("the homepage in its new order: one h1, the sections in the brief's sequenc
       assert.deepEqual(ids.filter((x, i) => ids.indexOf(x) !== i), [], `${route} has no id twice`);
     }
     assert.deepEqual(tab.errors, []);
+  } finally {
+    await tab.context.close();
+  }
+});
+
+test("the client walkthrough: one play button over its poster (no empty 0:00 bar), the browser's controls once it starts, and plain controls without JavaScript", async () => {
+  for (const js of [true, false]) {
+    const tab = await open({ width: 1440, javaScriptEnabled: js, reducedMotion: "reduce" });
+    const { page } = tab;
+    try {
+      await go(page, "/portfolio/chrysfadezzz/");
+      const video = page.locator("#walkthrough video");
+      const play = page.locator("#walkthrough [data-play]");
+      if (!js) {
+        assert.equal(await video.evaluate((v) => v.controls), true, "without script the video keeps its own controls");
+        assert.equal(await play.isVisible(), false, "and the play button stays hidden");
+        continue;
+      }
+      assert.deepEqual(await video.evaluate((v) => [v.controls, v.paused, v.networkState === v.NETWORK_EMPTY || v.readyState === 0]), [false, true, true], "at rest: no controls, not playing, nothing loaded");
+      await play.click();
+      await page.waitForFunction(() => !document.querySelector("#walkthrough video").paused);
+      assert.deepEqual(await video.evaluate((v) => [v.controls, document.activeElement === v]), [true, true]);
+      assert.equal(await play.isVisible(), false);
+      assert.deepEqual(tab.errors, []);
+    } finally {
+      await tab.context.close();
+    }
+  }
+});
+
+test("side by side, the website level cards line up: names, prices, the complexity line and the buttons sit at one height", async () => {
+  const tab = await open({ width: 1440, reducedMotion: "reduce" });
+  const { page } = tab;
+  try {
+    for (const route of ["/", "/web-design/", "/business-websites/"]) {
+      await go(page, route);
+      const rows = await page.locator(".lv-rail").evaluateAll((rails) => rails.map((rail) => {
+        const cards = [...rail.querySelectorAll(".lv-card")];
+        const at = (sel) => [...new Set(cards.map((c) => Math.round(c.querySelector(sel).getBoundingClientRect().top - c.getBoundingClientRect().top)))];
+        const end = [...new Set(cards.map((c) => Math.round(c.getBoundingClientRect().bottom - c.querySelector(".lv-actions > :last-child").getBoundingClientRect().bottom)))];
+        return { name: at(".lv-name"), price: at(".lv-price"), complex: at(".lv-complex"), end };
+      }));
+      assert.ok(rows.length > 0, `${route} has a level rail`);
+      for (const r of rows) for (const [k, v] of Object.entries(r)) assert.equal(v.length, 1, `${route} ${k} at ${v.join(", ")}`);
+    }
   } finally {
     await tab.context.close();
   }

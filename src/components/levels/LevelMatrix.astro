@@ -2,7 +2,9 @@
 // The expectation matrix (data/tiers.ts `matrix`): a real table on wider screens, and on phones a four-way choice
 // that shows one level's column as a list. The phone choice is plain radio buttons and CSS (no script): each list
 // shows when its radio is checked. The table and the lists hold the same words; only one of them is ever displayed,
-// so a screen reader meets it once.
+// so a screen reader meets it once. Since 2026-11-17 this is the one level comparison on /web-design/: the first time
+// a visitor switches the phone picker it counts `tier_comparison_opened` (the small script below only counts; the
+// picker works without it).
 import { levels, matrix } from "../../data/tiers";
 ---
 <div class="mx">
@@ -74,3 +76,14 @@ import { levels, matrix } from "../../data/tiers";
   #mx-immersive:focus-visible ~ .mx-pick [data-for="immersive"],
   #mx-flagship:focus-visible ~ .mx-pick [data-for="flagship"] { outline: 2px solid var(--focus); outline-offset: 2px; }
 </style>
+
+<script>
+  // count the first level switch once per page view (never which level)
+  const radios = document.querySelectorAll<HTMLInputElement>(".mx-radio");
+  let counted = false;
+  radios.forEach((r) => r.addEventListener("change", () => {
+    if (counted) return;
+    counted = true;
+    (window as unknown as { nuxyTrack?: (e: string) => void }).nuxyTrack?.("tier_comparison_opened");
+  }));
+</script>

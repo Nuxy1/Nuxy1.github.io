@@ -7,17 +7,16 @@ import { base, hours, phone, email, callNote } from "../../../../data/demos/fern
 const emailNote = `Demo: on a real site this opens an email to ${email}.`;
 ---
 <Shell title="Contact" current="contact" description="Contact Fernway Lawn & Landscape, a fictional lawn care company in a Nuxy Automation demonstration: a message form, hours and service area. Nothing is sent.">
-  <section class="fw-section fw-c-hero" aria-labelledby="c-h">
+  <section class="fw-section fw-c-hero" aria-labelledby="c-h" data-bar-clear>
     <div class="fw-wrap fw-c-in">
       <div class="fw-c-copy">
         <div class="fw-head">
-          <p class="fw-kicker">Contact</p>
           <h1 id="c-h">Questions, odd jobs, or just a hello.</h1>
           <p class="fw-lead">For a price, the <a class="fw-link" href={`${base}/quote/`}>estimate</a> is fastest. For anything else, write to us here.</p>
         </div>
         <ul class="fw-c-ways" role="list">
-          <li><a href="#call" data-demo-action={callNote}><span>Call</span><strong>{phone}</strong></a></li>
-          <li><a href="#email" data-demo-action={emailNote}><span>Email</span><strong>{email}</strong></a></li>
+          <li><a href="#c-h" data-demo-action={callNote}><span>Call</span><strong>{phone}</strong></a></li>
+          <li><a href="#c-h" data-demo-action={emailNote}><span>Email</span><strong>{email}</strong></a></li>
         </ul>
         <dl class="fw-c-hours">{hours.map(([d, h]) => <div><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
       </div>
@@ -28,8 +27,7 @@ const emailNote = `Demo: on a real site this opens an email to ${email}.`;
   <section class="fw-section" aria-labelledby="m-h">
     <div class="fw-wrap">
       <div class="fw-head">
-        <p class="fw-kicker">Service area</p>
-        <h2 id="m-h">Are you on our map?</h2>
+        <h2 id="m-h">Are you in our service area?</h2>
       </div>
       <ServiceMap heading="Towns we cover" id="contact-map" />
     </div>

@@ -165,8 +165,9 @@ test("every price is well formed and worded for its type: a plain price is whole
   for (const s of services) if (s.manage === "own" && !s.monthly) problems.push(`${s.id}: manages itself but names no monthly price`);
   for (const b of bundles) if (!wholeDollars.test(b.price)) problems.push(`bundle ${b.id}: price "${b.price}" is not whole dollars`);
   for (const l of levels) {
-    // a level reads "$499 – $900", "From $3,500", "Starting at $6,000" or the words "Custom quote" (Flagship states its number in the note)
-    if (l.price !== "Custom quote" && !/^(From |Starting at )?\$[\d,]+( – \$[\d,]+)?$/.test(l.price)) problems.push(`level ${l.id}: price "${l.price}"`);
+    // a level reads "$499 – $900" (Business, both live prices: owner decision 2026-11-21), "From $3,500", "From $6,000"
+    // or the words "Custom quote" (Flagship states its number in the note)
+    if (l.price !== "Custom quote" && !/^(From \$[\d,]+|\$[\d,]+ – \$[\d,]+)$/.test(l.price)) problems.push(`level ${l.id}: price "${l.price}"`);
     const lowest = dollars(l.price === "Custom quote" ? l.priceNote : l.price);
     if (lowest !== Number(l.from)) problems.push(`level ${l.id}: from ${l.from} but the page says ${lowest}`);
   }

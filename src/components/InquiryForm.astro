@@ -17,13 +17,18 @@
 import Icon from "./Icon.astro";
 import { inquiryUrl, inbox } from "../data/site";
 import { groups, plans, variants, bundles, retired, wants, wantsShown, wantOf } from "../data/services";
-import { ask } from "../lib/request";
+import { ask, gmail, outlook } from "../lib/request";
 import { rules as creativeRules, creativeWant, quoteParam } from "../data/creative";
 import { formLevels, goals, levelById } from "../data/tiers";
 import { leadSources } from "../data/case-studies";
 // (where a visitor came from, when a client project's "Get a Free Quote" named it: ?from=<id>, sent as "lead". Only the
 // shown projects' ids are offered; with none the field isn't on the page at all. The inquiry service keeps the same list.)
 const hasLeads = Object.keys(leadSources).length > 0;
+// (critique round 10) the management question says what management costs, from the published plans: Website Care,
+// and the cheapest automation plan
+const care = plans.find((p) => p.id === "care")!;
+const dollarsOf = (a: string) => Number(a.replace(/[^0-9.]/g, ""));
+const autoPlan = plans.filter((p) => p.kind === "automation").sort((a, b) => dollarsOf(a.amount) - dollarsOf(b.amount))[0];
 // ?level=<id> from a website level's button (data/tiers.ts) picks that level, shows the website questions and names it
 // at the top; with no answer to "What do you need?" yet it picks "Website".
 const levelNames = Object.fromEntries([...formLevels.map((l) => [l.id, l.id === "unsure" ? "" : `the ${levelById[l.id as keyof typeof levelById].name} website level (${levelById[l.id as keyof typeof levelById].price.toLowerCase()})`])]);
@@ -39,6 +44,10 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
 <div class="inq" data-inquiry data-leads={hasLeads ? JSON.stringify(leadSources) : undefined} data-services={JSON.stringify(asked)} data-creative={JSON.stringify(creativeRules)} data-creative-param={quoteParam} data-creative-want={creativeWant} data-levels={JSON.stringify(levelNames)}>
   <form class="inq-form" aria-labelledby="contact-title" method="post" action={inquiryUrl} accept-charset="UTF-8" data-endpoint={inquiryUrl}>
     <p class="inq-legend">Required unless marked optional. Takes about two minutes.</p>
+    {/* (critique round 11) two or more missing answers: Send scrolls here and focuses a count with one jump link per
+        question, as the plan sign-up pages do ([plan].astro), so a phone shows how many wait further down. One missing
+        answer still takes focus straight to its field. No alert role: the status line below announces the count. */}
+    <div class="inq-errs" tabindex="-1" hidden data-errs></div>
 
     <div class="inq-about" hidden data-about>
       <p><Icon name="info" /><span>You’re asking about <strong data-about-name></strong>.</span></p>
@@ -110,13 +119,15 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     <div class="field">
       <label for="f-need">Tell us about your project</label>
       <textarea id="f-need" name="need" rows="5" required minlength="10" maxlength="3000" aria-describedby="f-need-help f-need-err"></textarea>
-      <p class="help" id="f-need-help">A few sentences is plenty. For example: “Our website is out of date and hard to use on phones,” or “We miss calls while we’re on jobs.”</p>
+      <p class="help" id="f-need-help">A few sentences is plenty, and name any features you want. For example: “Our website is out of date and hard to use on phones, and we want online booking,” or “We miss calls while we’re on jobs.”</p>
       <p class="err" id="f-need-err" hidden></p>
     </div>
 
-    <fieldset class="field radios" aria-describedby="f-scope-help f-scope-err">
-      <legend>A one-time build, ongoing management, or both? <span class="opt">(optional)</span></legend>
-      <p class="help" id="f-scope-help">Management is always optional: what we build is yours either way.</p>
+    <!-- (only where both exist: a monthly plan is already management, and a check, repair, security review or video is
+    one piece of work, so for those answers it is hidden and, disabled, not sent. Site audit 2026-11-21, finding 9) -->
+    <fieldset class="field radios inq-scope" data-scope aria-describedby="f-scope-help f-scope-err">
+      <legend>A one-time setup, ongoing management, or both? <span class="opt">(optional)</span></legend>
+      <p class="help" id="f-scope-help">Management is always optional: what we build is yours either way. It’s {care.name} at {care.amount} a month for a website, or from {autoPlan.amount} a month for automations.</p>
       {Object.entries({ "one-time": "One-time setup", management: "Ongoing management", both: "Both", unsure: "Not sure yet" }).map(([v, l]) => (
         <label><input type="radio" name="scope" value={v} /> {l}</label>
       ))}
@@ -125,6 +136,8 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
 
     <!-- (for a website only: shown, and sent, once "What do you need?" is a website answer or a level link opened the
     form; while hidden it is disabled, so nothing in it travels) -->
+    <!-- (site audit 2026-11-21, finding 9: a third box, “Features you have in mind”, asked again what the project
+    description asks; the description's help now says to name features, and the server still accepts the old field) -->
     <fieldset class="field inq-web" data-web hidden disabled>
       <legend>About the website <span class="opt">(optional)</span></legend>
       <p class="help">Not sure which level you need? Choose “I’m not sure yet” and we’ll recommend one. <a href="/web-design/#levels" target="_blank" rel="noopener">Compare the levels<span class="sr-only"> (opens in a new tab)</span></a></p>
@@ -145,12 +158,6 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
           {goals.map((g) => <option value={g.id}>{g.label}</option>)}
         </select>
         <p class="err" id="f-goal-err" hidden></p>
-      </div>
-      <div class="field">
-        <label for="f-features">Features you have in mind</label>
-        <textarea id="f-features" name="features" rows="2" maxlength="600" aria-describedby="f-features-help f-features-err"></textarea>
-        <p class="help" id="f-features-help">For example: online booking, a shop, a 3D product view, a members area.</p>
-        <p class="err" id="f-features-err" hidden></p>
       </div>
     </fieldset>
     <!-- (without JavaScript the website questions above stay hidden, so the level, the one answer a level link is
@@ -226,7 +233,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     <p class="inq-privacy"><Icon name="lockSimple" /><span>We use what you send only to reply about your project. It is never sold, shared or added to a mailing list. <a href="/policies/#privacy">Privacy policy</a></span></p>
 
     <div class="inq-actions">
-      <button class="button" type="submit" data-submit><span data-label>Request my free quote</span><Icon name="paperPlaneTilt" /></button>
+      <button class="button" type="submit" data-submit><span data-label>Request My Free Quote</span><Icon name="paperPlaneTilt" /></button>
       <p class="inq-alt">or email <a href={ask()}>{inbox}</a></p>
     </div>
     <p class="inq-next"><Icon name="checkCircle" /><span>You’ll receive a written recommendation and price. No sales call is required.</span></p>
@@ -237,6 +244,12 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     <span class="inq-badge ok"><Icon name="checkCircle" /></span>
     <h2>Thanks, We Got Your Request</h2>
     <p>Your reference is <strong class="inq-ref" data-ref></strong>. We’ll reply to <strong data-email></strong> within one business day with what we’d build, what it costs and what we’d need from you.</p>
+    <!-- (critique round 5: a copy of what was sent stays here after sending, folded under one line; filled from the
+      answers that actually travelled, as text) -->
+    <details class="inq-sent">
+      <summary>What You Sent<Icon name="caretDown" /></summary>
+      <dl data-sent></dl>
+    </details>
     <p class="note">Nothing is charged and nothing happens until you agree to a written plan. If our reply doesn’t arrive, check your spam folder or email <a href={`mailto:${inbox}`}>{inbox}</a> with your reference.</p>
   </div>
 
@@ -249,6 +262,9 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       <a class="button" href={ask()} data-mailto><Icon name="envelopeSimple" />Email it instead</a>
       <button class="button secondary" type="button" data-retry><Icon name="arrowCounterClockwise" />Back to the form</button>
     </div>
+    <!-- (critique round 9: with no email app the button does nothing, so the panel also offers the same email in a
+      browser and prints the address) -->
+    <p class="note">If nothing opens, use <a href={gmail()} target="_blank" rel="noopener" data-gmail>Gmail</a> or <a href={outlook()} target="_blank" rel="noopener" data-outlook>Outlook</a> in your browser, also filled in, or write to <span class="glue">{inbox}</span> yourself.</p>
   </div>
 </div>
 
@@ -267,14 +283,14 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   }
   .field textarea { min-height: 132px; resize: vertical; }
   .inq-web { gap: 16px; }
-  .inq-web[hidden] { display: none; }
+  .inq-web[hidden], .inq-scope[hidden] { display: none; }
   .inq-web .help a { color: var(--cyan); }
-  #f-features { min-height: 84px; }
   .field select { appearance: none; padding-right: 36px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 21px, calc(100% - 15px) 21px; background-size: 5px 5px; background-repeat: no-repeat; }
   .field input::placeholder { color: var(--placeholder); }
   .field input:hover, .field select:hover, .field textarea:hover { border-color: var(--field-line-hover); }
   .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid transparent; /* (shows in forced-colors mode, where the shadow ring is dropped) */ border-color: var(--blue-line); box-shadow: 0 0 0 3px rgb(var(--blue-rgb) / 0.35); }
-  .field [aria-invalid="true"] { border-color: var(--bad); }
+  /* (critique round 9) the input rule above outranks a plain [aria-invalid] one, so text fields need the longer selector */
+  .field [aria-invalid="true"], .field input[aria-invalid="true"]:not([type="radio"]):not([type="checkbox"]) { border-color: var(--bad); }
   .field [aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.3); }
   .help { color: var(--muted); font-size: 0.875rem; line-height: 1.45; }
   .err { display: flex; gap: 6px; color: var(--bad); font-size: 0.875rem; font-weight: 500; line-height: 1.45; }
@@ -287,6 +303,8 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   .check input[type="checkbox"] { margin-top: 0.1em; }
   .check .help { padding-left: 30px; }
   .radios .help { flex-basis: 100%; }
+  /* (on a phone the four build-or-management answers wrapped one, two, one; one per line reads as a list) */
+  @media (max-width: 559px) { fieldset.inq-scope { display: grid; } }
   /* Radios and checkboxes drawn in the palette (the native ones come out warm grey on a dark page). Still real inputs:
      keyboard, form posting and screen readers are unchanged, and forced-colors mode gets the native control back. */
   .field input[type="radio"], .field input[type="checkbox"] {
@@ -318,7 +336,15 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   .pick:has(input:checked) { border-color: var(--blue-line); background: rgb(var(--blue-rgb) / 0.14); }
   .pick:has(input:focus-visible) { outline: 2px solid transparent; box-shadow: 0 0 0 3px rgb(var(--blue-rgb) / 0.35); }
   .pick input:focus-visible { outline: none; }
-  .picks[data-invalid] .pick { border-color: var(--bad); }
+  /* (critique round 11) a missing answer marks the group once: one red line around the five choices, as a text box gets
+     a red border, instead of five red choices. An outline 8px out (concentric with the choices' 10px corners), so nothing moves. */
+  .picks[data-invalid] .pick-grid { border-radius: 10px; outline: 1px solid var(--bad); outline-offset: 8px; }
+  .inq-errs { padding: 14px 16px; border: 1px solid var(--bad); border-radius: 10px; color: var(--ink); outline: none; scroll-margin-top: calc(var(--nav-h) + 16px); }
+  .inq-errs:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+  /* (the script builds these lines, so they carry no scope attribute: :global reaches them) */
+  .inq-errs :global(p) { margin: 0 0 6px; font-weight: 600; }
+  .inq-errs :global(ul) { display: grid; gap: 2px; margin: 0; padding-left: 20px; }
+  .inq-errs :global(a) { display: inline-block; padding-block: 10px; }
   .inq-about { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 6px 8px 6px 16px; border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: rgb(var(--blue-rgb) / 0.08); }
   .inq-about[hidden] { display: none; }
   .inq-about p { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; color: var(--body); line-height: 1.5; }
@@ -332,13 +358,15 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   .tip-box p { color: var(--body); font-size: 0.9375rem; overflow-wrap: anywhere; }
   .tip-box strong { color: var(--ink); }
   .tip-actions { display: flex; flex-wrap: wrap; gap: 0 8px; margin-left: -8px; }
-  .inq-more { border: 1px solid var(--hairline); border-radius: var(--r-md); background: rgb(12 21 35 / 0.5); }
-  .inq-more > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 52px; padding: 12px 16px; color: var(--ink); font-weight: 600; cursor: pointer; list-style: none; }
+  /* (site audit 2026-11-21, critique round 3) "More details" sits in the form panel as a section between two rules, not
+     as a second bordered box inside the panel's box */
+  .inq-more { border-block: 1px solid var(--hairline); }
+  .inq-more > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 52px; padding: 12px 0; color: var(--ink); font-weight: 600; cursor: pointer; list-style: none; }
   .inq-more > summary::-webkit-details-marker { display: none; }
   .inq-more > summary .icon { color: var(--cyan); transition: transform 200ms var(--ease); }
+  .inq-more > summary:hover { color: var(--link); }
   .inq-more[open] > summary .icon { transform: rotate(45deg); }
-  .inq-more[open] { padding-bottom: 16px; }
-  .inq-more > .inq-grid, .inq-more > .field { padding-inline: 16px; }
+  .inq-more[open] { padding-bottom: 20px; }
   .inq-more > * + * { margin-top: 16px; }
   .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
   .inq-privacy { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); font-size: 0.875rem; line-height: 1.5; }
@@ -352,6 +380,17 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
   .inq-alt { color: var(--muted); font-size: 0.9375rem; overflow-wrap: anywhere; }
   .inq-done, .inq-fail { display: grid; gap: 14px; justify-items: start; outline: none; scroll-margin-top: calc(clamp(20px, 4vw, 36px) + 8px); } /* (the card edge stays below the sticky header) */
   .inq-done h2, .inq-fail h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 1.875rem); }
+  .inq-sent { justify-self: stretch; border-block: 1px solid var(--hairline); }
+  .inq-sent > summary { display: flex; align-items: center; gap: 8px; min-height: 48px; color: var(--ink); font-weight: 600; cursor: pointer; list-style: none; }
+  .inq-sent > summary::-webkit-details-marker { display: none; }
+  .inq-sent > summary:hover { color: var(--link); }
+  .inq-sent > summary :global(.icon) { margin-left: auto; width: 16px; height: 16px; color: var(--muted); transition: transform 200ms var(--ease); }
+  .inq-sent[open] > summary :global(.icon) { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .inq-sent > summary :global(.icon) { transition: none; } }
+  .inq-sent dl { display: grid; gap: 12px; padding-bottom: 16px; }
+  .inq-sent dl :global(div) { display: grid; gap: 2px; }
+  .inq-sent dl :global(dt) { color: var(--muted); font-size: 0.875rem; }
+  .inq-sent dl :global(dd) { margin: 0; color: var(--ink); white-space: pre-line; overflow-wrap: anywhere; }
   .inq-badge { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; }
   .inq-badge .icon { width: 28px; height: 28px; }
   .inq-badge.ok { background: rgba(52, 211, 153, 0.14); color: var(--ok); }
@@ -363,7 +402,7 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
 </style>
 
 <script>
-  import { askWith } from "../lib/request";
+  import { askWith, gmailWith, outlookWith } from "../lib/request";
   import { emailTypo } from "../lib/email-typo";
   import type { CreativeRules } from "../data/creative-estimate";
 
@@ -377,9 +416,10 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     website: { max: 200, label: "Website", test: (v) => /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(:\d{2,5})?(\/\S*)?$/i.test(v), problem: "Enter a web address like yourbusiness.com, or leave it empty." },
     email: { required: true, max: 254, label: "Email", test: (v) => /^[^\s@<>"(),;:\\[\]]+@[^\s@<>"'(),;:\\[\]]+\.[a-z]{2,}$/i.test(v), problem: "Enter an email address like name@business.com." },
     phone: { max: 40, label: "Phone", test: (v) => /^[0-9+().\-\s x]+$/i.test(v) && (v.match(/\d/g) ?? []).length >= 7, problem: "Enter a phone number with at least 7 digits, or leave it empty." },
-    need: { required: true, min: 10, max: 3000, label: "Project description" },
+    // (critique round 11) the label reads as the question asks it ("Tell us about your project"), so a too-long answer
+    // says "Your project description is too long", not a field name the visitor never saw
+    need: { required: true, min: 10, max: 3000, label: "Your project description", missing: "Tell us a little about your project." },
     tools: { max: 400, label: "Tools you use now" },
-    features: { max: 600, label: "Features you have in mind" },
   };
   // (the answers to "What do you need?" that are about a website: they show the website questions)
   const WEB = ["new-website", "redesign", "shopify", "other"];
@@ -464,6 +504,10 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     const from = params.get("from") ?? "";
     const leadInput = field("lead");
     if (leadInput && /^[a-z0-9-]{1,40}$/.test(from) && Object.prototype.hasOwnProperty.call(leads, from)) leadInput.value = from;
+    // ?ref=NX-…: a monthly-plan sign-up that sent the visitor here (get-started's suggested plan). The message starts
+    // with the reference so the two cases link up; only that exact shape, and never over words already typed.
+    const signupRef = params.get("ref") ?? "";
+    if (!need.value.trim() && /^NX-[0-9A-F]{10}$/.test(signupRef)) need.value = `About my monthly-plan sign-up, reference ${signupRef}: `;
     // (several services: the answer most of them belong to, the first one on a tie)
     const answers = ids.map((x) => services[x].want);
     const times = (w: string) => answers.filter((x) => x === w).length;
@@ -493,7 +537,17 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       }
     }
     syncWeb();
-    picks.addEventListener("change", () => { forced = false; syncWeb(); });
+    const scope = form.querySelector<HTMLFieldSetElement>("[data-scope]")!;
+    const ONE_PIECE = ["maintenance", "health-check", "repair", "security", "creative"];
+    const syncScope = () => { scope.hidden = scope.disabled = ONE_PIECE.includes(chosen()?.value ?? ""); };
+    syncScope();
+    picks.addEventListener("change", () => {
+      const had = !web.hidden;
+      forced = false; syncWeb(); syncScope();
+      // (questions that appear or go away further down are said aloud; a sighted visitor sees them move. Site audit
+      // 2026-11-21, critique round 1)
+      if (had !== !web.hidden) status.textContent = web.hidden ? "The website questions were taken out." : "Website questions added further down. They are optional.";
+    });
     about.querySelector("[data-about-clear]")!.addEventListener("click", () => {
       serviceInput.value = "";
       // (a named level is taken back out of its question too)
@@ -523,12 +577,15 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       err.hidden = !message;
       return true;
     };
+    // (critique round 5) "Phone" as the best way to reach you needs a number to call; the page asks for one (the server
+    // takes the request either way, and the email still reaches the customer)
+    const callChosen = () => form.querySelector<HTMLInputElement>('input[name="contact"][value="phone"]')?.checked === true;
     const check = (name: string) => {
       const r = RULES[name];
       const v = valueOf(name).trim();
       const length = [...v].length;
       let message = "";
-      if (!v) message = r.required ? r.missing ?? `${r.label} is required.` : "";
+      if (!v) message = r.required ? r.missing ?? `${r.label} is required.` : name === "phone" && callChosen() ? "Add a phone number so we can call you, or choose Email as the best way to reach you." : "";
       else if (length > r.max) message = `${r.label} is too long (${r.max} characters at most).`;
       else if (r.min && length < r.min) message = `Please write a little more (at least ${r.min} characters).`;
       else if (r.test && !r.test(v)) message = r.problem ?? "";
@@ -543,6 +600,10 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       input?.addEventListener("input", () => input.getAttribute("aria-invalid") === "true" && check(name));
     }
     picks.addEventListener("change", () => picks.hasAttribute("data-invalid") && check("want"));
+    // (switching away from "Phone" clears the phone field's message; switching to it is checked on send)
+    for (const r of form.querySelectorAll<HTMLInputElement>('input[name="contact"]')) {
+      r.addEventListener("change", () => field("phone")?.getAttribute("aria-invalid") === "true" && check("phone"));
+    }
 
     // A likely typo in a well-known email domain is offered as a question; the address changes only if they say yes.
     const email = field("email")!;
@@ -587,7 +648,11 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       const picked = services[serviceInput.value];
       fail.querySelector("[data-fail-text]")!.textContent = text;
       // (long messages are cut so the email link still opens everywhere)
-      fail.querySelector<HTMLAnchorElement>("[data-mailto]")!.href = askWith(LABELS.map(([k, l]) => [l, answerOf(k).slice(0, 1500)]), picked ? { name: picked.name, price: picked.price } : undefined);
+      const answers = LABELS.map(([k, l]): [string, string] => [l, answerOf(k).slice(0, 1500)]);
+      const item = picked ? { name: picked.name, price: picked.price } : undefined;
+      fail.querySelector<HTMLAnchorElement>("[data-mailto]")!.href = askWith(answers, item);
+      fail.querySelector<HTMLAnchorElement>("[data-gmail]")!.href = gmailWith(answers, item);
+      fail.querySelector<HTMLAnchorElement>("[data-outlook]")!.href = outlookWith(answers, item);
       form.hidden = true;
       fail.hidden = false;
       fail.focus();
@@ -598,6 +663,14 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
       form.hidden = false;
       button.focus();
     });
+    const errs = form.querySelector<HTMLElement>("[data-errs]")!;
+    // (a question as the visitor reads it: its label or legend without "(optional)")
+    const questionOf = (name: string) => {
+      const el = name === "want" ? picks.querySelector("legend") : form.querySelector(`label[for="f-${name}"]`);
+      const copy = el?.cloneNode(true) as HTMLElement | undefined;
+      copy?.querySelectorAll(".opt").forEach((o) => o.remove());
+      return copy?.textContent?.trim() || RULES[name].label;
+    };
     const reveal = (el: HTMLElement | null) => {
       const details = el?.closest("details");
       if (details && !details.open) details.open = true;
@@ -611,10 +684,27 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (sending) return; // (a second click while the first is on its way)
+      errs.hidden = true;
       const bad = Object.keys(RULES).filter((name) => !check(name));
       if (bad.length) {
-        reveal(focusOf(bad[0]));
-        status.textContent = `${bad.length === 1 ? "One field needs" : `${bad.length} fields need`} fixing.`;
+        const count = `${bad.length === 1 ? "One answer needs" : `${bad.length} answers need`} fixing.`;
+        status.textContent = count;
+        if (bad.length === 1) return reveal(focusOf(bad[0]));
+        errs.replaceChildren(
+          Object.assign(document.createElement("p"), { textContent: count }),
+          Object.assign(document.createElement("ul"), { role: "list" }),
+        );
+        const list = errs.querySelector("ul")!;
+        for (const name of bad) {
+          const a = Object.assign(document.createElement("a"), { href: `#f-${name}`, textContent: questionOf(name) });
+          a.addEventListener("click", (e) => { e.preventDefault(); reveal(focusOf(name)); });
+          const li = document.createElement("li");
+          li.append(a);
+          list.append(li);
+        }
+        errs.hidden = false;
+        errs.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+        errs.focus({ preventScroll: true });
         return;
       }
       field("t")!.value = String(Math.round(performance.now() - opened));
@@ -628,6 +718,19 @@ for (const [id, now] of Object.entries(retired)) asked[id] = { ...asked[now], wa
         if (res.ok && data.ok && /^NX-\d{6}-[A-Z0-9]{4}$/.test(data.ref ?? "")) {
           done.querySelector("[data-ref]")!.textContent = data.ref;
           done.querySelector("[data-email]")!.textContent = email.value.trim();
+          // (the copy of what was sent: only the answers that travelled, so a hidden, disabled question never shows)
+          const travelled = new FormData(form);
+          const picked = services[serviceInput.value];
+          const rows: [string, string][] = [...(picked ? [["Service", picked.name] as [string, string]] : []), ...LABELS.filter(([k]) => String(travelled.get(k) ?? "").trim()).map(([k, l]) => [l, answerOf(k).trim()] as [string, string])];
+          done.querySelector("[data-sent]")!.replaceChildren(...rows.filter(([, a]) => a).map(([l, a]) => {
+            const row = document.createElement("div");
+            const dt = document.createElement("dt");
+            const dd = document.createElement("dd");
+            dt.textContent = l;
+            dd.textContent = a;
+            row.append(dt, dd);
+            return row;
+          }));
           form.hidden = true;
           done.hidden = false;
           done.focus();

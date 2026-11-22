@@ -2,18 +2,21 @@
 // Before/after comparison: two pictures stacked, the "after" one clipped at the handle. The handle is a real range
 // input laid over the picture, so it works with a mouse, touch, and the arrow keys, and screen readers announce it.
 // Without JavaScript both halves show, split in the middle. Each site styles it through --ba-* variables.
+// Both pictures stay readable to screen readers, so give each one its own alt: a listener hears the change, not
+// just the "before" (the clip only hides part of the "after" from sight).
 interface Props { label: string; caption?: string; start?: number; tag?: string; beforeLabel?: string; afterLabel?: string }
 const { label, caption, start = 50, tag, beforeLabel = "Before", afterLabel = "After" } = Astro.props;
 ---
 <figure class="ba" style={`--pos:${start}%`} data-ba>
   <div class="ba-stage">
     <div class="ba-pic ba-before"><slot name="before" /></div>
-    <div class="ba-pic ba-after" aria-hidden="true"><slot name="after" /></div>
+    <div class="ba-pic ba-after"><slot name="after" /></div>
     <span class="ba-label ba-l1" aria-hidden="true">{beforeLabel}</span>
     <span class="ba-label ba-l2" aria-hidden="true">{afterLabel}</span>
     <span class="ba-handle" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="m9 6-5 6 5 6M15 6l5 6-5 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
     <input class="ba-range" type="range" min="0" max="100" value={start} aria-label={`${label}: drag to compare before and after`} data-ba-range />
-    {tag && <span class="ba-tag">{tag}</span>}
+    {/* data-bar-clear: a site's fixed phone bar (Fernway) steps aside while this label is in the strip it covers */}
+    {tag && <span class="ba-tag" data-bar-clear>{tag}</span>}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -30,7 +33,7 @@ const { label, caption, start = 50, tag, beforeLabel = "Before", afterLabel = "A
   .ba-range { position: absolute; inset: 0; z-index: 4; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; -webkit-appearance: none; appearance: none; background: transparent; }
   .ba-range::-webkit-slider-thumb { -webkit-appearance: none; width: 48px; height: 100vh; }
   .ba-range::-moz-range-thumb { width: 48px; height: 100vh; border: 0; }
-  .ba-stage:has(.ba-range:focus-visible) { outline: 3px solid var(--ba-focus, #2563eb); outline-offset: 3px; }
+  .ba-stage:has(.ba-range:focus-visible) { outline: 3px solid var(--ba-focus, var(--demo-ring, #2563eb)); outline-offset: 3px; }
   .ba-label { position: absolute; top: 12px; z-index: 2; padding: 4px 10px; border-radius: 999px; background: var(--ba-label-bg); color: var(--ba-label-ink); font-size: 0.8125rem; font-weight: 650; pointer-events: none; }
   .ba-l1 { left: 12px; }
   .ba-l2 { right: 12px; }

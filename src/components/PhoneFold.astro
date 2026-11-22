@@ -1,0 +1,77 @@
+---
+// Phones only (under 640px): long blocks start folded so the page stays scannable (critique round 10: /automation/
+// ran ~24,000px on a phone). Two kinds, both marked in the page's markup:
+//   data-fold="3" data-fold-label="Lead Automations"  a card grid: the first 3 children show, the rest wait behind
+//                                                      "Show All 9 Lead Automations" (hidden children cannot be tabbed to)
+//   data-fold-clip data-fold-label="the Full Comparison"  one long block (a table, a written call): cut to a short
+//                                                      preview with a fade, then "Show the Full Comparison"
+// The script adds the fold, so without JavaScript, and on wider screens, everything is open. Opening is for good:
+// focus moves to the first revealed card (or stays on the opened block) and the button goes away.
+---
+<script>
+  const phone = window.matchMedia("(max-width: 639px)");
+  const open = new WeakSet<Element>();
+  const buttons = new Map<Element, HTMLButtonElement>();
+
+  const label = (el: Element) => {
+    const what = el.getAttribute("data-fold-label") ?? "";
+    if (el.hasAttribute("data-fold-clip")) return `Show ${what}`;
+    return `Show All ${el.querySelectorAll(":scope > .svc").length || el.children.length} ${what}`;
+  };
+
+  const fold = (el: Element) => {
+    if (open.has(el)) return;
+    el.setAttribute("data-folded", "");
+    let b = buttons.get(el);
+    if (!b) {
+      b = document.createElement("button");
+      b.type = "button";
+      b.className = "button secondary fold-more";
+      b.textContent = label(el);
+      b.addEventListener("click", () => {
+        open.add(el);
+        el.removeAttribute("data-folded");
+        b!.remove();
+        const keep = Number(el.getAttribute("data-fold") ?? 0);
+        const next = keep ? (el.children[keep] as HTMLElement | undefined) : (el as HTMLElement);
+        if (next) {
+          if (!next.hasAttribute("tabindex")) next.setAttribute("tabindex", "-1");
+          next.focus({ preventScroll: !keep });
+        }
+      });
+      buttons.set(el, b);
+    }
+    el.after(b);
+  };
+
+  const unfold = (el: Element) => {
+    el.removeAttribute("data-folded");
+    buttons.get(el)?.remove();
+  };
+
+  const apply = () => {
+    for (const el of document.querySelectorAll("[data-fold], [data-fold-clip]")) {
+      const keep = Number(el.getAttribute("data-fold") ?? 0);
+      const worth = el.hasAttribute("data-fold-clip") || el.children.length > keep + 1;
+      if (phone.matches && worth) fold(el);
+      else unfold(el);
+    }
+  };
+
+  // a #link or a reload that puts the visitor mid-page needs the real layout (see the page's inline script)
+  if (!document.documentElement.hasAttribute("data-full-layout")) apply();
+  phone.addEventListener("change", apply);
+</script>
+
+<style is:global>
+  @media (max-width: 639px) {
+    [data-fold][data-folded] > :nth-child(n + 4) { display: none; }
+    [data-fold-clip][data-folded] {
+      max-height: 520px; overflow: hidden;
+      mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
+    }
+    .fold-more { width: 100%; margin-top: 20px; }
+  }
+  .fold-more:focus-visible { outline-offset: 3px; }
+  [data-fold] > [tabindex="-1"]:focus, [data-fold-clip][tabindex="-1"]:focus { outline: none; }
+</style>

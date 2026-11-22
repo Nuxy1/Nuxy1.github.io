@@ -7,8 +7,12 @@
 
 const SMALL = new Set("a an the and but or nor for so yet as at by in of off on per to up via vs with from into".split(" "));
 const KEEP: Record<string, string> = { ai: "AI", seo: "SEO", faq: "FAQ", faqs: "FAQs", csv: "CSV", crm: "CRM", nuxy: "Nuxy", "3d": "3D", url: "URL", ssl: "SSL", api: "API", diy: "DIY", i: "I", n8n: "n8n", pm: "pm", am: "am" };
-// verb + particle pairs, where the particle is part of the verb ("Follow Up", not "Follow up")
-const PARTICLE: [RegExp, string][] = [[/\b(Follow|Look|Set|Sign|Clean|Back|Moving|Looks|Pick|Check) (up|for|in|out|on)\b/g, ""]];
+// verb + particle pairs, where the particle is part of the verb ("Follow Up", not "Follow up"), also with "it" or "them"
+// between them ("Set It Up": site audit 2026-11-21, a docs heading)
+const PARTICLE: [RegExp, string][] = [
+  [/\b(Follow|Look|Set|Sign|Clean|Back|Moving|Looks|Pick|Check) (up|for|in|out|on)\b/g, ""],
+  [/\b((?:Follow|Look|Set|Sign|Clean|Back|Pick|Check) (?:It|Them)) (up|out|in|on)\b/g, ""],
+];
 
 function word(w: string, force: boolean): string {
   const m = /^(["“‘(]*)(.*?)(["”’),:;.?!]*)$/.exec(w);
@@ -32,7 +36,8 @@ export function titleCase(s: string): string {
   let start = true;
   let t = words
     .map((w, i) => {
-      const out = w ? word(w, start || i === words.length - 1) : w;
+      // the first word inside brackets starts a phrase of its own: "Limits (On Purpose, for Small Businesses)"
+      const out = w ? word(w, start || i === words.length - 1 || /^["“‘]*\(/.test(w)) : w;
       start = /[.:?!—–]$/.test(w) || w === "—" || w === "–";
       return out;
     })

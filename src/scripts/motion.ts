@@ -66,26 +66,30 @@ export function choose(c: Choice) {
 function setupReveals() {
   const els = [...document.querySelectorAll<HTMLElement>(".reveal")];
   if (!els.length || !("IntersectionObserver" in window) || !moving()) return;
-  const fold = window.innerHeight;
-  // read every position first, then change classes: reading after each change would force a layout per element
-  const above = els.map((el) => el.getBoundingClientRect().top < fold);
-  const later = els.filter((el, i) => {
-    if (above[i]) { el.classList.add("in"); return false; }
-    return true;
-  });
-  if (!later.length) return;
+  // Where each element starts comes from the observer's first report, which the browser works out from the page's
+  // ordinary first layout. Reading positions here instead (getBoundingClientRect) forced that layout early, inside this
+  // script, and the class changes after it made the browser redo the work: about 57 ms on a throttled phone.
+  // Nothing is hidden until that first report: what starts above the bottom of the screen just stays as it is, and
+  // only what starts lower down is hidden (data-reveal), off screen, to rise in when it's scrolled to.
+  const placed = new WeakSet<Element>();
   const io = new IntersectionObserver((entries) => {
-    let i = 0;
+    let later = 0, i = 0;
     for (const e of entries) {
-      if (!e.isIntersecting) continue;
       const el = e.target as HTMLElement;
+      if (!placed.has(el)) {
+        placed.add(el);
+        if (e.boundingClientRect.top < window.innerHeight) { el.classList.add("in"); io.unobserve(el); }
+        else later++;
+        continue;
+      }
+      if (!e.isIntersecting) continue;
       el.style.setProperty("--stagger", `${Math.min(i++, 4) * 70}ms`);
       el.classList.add("in");
       io.unobserve(el);
     }
-  }, { rootMargin: "0px 0px -6% 0px" });
-  later.forEach((el) => io.observe(el));
-  root.setAttribute("data-reveal", "");
+    if (later) root.setAttribute("data-reveal", "");
+  },{ rootMargin: "0px 0px -6% 0px" });
+  els.forEach((el) => io.observe(el));
 }
 
 // ---- The footer's Motion choice ----

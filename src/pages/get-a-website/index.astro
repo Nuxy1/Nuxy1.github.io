@@ -1,5 +1,6 @@
 ---
 import { titleCase } from "../../lib/title-case";
+import { noWidow } from "../../lib/no-widow";
 // Landing page for businesses with no website yet (brief 2: headline, text and both buttons are the brief's words).
 // The page outreach links to. Published prices only (data/services.ts); the full offer is on /websites/.
 import Base from "../../layouts/Base.astro";
@@ -45,18 +46,18 @@ const pageData = {
   <section class="lp-hero">
     <div class="lp-hero-copy">
     <p class="eyebrow">No website yet?</p>
-    <h1>Your Business Deserves a Professional Website.</h1>
-    <p class="lead">We build fast, modern, mobile-friendly websites that help customers find your business, explore your services, and contact you.</p>
+    <h1>Your Business Deserves a Professional Website</h1>
+    <p class="lead">We build your first website: fast, easy to use on a phone, and set up so customers can find your business, see your services and contact you.</p>
     <div class="lp-actions">
       <a class="button" href="/contact/?service=new-website" data-track="cta_lp_quote">Get a Free Website Quote</a>
       <a class="button secondary" href="#examples">See Example Websites</a>
     </div>
     <p class="note lp-fine"><Icon name="checkCircle" /><span>{web.price} one-time. You own the domain and the site. No monthly plan required.</span></p>
     </div>
-    <DeviceShot slug="fernway-lawn" />
+    <DeviceShot slug="fernway-lawn" note={`A ${web.price} website is built in your own Squarespace or Wix account, so its look follows what that builder can do.`} />
   </section>
 
-  <section class="lp-section" aria-labelledby="why-h">
+  <section class="lp-section lp-wide" aria-labelledby="why-h">
     <h2 id="why-h">What a Website Does for a Small Business</h2>
     <ul class="gaps" role="list">
       {gaps.map((g) => (
@@ -65,16 +66,16 @@ const pageData = {
     </ul>
   </section>
 
-  <section class="lp-section panel lp-offer" aria-labelledby="offer-h">
+  <section class="lp-section lp-wide panel lp-offer" aria-labelledby="offer-h">
     <div class="offer-head">
       <h2 id="offer-h">What You Get</h2>
       <p class="offer-price"><strong>{web.price}</strong> one-time</p>
     </div>
     <ul class="ticks offer-list">
-      {gets.map((g) => <li><Icon name="check" />{g}</li>)}
+      {gets.map((g) => <li><Icon name="check" />{noWidow(g)}</li>)}
     </ul>
     <p class="offer-costs"><strong>Paid to other companies:</strong> {web.costs} We tell you the exact cost in your written plan, before you sign up for anything.</p>
-    <p class="offer-costs"><strong>Just need one page?</strong> The {starter.name} is {starter.price} one-time. <a href={`/contact/?service=${starter.id}`} data-track="cta_lp_starter">Get a free quote for the {starter.name}</a></p>
+    <p class="offer-costs"><strong>Just need one page?</strong> The {starter.name} is <span class="keep">{starter.price} one-time</span>. <a href={`/contact/?service=${starter.id}`} data-track="cta_lp_starter">Get a free quote for the {starter.name}</a></p>
     <a class="button" href="/contact/?service=new-website" data-track="cta_lp_quote">Get a Free Website Quote</a>
   </section>
 
@@ -83,14 +84,16 @@ const pageData = {
   <div class="wrap">
   <section class="lp-section" id="examples" aria-labelledby="ex-h">
     <h2 id="ex-h">Example Websites</h2>
-    <p class="lp-sub">Open one to see it on a computer and on a phone.</p>
-    <DemoSites level="h3" />
+    <p class="lp-sub">Two Business websites, the kind this page prices. Open one to see it on a computer and on a phone, or <a href="/web-design/">compare the bigger website levels</a>.</p>
+    {/* only the Business demos: this page prices the Business website, and Signature or Immersive examples here would set
+        the wrong expectation of what that price buys (site audit 2026-11-21, findings 1 and 10) */}
+    <DemoSites level="h3" only={["fernway-lawn", "mossgate-cleaning"]} />
   </section>
 
   </div>
 
-  <div class="wrap lp">
-  <section class="lp-section" aria-labelledby="how-h">
+  <div class="wrap lp lp-close">
+  <section class="lp-section lp-how" aria-labelledby="how-h">
     <h2 id="how-h">How It Works</h2>
     <ol class="how" role="list">
       {steps.map((s, i) => (
@@ -109,7 +112,7 @@ const pageData = {
     <p>Tell us your business and what you offer. Within one business day you’ll get a written plan and a fixed price. No call needed, and nothing is charged until you agree.</p>
     <div class="lp-actions">
       <a class="button" href="/contact/?service=new-website" data-track="cta_lp_quote">Get a Free Website Quote</a>
-      <a class="button secondary" href="/websites/">Full website details</a>
+      <a class="button secondary" href="/websites/">Full Website Details</a>
     </div>
   </section>
   </div>
@@ -146,12 +149,31 @@ const pageData = {
   @media (min-width: 640px) { .offer-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .offer-costs { color: var(--body); font-size: 0.9375rem; }
   .offer-costs strong { color: var(--ink); }
+  .keep { white-space: nowrap; } /* (round 8) "$499 one-time" never breaks at the hyphen */
   .lp-offer .button { justify-self: start; }
   @media (max-width: 479px) { .lp-offer .button { justify-self: stretch; } }
+  /* (critique round 8: from 1024px the 880px column left the right side of the screen empty) the why list and the
+     offer use the full width, like the hero and the close: the three reasons side by side, the two cost notes side by
+     side, and from 1200px four columns of what you get */
+  @media (min-width: 1024px) {
+    .lp > section.lp-wide { max-width: none; }
+    .gaps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+    .lp-offer { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
+    .lp-offer > :not(.offer-costs) { grid-column: 1 / -1; }
+    .offer-costs { max-width: 68ch; }
+  }
+  @media (min-width: 1200px) { .offer-list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
   .how { display: grid; gap: 22px; margin: 28px 0 0; padding: 0; list-style: none; }
   .num { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--link); font-weight: 650; }
 
   .lp-own p, .lp-cta p { margin-top: 12px; max-width: 68ch; color: var(--body); }
   .lp-cta { padding-bottom: clamp(64px, 8vw, 96px); }
+  /* (critique round 5) on a wide screen the page's close no longer runs down one narrow column with the right half
+     empty: the five steps on the left, what you own and the quote button beside them */
+  @media (min-width: 1024px) {
+    .lp-close { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: clamp(48px, 6vw, 96px); align-items: start; }
+    .lp-close > section { max-width: none; }
+    .lp-close > .lp-how { grid-row: span 2; padding-bottom: clamp(64px, 8vw, 96px); }
+  }
 </style>

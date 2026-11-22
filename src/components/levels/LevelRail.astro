@@ -1,10 +1,11 @@
 ---
-// "Choose your experience": the four website levels (data/tiers.ts) side by side. The cards themselves step up in
-// intensity, so the difference is visible before it is read: Business is a plain panel, Signature adds a fine rule
-// and a stronger edge, Immersive stands on two layered plates that part a little under a mouse (only when motion is
-// on), and Flagship is drawn as a double outline on the darkest ground. None of them glows or uses glass (DESIGN.md).
+// "Choose your experience": the four website levels (data/tiers.ts) side by side. Business, the level most owners
+// need, carries the one emphasis (a blue rule and the solid button); the other three share one plain card, and the
+// complexity bars show the step up (critique round 11: four card styles in one row read as noise). None of them glows
+// or uses glass (DESIGN.md).
 // Each card's button counts `tier_selected` (name and page only, never which level).
 import Icon from "../Icon.astro";
+import { noWidow } from "../../lib/no-widow";
 import { levels, type LevelId } from "../../data/tiers";
 
 interface Props {
@@ -19,40 +20,74 @@ const H = heading;
 const list = levels.filter((l) => l.id !== except);
 const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
 ---
-<ol class:list={["lv-rail", `n${list.length}`]} role="list">
+{/* (critique round 9) on a phone the short row shows one level at a time, so every price was a swipe away: the four
+   levels and prices sit above it, side by side. A screen reader skips it: the list below carries the same words. */}
+{compact && (
+  <dl class="lv-ladder" aria-hidden="true">
+    {list.map((l) => <div><dt>{l.name}</dt><dd>{l.price}</dd></div>)}
+  </dl>
+)}
+<ol class:list={["lv-rail", `n${list.length}`, { compact }]} role="list">
   {list.map((l, i) => (
     <li class:list={["lv", `lv-${l.id}`]}>
       <article class="lv-card" aria-labelledby={`lv-${l.id}-h`}>
-        <p class="lv-index"><span>{String(levels.indexOf(l) + 1).padStart(2, "0")}</span>{l.promise}</p>
+        <p class="lv-index"><span>{String(levels.indexOf(l) + 1).padStart(2, "0")}</span>{noWidow(l.promise)}</p>
         <H class="lv-name" id={`lv-${l.id}-h`}>{l.name}</H>
-        <p class="lv-tag">{compact ? l.for : l.tagline}</p>
+        <p class="lv-tag">{noWidow(compact ? l.for : l.tagline)}</p>
         <p class="lv-price">{l.price}</p>
-        <p class="lv-note">{l.priceNote}</p>
+        <p class="lv-note">{noWidow(l.priceNote)}</p>
         <p class="lv-complex">
           <span class="lv-steps" aria-hidden="true">{[1, 2, 3, 4].map((n) => <i class:list={{ on: n <= steps[l.complexity] }}></i>)}</span>
-          {l.complexity} complexity · {l.timeline.replace(/ after we have your words and photos|, set in the written plan/, "")}
+          {/* (critique 11-17) two lines, no "·": in a wrapping row the dot was left dangling at a line end */}
+          <span>{l.complexity} complexity</span>
+          <span class="lv-when">{l.timeline.replace(/ after we have your words and photos|, set in the written plan/, "").split(/(About \d+–\d+ weeks)/).map((t) => /^About \d+–\d+ weeks$/.test(t) ? <span class="lv-nw">{t}</span> : t)}</span>
         </p>
         {!compact && (
           <ul class="ticks lv-points" role="list">
-            {l.points.slice(0, 3).map((p) => <li><Icon name="check" />{p}</li>)}
+            {l.points.slice(0, 3).map((p) => <li><Icon name="check" />{noWidow(p)}</li>)}
           </ul>
         )}
         {compact ? (
           <div class="lv-actions">
             {l.page
               ? <a class="text-link" href={l.page}>See {l.name} websites<Icon name="arrowRight" /></a>
-              : <a class="text-link" href={l.href} data-track="tier_selected">{l.cta}<Icon name="arrowRight" /></a>}
+              : <a class="text-link" href={l.href} data-track="tier_selected">{l.cta}<span class="sr-only">: {l.name}</span><Icon name="arrowRight" /></a>}
           </div>
         ) : (
           <div class="lv-actions">
-            <a class="button secondary wide" href={l.href} data-track="tier_selected">{l.cta}</a>
+            {l.id === "business" && <p class="lv-pick">Where most local businesses start</p>}
             {l.page && <a class="text-link" href={l.page}>What {l.name} includes<Icon name="arrowRight" /></a>}
+            <a class:list={["button wide", { secondary: l.id !== "business" }]} href={l.href} data-track="tier_selected">{l.cta}<span class="sr-only">: {l.name}</span></a>
           </div>
         )}
       </article>
     </li>
   ))}
 </ol>
+{/* (critique round 7: nothing said which card of the row was in view) one dot per level, the one in view drawn long */}
+{compact && (
+  <p class="lv-swipe" aria-hidden="true">
+    <span class="lv-dots">{list.map((_, i) => <i class:list={{ on: i === 0 }}></i>)}</span>
+    Swipe sideways for all {list.length} levels<Icon name="arrowRight" />
+  </p>
+)}
+<script>
+    // marks the card in view; the home's short row is one sideways scroller under 720px (the dots are hidden above that)
+    document.querySelectorAll<HTMLElement>(".lv-rail.compact").forEach((rail) => {
+      const dots = rail.nextElementSibling?.querySelectorAll("i");
+      const cards = [...rail.children] as HTMLElement[];
+      if (!dots || dots.length !== cards.length || cards.length < 2) return;
+      let frame = 0;
+      const mark = () => {
+        frame = 0;
+        const step = cards[1].offsetLeft - cards[0].offsetLeft || 1;
+        const end = rail.scrollLeft >= rail.scrollWidth - rail.clientWidth - 2;
+        const at = end ? cards.length - 1 : Math.min(cards.length - 1, Math.round(rail.scrollLeft / step));
+        dots.forEach((d, i) => d.classList.toggle("on", i === at));
+      };
+      rail.addEventListener("scroll", () => { frame ||= requestAnimationFrame(mark); }, { passive: true });
+    });
+</script>
 
 <style>
   .lv-rail { list-style: none; display: grid; gap: 28px 20px; }
@@ -67,37 +102,68 @@ const steps = { Lower: 1, Moderate: 2, High: 3, Bespoke: 4 } as const;
   .lv-tag { color: var(--body); }
   .lv-price { margin-top: 6px; color: var(--ink); font-size: 1.375rem; font-weight: 650; letter-spacing: -0.02em; }
   .lv-note { color: var(--muted); font-size: 0.875rem; }
-  .lv-complex { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-block: 10px; border-block: 1px solid var(--hairline-soft); color: var(--body); font-size: 0.875rem; }
+  /* (critique 11-17) Chromium's "pretty" balances a short paragraph, which left "A clear, fast website" alone on a
+     wide line; in these narrow cards plain wrapping fills each line */
+  .lv-card :is(p, li) { text-wrap: wrap; }
+  /* align-content: start keeps the complexity lines together when a neighbour's taller row stretches this one */
+  .lv-complex { display: flex; flex-wrap: wrap; align-items: center; align-content: start; gap: 6px 10px; padding-block: 10px; border-block: 1px solid var(--hairline-soft); color: var(--body); font-size: 0.875rem; }
   .lv-steps { display: inline-grid; grid-template-columns: repeat(4, 14px); gap: 3px; }
   .lv-steps i { height: 5px; border-radius: 2px; background: var(--hairline-strong); }
   .lv-steps i.on { background: var(--link); }
   .lv-points { font-size: 0.9375rem; }
   .lv-actions { display: grid; gap: 14px; justify-items: start; margin-top: auto; padding-top: 10px; }
   .lv-actions .text-link { min-height: 44px; }
+  /* (critique 11-17: a longer tagline pushed one card's price below its neighbours') side by side, the cards share
+     their rows through subgrid, so names, prices, the complexity line and the buttons line up across a row; a
+     browser without subgrid keeps the plain column above */
+  @supports (grid-template-rows: subgrid) {
+    @media (min-width: 720px) {
+      .lv { display: grid; grid-row: span 8; grid-template-rows: subgrid; row-gap: 0; }
+      .lv-rail.compact .lv { grid-row: span 7; }
+      .lv-card { display: grid; grid-row: 1 / -1; grid-template-rows: subgrid; row-gap: 10px; }
+      .lv-actions { margin-top: 0; align-content: end; }
+    }
+  }
+  /* (2026-11-17) the button is the card's last line in source order too, so the buttons line up across a row whether
+     or not a card has the "includes" link, and the tab order matches what is seen */
 
-  /* Signature: a stronger edge and a fine blue rule along the top */
-  .lv-signature .lv-card { border-color: var(--hairline-strong); background: linear-gradient(var(--link), var(--link)) top / 100% 2px no-repeat, var(--panel); }
+  /* (2026-11-17) Business is the level the page recommends, so it carries the one emphasis: a fine blue rule along the
+     top, a plain "where most start" line and the only solid button. The levels above it step up in build, not in pull. */
+  .lv-business .lv-card { border-color: var(--blue-line); background: linear-gradient(var(--link), var(--link)) top / 100% 2px no-repeat, var(--panel); }
+  .lv-card .lv-pick { color: var(--link); font-size: 0.875rem; font-weight: 600; text-wrap: balance; }
+  /* a label that wraps in a four-across row (at narrow widths) gets room and a balanced break */
+  .lv-actions .button { height: auto; min-height: 48px; padding-block: 10px; line-height: 1.3; text-wrap: balance; text-align: center; }
+  .lv-nw { white-space: nowrap; }
+  .lv-when { flex-basis: 100%; }
+  /* (critique 11-17) a link that wraps keeps its arrow after the last word, not pinned to the card's far edge */
+  .lv-actions .text-link { display: inline-block; padding-block: 10px; line-height: 1.4; text-wrap: balance; }
+  .lv-actions .text-link :global(svg) { display: inline; margin-left: 6px; vertical-align: -0.15em; }
+  /* (site audit 2026-11-21, critique round 4: on a phone the four stacked home cards ran 2,546px) under 720px the
+     home's short cards sit in one row that scrolls sideways, Business first and the next card peeking in. Every card
+     and link stays in the page and in tab order (a focused link scrolls into view); a level page keeps its stacked list.
+     The hint under the row is for sighted visitors only: a screen reader hears a list of four. */
+  .lv-swipe, .lv-ladder { display: none; }
+  @media (max-width: 719px) {
+    .lv-rail.compact { grid-auto-flow: column; grid-auto-columns: min(84%, 340px); gap: 12px; margin-inline: calc(-1 * clamp(16px, 4vw, 40px)); padding: 4px clamp(16px, 4vw, 40px) 10px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: clamp(16px, 4vw, 40px); scrollbar-width: thin; }
+    .lv-rail.compact .lv { scroll-snap-align: start; }
+    .lv-swipe { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--muted); font-size: 0.875rem; }
+    .lv-ladder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; margin-bottom: 20px; }
+    .lv-ladder div { display: grid; gap: 2px; padding-left: 12px; border-left: 2px solid var(--hairline-strong); }
+    .lv-ladder div:first-child { border-left-color: var(--link); }
+    .lv-ladder dt { color: var(--muted); font-size: 0.875rem; }
+    .lv-ladder dd { margin: 0; color: var(--ink); font-size: 1rem; font-weight: 650; white-space: nowrap; }
+    .lv-swipe :global(svg) { width: 1em; height: 1em; }
+    .lv-dots { display: inline-flex; align-items: center; gap: 5px; margin-right: 6px; }
+    .lv-dots i { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--hairline-strong); transition: width 180ms var(--ease-out, ease), background-color 180ms ease; }
+    .lv-dots i.on { width: 18px; background: var(--link); }
+  }
+  @media (prefers-reduced-motion: reduce) { .lv-dots i { transition: none; } }
+  /* the levels above Business: one plain card with a firmer edge; the bars say how much more is built */
+  .lv:not(.lv-business) .lv-card { border-color: var(--hairline-strong); }
 
-  /* Immersive: the card stands on two plates, a little narrower each, like layers of a scene */
-  .lv-immersive .lv-card { border-color: var(--hairline-strong); background: linear-gradient(180deg, var(--surface-strong), var(--panel) 60%); }
-  .lv-immersive::before, .lv-immersive::after { content: ""; position: absolute; z-index: 0; border: 1px solid var(--hairline); border-radius: var(--r-lg); background: var(--bg-2); pointer-events: none; }
-  .lv-immersive::before { inset: 0 10px; transform: translateY(8px); }
-  .lv-immersive::after { inset: 0 20px; transform: translateY(16px); opacity: 0.6; z-index: -1; }
-  .lv-immersive .lv-steps i.on, .lv-flagship .lv-steps i.on { background: var(--cyan); }
-
-  /* Flagship: the darkest ground, a light outline and a second rule inside it */
-  .lv-flagship .lv-card { border-color: rgb(var(--ink-rgb) / 0.5); background: var(--bg); outline: 1px solid var(--hairline); outline-offset: -7px; }
-
-  /* Under a mouse, with motion on, the Immersive card tilts a few degrees and its plates part: depth you can feel,
-     transform only, and nothing at all on touch screens or with motion reduced */
+  /* Under a mouse, with motion on, a card lifts a little: transform only, nothing on touch screens or with motion reduced */
   @media (hover: hover) and (pointer: fine) {
-    :global(html[data-motion="standard"]) .lv-rail, :global(html[data-motion="enhanced"]) .lv-rail { perspective: 1200px; }
     :global(html[data-motion="standard"]) .lv-card, :global(html[data-motion="enhanced"]) .lv-card { transition: transform var(--dur-3, 380ms) var(--ease-out, ease), border-color 160ms ease; }
     :global(html[data-motion="standard"]) .lv:is(:hover, :focus-within) .lv-card, :global(html[data-motion="enhanced"]) .lv:is(:hover, :focus-within) .lv-card { transform: translateY(-3px); }
-    :global(html[data-motion="standard"]) .lv-immersive::before, :global(html[data-motion="standard"]) .lv-immersive::after,
-    :global(html[data-motion="enhanced"]) .lv-immersive::before, :global(html[data-motion="enhanced"]) .lv-immersive::after { transition: transform var(--dur-3, 380ms) var(--ease-out, ease); }
-    :global(html[data-motion="standard"]) .lv-immersive:is(:hover, :focus-within) .lv-card, :global(html[data-motion="enhanced"]) .lv-immersive:is(:hover, :focus-within) .lv-card { transform: rotateX(4deg) rotateY(-5deg) translateY(-4px); }
-    :global(html[data-motion="standard"]) .lv-immersive:is(:hover, :focus-within)::before, :global(html[data-motion="enhanced"]) .lv-immersive:is(:hover, :focus-within)::before { transform: translateY(14px); }
-    :global(html[data-motion="standard"]) .lv-immersive:is(:hover, :focus-within)::after, :global(html[data-motion="enhanced"]) .lv-immersive:is(:hover, :focus-within)::after { transform: translateY(28px); }
   }
 </style>

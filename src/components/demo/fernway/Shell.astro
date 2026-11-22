@@ -2,7 +2,8 @@
 // Fernway's frame on every page: header with its own navigation (a folding menu on phones that works without
 // JavaScript), the phone action bar (call / text / quote), and the footer with hours and the fictional-business line.
 // The design system lives here as global styles under body.fw: Bricolage Grotesque headings, Inter text, pill
-// buttons, a forest / lime / cream palette and sections that run edge to edge.
+// buttons, a moss / lawn / clover / straw / ivory palette (docs/demo-redesign-brief-2026-11.md) and sections that run
+// edge to edge. Variable names kept from the first version: --fw-forest is moss, --fw-lime is straw.
 import DemoSite from "../../../layouts/DemoSite.astro";
 import { base, nav, phone, callNote, textNote, hours, email } from "../../../data/demos/fernway";
 
@@ -10,33 +11,33 @@ interface Props { title?: string; description: string; current?: string }
 const { title, description, current } = Astro.props;
 const here = (href: string) => (current && href.endsWith(`/${current}/`) ? "page" : undefined);
 ---
-<DemoSite slug="fernway-lawn" theme="#173826" title={title} description={description} bodyClass="fw"
+<DemoSite slug="fernway-lawn" theme="#1f3a2b" title={title} description={description} bodyClass="fw"
   fonts={["/fonts/bricolage-var.woff2", "/fonts/inter-var-latin.woff2"]}>
   <header class="fw-top">
     <div class="fw-wrap fw-top-in">
       <a class="fw-logo" href={`${base}/`} aria-label="Fernway Lawn & Landscape, home">
         <svg viewBox="0 0 44 44" width="40" height="40" aria-hidden="true">
-          <rect width="44" height="44" rx="14" fill="#173826" />
-          <path d="M22 34V18" stroke="#c9e265" stroke-width="2.6" stroke-linecap="round" />
-          <path d="M22 24c-6.5 0-10-3.5-10-10 6.5 0 10 3.5 10 10Z" fill="#c9e265" />
-          <path d="M22 20.5c0-6.5 3.5-10 10-10 0 6.5-3.5 10-10 10Z" fill="#8fbf5a" />
+          <rect width="44" height="44" rx="12" fill="#1f3a2b" />
+          <path d="M22 34V18" stroke="#e2c36b" stroke-width="2.6" stroke-linecap="round" />
+          <path d="M22 24c-6.5 0-10-3.5-10-10 6.5 0 10 3.5 10 10Z" fill="#e2c36b" />
+          <path d="M22 20.5c0-6.5 3.5-10 10-10 0 6.5-3.5 10-10 10Z" fill="#9dbf6e" />
         </svg>
         <span class="fw-wordmark">Fernway<small> Lawn &amp; Landscape</small></span>
       </a>
       <nav class="fw-nav" aria-label="Main">
         {nav.map((n) => <a href={n.href} aria-current={here(n.href)}>{n.label}</a>)}
       </nav>
-      <a class="fw-phone" href="#call" data-demo-action={callNote}>
+      <a class="fw-phone" href={`${base}/contact/`} data-demo-action={callNote}>
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
         {phone}
       </a>
-      <a class="fw-btn fw-btn-sm" href={`${base}/quote/`} aria-current={here(`${base}/quote/`)}>Get a quote</a>
+      <a class="fw-btn fw-btn-sm" href={`${base}/quote/`} aria-current={here(`${base}/quote/`)}>Get my estimate</a>
       <details class="fw-menu" data-menu>
         <summary aria-label="Menu"><span></span><span></span><span></span></summary>
         <div class="fw-menu-panel">
           <a href={`${base}/`}>Home</a>
           {nav.map((n) => <a href={n.href} aria-current={here(n.href)}>{n.label}</a>)}
-          <a href={`${base}/quote/`}>Get a quote</a>
+          <a href={`${base}/quote/`}>Get my estimate</a>
         </div>
       </details>
     </div>
@@ -44,80 +45,90 @@ const here = (href: string) => (current && href.endsWith(`/${current}/`) ? "page
 
   <main id="main"><slot /></main>
 
+  <!-- the footer is the yard sign: the name big, the phone number as the one thing to act on, the week drawn on the
+       season calendar's track (the long weekday bar, the short Saturday, Sunday left open) and the small print in one strip -->
   <footer class="fw-foot">
-    <div class="fw-wrap fw-foot-in">
-      <div class="fw-foot-brand">
-        <p class="fw-foot-name">Fernway Lawn &amp; Landscape</p>
-        <p>Mowing, cleanups, beds and snow, for homes within 25 miles of our yard.</p>
-        <p class="fw-foot-demo">Fernway is a fictional business. This is an interactive demonstration website built by{" "}
-          <a href="/" target="_top">Nuxy Automation</a>: nothing here can be booked or bought, and nothing you type is sent.</p>
+    <div class="fw-wrap">
+      <div class="fw-foot-sign">
+        <div>
+          <p class="fw-foot-name fw-display">Fernway Lawn &amp; Landscape</p>
+          <p class="fw-foot-tag">Mowing, cleanups, beds and snow, for homes within 25 miles of our yard.</p>
+        </div>
+        <a class="fw-foot-call" href={`${base}/contact/`} data-demo-action={callNote}><span>Call the yard</span><strong>{phone}</strong></a>
       </div>
-      <div>
-        <p class="fw-foot-h">Hours</p>
-        <dl class="fw-hours">{hours.map(([d, h]) => <div><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
-      </div>
-      <div>
-        <p class="fw-foot-h">Reach us</p>
+      <p class="fw-foot-h">Yard hours</p>
+      <dl class="fw-foot-week">{hours.map(([d, h]) => <div class:list={{ "is-off": /^closed/i.test(h) }}><dt>{d}</dt><dd>{h}</dd></div>)}</dl>
+      <div class="fw-foot-strip">
         <ul role="list" class="fw-foot-links">
-          <li><a href="#call" data-demo-action={callNote}>{phone}</a></li>
-          <li><a href="#email" data-demo-action={`Demo: on a real site this writes to ${email}.`}>{email}</a></li>
           {nav.map((n) => <li><a href={n.href}>{n.label}</a></li>)}
+          <li><a href={`${base}/contact/`} data-demo-action={`Demo: on a real site this writes to ${email}.`}>{email}</a></li>
         </ul>
+        <p class="fw-foot-demo">Fernway is a fictional business. This is an interactive demonstration website built by{" "}
+          <a href="/" target="_top">Nuxy Automation</a>: nothing here can be booked or bought, and nothing you type is sent. The
+          photos are AI-generated examples, not real customer work.</p>
       </div>
     </div>
   </footer>
 
-  <nav class="fw-bar" aria-label="Quick actions">
-    <a href="#call" data-demo-action={callNote}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>Call</a>
-    <a href="#text" data-demo-action={textNote}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>Text</a>
-    <a class="fw-bar-main" href={`${base}/quote/`}>Free quote</a>
-  </nav>
+  <!-- the phone bar. The quote page has none: its estimate button would link to the page itself, and a Call/Text bar
+       would sit over the form's options (both are in the menu and the footer). On the home, services, projects and
+       contact pages it starts out of the way, because the first screen there is words, chips, the drag slider or the
+       message form; the script below brings it in once those have scrolled past, and keeps it out while the home
+       dock's own "Get my estimate" is on screen. -->
+  {current !== "quote" && (
+    <nav class:list={["fw-bar", { "is-away": ["home", "services", "projects", "contact"].includes(current) }]} aria-label="Quick actions" data-bar>
+      <a href={`${base}/contact/`} data-demo-action={callNote}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>Call</a>
+      <a href={`${base}/contact/`} data-demo-action={textNote}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>Text</a>
+      <a class="fw-bar-main" href={`${base}/quote/`}>Get my estimate</a>
+    </nav>
+  )}
 </DemoSite>
 
 <style is:global>
   @font-face { font-family: "Bricolage Grotesque"; src: url("/fonts/bricolage-var.woff2") format("woff2"); font-weight: 200 800; font-stretch: 75% 100%; font-display: swap; }
   body.fw {
-    --fw-forest: #173826; --fw-moss: #2f5d3a; --fw-leaf: #4f8a45; --fw-lime: #c9e265; --fw-lime-2: #e3f0a8;
-    --fw-cream: #f5f1e6; --fw-paper: #fbf9f3; --fw-sand: #ebe4d2; --fw-clay: #a2522a; --fw-ink: #13201a; --fw-soft: #4a5a50;
-    --fw-line: rgba(23, 56, 38, 0.14); --fw-radius: 22px; --fw-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
-    background: var(--fw-paper); color: var(--fw-ink); font-size: 1rem;
+    --fw-forest: #1f3a2b; --fw-moss: #2e5236; --fw-leaf: #4a7330; --fw-lime: #e2c36b; --fw-lime-2: #dce8c8;
+    --fw-cream: #f1eee2; --fw-paper: #faf8f1; --fw-sand: #e9e2cc; --fw-clay: #8a5a1c; --fw-ink: #17231b; --fw-soft: #4b5a4f;
+    --fw-line: rgba(31, 58, 43, 0.14); --fw-radius: 14px; --fw-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    --demo-ring: var(--fw-clay); /* 5.5:1 on paper, and not the green of the buttons it circles */
+    background: var(--fw-paper); color: var(--fw-ink); font-size: 1rem; caret-color: var(--fw-moss); accent-color: var(--fw-moss);
   }
-  :where(.fw) :is(h1, h2, h3, .fw-display) { font-family: "Bricolage Grotesque", "Inter", system-ui, sans-serif; font-weight: 750; letter-spacing: -0.025em; line-height: 1.04; text-wrap: balance; }
+  body.fw ::selection { background: rgb(226 195 107 / 0.6); color: var(--fw-ink); }
+  /* on the forest-green sections and over the hero photo the ring turns to the lime-gold (7:1 on forest) */
+  :is(.fw-hero, .fw-foot, .fw-bar, .fw-band, .fw-cal-sec, .fw-a-day, .fw-q-est) { --demo-ring: var(--fw-lime); }
+  :where(.fw) :is(h1, h2, h3, .fw-display) { font-family: "Bricolage Grotesque", "Inter", system-ui, sans-serif; font-weight: 800; font-stretch: 86%; letter-spacing: -0.03em; line-height: 0.98; text-wrap: balance; }
   /* form fields, shared by the contact form and the estimator */
   :where(.fw) .fw-fields { display: grid; gap: 14px; }
   @media (min-width: 640px) { :where(.fw) .fw-fields { grid-template-columns: 1fr 1fr; } :where(.fw) .fw-field-wide { grid-column: 1 / -1; } }
   :where(.fw) .fw-field { display: grid; gap: 6px; font-weight: 600; font-size: 0.9375rem; }
   :where(.fw) .fw-field input, :where(.fw) .fw-field select, :where(.fw) .fw-field textarea { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid #cfd6cc; border-radius: 14px; background: var(--fw-paper); color: var(--fw-ink); font: inherit; font-weight: 450; transition: border-color 160ms ease-out, box-shadow 160ms ease-out; }
   :where(.fw) .fw-field textarea { resize: vertical; min-height: 96px; }
-  :where(.fw) .fw-field input:focus, :where(.fw) .fw-field select:focus, :where(.fw) .fw-field textarea:focus { outline: none; border-color: var(--fw-moss); box-shadow: 0 0 0 4px rgba(79, 138, 69, 0.2); }
+  :where(.fw) .fw-field input:focus, :where(.fw) .fw-field select:focus, :where(.fw) .fw-field textarea:focus { outline: 2px solid transparent; outline-offset: 2px; border-color: var(--fw-moss); box-shadow: 0 0 0 4px rgba(79, 138, 69, 0.2); }
   :where(.fw) .fw-field input:user-invalid, :where(.fw) .fw-field select:user-invalid, :where(.fw) .fw-field textarea:user-invalid { border-color: #b3401f; }
   :where(.fw) .fw-field :is(input, select, textarea)[aria-invalid="true"] { border-color: #b3401f; box-shadow: 0 0 0 3px rgba(179, 64, 31, 0.16); }
-  :where(.fw) .fw-field :is(input, select, textarea)[aria-invalid="true"]:focus { box-shadow: 0 0 0 4px rgba(179, 64, 31, 0.3); }
+  :where(.fw) .fw-field :is(input, select, textarea)[aria-invalid="true"]:focus { box-shadow: 0 0 0 2px #b3401f, 0 0 0 6px rgba(179, 64, 31, 0.2); }
+  /* a choice group left empty (lib/demo/stepper flag() marks its block): an outline round the options, off the layout */
+  :where(.fw) [data-step] [data-invalid] { outline: 2px solid #b3401f; outline-offset: 6px; border-radius: var(--fw-radius); }
   :where(.fw) .fw-field small { font-weight: 450; }
-  :where(.fw) h1 { font-size: clamp(2.5rem, 6.4vw, 5.25rem); }
-  :where(.fw) h2 { font-size: clamp(2rem, 4.2vw, 3.25rem); }
-  :where(.fw) h3 { font-size: 1.375rem; letter-spacing: -0.015em; line-height: 1.15; }
-  :where(.fw) p { text-wrap: pretty; }
+  :where(.fw) h1 { font-size: clamp(2.75rem, 7vw, 6rem); }
+  :where(.fw) h2 { font-size: clamp(2.125rem, 4.6vw, 3.75rem); }
+  :where(.fw) h3 { font-size: 1.375rem; font-stretch: 92%; letter-spacing: -0.015em; line-height: 1.1; }
+  :where(.fw) :is(p, figcaption, li, dd) { text-wrap: pretty; }
   :where(.fw) a { color: inherit; }
-  :where(.fw) :focus-visible { outline-color: #2d6cdf; }
   .fw-wrap { width: min(1240px, 100% - 40px); margin-inline: auto; }
   .fw-section { padding-block: clamp(64px, 9vw, 120px); }
-  .fw-kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fw-moss); }
-  .fw-kicker::before { content: ""; width: 18px; height: 2px; border-radius: 2px; background: currentColor; }
   .fw-lead { font-size: clamp(1.0625rem, 1.6vw, 1.25rem); color: var(--fw-soft); max-width: 60ch; }
   .fw-head { display: grid; gap: 14px; margin-bottom: clamp(32px, 5vw, 56px); max-width: 760px; }
   .fw-demo-note { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--fw-lime-2); color: var(--fw-forest); font-size: 0.8125rem; font-weight: 650; }
 
   /* buttons: pills, lime on forest or forest on lime, with a small lift */
   .fw-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 26px; border: 0; border-radius: 999px; background: var(--fw-forest); color: #fff; font-weight: 650; font-size: 1rem; text-decoration: none; white-space: nowrap; transition: transform 200ms var(--fw-ease), background-color 200ms var(--fw-ease), box-shadow 200ms var(--fw-ease); }
-  .fw-btn:hover { background: #0f2a1b; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(23, 56, 38, 0.22); }
-  .fw-btn:active { transform: translateY(0) scale(0.98); }
-  .fw-btn svg { transition: transform 200ms var(--fw-ease); }
-  .fw-btn:hover svg { transform: translateX(3px); }
-  .fw-btn-lime { background: var(--fw-lime); color: var(--fw-forest); }
-  .fw-btn-lime:hover { background: #d6ec7b; }
+  .fw-btn:hover { background: #15291e; }
+  .fw-btn:active { transform: scale(0.97); }
+  .fw-btn-lime { background: var(--fw-lime); color: var(--fw-ink); }
+  .fw-btn-lime:hover { background: #ebd083; }
   .fw-btn-ghost { background: transparent; color: var(--fw-forest); box-shadow: 0 0 0 1.5px var(--fw-forest) inset; }
-  .fw-btn-ghost:hover { background: rgba(23, 56, 38, 0.06); box-shadow: 0 0 0 1.5px var(--fw-forest) inset; }
+  .fw-btn-ghost:hover { background: rgba(31, 58, 43, 0.06); box-shadow: 0 0 0 1.5px var(--fw-forest) inset; }
   .fw-btn-sm { min-height: 44px; padding: 0 20px; font-size: 0.9375rem; }
   .fw-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 650; color: var(--fw-forest); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 calc(100% - 8px) / 0 2px no-repeat; transition: background-size 240ms var(--fw-ease); }
   .fw-link:hover { background-size: 100% 2px; }
@@ -127,10 +138,10 @@ const here = (href: string) => (current && href.endsWith(`/${current}/`) ? "page
   .fw-top-in { display: flex; align-items: center; gap: 24px; min-height: 72px; }
   .fw-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
   .fw-wordmark { display: grid; font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.375rem; line-height: 1; letter-spacing: -0.03em; color: var(--fw-forest); }
-  .fw-wordmark small { font-family: "Inter", sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; color: var(--fw-soft); margin-top: 3px; }
+  .fw-wordmark small { font-family: "Inter", sans-serif; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; color: var(--fw-soft); margin-top: 3px; }
   .fw-nav { display: flex; gap: 4px; }
   .fw-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 999px; font-weight: 550; text-decoration: none; color: var(--fw-ink); transition: background-color 160ms ease-out; }
-  .fw-nav a:hover { background: rgba(23, 56, 38, 0.07); }
+  .fw-nav a:hover { background: rgba(31, 58, 43, 0.07); }
   .fw-nav a[aria-current="page"] { background: var(--fw-lime-2); color: var(--fw-forest); font-weight: 650; }
   .fw-phone { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 650; text-decoration: none; color: var(--fw-forest); white-space: nowrap; }
   .fw-menu { display: none; position: relative; }
@@ -147,63 +158,118 @@ const here = (href: string) => (current && href.endsWith(`/${current}/`) ? "page
   @media (max-width: 1023px) { .fw-menu { display: block; } }
   @media (max-width: 479px) { .fw-top .fw-btn-sm { display: none; } .fw-wordmark small { display: none; } }
 
-  /* footer */
-  .fw-foot { background: var(--fw-forest); color: #dfe9de; padding: 64px 0 120px; }
-  .fw-foot-in { display: grid; gap: 40px; grid-template-columns: 1.4fr 1fr 1fr; }
-  @media (max-width: 767px) { .fw-foot-in { grid-template-columns: 1fr; } }
-  .fw-foot-name { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.5rem; color: #fff; margin-bottom: 8px; }
-  .fw-foot-brand { display: grid; gap: 8px; align-content: start; }
-  .fw-foot-demo { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.07); font-size: 0.875rem; color: #c9d6c8; }
-  .fw-foot-demo a { color: var(--fw-lime); }
-  .fw-foot-h { font-weight: 700; color: #fff; margin-bottom: 10px; }
-  .fw-hours { display: grid; gap: 8px; font-size: 0.9375rem; }
-  .fw-hours div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 8px; }
-  .fw-hours dd { color: #fff; }
-  .fw-foot-links { display: grid; }
-  .fw-foot-links a { display: inline-flex; align-items: center; min-height: 40px; text-decoration: none; color: #dfe9de; }
+  /* footer: the yard sign (see the markup) */
+  .fw-foot { background: var(--fw-forest); color: #dfe9de; padding: clamp(56px, 8vw, 96px) 0 72px; }
+  .fw-foot-sign { display: grid; gap: 28px 48px; align-items: end; }
+  @media (min-width: 900px) { .fw-foot-sign { grid-template-columns: minmax(0, 1fr) auto; } }
+  .fw-foot-name { font-size: clamp(2.5rem, 6vw, 4.75rem); color: #fff; }
+  .fw-foot-tag { margin-top: 14px; max-width: 46ch; font-size: 1.0625rem; }
+  .fw-foot-call { display: grid; gap: 6px; justify-items: start; text-decoration: none; color: var(--fw-lime); }
+  .fw-foot-call span { font-size: 0.9375rem; font-weight: 600; color: #dfe9de; }
+  .fw-foot-call strong { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-stretch: 86%; font-size: clamp(2rem, 4.2vw, 3.25rem); letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; text-decoration: underline 3px transparent; text-underline-offset: 8px; transition: text-decoration-color 200ms var(--fw-ease); }
+  .fw-foot-call:hover strong { text-decoration-color: currentColor; }
+  .fw-foot-h { margin: clamp(44px, 6vw, 72px) 0 12px; font-weight: 700; color: #fff; }
+  .fw-foot-week { display: flex; gap: 4px; }
+  .fw-foot-week > div { display: grid; grid-template-rows: 12px auto auto; row-gap: 4px; flex: 0 0 12.5rem; }
+  .fw-foot-week > div:first-child { flex: 1 1 0; min-width: 0; }
+  .fw-foot-week > div::before { content: ""; background: var(--fw-lime-2); }
+  .fw-foot-week > div:first-child::before { background: var(--fw-lime); border-radius: 999px 0 0 999px; }
+  .fw-foot-week > div:last-child::before { border-radius: 0 999px 999px 0; }
+  .fw-foot-week > div.is-off::before { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.42); }
+  .fw-foot-week dt { margin-top: 8px; font-size: 0.9375rem; font-weight: 600; }
+  .fw-foot-week dd { color: #fff; font-weight: 650; font-variant-numeric: tabular-nums; }
+  /* a phone stacks the week, each day keeping its mark as a short upright bar */
+  @media (max-width: 699px) {
+    .fw-foot-week { flex-direction: column; gap: 14px; }
+    .fw-foot-week > div, .fw-foot-week > div:first-child { flex: none; grid-template-columns: 10px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 14px; row-gap: 2px; }
+    .fw-foot-week > div::before, .fw-foot-week > div:first-child::before, .fw-foot-week > div:last-child::before { grid-column: 1; grid-row: 1 / 3; border-radius: 999px; }
+    .fw-foot-week dt, .fw-foot-week dd { grid-column: 2; }
+    .fw-foot-week dt { margin-top: 0; }
+  }
+  .fw-foot-strip { display: grid; gap: 12px 48px; margin-top: clamp(40px, 5vw, 56px); padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+  @media (min-width: 900px) { .fw-foot-strip { grid-template-columns: auto minmax(0, 1fr); align-items: center; } }
+  .fw-foot-links { display: flex; flex-wrap: wrap; column-gap: 22px; }
+  .fw-foot-links a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: #dfe9de; }
   .fw-foot-links a:hover { color: var(--fw-lime); }
-  @media (min-width: 900px) { .fw-foot { padding-bottom: 72px; } }
+  .fw-foot-demo { max-width: 66ch; font-size: 0.875rem; color: #c9d6c8; }
+  .fw-foot-demo a { color: var(--fw-lime); }
 
   /* phone action bar */
-  .fw-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 35; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 6px; padding: 6px; border-radius: 999px; background: var(--fw-forest); box-shadow: 0 14px 32px rgba(10, 24, 16, 0.35); }
-  .fw-bar a { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border-radius: 999px; color: #fff; font-weight: 650; text-decoration: none; }
+  .fw-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 35; display: grid; grid-template-columns: 1fr 1fr 1.9fr; gap: 6px; padding: 6px; border-radius: 999px; background: var(--fw-forest); box-shadow: 0 14px 32px rgba(10, 24, 16, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.16); transition: transform 280ms var(--fw-ease), opacity 200ms ease-out, visibility 0s linear 0s; }
+  .fw-bar.is-away { transform: translateY(calc(100% + 16px)); opacity: 0; visibility: hidden; transition: transform 280ms var(--fw-ease), opacity 200ms ease-out, visibility 0s linear 280ms; }
+  .fw-bar a { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border-radius: 999px; color: #fff; font-weight: 650; text-decoration: none; white-space: nowrap; }
+  @media (max-width: 359px) { .fw-bar .fw-bar-main { font-size: 0.9375rem; } }
   .fw-bar .fw-bar-main { background: var(--fw-lime); color: var(--fw-forest); }
   @media (min-width: 900px) { .fw-bar { display: none; } }
-  @media (max-width: 899px) { .fw .demo-toast { bottom: 92px; } }
+  /* a phone on its side: the header already carries Get my estimate (Call and Text are in the menu and the footer),
+     and the bar would take a sixth of the screen and cover the headline */
+  @media (max-height: 500px) and (min-width: 480px) { .fw-bar { display: none; } }
+  /* the bar is 60px tall (6 + 48 + 6) and 12px off the bottom: a focused field scrolls clear of it (WCAG 2.4.11) */
+  @media (max-width: 899px) {
+    html:has(.fw-bar) { scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+    .fw:has(.fw-bar) .demo-toast { bottom: 92px; }
+    .fw:has(.fw-bar) .fw-foot { padding-bottom: 120px; }
+  }
 
   /* shared cards and surfaces */
   .fw-card { position: relative; display: grid; gap: 12px; align-content: start; padding: 26px; border-radius: var(--fw-radius); background: #fff; box-shadow: 0 0 0 1px var(--fw-line); transition: transform 260ms var(--fw-ease), box-shadow 260ms var(--fw-ease); }
-  .fw-card:hover { transform: translateY(-4px); box-shadow: 0 0 0 1px var(--fw-line), 0 22px 44px rgba(19, 32, 26, 0.1); }
+  .fw-card:hover { box-shadow: 0 0 0 1px rgba(31, 58, 43, 0.28); }
   .fw-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
   .fw-price { font-weight: 700; color: var(--fw-forest); }
   .fw-fine { font-size: 0.875rem; color: var(--fw-soft); }
   .fw-checks { display: grid; gap: 8px; }
   .fw-checks li { display: grid; grid-template-columns: 20px 1fr; gap: 10px; }
-  .fw-checks li::before { content: ""; width: 20px; height: 20px; margin-top: 2px; border-radius: 50%; background: var(--fw-lime-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m5.5 10.5 3 3 6-7' fill='none' stroke='%23173826' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat; }
+  .fw-checks li::before { content: ""; width: 20px; height: 20px; margin-top: 2px; border-radius: 50%; background: var(--fw-lime-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m5.5 10.5 3 3 6-7' fill='none' stroke='%231f3a2b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat; }
 
-  /* the reveal on scroll (tiers 1-2 only; tier 3 and no JavaScript show everything at once) */
-  :root[data-tier="1"] .fw-rise, :root[data-tier="2"] .fw-rise { opacity: 0; transform: translateY(18px); transition: opacity 400ms var(--fw-ease), transform 400ms var(--fw-ease); transition-delay: var(--d, 0ms); }
-  :root[data-tier="1"] .fw-rise.in, :root[data-tier="2"] .fw-rise.in { opacity: 1; transform: none; }
 
-  /* CTA band, used at the end of pages */
-  .fw-band { position: relative; overflow: hidden; border-radius: 32px; background: var(--fw-forest); color: #fff; padding: clamp(36px, 6vw, 72px); display: grid; gap: 18px; justify-items: start; }
+  /* CTA band, used at the end of pages: on wide screens the headline holds the left and the line plus the button sit
+     at the right, on the headline's baseline, so the band has no empty half */
+  .fw-band { position: relative; overflow: hidden; border-radius: 20px; background: var(--fw-forest); color: #fff; padding: clamp(36px, 6vw, 72px); display: grid; gap: 18px; justify-items: start; }
   .fw-band h2 { color: #fff; max-width: 18ch; }
   .fw-band p { color: #cfdccc; max-width: 54ch; }
-  .fw-band::after { content: ""; position: absolute; right: -80px; bottom: -120px; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(201, 226, 101, 0.35), transparent 65%); pointer-events: none; }
+  @media (min-width: 900px) {
+    .fw-band { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); grid-template-rows: 1fr auto; column-gap: clamp(40px, 6vw, 96px); align-items: end; }
+    .fw-band h2 { grid-column: 1; grid-row: 1 / span 2; align-self: end; font-size: clamp(2.25rem, 4vw, 3.25rem); }
+    .fw-band p { grid-column: 2; grid-row: 1; }
+    .fw-band .fw-btn { grid-column: 2; grid-row: 2; }
+  }
 </style>
 
 <script>
-  // reveal sections as they come into view (only what starts below the first screen; tier 3 skips it in CSS)
-  const els = [...document.querySelectorAll<HTMLElement>(".fw-rise")];
-  if ("IntersectionObserver" in window) {
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
-    }, { rootMargin: "0px 0px -8% 0px" });
-    const above = els.map((el) => el.getBoundingClientRect().top < innerHeight); // read all, then write
-    els.forEach((el, i) => { if (above[i]) el.classList.add("in"); else io.observe(el); });
-  } else els.forEach((el) => el.classList.add("in"));
   // the phone menu closes when a link in it is chosen or on Escape
   const menu = document.querySelector<HTMLDetailsElement>(".fw-menu");
   menu?.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) menu.open = false; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && menu?.open) { menu.open = false; menu.querySelector("summary")?.focus(); } });
+
+  // The phone bar steps aside while (1) a [data-bar-clear] element (a hero's words and chips, the estimate dock, a
+  // before/after's "Example images" label, the message form) is in
+  // the strip at the bottom of the screen that the bar covers, so it never hides a headline or a field, or (2) a
+  // [data-bar-dup] element (the dock's own "Get my estimate") is anywhere on screen, so one action never shows twice.
+  const bar = document.querySelector<HTMLElement>("[data-bar]");
+  const clear = [...document.querySelectorAll("[data-bar-clear]")];
+  const dup = [...document.querySelectorAll("[data-bar-dup]")];
+  if (bar && (clear.length || dup.length) && "IntersectionObserver" in window) {
+    const inStrip = new Set<Element>(), onScreen = new Set<Element>();
+    const track = (set: Set<Element>) => (entries: IntersectionObserverEntry[]) => {
+      for (const e of entries) {
+        if (e.isIntersecting) set.add(e.target);
+        else set.delete(e.target);
+      }
+      bar.classList.toggle("is-away", inStrip.size + onScreen.size > 0);
+    };
+    // the bar is 60px tall and 12px off the bottom; the strip adds 12px of air above it. Its size depends on the
+    // screen's height, so it is measured again when the window changes size (a phone turning, a desktop resizing).
+    let strip: IntersectionObserver | undefined;
+    const watchStrip = () => {
+      strip?.disconnect();
+      inStrip.clear();
+      strip = new IntersectionObserver(track(inStrip), { rootMargin: `-${Math.max(0, innerHeight - 84)}px 0px 0px 0px` });
+      for (const el of clear) strip.observe(el);
+    };
+    const whole = new IntersectionObserver(track(onScreen));
+    for (const el of dup) whole.observe(el);
+    watchStrip();
+    let wait = 0;
+    addEventListener("resize", () => { clearTimeout(wait); wait = window.setTimeout(watchStrip, 150); });
+  } else bar?.classList.remove("is-away");
 </script>

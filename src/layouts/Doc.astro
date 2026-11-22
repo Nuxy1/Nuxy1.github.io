@@ -1,8 +1,9 @@
 ---
 // A docs page: a project's README rendered as a page of the site (scripts/sync-docs.mjs copies them in).
 import Base from "./Base.astro";
+import { crumbs } from "../lib/crumbs";
 import Icon from "../components/Icon.astro";
-const { frontmatter } = Astro.props;
+const { frontmatter, headings = [] } = Astro.props;
 // Each table goes in a box that scrolls sideways when the table is wider than the screen (.table-scroll in Base.astro).
 // The box takes keyboard focus, so arrow keys scroll it too (WCAG 2.1.1), and is named after the heading above the
 // table. It wraps the table because a role on the table itself would hide that it is a table. Heading text arrives
@@ -14,26 +15,73 @@ const WHOLE = 28;
 // don't do on their own. Neither adds a character, so copied code is unchanged.
 const breakable = (code: string) => code.split(/(\/+)/).map((part, i) =>
   i % 2 ? `${part}<wbr>` : part.replace(/[^\s]*-[^\s]*/g, (word) => `<span class="nobr">${word}</span>`)).join("");
+// (critique round 9) A code block that wraps on a phone (Base.astro) breaks where a reader would: after a slash and
+// between JSON fields, never inside an email address or a hyphenated word (it showed "Maria.Gonzalez@Gm" / "ial.com").
+// Only the text between tags changes, and nothing adds a character, so copied code is unchanged.
+// (critique round 11) Each indented line also carries its indent (--lead), so a wrapped line continues 3 characters in
+// from where its own text starts: in the demo's indented log a continuation sat 1 character from the entry's first
+// word and read as a new entry.
+const codeBlock = (pre: string) => pre.split(/(<[^>]+>)/).map((part, i) => i % 2 ? part : part.split(/(\/+|":|",)/).map((bit, j) =>
+  j % 2 ? `${bit}<wbr>` : bit.replace(/[^\s]*[-@][^\s]*/g, (word) => `<span class="nobr">${word}</span>`)).join("")).join("")
+  .replace(/<span class="line">((?:<[^>]+>| )*)/g, (line, head: string) => {
+    const lead = head.replace(/<[^>]+>/g, "").length;
+    return lead ? `<span class="line" style="--lead:${lead}">${head}` : line;
+  });
 const body = (await Astro.slots.render("default")).replace(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>|<table\b[^>]*>[\s\S]*?<\/table>/g, (match, _level, text) => {
   if (text !== undefined) { heading = plain(text); return match; }
   const label = (heading ? `Table: ${heading}` : "Table").replace(/"/g, "&quot;");
-  return `<div class="table-scroll" role="region" tabindex="0" aria-label="${label}">${match}</div>`;
-}).replace(/<pre\b[\s\S]*?<\/pre>|<h([1-6])\b[\s\S]*?<\/h\1>|<code>([^<]*)<\/code>/g, (match, level, text) => {
+  // (critique round 5) a table of three or more columns stacks on a phone, one block per row: each cell carries its
+  // column's name, shown above it there (the heading row is then hidden visually; it stays for screen readers)
+  const heads = [...match.matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/g)].map((m) => plain(m[1]).replace(/"/g, "&quot;"));
+  const ROLES: Record<string, string> = { table: "table", thead: "rowgroup", tbody: "rowgroup", tr: "row", th: "columnheader", td: "cell" };
+  const table = heads.length < 3 ? match : match
+    .replace(/<tr\b[^>]*>[\s\S]*?<\/tr>/g, (row) => { let i = 0; return row.replace(/<td\b/g, () => `<td data-label="${heads[i++] ?? ""}"`); })
+    .replace(/<(table|thead|tbody|tr|th|td)\b/g, (_m, tag: string) => `<${tag} role="${ROLES[tag]}"`);
+  return `<div class="table-scroll" role="region" tabindex="0" aria-label="${label}">${table}</div>`;
+}).replace(/<pre\b[\s\S]*?<\/pre>|<h([1-6])\b[\s\S]*?<\/h\1>|(\(?)<code>([^<]*)<\/code>/g, (match, level, open, text) => {
   // Inline code never breaks at a hyphen: split there on a phone, `needs-review.csv` reads as two words and nobody can
   // tell where the real break is. A short piece in body text stays on one line (28 characters still fit a 320px
   // screen inside a list); a longer one, or one in a heading's larger type, may break only at a space or after a slash,
   // and each line keeps its own box (Base.astro).
   if (level) return match.replace(/<code>([^<]*)<\/code>/g, (_m, t) => `<code>${breakable(t)}</code>`);
+  if (match.startsWith("<pre")) return codeBlock(match);
   if (text === undefined) return match;
-  return text.replace(/&[#a-z0-9]+;/gi, "x").length <= WHOLE ? `<code class="whole">${text}</code>` : `<code>${breakable(text)}</code>`;
+  // (critique round 7) an opening bracket stays with the short code after it: on a phone "(" sat alone at a line's end
+  if (text.replace(/&[#a-z0-9]+;/gi, "x").length > WHOLE) return `${open}<code>${breakable(text)}</code>`;
+  return open ? `<span class="glue">(<code class="whole">${text}</code></span>` : `<code class="whole">${text}</code>`;
 });
 // A demo video's poster is the largest thing on screen; announcing it in the head lets the browser fetch it first.
 const poster = body.match(/<video[^>]*poster="([^"]+)"/)?.[1];
+// (critique round 9) A guide of three or more sections lists them under its opening paragraph, as /handover/ does:
+// the longest guide runs 7,215px on a phone, and the only way back to a section was scrolling.
+const sections = (headings as { depth: number; slug: string; text: string }[]).filter((h) => h.depth === 2);
+const intro = body.indexOf("</p>", body.indexOf("</h1>"));
+const cut = sections.length >= 3 && body.includes("</h1>") && intro > 0 ? intro + 4 : 0;
 ---
 <Base title={`${frontmatter.title} · Nuxy Docs`} description={frontmatter.description}>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(crumbs([["Docs", "/docs/"], [frontmatter.title, Astro.url.pathname]]))} />
   {poster && <link slot="head" rel="preload" as="image" type="image/webp" href={poster} fetchpriority="high" />}
-  <p class="doc-links"><a href="/docs/">All docs</a><a href={`https://github.com/Nuxy1/${frontmatter.repo}`}><Icon name="githubLogo" />Code on GitHub</a></p>
-  <Fragment set:html={body} />
+  <!-- the same breadcrumb as the example and experiment pages (site audit 2026-11-21, finding 12), with the code link beside it -->
+  <div class="doc-top">
+    <p class="crumbs"><a class="tap" href="/docs/">Docs</a><span aria-hidden="true">/</span>{frontmatter.title}</p>
+    <a class="doc-repo tap" href={`https://github.com/Nuxy1/${frontmatter.repo}`}><Icon name="githubLogo" />Code on GitHub</a>
+  </div>
+  <Fragment set:html={body.slice(0, cut)} />
+  {cut > 0 && (
+    <nav class="doc-toc" aria-label="On this page">
+      <ul role="list">{sections.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}</ul>
+    </nav>
+  )}
+  <Fragment set:html={body.slice(cut)} />
+  <!-- a README ends at its license line; the page ends with the way to get one set up (site audit 2026-11-21, critique round 1) -->
+  <aside class="doc-next" aria-labelledby="doc-next-h">
+    <h2 id="doc-next-h">Want Something Like This in Your Own Accounts?</h2>
+    <p>Tell us what you use and what keeps going wrong. We reply within one business day with a written plan and a fixed price, and nothing is charged until you agree.</p>
+    <div class="doc-next-actions">
+      <a class="button" href="/contact/" data-track="cta_docs">Get a Free Quote</a>
+      <a class="button secondary" href="/automation/">See What We Automate</a>
+    </div>
+  </aside>
 </Base>
 
 <script>
@@ -46,8 +94,50 @@ const poster = body.match(/<video[^>]*poster="([^"]+)"/)?.[1];
 </script>
 
 <style>
-  .doc-links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; font-size: 0.9375rem; font-weight: 600; }
-  .doc-links a { display: inline-flex; align-items: center; gap: 6px; }
+  /* (critique round 5) a 14px row gap when the code link wraps under the crumbs: the two 44px tap bands then meet near the
+     middle between the lines, so a tap just under "Docs" stays on Docs */
+  .doc-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 14px 20px; margin-bottom: 16px; }
+  .crumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; color: var(--muted); font-size: 0.875rem; }
+  .crumbs a { color: var(--link); }
+  .doc-repo { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 600; }
+  /* the /handover/ index row; a long section name wraps inside its pill rather than pushing the row sideways */
+  .doc-toc { margin: 28px 0 36px; padding-top: 20px; border-top: 1px solid var(--hairline-soft); }
+  .doc-toc ul { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0; padding: 0; list-style: none; }
+  .doc-toc li { margin: 0; }
+  .doc-toc a { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; padding: 8px 14px; border: 1px solid var(--hairline); border-radius: var(--r-full); color: var(--body); font-size: 0.9375rem; font-weight: 500; line-height: 1.3; text-decoration: none; transition: border-color 160ms ease-out, color 160ms ease-out; }
+  .doc-toc a:hover { border-color: var(--blue-line); color: var(--ink); }
+  /* (site audit 2026-11-21, critique rounds 1 and 3) Running text keeps a reading measure: at 1440 the 800px column gave
+     lines of 90-99 characters. Inter's "0" is wide, so ch overstates the measure: counted per rendered line, 64ch still
+     ran a median of 81 characters (max 88); 56ch runs a median of 71, none over 77. Code, tables and headings keep the
+     full column. */
+  :global(.page > :is(p, ul, ol, blockquote)) { max-width: 56ch; }
+  /* A table of three or more columns keeps room for its longest column and scrolls in its box on a phone, instead of
+     squeezing every column to a few words per line. */
+  :global(.page > .table-scroll > table:has(th:nth-child(3))) { min-width: 34rem; }
+  /* (critique round 5: on a phone the sideways scroll cut the table off mid-word) under 600px each row is one block,
+     each cell under its column's name; the explicit roles keep it a table for screen readers that drop the semantics
+     of a table drawn as blocks */
+  @media (max-width: 599px) {
+    :global(.page > .table-scroll:has(td[data-label])) { width: 100%; overflow: visible; background: none; }
+    :global(.page > .table-scroll > table:has(td[data-label])) { min-width: 0; width: 100%; }
+    :global(.page > .table-scroll > table:has(td[data-label]) :is(tbody, tr, td)) { display: block; }
+    :global(.page > .table-scroll > table:has(td[data-label]) thead) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    :global(.page > .table-scroll > table:has(td[data-label]) tr) { padding: 14px 0; border-bottom: 1px solid var(--hairline); }
+    :global(.page > .table-scroll > table:has(td[data-label]) tbody tr:first-child) { border-top: 1px solid var(--hairline); }
+    :global(.page > .table-scroll > table:has(td[data-label]) td) { padding: 0; border: 0; }
+    :global(.page > .table-scroll > table:has(td[data-label]) td + td) { margin-top: 10px; }
+    :global(.page > .table-scroll > table:has(td[data-label]) td::before) { content: attr(data-label); display: block; margin-bottom: 2px; color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
+    :global(.page > .table-scroll > table:has(td[data-label]) td:first-child) { color: var(--ink); font-weight: 600; }
+  }
+  /* (the first column names the thing, "Lead follow-up" or `line-items.cjs`: kept on one line, never split at its hyphen) */
+  :global(.page td:first-child > a) { position: relative; white-space: nowrap; }
+  /* (critique round 5) the same 44px tap band as .tap in Base.astro: these links come from the README, so no class */
+  :global(.page td:first-child > a::after) { content: ""; position: absolute; left: -4px; right: -4px; top: calc(50% - 22px); height: 44px; }
+  .doc-next { margin-top: clamp(48px, 6vw, 72px); padding: clamp(20px, 4vw, 32px); border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--surface); }
+  .doc-next h2 { margin: 0 0 10px; font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.5rem); }
+  .doc-next p { max-width: 60ch; margin: 0 0 20px; color: var(--body); }
+  .doc-next-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  @media (max-width: 479px) { .doc-next-actions .button { flex: 1 1 100%; } }
   /* the relay demo video that scripts/sync-docs.mjs puts in place of the README's GIF */
   :global(.doc-video) { margin: 24px 0; }
   :global(.doc-video video) { width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--bg-deep); }
