@@ -19,7 +19,7 @@ const pageData = {
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(pageData)} />
   <h1>Policies</h1>
   <p class="lead">Plain-language terms for working with Nuxy Automation, a one-person business in Faribault, Minnesota. The rest of the site says “we”; these terms say “I”, because one person makes and keeps every promise in them. Questions: <a href={`mailto:${contact}`}>{contact}</a>.</p>
-  <p>Last updated {callbackForm ? "November 13, 2026" : "November 11, 2026"}.</p>
+  <p>Last updated November 22, 2026.</p>
 
   <h2 id="refunds">Refunds</h2>
   <ul>
@@ -61,6 +61,7 @@ const pageData = {
     <li><strong>The contact form:</strong> your answers go to my own server, which saves them and emails them to my inbox. It doesn’t keep your IP address. I use them only to reply about your project and never add you to a mailing list. If you tick “It’s OK to follow up”, I may write once or twice more about that request if you go quiet; if you don’t, I only reply to it. Requests are deleted after a year unless you become a client; messages flagged as spam are deleted after 30 days.</li>
     <li><strong>This website:</strong> no cookies and no advertising or tracking scripts. It counts visits anonymously: which page, which button (for example “started the demo”), the day, and the site you came from. Nothing you type, no IP address and nothing that identifies you. If your browser sends Do Not Track or Global Privacy Control, nothing is counted. The site is hosted by GitHub Pages, which keeps its own server logs.</li>
     {callbackForm && <li><strong>Callback requests:</strong> if you ask for a callback on the contact page, your name, business, phone number, email (if you give one), what the call is about, the time of day you prefer and any note go to the same server and inbox as the contact form, and are kept and deleted the same way. You must tick that I may call or text you at that number; I use it only to call or text you about that request, never for marketing, and never share it. Asking for a callback doesn’t book a time.</li>}
+    <li id="texts"><strong>Text messages:</strong> Nuxy Automation’s own automated texts are system alerts sent only to my own phone, for example when a service I run stops responding. Message frequency varies, and message and data rates may apply. Reply STOP to stop them or HELP for help, or email me at <a href={`mailto:${contact}`}>{contact}</a>. I never sell mobile information or share it with third parties or affiliates for marketing or promotional purposes, and I never share text-message opt-in data and consent with any third party.</li>
     {calUrl && <li><strong>Booking a call:</strong> the booking page is run by {calService}. What you enter there (your name, email, the time you pick and any note) is kept by {calService} under its own privacy policy and sent to me so I can call you. It shows only the times I’m free, never what is in my calendar.</li>}
     <li><strong>Email:</strong> if I emailed you about your website and you reply “unsubscribe”, I never email you again.</li>
     <li><strong>Your requests:</strong> email me to see, correct or delete what I have about you.</li>
