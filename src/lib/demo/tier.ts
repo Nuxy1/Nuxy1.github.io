@@ -1,8 +1,10 @@
 // Experience tier for the demo websites, one answer for every effect on the page:
 //   1 = full: pointer-driven depth, canvas or WebGL effects (wide screen, mouse or trackpad, enough cores)
-//   2 = standard: CSS-only motion, no canvas loops (most phones and tablets)
-//   3 = reduced: still pictures and instant state changes (reduced motion, data saver, low memory, or the visitor
-//       chose "Reduced" in the Nuxy site's motion setting, which shares this browser's storage)
+//   2 = standard: most phones and tablets. Pages keep to CSS motion here, except a product demo whose 3D is the
+//       content: Halvane runs its scene at its lighter level (tier B), with the frame watch falling back to posters
+//   3 = reduced: still pictures and instant state changes (reduced motion, data saver, a 2G connection, under 4 GB
+//       of memory, two cores or fewer, or the visitor chose "Reduced" in the Nuxy site's motion setting, which
+//       shares this browser's storage)
 // <html data-tier> carries it for CSS. `?tier=1|2|3` forces one, for testing and for the screenshots.
 // No JavaScript at all = the static markup, which every effect starts from.
 export type Tier = 1 | 2 | 3;

@@ -99,12 +99,35 @@ test("level and add-on prices are the brief's", () => {
   });
 });
 
-test("the 3D scene caps its pixel ratio at 1.5, pauses off screen and frees everything it made", () => {
+test("the 3D scene caps its pixel ratio (1.5 on phones, 2 on desktops), pauses off screen and frees everything it made", () => {
   const scene = readFileSync(join(here, "..", "src", "lib", "halvane", "scene.ts"), "utf8");
-  assert.match(scene, /setPixelRatio\(Math\.min\(window\.devicePixelRatio \|\| 1, 1\.5\)\)/);
+  assert.match(scene, /let dprCap = opts\.phone \? 1\.5 : opts\.tier === "A" \? 2 : 1;/, "1.5 on phones, 2 on tier A desktops, 1 otherwise");
+  assert.match(scene, /setPixelRatio\(Math\.min\(window\.devicePixelRatio \|\| 1, dprCap\)\)/, "the cap is applied as a ceiling");
+  assert.match(scene, /dprCap = 1;\s*applyDpr\(\);/, "the frame watch steps the cap down to 1 before it gives up");
+  assert.doesNotMatch(scene, /setPixelRatio\(window\.devicePixelRatio\)/, "never the raw device ratio");
   assert.match(scene, /new IntersectionObserver/);
   assert.match(scene, /visibilitychange/);
   assert.match(scene, /renderer\.dispose\(\);[\s\S]*renderer\.forceContextLoss\(\)/);
+});
+
+test("the 3D scene links its shaders off the main thread: no draw before they are ready, the PMREM filters built first", () => {
+  const scene = readFileSync(join(here, "..", "src", "lib", "halvane", "scene.ts"), "utf8");
+  assert.match(scene, /const canRun = \(\) => ready && /, "the frame loop and the resize redraw wait for the programs");
+  const lastCompile = scene.lastIndexOf("await renderer.compileAsync(scene, camera);");
+  const readyAt = scene.indexOf("ready = true;");
+  assert.ok(lastCompile > 0 && readyAt > lastCompile, "ready is set only after the last compile has finished");
+  // the list may grow (row 79 added the wadding's wool maps); what matters is that these are in it and the order holds
+  const uploadAt = scene.search(/await upload\(\[first\.color, first\.height, paperColor, paperHeight, shadowTex[\w, ]*\]\);/);
+  assert.ok(uploadAt > lastCompile && uploadAt < readyAt, "the first finish and the paper are uploaded one task each before the first draw");
+  assert.match(scene, /loadFinish\(f\)\.then\(async \(tex\) => \{\s*await upload\(\[tex\.color, tex\.height\]\);/, "a finish swap uploads its textures before the wipe uses them");
+  assert.ok(scene.indexOf("await warmPmrem(renderer, pmrem, 256);") < scene.indexOf("pmrem.fromScene("), "the PMREM filters are linked before fromScene uses them");
+  assert.match(scene, /pmrem\.fromScene\([^)]*size: 256/, "fromScene asks for the size the warm-up built");
+  assert.ok(scene.indexOf("const assets = Promise.all(") < scene.indexOf("const envScene = new Scene();"), "the model's files are fetched while the environment builds");
+  // warmPmrem reads three's private fields; three is pinned, and this catches an upgrade that renames them
+  const pmrem = readFileSync(createRequire(import.meta.url).resolve("three/src/extras/PMREMGenerator.js"), "utf8");
+  for (const f of ["_setSize(", "_allocateTargets(", "_pingPongRenderTarget", "_lodMeshes", "_blurMaterial", "_ggxMaterial"]) {
+    assert.ok(pmrem.includes(f), `three's PMREMGenerator still has ${f}`);
+  }
 });
 
 // ---------- in a browser ----------
@@ -114,10 +137,13 @@ const WIDTHS = [320, 375, 390, 430, 768, 1024, 1280, 1440, 1920];
 const PAGES = ["/web-design/", "/business-websites/", "/signature-websites/", "/immersive-websites/", "/portfolio/", "/automation/", "/contact/?level=immersive", "/example-sites/halvane-audio/"];
 
 // counting only happens on the real address, so a second browser maps that name to the local build (as pages.test.mjs)
-const HOST = new URL((await import("../astro.config.mjs")).default.site).hostname;
-let web, site, real, browser, hosted;
+// The site's host is read inside before(), never with a top-level await: the browserless tests above are already
+// declared, so an await here let them start and finish first, and node ran after() while before() was still launching
+// the browsers. after() closed nothing, and the two browsers and the server kept the process alive (hung 11-23).
+let HOST, web, site, real, browser, hosted;
 before(async () => {
   assert.ok(existsSync(join(dist, "index.html")), "run npm run build first");
+  HOST = new URL((await import("../astro.config.mjs")).default.site).hostname;
   web = await serveDist(dist);
   site = web.url;
   real = `http://${HOST}:${new URL(site).port}`;
@@ -380,7 +406,7 @@ test("the Immersive page opens the Halvane concept, which loads 3D only when mot
     await settle(page);
     assert.equal(tab.count("immersive_demo_opened"), 1);
     assert.match(await page.textContent("body"), /fictional business|not a real business/i, "the concept is labelled");
-    const webgl = await page.evaluate(() => !!document.createElement("canvas").getContext("webgl"));
+    const webgl = await page.evaluate(() => !!document.createElement("canvas").getContext("webgl", { failIfMajorPerformanceCaveat: true }));
     if (webgl) {
       await page.waitForSelector(".hv-stage.is-3d", { timeout: 15000 });
       assert.ok(tab.asked.some((p) => /\/_astro\/scene\.[\w-]+\.js$/.test(p)), "the scene loads as its own file");
@@ -393,14 +419,14 @@ test("the Immersive page opens the Halvane concept, which loads 3D only when mot
   } finally {
     await tab.context.close();
   }
-  // reduced motion: the still drawing, and the 3D code is never even downloaded
+  // reduced motion: the poster, and the 3D code is never even downloaded
   const still = await open({ base: site, reducedMotion: "reduce" });
   try {
     await still.go("/example-sites/halvane-audio/");
     await still.page.waitForTimeout(1500);
     assert.equal(await still.page.locator(".hv-stage.is-3d").count(), 0);
     assert.deepEqual(still.asked.filter((p) => /\/_astro\/scene\./.test(p)), []);
-    assert.equal(await still.page.locator(".hv-stage svg").first().isVisible(), true);
+    assert.equal(await still.page.locator(".hv-stage img[data-poster]").first().isVisible(), true);
     assert.deepEqual(still.errors, []);
   } finally {
     await still.context.close();

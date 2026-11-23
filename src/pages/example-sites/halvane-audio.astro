@@ -1,24 +1,25 @@
 ---
-// Halvane Audio: the Immersive-level concept project (website levels brief). A made-up speaker brand launches one
-// product, the Lumen One, with a scroll story that takes the speaker apart: cabinet, woofer, tweeter, crossover,
-// then the finish. Nothing here is real (DemoSite adds the banner, noindex and the demo form behaviour).
-// How the 3D is kept honest about cost:
-// - the page first shows a still drawing of the speaker (inline SVG, no download), and the story, the finishes
-//   (pure CSS) and the reserve form all work with it, with JavaScript off and with reduced motion;
-// - only after the page has loaded, when the visitor has not asked for reduced motion, is not saving data and the
-//   browser has WebGL, is the Three.js scene (lib/halvane/scene.ts) fetched and swapped in;
-// - scrolling never gets taken over: the page scrolls normally and the scene follows it (which step is in the
-//   middle of the screen picks the part; how far through the story you are sets how far apart it is);
-// - the scene pauses off screen and in a hidden tab, has a "Pause motion" button, and is disposed on pagehide or
-//   when reduced motion is switched on.
+// Halvane Audio, LUMEN ONE: a made-up speaker brand (demonstration website, Nuxy Automation).
+// One sticky stage holds the product. The chapters scroll over it, and each names a camera state in
+// lib/halvane/cameras.json. The page works without JavaScript (posters and captions), without WebGL and under
+// reduced motion (posters swap by chapter). With WebGL on tiers 1-2 the Blender-built model takes over the stage.
 import DemoSite from "../../layouts/DemoSite.astro";
+import cams from "../../lib/halvane/cameras.json";
 
+// the model's meshes are meshopt-compressed; its decoder is WebAssembly, which CSP only lets compile with
+// 'wasm-unsafe-eval' (WebAssembly only: JavaScript eval stays blocked). This page alone gets it.
+Astro.csp?.insertScriptResource("'wasm-unsafe-eval'");
+
+const B = "/3d/halvane/";
+// a number never wraps away from its unit ("19 mm", "45 Hz", "6.5-inch"): a no-break space, or a word joiner after the hyphen
+const NBSP = String.fromCharCode(0xa0), WJ = String.fromCharCode(0x2060);
+const nb = (s: string) => s.replace(/(\d) (?=\S)/g, `$1${NBSP}`).replace(/(\d)-(?=[a-z])/g, `$1-${WJ}`);
 const steps = [
-  { id: "cabinet", n: "01", h: "The cabinet", p: "Solid walnut, 19 mm thick, braced inside so the box stays quiet and only the drivers speak. A slot port along the bottom lets it sit close to a wall without booming." },
-  { id: "woofer", n: "02", h: "The woofer", p: "A 6.5-inch paper-composite cone on a cast frame. Paper is light and naturally damped, so voices sound like people in the room, not like speakers." },
-  { id: "tweeter", n: "03", h: "The tweeter", p: "A 1-inch aluminium dome in a shallow waveguide with a brass ring. It spreads the treble evenly across the room, not only to the one chair in the middle." },
-  { id: "crossover", n: "04", h: "The crossover", p: "Hand-soldered on the back plate with air-core coils and film capacitors, tuned by ear over six weeks of listening. Brass binding posts take bare wire or banana plugs." },
-];
+  { id: "cabinet", h: "The cabinet", p: "Solid hardwood, 19 mm thick, braced inside so the box stays quiet and only the drivers speak. The bass breathes out through the slot along the bottom of the front." },
+  { id: "woofer", h: "The woofer", p: "A 6.5-inch paper-composite cone on a cast frame. Paper is light and naturally damped: the aim is voices that sound like people in the room, not like speakers." },
+  { id: "tweeter", h: "The tweeter", p: "A 1-inch aluminium dome in a shallow waveguide with a brass ring. The waveguide is shaped to spread the treble across the room, not only to the one chair in the middle." },
+  { id: "crossover", h: "The crossover", p: "Air-core coils and film capacitors, hand-soldered on the back plate, with the final values meant to be set by ear." },
+].map((s) => ({ ...s, p: nb(s.p) }));
 const finishes = [
   { id: "walnut", name: "Walnut", note: "Oiled solid walnut" },
   { id: "chalk", name: "Chalk", note: "Matte lacquer over oak" },
@@ -27,437 +28,998 @@ const finishes = [
 const specs = [
   ["Type", "Two-way bookshelf speaker with a front slot port"],
   ["Drivers", "6.5-inch paper-composite woofer, 1-inch aluminium dome tweeter"],
-  ["Frequency response", "45\u00a0Hz – 22\u00a0kHz (±3\u00a0dB)"],
-  ["Sensitivity", "87\u00a0dB (2.83\u00a0V at 1\u00a0m)"],
-  ["Impedance", "6\u00a0Ω nominal"],
-  ["Size", "21 × 33 × 26\u00a0cm (W × H × D)"],
-  ["Weight", "7.4\u00a0kg each"],
-  ["Price", "$1,180 a pair (demonstration price)"],
+  ["Frequency response", "45 Hz – 22 kHz (±3 dB)"],
+  ["Sensitivity", "87 dB (2.83 V at 1 m)"],
+  ["Impedance", "6 Ω nominal"],
+  ["Size", "21 × 33 × 26 cm (W × H × D)"],
+  ["Weight", "7.4 kg each"],
+  ["Price", `$1,180 a pair (demonstration${NBSP}price)`],
+].map(([k, v]) => [k, nb(v)]);
+
+// each step chapter shows one camera state; the caption sits on the side away from the model (sign of the shift)
+const stepState: Record<string, keyof typeof cams.states> = { cabinet: "silhouette", woofer: "front-detail", tweeter: "driver-macro", crossover: "rear-detail" };
+const side = (s: keyof typeof cams.states) => { const x = cams.states[s].shift[0]; return x > 0 ? "left" : x < 0 ? "right" : "centre"; };
+const srcset = (f: string, s: string) => [800, 1200, 1600].map((w) => `${B}posters/${f}-${s}-${w}.webp ${w}w`).join(", ");
+const tags = [
+  { id: "tweeter", label: "1-inch aluminium tweeter" },
+  { id: "woofer", label: "6.5-inch paper woofer" },
+  { id: "cabinet", label: "Walnut cabinet" },
+  { id: "rear", label: "Hand-soldered crossover" },
 ];
 ---
-<DemoSite slug="halvane-audio" theme="#0f0d0b" description="Halvane Audio is a made-up speaker brand: a demonstration website by Nuxy Automation.">
-  <div class="hv">
-    <a class="hv-skip" href="#main">Skip to content</a>
-    <header class="hv-head">
-      <div class="hv-bar">
-        <a class="hv-mark" href="#main">Halvane<span>Audio</span></a>
-        <nav aria-label="Halvane Audio">
-          <a href="#inside">Inside</a>
-          <a href="#finish">Finishes</a>
-          <a href="#specs">Specs</a>
-        </nav>
-        <a class="hv-btn sm" href="#reserve">Reserve</a>
-      </div>
-    </header>
+<DemoSite slug="halvane-audio" theme="#100e0c" bodyClass="hv-body" description="Halvane Audio is a made-up speaker brand: a demonstration website by Nuxy Automation." fonts={["/fonts/newsreader-display-var.woff2", "/fonts/albert-sans-var.woff2"]}>
+  <header class="hv-head">
+    <div class="hv-bar">
+      <span class="hv-id"><a class="hv-mark" href="#main" translate="no">Halvane <span>Audio</span></a><small>Fictional brand</small></span>
+      <nav aria-label="Halvane Audio">
+        <a class="hv-wide" href="#inside">Inside</a>
+        <a href="#finish">Finishes</a>
+        <a class="hv-mid" href="#specs">Specs</a>
+      </nav>
+      <a class="hv-btn sm" href="#reserve">Reserve</a>
+    </div>
+    <span class="hv-prog" aria-hidden="true"></span>
+  </header>
 
-    <main id="main">
-      <div class="hv-story">
-        <div class="hv-stage" data-stage data-part="cabinet">
-          <svg viewBox="0 0 300 400" role="img" aria-labelledby="hv-art-t">
-            <title id="hv-art-t">The Lumen One speaker from the front, in the chosen finish</title>
-            <defs>
-              <pattern id="hv-grain" width="11" height="400" patternUnits="userSpaceOnUse">
-                <path d="M3 0C6 110 1 250 5 400M8.5 0C7 140 10 260 7.5 400" fill="none" stroke="#000" stroke-opacity=".16" />
-              </pattern>
-              <linearGradient id="hv-shade" x1="0" x2="1" y1="0" y2="1">
-                <stop offset="0" stop-color="#fff" stop-opacity=".12" />
-                <stop offset=".55" stop-color="#fff" stop-opacity="0" />
-                <stop offset="1" stop-color="#000" stop-opacity=".32" />
-              </linearGradient>
-            </defs>
-            <ellipse cx="150" cy="372" rx="128" ry="9" fill="#000" opacity=".55" />
-            <g class="p-cabinet">
-              <rect class="cab" x="40" y="20" width="220" height="346" rx="14" />
-              <rect class="grain" x="40" y="20" width="220" height="346" rx="14" fill="url(#hv-grain)" />
-              <rect x="40" y="20" width="220" height="346" rx="14" fill="url(#hv-shade)" />
-            </g>
-            <g class="p-crossover">
-              <rect x="77" y="131" width="146" height="199" rx="6" fill="none" stroke="#c8a46a" stroke-dasharray="5 5" />
-              <rect x="94" y="160" width="112" height="118" rx="3" fill="#c8a46a" fill-opacity=".1" stroke="#c8a46a" stroke-opacity=".7" />
-              <circle cx="122" cy="190" r="16" fill="none" stroke="#c8a46a" stroke-width="6" stroke-opacity=".7" />
-              <rect x="150" y="225" width="40" height="14" rx="7" fill="#c8a46a" fill-opacity=".6" />
-            </g>
-            <g class="p-tweeter">
-              <circle cx="150" cy="90" r="35" fill="#c8a46a" />
-              <circle cx="150" cy="90" r="29" fill="#1c1b1a" />
-              <circle cx="150" cy="90" r="14" fill="#dcd8d0" />
-              <circle cx="146" cy="86" r="5" fill="#fff" opacity=".55" />
-              <circle class="hl" cx="150" cy="90" r="43" />
-            </g>
-            <g class="p-woofer">
-              <circle cx="150" cy="237" r="79" fill="#c8a46a" />
-              <circle cx="150" cy="237" r="74" fill="#141312" />
-              <circle cx="150" cy="237" r="64" fill="#24211f" />
-              <circle cx="150" cy="237" r="44" fill="#1f1d1b" />
-              <circle cx="150" cy="237" r="20" fill="#2b2826" />
-              <circle cx="144" cy="231" r="6" fill="#fff" opacity=".1" />
-              <circle class="hl" cx="150" cy="237" r="87" />
-            </g>
-            <rect x="92" y="328" width="116" height="17" rx="8.5" fill="#050404" />
-          </svg>
-          <canvas data-canvas aria-hidden="true" hidden></canvas>
-          <p class="hv-tag" data-tag aria-hidden="true" hidden></p>
-          <div class="hv-tools" data-tools hidden>
-            <button type="button" data-turn="-1" aria-label="Turn the speaker left">&#8249;</button>
-            <button type="button" data-pause>Pause motion</button>
-            <button type="button" data-turn="1" aria-label="Turn the speaker right">&#8250;</button>
-          </div>
+  <main id="main">
+    <div class="hv-story" data-story>
+      <div class="hv-stage" data-stage>
+        <div class="hv-frame is-on" data-frame>
+          <img class="hv-settle" data-poster src={`${B}posters/walnut-reveal-1200.webp`} srcset={srcset("walnut", "reveal")} sizes="(orientation: portrait) 119vw, 100vh" width="1600" height="1600" fetchpriority="high" alt="The Lumen One speaker in walnut, turned to show its front and side." />
         </div>
-
-        <div class="hv-flow">
-          <section class="hv-hero" aria-labelledby="hv-h1" data-step="cabinet">
-            <p class="hv-eye">Lumen One · two-way bookshelf speaker</p>
-            <h1 id="hv-h1">Built by hand.<br /> Tuned by ear.</h1>
-            <p class="hv-lead">A bookshelf speaker with a solid walnut cabinet, a 6.5-inch paper woofer and an aluminium tweeter in a brass ring. Scroll down and take one apart.</p>
-            <div class="hv-actions">
-              <a class="hv-btn" href="#reserve">Reserve a pair</a>
-              <a class="hv-link" href="#inside">See inside</a>
-            </div>
-          </section>
-
-          <section id="inside" class="hv-steps" aria-labelledby="hv-inside-h">
-            <h2 id="hv-inside-h" class="sr-only">Inside the Lumen One</h2>
-            {steps.map((s) => (
-              <article class="hv-step" data-step={s.id} aria-labelledby={`hv-${s.id}-h`}>
-                <p class="hv-n">{s.n}</p>
-                <h3 id={`hv-${s.id}-h`}>{s.h}</h3>
-                <p>{s.p}</p>
-              </article>
-            ))}
-            <article class="hv-step" id="finish" data-step="finish" aria-labelledby="hv-finish-h">
-              <p class="hv-n">05</p>
-              <h3 id="hv-finish-h">Your finish</h3>
-              <p>Three finishes, the same speaker inside. Each pair is matched by grain or colour batch before it leaves the workshop.</p>
-              <fieldset class="hv-finishes">
-                <legend class="sr-only">Cabinet finish</legend>
-                {finishes.map((f, i) => (
-                  <label class:list={["hv-sw", `sw-${f.id}`]}>
-                    <input type="radio" name="hv-finish" value={f.id} checked={i === 0} data-finish />
-                    <span><strong>{f.name}</strong>{f.note}</span>
-                  </label>
-                ))}
-              </fieldset>
-            </article>
-          </section>
+        <canvas data-canvas aria-hidden="true" hidden></canvas>
+        <div class="hv-veil" data-veil aria-hidden="true"></div>
+        <div class="hv-tags" data-tags aria-hidden="true" hidden>
+          {tags.map((t) => <span class="hv-tag" data-spot={t.id}><i></i><b>{t.label}</b></span>)}
         </div>
       </div>
 
-      <section class="hv-specs" id="specs" aria-labelledby="hv-specs-h">
-        <div class="hv-wrap hv-two">
-          <div>
-            <p class="hv-eye">Specifications</p>
-            <h2 id="hv-specs-h">The numbers, plainly</h2>
-            <p class="hv-muted">Measured in our listening room with the grille off. A pair includes cotton dust covers and a printed tuning card signed by the person who voiced it.</p>
-          </div>
-          <dl class="hv-dl">
-            {specs.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
-          </dl>
-        </div>
-      </section>
-
-      <section class="hv-reserve" id="reserve" aria-labelledby="hv-res-h">
-        <div class="hv-wrap hv-two">
-          <div>
-            <p class="hv-eye">First run · 200 pairs</p>
-            <h2 id="hv-res-h">Reserve a pair</h2>
-            <p class="hv-muted">No payment now. We email you when your pair is built, and you can still change the finish until then.</p>
-          </div>
-          <div class="hv-card">
-            <form method="dialog" data-demo-form="hv-sent" class="hv-form">
-              <label>Email
-                <input type="email" name="email" required autocomplete="email" spellcheck="false" placeholder="you@example.com" />
-              </label>
-              <label>Finish
-                <select name="finish" data-finish-select>
-                  {finishes.map((f) => <option value={f.id}>{f.name}</option>)}
-                </select>
-              </label>
-              <button class="hv-btn" type="submit">Reserve a pair</button>
-              <p class="hv-small">Demonstration website: this form sends nothing.</p>
-            </form>
-            <div class="demo-sent" id="hv-sent" tabindex="-1" hidden>
-              <strong>Demo only — nothing was sent</strong>
-              <p>On a real launch site you would get a confirmation email now, and Halvane would see your reservation in its order list.</p>
-              <button class="hv-btn ghost" type="button" data-demo-again>Fill it in again</button>
+      <section class="hv-ch hv-hero" data-state="reveal" data-side={side("reveal")} aria-labelledby="hv-h1">
+        <div class="hv-hold">
+          <div class="hv-cap" data-cap>
+            <h1 id="hv-h1" class="hv-in-1">Built by hand.<br /> Tuned by ear.</h1>
+            <div class="hv-lede hv-in-2">
+              <p>{nb("The Lumen One is a bookshelf speaker in solid hardwood, with a 6.5-inch paper woofer and an aluminium tweeter in a brass ring. Scroll down and take one apart.")}</p>
+              <div class="hv-cta">
+                <a class="hv-btn" href="#reserve">Reserve a pair</a>
+                <a class="hv-link" href="#inside">See inside</a>
+              </div>
             </div>
           </div>
         </div>
       </section>
-    </main>
 
-    <footer class="hv-foot">
-      <div class="hv-wrap">
-        <p class="hv-mark">Halvane<span>Audio</span></p>
-        <p class="hv-muted"><a href="#rooms" data-demo-action="On a real site this would list listening rooms near you.">Find a listening room</a> · <a href="#warranty" data-demo-action="On a real site this would open the warranty and care guide.">Warranty and care</a></p>
-        <p class="foot-fict">Halvane Audio is a fictional business. This is a demonstration website made by <a href="/websites/" target="_top">Nuxy Automation</a>.</p>
+      {steps.map((s) => (
+        <section class="hv-ch" data-state={stepState[s.id]} data-side={side(stepState[s.id])} aria-labelledby={`hv-${s.id}-h`}>
+          {s.id === "cabinet" && <span class="hv-at" id="inside"></span>}
+          <div class="hv-hold">
+            <div class="hv-cap" data-cap>
+              <h2 id={`hv-${s.id}-h`}>{s.h}</h2>
+              <p>{s.p}</p>
+              {s.id === "woofer" && <p class="hv-note">Drawn apart for illustration.</p>}
+              {s.id === "crossover" && <p class="hv-note">Back panel opened for illustration.</p>}
+            </div>
+          </div>
+        </section>
+      ))}
+
+      <section class="hv-ch" data-state="material-transition" data-side={side("material-transition")} aria-labelledby="hv-fin-h">
+        <span class="hv-at" id="finish"></span>
+        <div class="hv-hold">
+          <div class="hv-cap" data-cap>
+            <h2 id="hv-fin-h">Your finish</h2>
+            <p>Three finishes, the same speaker inside. Each pair is matched by grain or colour batch before it leaves the workshop.</p>
+            <fieldset class="hv-finishes">
+              <legend class="sr-only">Cabinet finish</legend>
+              {finishes.map((f, i) => (
+                <label class={`hv-sw sw-${f.id}`}>
+                  <input type="radio" name="hv-finish" value={f.id} checked={i === 0} data-finish />
+                  <span class="hv-chip" aria-hidden="true"></span>
+                  <span class="hv-sw-t"><strong>{f.name}</strong><span>{f.note}</span></span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
+        </div>
+      </section>
+
+      <section class="hv-room" aria-labelledby="hv-room-h">
+        <picture>
+          <source media="(orientation: portrait)" srcset={`${B}room/room-mobile-800.webp 800w, ${B}room/room-mobile-1200.webp 1200w`} sizes="100vw" width="1200" height="1500" />
+          <img src={`${B}room/room-desktop-1600.webp`} srcset={`${B}room/room-desktop-1600.webp 1600w, ${B}room/room-desktop-2400.webp 2400w`} sizes="100vw" width="2400" height="1350" loading="lazy" decoding="async" alt="Lumen One in walnut on a dark wooden sideboard, close to the wall beside a stack of books, in warm evening light." />
+        </picture>
+        <div class="hv-room-cap">
+          <h2 id="hv-room-h">At home by the wall</h2>
+          <p>The port is on the front, so Lumen One can sit close to the wall, among the books, where speakers actually end up.</p>
+        </div>
+      </section>
+
+      <section class="hv-ch hv-look" data-state="showroom" data-side={side("showroom")} aria-labelledby="hv-look-h">
+        <div class="hv-hold">
+          <div class="hv-cap" data-cap>
+            <h2 id="hv-look-h" data-look-h>The finished speaker</h2>
+            <p data-how>The woofer, the tweeter in its brass ring, and the port slot along the bottom of the front.</p>
+            <div class="hv-tools" role="group" aria-label="Turn the speaker" data-tools hidden>
+              <button class="hv-tool" type="button" data-turn="-1">Turn left</button>
+              <button class="hv-tool" type="button" data-turn="1">Turn right</button>
+              <button class="hv-tool" type="button" data-reset>Reset view</button>
+            </div>
+            <p class="sr-only" role="status" aria-live="polite" data-turn-status></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="hv-ch hv-final" data-state="final-product" data-side={side("final-product")} aria-labelledby="hv-final-h">
+        <div class="hv-hold">
+          <div class="hv-cap" data-cap>
+            <h2 id="hv-final-h">Lumen One</h2>
+            <p>A planned first run of 200&nbsp;pairs at $1,180 a&nbsp;pair (demonstration&nbsp;price), each with a tuning card signed by the person who voiced it.</p>
+            <div class="hv-cta"><a class="hv-btn" href="#reserve">Reserve a pair</a></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="hv-specs" id="specs" aria-labelledby="hv-specs-h">
+      <div class="hv-specs-in">
+        <h2 id="hv-specs-h">The numbers, plainly</h2>
+        <p>Lumen One is a fictional product, so these are its design figures, not test results. A pair would come with cotton dust covers and a printed tuning card signed by the person who voiced it.</p>
       </div>
-    </footer>
-  </div>
+      <dl class="hv-dl">
+        {specs.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+      </dl>
+    </section>
+
+    <section class="hv-reserve" id="reserve" aria-labelledby="hv-res-h">
+      <div class="hv-reserve-copy">
+        <h2 id="hv-res-h">Reserve a pair</h2>
+        <p>The first run is 200&nbsp;pairs. No payment now. We email you when your pair is built, and you can still change the finish until then.</p>
+        <dl class="hv-sum" aria-label="Your reservation">
+          <div><dt>Finish</dt><dd data-res-finish>Walnut</dd></div>
+          <div><dt>Price</dt><dd>$1,180 a&nbsp;pair (demonstration&nbsp;price)</dd></div>
+          <div><dt>Run</dt><dd>200&nbsp;pairs, first run</dd></div>
+        </dl>
+      </div>
+      <div>
+        <form method="dialog" data-demo-form="hv-sent" class="hv-form">
+          <label class="hv-field"><span>Email</span><input type="email" name="email" required autocomplete="email" spellcheck="false" placeholder="you@example.com" aria-describedby="hv-email-hint" /></label>
+          <p class="hv-err" id="hv-email-hint">Enter a full email address, like you@example.com.</p>
+          <label class="hv-field"><span>Finish</span>
+            <select name="finish" data-finish-select>
+              {finishes.map((f) => <option value={f.id}>{f.name}</option>)}
+            </select>
+          </label>
+          <button class="hv-btn" type="submit">Reserve a pair</button>
+          <p class="hv-small">Demonstration website: this form sends nothing.</p>
+        </form>
+        <div class="demo-sent" id="hv-sent" tabindex="-1" hidden>
+          <strong>Demo only: nothing was sent.</strong>
+          <p>On a real launch site you would now get an email confirming your <span data-sent-finish>walnut</span> pair, and Halvane would see the reservation in its order list.</p>
+          <button class="hv-btn ghost" type="button" data-demo-again>Fill it in again</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="hv-foot" id="hv-foot">
+    <a class="hv-mark" href="#main" translate="no">Halvane <span>Audio</span></a>
+    <ul>
+      <li><a href="#hv-foot" data-demo-action="On a real site this would list listening rooms near you.">Find a listening room</a></li>
+      <li><a href="#hv-foot" data-demo-action="On a real site this would open the warranty and care guide.">Warranty and care</a></li>
+    </ul>
+    <p class="foot-fict">Halvane Audio is a fictional business. This is a demonstration website made by <a href="/websites/" target="_top">Nuxy Automation</a>.</p>
+  </footer>
 </DemoSite>
 
-<style>
-  .hv { --bg: #0f0d0b; --bg-2: #17140f; --ink: #f3ede4; --muted: #a89f92; --brass: #c8a46a; --line: #2a2520; --finish: #8a5c3c; background: var(--bg); color: var(--ink); }
-  :global(body) { background: #0f0d0b; }
-  /* the finish changes without JavaScript too */
-  .hv:has(input[value="chalk"]:checked) { --finish: #e4ddd0; }
-  .hv:has(input[value="graphite"]:checked) { --finish: #34322f; }
-  .hv :focus-visible { outline-color: var(--brass); }
-  .hv a { color: inherit; }
-  .hv :is(h1, h2, h3) { text-wrap: balance; }
-  /* below 900px the stage is stuck to the top of the screen, so an anchor jump (#inside, #finish) stops under it: the
-     steps keep the stage height clear (the page already pads 88px for anchors, hence the subtraction) */
-  @media (max-width: 899px) { .hv-steps, .hv-step { scroll-margin-top: calc(max(46svh, 280px) - 72px); } }
-  .hv-skip { position: absolute; left: 16px; top: -60px; z-index: 20; padding: 10px 14px; border-radius: 8px; background: var(--brass); color: #14110d; font-weight: 600; text-decoration: none; }
-  .hv-skip:focus { top: 56px; }
-  .hv-wrap { max-width: 1200px; margin: 0 auto; padding-inline: clamp(16px, 4vw, 40px); }
+<style is:global>
+  @font-face { font-family: "Newsreader Display"; src: url("/fonts/newsreader-display-var.woff2") format("woff2"); font-weight: 300 500; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Albert Sans"; src: url("/fonts/albert-sans-var.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
 
-  .hv-head { border-bottom: 1px solid var(--line); }
-  .hv-bar { display: flex; align-items: center; gap: 24px; max-width: 1440px; margin: 0 auto; padding: 14px clamp(16px, 4vw, 40px); }
-  .hv-mark { display: inline-flex; align-items: baseline; gap: 8px; font-size: 1rem; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; text-decoration: none; }
-  .hv-mark span { color: var(--brass); font-size: 0.6875rem; letter-spacing: 0.24em; }
-  .hv-head nav { display: none; gap: 28px; margin-left: auto; font-size: 0.9375rem; }
-  .hv-head nav a { color: var(--muted); text-decoration: none; }
-  .hv-head nav a:hover { color: var(--ink); }
-  .hv-head .hv-btn { margin-left: auto; }
-  @media (min-width: 720px) { .hv-head nav { display: flex; } .hv-head .hv-btn { margin-left: 8px; } }
-
-  .hv-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 24px; border: 1px solid var(--brass); border-radius: 999px; background: var(--brass); color: #14110d; font-weight: 600; text-decoration: none; transition: background-color 160ms ease-out, color 160ms ease-out; }
-  .hv-btn:hover { background: #d8b67e; }
-  .hv-btn.sm { min-height: 40px; padding: 8px 18px; font-size: 0.9375rem; }
-  .hv-btn.ghost { background: transparent; color: var(--ink); }
-  .hv-btn.ghost:hover { background: #2a2520; }
-  /* `.hv a { color: inherit }` outranks `.hv-btn`, so link buttons need their dark text restated. */
-  .hv a.hv-btn:not(.ghost) { color: #14110d; }
-  .hv-link { color: var(--ink); font-weight: 500; text-underline-offset: 5px; text-decoration-color: var(--brass); }
-
-  .hv-eye { color: var(--brass); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
-  .hv-muted { color: var(--muted); }
-  .hv h1, .hv h2, .hv h3 { font-weight: 300; letter-spacing: -0.035em; line-height: 1.04; }
-  .hv h1 { font-size: clamp(2.75rem, 6.4vw, 5.25rem); margin-top: 18px; }
-  .hv h2 { font-size: clamp(2rem, 4vw, 3rem); margin-top: 12px; }
-  .hv h3 { font-size: clamp(1.75rem, 3vw, 2.5rem); margin-top: 10px; }
-
-  /* the story: a sticky stage with the speaker beside (desktop) or above (phone) the text that scrolls past it */
-  .hv-story { display: grid; }
-  .hv-stage { position: sticky; top: 0; z-index: 2; height: 46svh; min-height: 280px; overflow: clip; background: linear-gradient(var(--bg) 88%, rgba(15, 13, 11, 0)); }
-  @media (min-width: 900px) {
-    .hv-story { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); }
-    .hv-stage { height: 100svh; background: radial-gradient(60% 50% at 50% 55%, #1d1812, var(--bg)); }
+  body.hv-body {
+    --night: #100e0c; --smoke: #1b1815; --ivory: #efe7da; --ash: #a39a8c; --walnut: #5e3f2b; --brass: #b9a27c;
+    --text: #d9d1c4;
+    --display: "Newsreader Display", "Iowan Old Style", Georgia, serif;
+    --sans: "Albert Sans", system-ui, sans-serif;
+    --gut: clamp(20px, 6vw, 96px);
+    --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    background: var(--night);
+    color: var(--text);
+    font-family: var(--sans);
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
   }
-  .hv-stage svg { position: absolute; inset: 0; margin: auto; height: min(80%, 560px); width: auto; transition: opacity 600ms ease-out; }
-  .hv-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; touch-action: pan-y; cursor: grab; transition: opacity 600ms ease-out; }
-  .hv-stage canvas:active { cursor: grabbing; }
+  body.hv-body ::selection { background: rgba(185, 162, 124, 0.35); color: var(--ivory); }
+  .hv-head :focus-visible, #main :focus-visible, .hv-foot :focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+
+  /* header: overlays the stage (negative margin), sticks once the demo bar has scrolled away */
+  .hv-head { position: sticky; top: 0; z-index: 30; height: 64px; margin-bottom: -64px; }
+  /* over the story the bar is a shade, not a band: dense where its text sits (the small grey links need 4.5:1 over
+     the woofer close-up and the room's lit wall, measured by qa/tools/headcontrast.mjs), then a soft fall-off below
+     the bar; over the night stage it does not show at all */
+  .hv-head::after { content: ""; position: absolute; inset: 0 0 auto; height: 104px; z-index: -2; background: linear-gradient(rgba(16, 14, 12, 0.94), rgba(16, 14, 12, 0.88) 58%, rgba(16, 14, 12, 0)); transition: opacity 200ms var(--ease); pointer-events: none; }
+  /* solid once the page leaves the story (script): a gradient can't transition, so a solid layer fades in over it */
+  .hv-head::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--night); box-shadow: 0 1px 0 rgba(239, 231, 218, 0.08); opacity: 0; transition: opacity 200ms var(--ease); pointer-events: none; }
+  .hv-head.is-solid::before { opacity: 1; }
+  .hv-head.is-solid::after { opacity: 0; }
+  .hv-bar { height: 100%; display: flex; align-items: center; gap: clamp(16px, 2.4vw, 32px); padding: 0 var(--gut); }
+  .hv-mark { display: inline-block; padding-block: 10px; margin-block: -10px; color: var(--ivory); text-decoration: none; font: 400 1.5rem/1 var(--display); letter-spacing: -0.01em; }
+  /* the sticky header carries the fiction notice through the whole story, under the wordmark so it costs no width */
+  .hv-head .hv-id { margin-right: auto; display: grid; justify-items: start; gap: 4px; }
+  .hv-head .hv-id small { font: 500 0.6875rem/1 var(--sans); letter-spacing: 0.02em; color: var(--ash); }
+  .hv-mark span { font: 400 0.9375rem/1 var(--sans); color: var(--ash); margin-left: 2px; }
+  .hv-head nav { display: flex; gap: clamp(16px, 2.2vw, 28px); }
+  .hv-head nav a { color: var(--ash); text-decoration: none; font-size: 0.9375rem; padding: 11px 0; transition: color 200ms var(--ease); }
+  /* hover answers a mouse only: on touch a tapped control keeps :hover until the next tap, and a brass edge left on
+     a Turn button reads as a toggle that stayed on */
+  @media (hover: hover) and (pointer: fine) { .hv-head nav a:hover { color: var(--ivory); } }
+  /* where the reader is: set by the page script from the section under the middle of the screen */
+  .hv-head nav a[aria-current] { color: var(--ivory); text-decoration: underline 1px var(--brass); text-underline-offset: 7px; }
+  .hv-head .hv-btn[aria-current] { box-shadow: 0 0 0 2px var(--night), 0 0 0 3px var(--brass); }
+  /* how far through the story the reader is (script: --hv-p, 0 to 1), a brass hairline under the bar at every size;
+     it hands over to the solid header once the story ends */
+  .hv-prog { position: absolute; left: var(--gut); right: var(--gut); bottom: 0; height: 1px; background: var(--brass); opacity: 0.75; transform: scaleX(var(--hv-p, 0)); transform-origin: 0 50%; transition: opacity 200ms var(--ease); pointer-events: none; }
+  .hv-head.is-solid .hv-prog { opacity: 0; }
+  /* a phone keeps the two jumps that save the most scrolling; "Inside" is the hero's own "See inside" link */
+  @media (max-width: 599px) { .hv-bar, .hv-head nav { gap: 14px; } .hv-head nav .hv-wide { display: none; } }
+  @media (max-width: 419px) { .hv-head .hv-mark span { display: none; } }
+  /* the narrowest phones (320 px) keep the mark, Finishes and Reserve: Specs sits just above the form anyway */
+  @media (max-width: 359px) { .hv-head nav .hv-mid { display: none; } }
+
+  .hv-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; border: 1px solid var(--ivory); border-radius: 3px; background: var(--ivory); color: var(--night); font: 600 0.9375rem/1 var(--sans); text-decoration: none; cursor: pointer; transition: background-color 200ms var(--ease), border-color 200ms var(--ease), transform 120ms var(--ease); }
+  @media (hover: hover) and (pointer: fine) { .hv-btn:hover { background: #fbf4e8; } }
+  .hv-btn:active { transform: scale(0.98); }
+  .hv-btn.sm { min-height: 40px; padding: 0 16px; font-size: 0.875rem; }
+  @media (pointer: coarse) { .hv-btn.sm { min-height: 44px; } .hv-head nav a { display: inline-block; min-width: 44px; text-align: center; } }
+  .hv-btn.ghost { background: transparent; color: var(--ivory); border-color: rgba(239, 231, 218, 0.4); }
+  @media (hover: hover) and (pointer: fine) { .hv-btn.ghost:hover { border-color: var(--ivory); } }
+  .hv-link { color: var(--ivory); font-weight: 500; text-decoration: underline; text-decoration-color: var(--brass); text-decoration-thickness: 1px; text-underline-offset: 5px; padding: 12px 0; transition: text-decoration-color 200ms var(--ease); }
+  @media (hover: hover) and (pointer: fine) { .hv-link:hover { text-decoration-color: var(--ivory); } }
+
+  /* the stage: one sticky viewport; posters are squares spanning the state's landscape fov, centred on the target
+     and shifted like the 3D camera (scene.ts). The defaults below are the reveal state; the script sets the rest. */
+  .hv-story { position: relative; }
+  .hv-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; container: stage / size; background: var(--night); }
+  .hv-frame {
+    --ps: 100cqh; --tx: min(30cqh, max(0px, 45cqw - 30.5cqh)); --ty: 0px;
+    position: absolute; left: 50%; top: 50%; width: var(--ps); height: var(--ps);
+    translate: calc(-50% + var(--tx)) calc(-50% + var(--ty));
+    opacity: 0; transition: opacity 420ms var(--ease);
+    -webkit-mask-image: radial-gradient(closest-side, #000 82%, transparent); mask-image: radial-gradient(closest-side, #000 82%, transparent);
+  }
+  @container stage (orientation: portrait) { .hv-frame { --ps: 118.74cqw; --tx: 0px; --ty: -2cqw; } }
+  .hv-frame.is-cover { -webkit-mask-image: linear-gradient(var(--fade, to right), transparent, #000 24%); mask-image: linear-gradient(var(--fade, to right), transparent, #000 24%); }
+  @container stage (orientation: portrait) { .hv-frame.is-cover { -webkit-mask-image: linear-gradient(transparent, #000 16%, #000 84%, transparent); mask-image: linear-gradient(transparent, #000 16%, #000 84%, transparent); } }
+  .hv-frame.is-on { opacity: 1; }
+  .hv-frame img { display: block; width: 100%; height: 100%; }
+  .hv-settle { animation: hv-settle 700ms var(--ease) both; }
+  @keyframes hv-settle { from { transform: translateY(16px) scale(0.98); } }
+  .hv-stage canvas { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; opacity: 0; transition: opacity 600ms var(--ease); }
   .hv-stage.is-3d canvas { opacity: 1; }
-  .hv-stage.is-3d svg { opacity: 0; }
-  .cab { fill: var(--finish); transition: fill 400ms ease-out; }
-  .grain { opacity: 0; transition: opacity 400ms ease-out; }
-  .hv:has(input[value="walnut"]:checked) .grain { opacity: 1; }
-  .hl { fill: none; stroke: var(--brass); stroke-width: 2; stroke-dasharray: 4 6; opacity: 0; transition: opacity 300ms ease-out; }
-  .p-crossover { opacity: 0; transition: opacity 300ms ease-out; }
-  .hv-stage[data-part="woofer"] .p-woofer .hl,
-  .hv-stage[data-part="tweeter"] .p-tweeter .hl,
-  .hv-stage[data-part="crossover"] .p-crossover { opacity: 1; }
-  .hv-stage[data-part="crossover"] .p-woofer, .hv-stage[data-part="crossover"] .p-tweeter { opacity: 0.35; }
-  .p-woofer, .p-tweeter { transition: opacity 300ms ease-out; }
+  .hv-stage.is-3d .hv-frame { opacity: 0; transition-duration: 600ms; }
+  /* Still motion keeps the poster swap as a shorter crossfade: a fade moves nothing, and a cut between two views of
+     the speaker reads as a glitch. The layout's reduced-motion rule (0.01ms !important on every element) would make it
+     a cut, so the poster frames win it back with a more specific !important */
+  .hv-stage.is-still canvas { transition: none; }
+  .hv-stage.is-still .hv-frame { transition: opacity 200ms var(--ease); }
+  @media (prefers-reduced-motion: reduce) { .hv-stage .hv-frame { transition: opacity 200ms var(--ease) !important; } }
+  /* a close-up fills the screen, so its caption would sit on the cabinet: the light falls off on the caption's side,
+     as the poster's edge fade does. Scroll sets its opacity with the camera's blend into and out of the close-up. */
+  .hv-veil {
+    --c: calc(var(--gut) + min(30rem, 40vw));
+    position: absolute; inset: 0; pointer-events: none; opacity: 0; display: none;
+    background: linear-gradient(var(--veil, to right), rgba(16, 14, 12, 0.88), rgba(16, 14, 12, 0.8) calc(var(--c) * 0.6), rgba(16, 14, 12, 0.66) var(--c), rgba(16, 14, 12, 0.36) calc(var(--c) + 9vw), rgba(16, 14, 12, 0.12) calc(var(--c) + 18vw), rgba(16, 14, 12, 0) calc(var(--c) + 26vw));
+  }
+  .hv-stage.is-3d .hv-veil { display: block; }
 
-  .hv-tag { position: absolute; left: 0; top: 0; z-index: 1; translate: 0 -50%; padding: 5px 12px 5px 22px; border: 1px solid var(--line); border-radius: 999px; background: rgba(15, 13, 11, 0.82); color: var(--ink); font-size: 0.8125rem; font-weight: 500; white-space: nowrap; pointer-events: none; will-change: transform; }
-  .hv-tag::before { content: ""; position: absolute; left: 8px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: var(--brass); }
-  .hv-tools { position: absolute; left: 50%; bottom: 14px; z-index: 1; display: flex; gap: 8px; translate: -50% 0; }
-  .hv-tools button { white-space: nowrap; min-width: 44px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(15, 13, 11, 0.85); color: var(--ink); font-size: 0.875rem; }
-  .hv-tools button[data-turn] { font-size: 1.375rem; line-height: 1; }
-  .hv-tools button:hover { border-color: var(--brass); }
+  /* part labels in the showroom: a brass dot on the part, the name beside it (flipped near the right edge) */
+  .hv-tags { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 240ms var(--ease); }
+  .hv-stage.is-3d.is-look .hv-tags { opacity: 1; }
+  .hv-tag { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 10px; translate: 0 -50%; white-space: nowrap; opacity: 0; transition: opacity 200ms var(--ease); }
+  .hv-tag.is-shown { opacity: 1; }
+  .hv-tag.is-flip { flex-direction: row-reverse; translate: -100% -50%; }
+  /* a dark ring keeps the brass dot apart from the brass tweeter ring and the woofer's rim it sits on; the chip's
+     hairline (inset, so the box placeTags measures is unchanged) is the turn buttons' edge, so it holds off the model */
+  .hv-tag i { flex: none; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--brass); box-shadow: 0 0 0 2px rgba(16, 14, 12, 0.9), 0 0 0 5px rgba(185, 162, 124, 0.28); }
+  .hv-tag.is-flip i { margin: 0 -4px 0 0; }
+  .hv-tag b { font: 500 0.8125rem/1 var(--sans); color: var(--ivory); padding: 6px 9px; border-radius: 3px; background: rgba(16, 14, 12, 0.78); box-shadow: inset 0 0 0 1px rgba(239, 231, 218, 0.2); translate: var(--dx, 0px) var(--dy, 0px); }
+  /* a label stepped a row off its dot (placeTags) hangs from it on a thin brass elbow: down from the dot, across to the label */
+  .hv-tag.is-down::before, .hv-tag.is-up::before { content: ""; position: absolute; left: 0; width: var(--ew, 14px); border: 0 solid rgba(185, 162, 124, 0.75); border-left-width: 1px; }
+  .hv-tag.is-down::before { top: 50%; height: var(--dy); border-bottom-width: 1px; }
+  .hv-tag.is-up::before { bottom: 50%; height: calc(-1 * var(--dy)); border-top-width: 1px; }
+  .hv-tag.is-flip::before { left: auto; right: 0; border-left-width: 0; border-right-width: 1px; }
 
-  .hv-flow { position: relative; padding-inline: clamp(16px, 4vw, 56px); }
-  .hv-hero { padding-block: 24px 64px; }
-  @media (min-width: 900px) { .hv-hero { min-height: calc(100svh - 120px); display: grid; align-content: center; padding-block: 48px; } }
-  .hv-lead { margin-top: 22px; max-width: 34rem; color: var(--muted); font-size: 1.125rem; }
-  .hv-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; margin-top: 32px; }
-  .hv-step { display: grid; align-content: center; gap: 0; min-height: 72svh; max-width: 30rem; padding-block: 48px; border-top: 1px solid var(--line); }
-  .hv-step > p:not(.hv-n) { margin-top: 18px; color: var(--muted); font-size: 1.0625rem; }
-  .hv-n { color: var(--brass); font-size: 0.875rem; font-weight: 600; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; }
-  .hv-finishes { display: grid; gap: 10px; margin-top: 24px; }
-  .hv-sw { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: border-color 160ms ease-out; }
-  .hv-sw:hover { border-color: #4a4136; }
-  .hv-sw:has(input:checked) { border-color: var(--brass); }
-  .hv-sw:has(input:focus-visible) { outline: 3px solid var(--brass); outline-offset: 2px; }
-  .hv-sw input { appearance: none; flex: none; width: 28px; height: 28px; margin: 0; border-radius: 50%; border: 2px solid var(--line); }
-  .hv-sw input:checked { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--brass); }
-  .hv-sw input:focus-visible { outline: none; }
-  .sw-walnut input { background: #8a5c3c; }
-  .sw-chalk input { background: #e4ddd0; }
-  .sw-graphite input { background: #34322f; border-color: #5a554e; }
-  .hv-sw span { display: grid; color: var(--muted); font-size: 0.875rem; line-height: 1.35; }
-  .hv-sw strong { color: var(--ink); font-size: 1rem; font-weight: 600; }
+  /* chapters scroll over the stage; each holds its caption for a stretch of scroll while the camera holds too */
+  .hv-ch { position: relative; z-index: 1; height: 150vh; height: 150svh; pointer-events: none; }
+  .hv-stage + .hv-ch { margin-top: -100vh; margin-top: -100svh; }
+  .hv-hero { height: calc(100vh - 44px); height: calc(100svh - 44px); }
+  .hv-hold { position: sticky; top: 0; height: 100vh; height: 100svh; display: grid; align-items: center; padding: 96px var(--gut) 48px; }
+  .hv-hero .hv-hold { position: static; height: 100%; }
+  .hv-at { position: absolute; left: 0; top: calc(25vh + 96px); top: calc(25svh + 96px); width: 1px; height: 1px; }
+  .hv-cap { pointer-events: auto; width: min(30rem, 40vw); }
+  [data-side="left"] .hv-cap, [data-side="centre"] .hv-cap { justify-self: start; }
+  [data-side="right"] .hv-cap { justify-self: end; }
+  .hv-hero .hv-cap { width: min(40rem, 46vw); display: grid; gap: clamp(20px, 3vh, 36px); }
+  .hv-look .hv-cap { width: min(22rem, 30vw); }
+  .hv-cap:focus-within { opacity: 1 !important; translate: none !important; }
 
-  .hv-specs, .hv-reserve { padding-block: clamp(64px, 9vw, 120px); border-top: 1px solid var(--line); }
-  .hv-reserve { background: var(--bg-2); }
-  .hv-two { display: grid; gap: 32px; }
-  @media (min-width: 900px) { .hv-two { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 72px; align-items: start; } }
-  .hv-two > div > .hv-muted { margin-top: 18px; max-width: 30rem; }
-  .hv-dl { display: grid; margin: 0; border-top: 1px solid var(--line); }
-  .hv-dl div { display: grid; gap: 4px; padding-block: 14px; border-bottom: 1px solid var(--line); }
-  @media (min-width: 600px) { .hv-dl div { grid-template-columns: 12rem minmax(0, 1fr); gap: 20px; } }
-  .hv-dl dt { color: var(--muted); font-size: 0.9375rem; }
-  .hv-dl dd { margin: 0; }
+  .hv-cap h1, .hv-cap h2, .hv-room h2, .hv-specs h2, .hv-reserve h2 { margin: 0; font-family: var(--display); font-weight: 300; color: var(--ivory); letter-spacing: -0.012em; text-wrap: balance; }
+  .hv-hero h1 { font-size: clamp(2.75rem, 1rem + 5.4vw, 6.5rem); line-height: 0.98; }
+  .hv-cap h2 { font-size: clamp(2.125rem, 1.25rem + 2.4vw, 3.75rem); line-height: 1.02; margin-bottom: 0.4em; }
+  .hv-final h2 { font-size: clamp(2.75rem, 1rem + 4.6vw, 5.5rem); }
+  .hv-cap p { margin: 0; font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem); line-height: 1.62; }
+  /* no last line of one lone word in the copy blocks */
+  .hv-cap p, .hv-room p, .hv-specs p, .hv-reserve p { text-wrap: pretty; }
+  .hv-lede p { font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem); max-width: 32em; }
+  .hv-cap .hv-note { margin-top: 14px; color: var(--ash); font-size: 0.875rem; }
+  .hv-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; margin-top: 26px; }
+  .hv-in-1 { animation: hv-rise 600ms 120ms var(--ease) both; }
+  .hv-in-2 { animation: hv-rise-sm 500ms 220ms var(--ease) both; }
+  /* the layout stops animation under prefers-reduced-motion; the Nuxy "Reduced" setting (tier 3) stops it here too */
+  html[data-tier="3"] .hv-settle, html[data-tier="3"] .hv-in-1, html[data-tier="3"] .hv-in-2 { animation: none; }
+  /* a dark page gets dark scrollbars and form chrome (the Nuxy bar and drawer set their own colours) */
+  :root:has(> body.hv-body) { color-scheme: dark; }
+  .hv-btn, .hv-tool, .hv-sw { -webkit-tap-highlight-color: transparent; }
+  @keyframes hv-rise { from { opacity: 0; transform: translateY(14px); } }
+  @keyframes hv-rise-sm { from { opacity: 0; transform: translateY(8px); } }
 
-  .hv-card { padding: clamp(20px, 3vw, 32px); border: 1px solid var(--line); border-radius: 16px; background: var(--bg); }
+  /* finishes: material samples, not cards */
+  .hv-finishes { border: 0; margin: 24px 0 0; padding: 0; display: grid; gap: 2px; }
+  .hv-sw { position: relative; display: grid; grid-template-columns: 36px 1fr; align-items: center; gap: 14px; margin-left: -8px; padding: 8px; border-radius: 4px; cursor: pointer; }
+  .hv-sw input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .hv-chip { width: 36px; height: 36px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(239, 231, 218, 0.14); transition: box-shadow 200ms var(--ease); }
+  .sw-walnut .hv-chip { background: linear-gradient(160deg, #7a5539, var(--walnut) 55%, #4a3020); }
+  /* Chalk is lacquer on the front and top over oak sides: the sample shows both, face and edge */
+  .sw-chalk .hv-chip { background: linear-gradient(160deg, #f1ebe0, #ddd4c5) 0 0 / 64% 100% no-repeat, linear-gradient(160deg, #a38d79, #8c7663); }
+  /* the chips follow the rendered finish (front face to shaded side), as walnut's does: the stained ash renders
+     warm brown-grey (posters 11-23: front #625145, side #4a392c), not the near-black neutral the chip had */
+  .sw-graphite .hv-chip { background: linear-gradient(160deg, #5f4e42, #48392e 55%, #33281f); }
+  .hv-sw-t { display: grid; gap: 3px; }
+  .hv-sw-t strong { font-weight: 500; font-size: 1rem; color: var(--ash); transition: color 200ms var(--ease); }
+  .hv-sw-t span { font-size: 0.875rem; color: var(--ash); }
+  .hv-sw:has(input:checked) strong { color: var(--ivory); }
+  @media (hover: hover) and (pointer: fine) { .hv-sw:hover strong { color: var(--ivory); } }
+  .hv-sw:has(input:checked) .hv-chip { box-shadow: 0 0 0 2px var(--night), 0 0 0 3px var(--brass); }
+  .hv-sw:has(input:focus-visible) { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  .hv-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .hv-tool { min-height: 44px; padding: 0 16px; border-radius: 3px; border: 1px solid rgba(239, 231, 218, 0.22); background: rgba(27, 24, 21, 0.86); color: var(--ivory); font: 500 0.875rem/1 var(--sans); cursor: pointer; transition: border-color 200ms var(--ease), transform 120ms var(--ease); }
+  @media (hover: hover) and (pointer: fine) { .hv-tool:hover { border-color: var(--brass); } }
+  .hv-tool:active { transform: scale(0.97); }
+
+  /* the room: a full-bleed still that passes over the stage like a curtain */
+  .hv-room { position: relative; z-index: 2; background: var(--night); color: var(--text); }
+  .hv-room picture, .hv-room img { display: block; width: 100%; }
+  .hv-room img { height: auto; }
+  .hv-room p { margin: 0; line-height: 1.62; max-width: 34em; }
+  .hv-room h2 { font-size: clamp(2rem, 1.25rem + 2.2vw, 3.25rem); line-height: 1.04; margin-bottom: 0.4em; }
+
+  .hv-specs, .hv-reserve, .hv-foot { position: relative; z-index: 2; }
+  .hv-specs { background: var(--night); padding: clamp(96px, 12vw, 168px) var(--gut) clamp(72px, 9vw, 128px); display: grid; grid-template-columns: minmax(0, 24rem) minmax(0, 1fr); gap: 40px clamp(40px, 7vw, 120px); align-items: start; }
+  .hv-specs h2, .hv-reserve h2 { font-size: clamp(2.25rem, 1.4rem + 2.4vw, 3.75rem); line-height: 1.02; margin-bottom: 0.45em; }
+  .hv-specs-in p, .hv-reserve-copy p { margin: 0; line-height: 1.62; max-width: 32em; }
+  .hv-dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 40px clamp(28px, 4vw, 56px); }
+  .hv-dl dt { color: var(--ash); font-size: 0.875rem; margin-bottom: 10px; }
+  .hv-dl dd { margin: 0; color: var(--ivory); font: 400 clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem)/1.3 var(--display); }
+
+  .hv-reserve { background: var(--smoke); padding: clamp(80px, 10vw, 144px) var(--gut); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 28rem); gap: 40px clamp(40px, 8vw, 128px); align-items: start; }
+  /* what the form will reserve, restated next to it: the finish follows the choice made above or in the form */
+  .hv-sum { margin: 32px 0 0; max-width: 32em; border-top: 1px solid rgba(239, 231, 218, 0.16); }
+  .hv-sum div { display: grid; grid-template-columns: 5.5rem 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid rgba(239, 231, 218, 0.16); }
+  .hv-sum dt { color: var(--ash); font-size: 0.875rem; line-height: 1.6; }
+  .hv-sum dd { margin: 0; color: var(--ivory); line-height: 1.5; }
   .hv-form { display: grid; gap: 18px; }
-  .hv-form label { display: grid; gap: 8px; font-size: 0.9375rem; font-weight: 600; }
-  .hv-form input, .hv-form select { min-height: 48px; padding: 10px 14px; border: 1px solid #4a4136; border-radius: 10px; background: var(--bg-2); color: var(--ink); font-weight: 400; }
-  .hv-form input::placeholder { color: #8a8174; }
-  .hv-form input:focus-visible, .hv-form select:focus-visible { outline: 3px solid var(--brass); outline-offset: 1px; }
-  .hv-small { color: var(--muted); font-size: 0.8125rem; }
-  .hv .demo-sent { border-color: var(--line); }
-  .hv .demo-sent p { color: var(--muted); }
-  .hv .demo-sent .hv-btn { justify-self: start; }
+  .hv-field { display: grid; gap: 8px; font-size: 0.9375rem; font-weight: 500; color: var(--ivory); }
+  /* the field edges need 3:1 to read as fields (0.42 ivory over the night fill and the smoke section) */
+  .hv-field input, .hv-field select { height: 50px; padding: 0 14px; border-radius: 3px; border: 1px solid rgba(239, 231, 218, 0.42); background: var(--night); color: var(--ivory); font: 400 1rem var(--sans); }
+  .hv-field input::placeholder { color: #8a8276; }
+  .hv-field input:focus, .hv-field select:focus { outline: none; border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass); }
+  /* a wrong or empty email, once the visitor has tried: a terracotta edge and one line under the field (6:1 on the
+     smoke section), instead of only the browser's bubble */
+  .hv-field input:user-invalid { border-color: #e0866b; }
+  .hv-field input:user-invalid:focus { border-color: #e0866b; box-shadow: 0 0 0 1px #e0866b; }
+  .hv-err { display: none; margin: -10px 0 0; color: #e0866b; font-size: 0.875rem; }
+  .hv-form:has(input:user-invalid) .hv-err { display: block; }
+  /* a jump from the header lands with the section's own padding clear of the 64 px bar */
+  .hv-specs, .hv-reserve { scroll-margin-top: 64px; }
+  .hv-form .hv-btn { justify-self: start; }
+  .hv-small { margin: 0; color: var(--ash); font-size: 0.875rem; }
+  .hv-reserve .demo-sent { color: var(--ivory); border-color: rgba(239, 231, 218, 0.3); border-radius: 4px; }
+  .hv-reserve .demo-sent p { margin: 0; color: var(--text); line-height: 1.6; }
+  .hv-reserve .demo-sent .hv-btn { justify-self: start; }
 
-  .hv-foot { padding-block: 40px 48px; border-top: 1px solid var(--line); }
-  .hv-foot .hv-wrap { display: grid; gap: 14px; }
-  .hv-foot a { text-underline-offset: 3px; }
-  .foot-fict { color: var(--muted); font-size: 0.875rem; }
-  .foot-fict a { color: var(--brass); }
+  .hv-foot { background: var(--night); padding: 56px var(--gut) 64px; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 20px 48px; }
+  .hv-foot ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 28px; justify-self: end; }
+  .hv-foot ul a { display: inline-block; padding: 10px 0; color: var(--text); text-decoration: none; }
+  @media (hover: hover) and (pointer: fine) { .hv-foot ul a:hover { color: var(--ivory); text-decoration: underline; text-decoration-color: var(--brass); text-underline-offset: 5px; } }
+  .foot-fict { grid-column: 1 / -1; margin: 0; color: var(--ash); font-size: 0.875rem; }
+  .foot-fict a { color: var(--ivory); text-underline-offset: 3px; }
+
+  @media (max-width: 899px) {
+    .hv-specs, .hv-reserve { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 599px) {
+    .hv-foot { grid-template-columns: 1fr; }
+    .hv-foot ul { justify-self: start; }
+    .hv-form .hv-btn { justify-self: stretch; }
+  }
+
+  /* wide (landscape): captions beside the model; the room fills the screen with its caption on it */
+  @media (orientation: landscape) {
+    .hv-room { height: 100vh; height: 100svh; }
+    .hv-room picture { position: absolute; inset: 0; }
+    .hv-room img { height: 100%; object-fit: cover; }
+    .hv-room::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(16, 14, 12, 0.85), rgba(16, 14, 12, 0) 48%); pointer-events: none; }
+    .hv-room-cap { position: absolute; z-index: 1; left: var(--gut); bottom: clamp(32px, 7vh, 72px); width: min(28rem, 40vw); }
+  }
+
+  /* stacked (portrait): the model sits in the middle third; captions take the bottom over a scrim */
+  @media (orientation: portrait) {
+    .hv-hold { align-items: end; padding: 88px var(--gut) max(24px, env(safe-area-inset-bottom)); }
+    /* the caption box spans the hold so its scrim reaches both screen edges; the text inside keeps a reading width */
+    .hv-cap, .hv-hero .hv-cap, .hv-look .hv-cap { width: auto; max-width: none; position: relative; }
+    .hv-cap > :not(.hv-lede), .hv-lede > * { max-width: 34rem; }
+    [data-side] .hv-cap { justify-self: stretch; }
+    .hv-stage.is-3d .hv-veil { display: none; } /* the caption scrim below does this job here */
+    .hv-cap::before { content: ""; position: absolute; z-index: -1; inset: -56px calc(-1 * var(--gut)) calc(-1 * max(24px, env(safe-area-inset-bottom))); background: linear-gradient(rgba(16, 14, 12, 0), rgba(16, 14, 12, 0.88) 56px); pointer-events: none; }
+    .hv-hero .hv-hold { align-items: stretch; padding-top: 92px; }
+    .hv-hero .hv-cap { display: flex; flex-direction: column; justify-content: space-between; }
+    /* the hero's scrim sits under the lede only, so the speaker between the headline and the lede stays lit */
+    .hv-hero .hv-cap::before { content: none; }
+    .hv-hero .hv-lede { position: relative; }
+    .hv-hero .hv-lede::before { content: ""; position: absolute; z-index: -1; inset: -56px calc(-1 * var(--gut)) calc(-1 * max(24px, env(safe-area-inset-bottom))); background: linear-gradient(rgba(16, 14, 12, 0), rgba(16, 14, 12, 0.88) 56px); pointer-events: none; }
+    .hv-look .hv-hold { align-items: start; }
+    .hv-look .hv-cap::before { inset: -88px calc(-1 * var(--gut)) -56px; background: linear-gradient(rgba(16, 14, 12, 0.88) calc(100% - 56px), rgba(16, 14, 12, 0)); }
+    .hv-room { min-height: 100vh; min-height: 100svh; display: grid; align-content: center; gap: 28px; padding: 72px 0 48px; }
+    .hv-room-cap { padding: 0 var(--gut); }
+    /* a tall tablet would push the caption below the fold under a 4:5 picture: the picture gives up its top and bottom */
+    .hv-room img { max-height: 66vh; max-height: 66svh; object-fit: cover; }
+  }
 </style>
 
 <script>
-  import type { Speaker, Part, Finish } from "../../lib/halvane/scene";
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import cams from "../../lib/halvane/cameras.json";
+  import { fitLandscape, fitPortrait, locate, poseAt, poseOf, shiftLimit, type CamState, type Pose } from "../../lib/halvane/timeline";
+  import { tier, webgl, whileTier } from "../../lib/demo/tier";
+  import type { Speaker, Finish, Hotspot } from "../../lib/halvane/scene";
 
-  const stage = document.querySelector<HTMLElement>("[data-stage]")!;
-  let canvas = stage.querySelector<HTMLCanvasElement>("[data-canvas]")!;
-  const tag = stage.querySelector<HTMLElement>("[data-tag]")!;
-  const tools = stage.querySelector<HTMLElement>("[data-tools]")!;
-  const pauseBtn = tools.querySelector<HTMLButtonElement>("[data-pause]")!;
-  const select = document.querySelector<HTMLSelectElement>("[data-finish-select]")!;
+  gsap.registerPlugin(ScrollTrigger);
+
+  // ScrollTrigger owns scroll: on refresh it measures where each chapter's middle sits (the anchors); on update the
+  // viewport centre goes through timeline.poseAt (a pure function, so fast, reversed and touch scrolling all land on
+  // the same pose) and from there to the 3D scene, the posters and the caption fades. Nothing is pinned or hijacked.
+  const B = "/3d/halvane/";
   const NAMES: Record<Finish, string> = { walnut: "Walnut", chalk: "Chalk", graphite: "Graphite" };
-  const LABEL: Record<Exclude<Part, "cabinet">, string> = { woofer: "6.5-inch paper woofer", tweeter: "1-inch aluminium tweeter", crossover: "Hand-soldered crossover" };
+  const STATES = cams.states as unknown as Record<string, CamState>;
+  const ALT: Record<string, (f: string) => string> = {
+    reveal: (f) => `The Lumen One speaker in ${f}, turned to show its front and side.`,
+    silhouette: (f) => `The Lumen One in ${f} from the side: a narrow front and a deep cabinet.`,
+    "driver-macro": () => "Close view of the tweeter’s aluminium dome in its brass-ringed waveguide.",
+    "front-detail": () => "The woofer drawn forward out of the cabinet, for illustration.",
+    "rear-detail": () => "The back panel swung open on the crossover board inside.",
+    "material-transition": (f) => `The Lumen One speaker in ${f}.`,
+    showroom: (f) => `The Lumen One speaker in ${f}.`,
+    "final-product": (f) => `The Lumen One speaker in ${f}.`,
+  };
+  // the arrow keys are offered only where a keyboard is the likely input
+  const touch = matchMedia("(pointer: coarse)");
+  const how3d = () => touch.matches
+    ? "Drag the speaker to turn it, or use these buttons. The labels follow the parts."
+    : "Drag the speaker to turn it, or use these buttons or the arrow keys. The labels follow the parts.";
 
-  let speaker: Speaker | null = null;
-  let part: Part = "cabinet";
+  const one = <T extends Element>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel)!;
+  const story = one<HTMLElement>("[data-story]");
+  const stage = one<HTMLElement>("[data-stage]", story);
+  const chapters = [...story.querySelectorAll<HTMLElement>(".hv-ch[data-state]")];
+
+  // the nav marks the part of the page under the middle of the screen (a zero-height line there), with every tier
+  const navLinks = [...document.querySelectorAll<HTMLAnchorElement>(".hv-head nav a, .hv-head .hv-btn")];
+  const linkOf = new Map<Element, HTMLAnchorElement>();
+  for (const a of navLinks) {
+    const first = document.getElementById(a.hash.slice(1))?.closest("section");
+    if (!first) continue;
+    linkOf.set(first, a);
+    // Inside covers every chapter from the cabinet up to the finishes, and Finishes the rest of the story (the room,
+    // the turn, the last chapter), so the nav does not go blank between the finishes and the specs
+    if (a.hash === "#inside" || a.hash === "#finish")
+      for (let el = first.nextElementSibling; el && !el.querySelector("#finish"); el = el.nextElementSibling)
+        if (el.matches("section")) linkOf.set(el, a);
+  }
+  const underLine = new Set<Element>();
+  const spy = new IntersectionObserver((entries) => {
+    for (const e of entries) e.isIntersecting ? underLine.add(e.target) : underLine.delete(e.target);
+    const on = [...underLine].map((el) => linkOf.get(el))[0];
+    for (const a of navLinks) a === on ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
+  }, { rootMargin: "-50% 0px -50% 0px" });
+  linkOf.forEach((_, el) => spy.observe(el));
+  const names = chapters.map((c) => c.dataset.state!);
+  let states = names.map((n) => STATES[n]);
+  const caps = chapters.map((c) => one<HTMLElement>("[data-cap]", c));
+  const tools = one<HTMLElement>("[data-tools]", story);
+  const how = one<HTMLElement>("[data-how]", story);
+  const HOW_STILL = how.textContent ?? "";
+  // the still showroom is a picture, so it is named for what it shows; "Have a look around" only with the 3D tools
+  const lookH = one<HTMLElement>("[data-look-h]", story);
+  const LOOK_STILL = lookH.textContent ?? "";
+  const tagBox = one<HTMLElement>("[data-tags]", stage);
+  const cabinetTag = one<HTMLElement>('[data-spot="cabinet"] b', tagBox);
+  const radios = [...document.querySelectorAll<HTMLInputElement>("[data-finish]")];
+  const select = one<HTMLSelectElement>("[data-finish-select]");
+  let canvas = one<HTMLCanvasElement>("[data-canvas]", stage);
+  const veil = one<HTMLElement>("[data-veil]", stage);
+
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  const chosenReduced = () => { try { return localStorage.getItem("nuxy-motion") === "reduced"; } catch { return false; } };
+  const isStill = () => reduce.matches || chosenReduced();
+  let still = isStill();
+  stage.classList.toggle("is-still", still);
+
+  // ---- posters: two frames so a new view can decode before it crossfades in
+  const frameA = one<HTMLElement>("[data-frame]", stage);
+  const frameB = document.createElement("div");
+  frameB.className = "hv-frame";
+  frameB.setAttribute("aria-hidden", "true");
+  const imgB = new Image(1600, 1600);
+  imgB.decoding = "async";
+  imgB.alt = "";
+  imgB.dataset.poster = "";
+  frameB.append(imgB);
+  frameA.after(frameB);
+  const frames = [frameA, frameB];
+  const frameState = ["reveal", "reveal"];
+  let on = 0;
+
+  let W = 1;
+  let H = 1;
+  let portrait = false;
+  let stacked = false;
+  const rad = (d: number) => (d * Math.PI) / 180;
+  // a close-up's poster is rendered wider than its fov (cameras.json poster.cover) so it can fill the screen
+  const coverOf = (s: string) => STATES[s].poster?.cover ?? 1;
+  const srcset = (f: string, s: string) =>
+    [800, 1200, 1600].map((w) => Math.round(w * coverOf(s))).map((w) => `${B}posters/${f}-${s}-${w}.webp ${w}w`).join(", ");
+  // a state may be refitted so the cabinet clears its caption on this screen (measure() fills this)
+  const fitted = new Map<string, CamState>();
+  const stateOf = (n: string) => fitted.get(n) ?? STATES[n];
+
+  // same projection as scene.ts: the poster spans the fov cameras.json gives the state (what Blender rendered); the
+  // short side spans the pose's fov, which a refit may have widened
+  function placeFrame(i: number) {
+    const s = stateOf(frameState[i]);
+    const p = poseOf(s, portrait);
+    const short = Math.min(W, H);
+    const c = coverOf(frameState[i]);
+    const ps = (c * short * Math.tan(rad(STATES[frameState[i]].fov) / 2)) / Math.tan(rad(p.fov) / 2);
+    const sx = p.shift[0] * short;
+    const st = frames[i].style;
+    st.setProperty("--ps", `${ps.toFixed(1)}px`);
+    st.setProperty("--tx", `${sx.toFixed(1)}px`);
+    st.setProperty("--ty", `${(-p.shift[1] * short).toFixed(1)}px`);
+    // a cover poster runs off the screen: only its edge on the caption's side fades, not a round vignette
+    frames[i].classList.toggle("is-cover", c > 1);
+    st.setProperty("--fade", sx < 0 ? "to left" : "to right");
+    frames[i].querySelector("img")!.sizes = `${Math.ceil(ps)}px`;
+  }
+
   let finish: Finish = "walnut";
-  let paused = false;
-  const label = () => (part === "cabinet" ? `${NAMES[finish]} cabinet` : LABEL[part]);
+  let posterKey = "walnut-reveal";
+  let token = 0;
+  function showPoster(name: string, force = false) {
+    const key = `${finish}-${name}`;
+    if (key === posterKey && !force) return;
+    posterKey = key;
+    const mine = ++token;
+    const i = 1 - on;
+    frameState[i] = name;
+    placeFrame(i);
+    const img = frames[i].querySelector("img")!;
+    img.srcset = srcset(finish, name);
+    img.src = `${B}posters/${finish}-${name}-${Math.round(1200 * coverOf(name))}.webp`;
+    const done = () => {
+      if (mine !== token) return;
+      const old = frames[on];
+      old.classList.remove("is-on");
+      old.setAttribute("aria-hidden", "true");
+      old.querySelector("img")!.alt = "";
+      frames[i].classList.add("is-on");
+      frames[i].removeAttribute("aria-hidden");
+      img.alt = ALT[name](finish);
+      on = i;
+    };
+    img.decode().then(done, done);
+  }
+  // under 3D the shown poster stays in the accessibility tree (only faded; the canvas is aria-hidden), so it keeps
+  // describing the stage: its words follow the chapter and the finish even though the poster no longer swaps
+  function altNow() {
+    frames[on].querySelector("img")!.alt = ALT[names[near]](finish);
+  }
 
-  // the label follows the part on screen but never leaves the stage (on a phone it would push the page sideways)
-  let tagW = 0;
-  const setTag = () => { tag.textContent = label(); tagW = tag.hidden ? 0 : tag.offsetWidth; };
-  const placeTag = (x: number, y: number) => {
-    if (!tagW && !tag.hidden) tagW = tag.offsetWidth;
-    const max = stage.clientWidth - tagW - 8;
-    tag.style.transform = `translate(${Math.round(Math.max(8, Math.min(x, max)))}px, ${Math.round(y)}px)`;
-  };
+  // ---- scroll
+  let anchors: number[] = [];
+  let pose: Pose = poseOf(states[0], false);
+  let near = 0;
+  let look = false;
+  let preloaded = false;
+  const lookIdx = names.indexOf("showroom");
+  const preloadIdx = names.indexOf("rear-detail");
+  const capV = caps.map(() => 1);
 
-  // the step crossing the line a little below the middle of the screen picks the part
-  const setPart = (p: Part) => {
-    part = p;
-    stage.dataset.part = p;
-    setTag();
-    speaker?.setPart(p);
-  };
-  const steps = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      const s = (e.target as HTMLElement).dataset.step!;
-      setPart(s === "finish" ? "cabinet" : (s as Part));
+  function measure() {
+    W = stage.clientWidth || innerWidth;
+    H = stage.clientHeight || innerHeight;
+    portrait = W < H;
+    stacked = matchMedia("(orientation: portrait)").matches;
+    const y = scrollY;
+    anchors = chapters.map((c) => { const r = c.getBoundingClientRect(); return r.top + y + r.height / 2; });
+    fitCaptions();
+    placeFrame(0);
+    placeFrame(1);
+  }
+
+  // Portrait stacks each caption under the speaker (over it in the showroom). The caption sits in a sticky hold as
+  // tall as the screen, so its offset in the hold is where it shows on screen; the cabinet is refitted into the band
+  // the caption leaves free. The hero is fitted between its headline and its lede; the full-screen close-ups are
+  // left as framed.
+  const HEAD = 64;
+  const GAP = 32;
+  // the showroom speaker can be turned all the way round, so it has to clear the caption at every angle
+  const TURN = Array.from({ length: 24 }, (_, k) => k * 15);
+  function fitCaptions() {
+    fitted.clear();
+    if (portrait && stacked) {
+      chapters.forEach((_, i) => {
+        const n = names[i];
+        if (coverOf(n) > 1) return;
+        const cap = caps[i];
+        let band: [number, number];
+        if (i === 0) {
+          // the hero puts its headline at the top and its lede at the bottom: the speaker goes in the gap, clear of
+          // the lede's scrim, which darkens the 56 px above the lede (the hero section starts where the stage does)
+          const h1 = cap.querySelector<HTMLElement>("h1");
+          const lede = cap.querySelector<HTMLElement>(".hv-lede");
+          if (!h1 || !lede) return;
+          band = [cap.offsetTop + h1.offsetTop + h1.offsetHeight + 20, cap.offsetTop + lede.offsetTop - 48];
+        } else {
+          const top = cap.offsetTop;
+          const bottom = top + cap.offsetHeight;
+          band = (top + bottom) / 2 < H / 2 ? [bottom + 24, H - 16] : [HEAD + 12, top - 24];
+        }
+        if (band[1] - band[0] < 80) return;
+        const f = fitPortrait(STATES[n], W, H, band[0], band[1]);
+        if (f !== STATES[n]) fitted.set(n, f);
+      });
+    } else if (!portrait) {
+      // landscape: the caption is a column on one side, so the cabinet keeps to the band beside it, as far from the
+      // caption as the caption is from its own edge of the screen. The close-ups (under their veil) and a square
+      // screen keep the framing from cameras.json, held on screen by shiftLimit. The scene draws these shifts as given.
+      const lim = shiftLimit(W, H);
+      chapters.forEach((_, i) => {
+        const n = names[i];
+        const s = STATES[n];
+        let f = s;
+        let band: [number, number] = [0, 0];
+        if (coverOf(n) <= 1 && !stacked) {
+          const cap = caps[i];
+          const r = cap.getBoundingClientRect();
+          const right = r.left + Math.max(cap.offsetWidth, cap.scrollWidth);
+          band = (r.left + right) / 2 < W / 2 ? [right + GAP, W - r.left] : [W - right, r.left - GAP];
+        }
+        if (band[1] - band[0] >= 80) f = fitLandscape(s, W, H, band[0], band[1], i === lookIdx ? TURN : [0]);
+        else if (Math.abs(s.shift[0]) > lim) f = { ...s, shift: [Math.sign(s.shift[0]) * lim, s.shift[1]] };
+        if (f !== s) fitted.set(n, f);
+      });
     }
-  }, { rootMargin: "-55% 0px -35% 0px" });
-  document.querySelectorAll("[data-step]").forEach((el) => steps.observe(el));
+    states = names.map(stateOf);
+  }
 
-  // how far apart the speaker is: opens as the woofer step arrives, closes again for the finish step
-  const first = document.querySelector<HTMLElement>('[data-step="woofer"]')!;
-  const last = document.querySelector<HTMLElement>('[data-step="finish"]')!;
-  const clamp = (n: number) => Math.min(1, Math.max(0, n));
-  const spread = () => {
-    const vh = innerHeight, line = vh * 0.6;
-    const open = clamp((line - first.getBoundingClientRect().top + vh * 0.2) / (vh * 0.45));
-    const close = clamp((line - last.getBoundingClientRect().top + vh * 0.2) / (vh * 0.45));
-    return open * (1 - close);
-  };
-  let ticking = false;
-  addEventListener("scroll", () => {
-    if (!speaker || ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => { ticking = false; speaker?.setExplode(spread()); });
-  }, { passive: true });
+  // how far the centre is from chapter i's anchor, as a share of the gap to the neighbour on that side
+  function dist(i: number, centre: number) {
+    const j = centre < anchors[i] ? i - 1 : i + 1;
+    if (j < 0 || j >= anchors.length) return 0;
+    return Math.abs(centre - anchors[i]) / Math.abs(anchors[j] - anchors[i]);
+  }
 
-  // finishes: the drawing follows by CSS alone; this keeps the 3D cabinet, the label and the form in step
-  for (const r of document.querySelectorAll<HTMLInputElement>("[data-finish]")) {
-    r.addEventListener("change", () => {
-      finish = r.value as Finish;
-      select.value = finish;
-      setTag();
-      speaker?.setFinish(finish);
+  function fadeCaps(centre: number) {
+    const [a, b] = stacked ? [0.17, 0.3] : [0.2, 0.4];
+    caps.forEach((cap, i) => {
+      const t = Math.min(1, Math.max(0, (dist(i, centre) - a) / (b - a)));
+      const v = 1 - t * t * (3 - 2 * t);
+      if (Math.abs(v - capV[i]) < 0.004 && v !== 0 && v !== 1) return;
+      if (v === capV[i]) return;
+      capV[i] = v;
+      cap.style.opacity = v.toFixed(3);
+      cap.style.translate = `0 ${((1 - v) * 10 * (centre < anchors[i] ? 1 : -1)).toFixed(1)}px`;
+      cap.style.pointerEvents = v < 0.05 ? "none" : "";
     });
   }
 
-  for (const b of tools.querySelectorAll<HTMLButtonElement>("[data-turn]")) {
-    b.addEventListener("click", () => speaker?.turn(Number(b.dataset.turn) * 0.4));
+  function clearCaps() {
+    caps.forEach((cap, i) => { cap.style.opacity = ""; cap.style.translate = ""; cap.style.pointerEvents = ""; capV[i] = 1; });
   }
-  pauseBtn.addEventListener("click", () => {
-    paused = !paused;
-    pauseBtn.textContent = paused ? "Resume motion" : "Pause motion";
-    speaker?.setPaused(paused);
+
+  function setLook(onNow: boolean) {
+    if (onNow === look) return;
+    look = onNow;
+    stage.classList.toggle("is-look", onNow);
+    if (speaker) {
+      speaker.setInteractive(onNow);
+      if (!onNow) speaker.reset();
+    }
+  }
+
+  // the veil follows the same blend as the camera (locate, as in poseAt): full on a close-up, none elsewhere
+  let veilV = -1;
+  function shade(centre: number) {
+    const { i, t } = locate(anchors, centre);
+    const j = Math.min(i + 1, names.length - 1);
+    const a = coverOf(names[i]) > 1 ? 1 - t : 0;
+    const b = coverOf(names[j]) > 1 ? t : 0;
+    const v = stacked ? 0 : Math.round((a + b) * 1000) / 1000;
+    if (v === veilV) return;
+    veilV = v;
+    veil.style.opacity = String(v);
+    if (v > 0) veil.style.setProperty("--veil", STATES[names[a >= b ? i : j]].shift[0] < 0 ? "to left" : "to right");
+  }
+
+  function update() {
+    if (!anchors.length) return;
+    const centre = scrollY + H / 2;
+    pose = poseAt(states, anchors, centre, portrait);
+    speaker?.setPose(pose);
+    shade(centre);
+    let n = 0;
+    for (let i = 1; i < anchors.length; i++) if (Math.abs(centre - anchors[i]) < Math.abs(centre - anchors[n])) n = i;
+    if (n !== near) {
+      near = n;
+      if (speaker) altNow();
+    }
+    if (!speaker) showPoster(names[near]);
+    if (speaker && !preloaded && near >= preloadIdx) { preloaded = true; speaker.preload(); }
+    setLook(near === lookIdx && dist(near, centre) < 0.22);
+    if (!still) fadeCaps(centre);
+  }
+
+  const refresh = () => { measure(); update(); };
+  ScrollTrigger.create({ trigger: story, start: "top bottom", end: "bottom top", onUpdate: update, onRefresh: refresh });
+  refresh();
+  // once the stage starts to scroll away, the last caption, the specs and the form pass under the header: it turns
+  // solid from there to the page end. Progress, not onEnter, so a jump past the start (a nav link, a restored scroll)
+  // still lands solid; the solid layer is the stage's own night colour, so over the stage it does not show.
+  const head = one<HTMLElement>(".hv-head");
+  const solid = (t: ScrollTrigger) => head.classList.toggle("is-solid", t.progress > 0);
+  ScrollTrigger.create({ trigger: story, start: "bottom bottom", end: "max", onUpdate: solid, onRefresh: solid });
+  const progress = (t: ScrollTrigger) => head.style.setProperty("--hv-p", t.progress.toFixed(4));
+  ScrollTrigger.create({ trigger: story, start: "top top", end: "bottom bottom", onUpdate: progress, onRefresh: progress });
+  document.fonts?.ready.then(() => ScrollTrigger.refresh());
+
+  // keyboard focus on a faded caption brings its chapter (and its camera view) to the middle of the screen
+  story.addEventListener("focusin", (e) => {
+    const el = e.target as HTMLElement;
+    const i = chapters.findIndex((c) => c.contains(el));
+    if (i < 0 || capV[i] > 0.98 || !el.matches(":focus-visible")) return;
+    scrollTo({ top: Math.max(0, anchors[i] - H / 2), behavior: still ? "auto" : "smooth" });
   });
 
-  // the 3D scene: only after load, never with reduced motion or data saving, only with working WebGL
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
-  const phone = matchMedia("(max-width: 767px), (pointer: coarse)").matches;
-  const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
-  const webgl = () => {
-    try {
-      const gl = (document.createElement("canvas").getContext("webgl2") || document.createElement("canvas").getContext("webgl")) as WebGLRenderingContext | null;
-      gl?.getExtension("WEBGL_lose_context")?.loseContext();
-      return !!gl;
-    } catch { return false; }
+  const onStill = () => {
+    still = isStill();
+    stage.classList.toggle("is-still", still);
+    if (still) clearCaps();
+    else update();
   };
+  reduce.addEventListener("change", onStill);
+  document.addEventListener("demo:tier", onStill);
+
+  // ---- finish: the radios, the reserve form's select, the posters and the 3D model all follow one value
+  const tagW = new Map<HTMLElement, number>();
+  const resFinish = one<HTMLElement>("[data-res-finish]");
+  const sentFinish = one<HTMLElement>("[data-sent-finish]");
+  function chooseFinish(f: Finish) {
+    if (f === finish || !(f in NAMES)) return;
+    finish = f;
+    for (const r of radios) r.checked = r.value === f;
+    select.value = f;
+    cabinetTag.textContent = `${NAMES[f]} cabinet`;
+    resFinish.textContent = NAMES[f];
+    sentFinish.textContent = NAMES[f].toLowerCase();
+    tagW.delete(cabinetTag.parentElement!);
+    if (speaker) {
+      speaker.setFinish(f, !still);
+      altNow();
+    } else showPoster(names[near]);
+  }
+  for (const r of radios) r.addEventListener("change", () => { if (r.checked) chooseFinish(r.value as Finish); });
+  select.addEventListener("change", () => chooseFinish(select.value as Finish));
+  // the demo form resets itself after a pretend send; keep the chosen finish in it
+  select.form?.addEventListener("reset", () => setTimeout(() => (select.value = finish)));
+  const restored = radios.find((r) => r.checked)?.value as Finish | undefined; // browsers restore radios on reload
+  if (restored) chooseFinish(restored);
+
+  // ---- showroom: drag (in scene.ts), buttons, arrow keys, part labels
+  // a screen reader hears what each turn did; the text is cleared first so the same words are announced again
+  const turnStatus = one<HTMLElement>("[data-turn-status]");
+  let turnT = 0;
+  function turned(msg: string) {
+    turnStatus.textContent = "";
+    clearTimeout(turnT);
+    // the turn eases for about half a second: once it settles, name the parts whose labels are showing
+    turnT = window.setTimeout(() => {
+      const seen = [...tagBox.querySelectorAll<HTMLElement>(".hv-tag.is-shown b")].map((b) => b.textContent!.trim());
+      turnStatus.textContent = seen.length ? `${msg} In view: ${seen.join(", ")}.` : msg;
+    }, 700);
+  }
+  tools.addEventListener("click", (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
+    if (!b || !speaker) return;
+    if (b.dataset.turn) {
+      const dir = Number(b.dataset.turn);
+      speaker.nudge(dir * 0.4);
+      turned(dir > 0 ? "Turned right." : "Turned left.");
+    } else if (b.hasAttribute("data-reset")) {
+      speaker.reset();
+      turned("Back to the front view.");
+    }
+  });
+  addEventListener("keydown", (e) => {
+    if (!look || !speaker || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    if ((e.target as HTMLElement).closest("input, select, textarea, [contenteditable]")) return;
+    e.preventDefault();
+    const right = e.key === "ArrowRight";
+    speaker.nudge(right ? 0.4 : -0.4);
+    turned(right ? "Turned right." : "Turned left.");
+  });
+  // labels never stack, never cover another part's dot and never run off the screen. In scene order (tweeter,
+  // woofer, cabinet, rear) each label takes the first free place of: beside its dot on the right; on the left, hung
+  // from the part's other rim so it never crosses its own driver; then a row up or down (two at most) on a leader,
+  // slid back on screen where it would run off an edge. With no free place it waits for the turn to make one.
+  // Boxes are [left, right, middle y, half height].
+  const TAG_H = 30;
+  const ROW = TAG_H + 8;
+  const EDGE = 8;
+  type Box = [number, number, number, number];
+  function placeTags(spots: Hotspot[]) {
+    // on a stacked phone the showroom caption sits over the top of the stage: labels keep below it and the 56 px its
+    // scrim runs past it (.hv-look .hv-cap::before). Read live, since the caption scrolls in before its hold.
+    const tagTop = portrait && stacked && lookIdx >= 0 ? caps[lookIdx].getBoundingClientRect().bottom + 56 - stage.getBoundingClientRect().top : 0;
+    const placed: Box[] = [];
+    const dots = new Map<Hotspot["id"], Box>();
+    for (const s of spots) {
+      if (!s.shown) continue;
+      const d: Box = [s.x - 7, s.x + 7, s.y, 7];
+      dots.set(s.id, d);
+      placed.push(d);
+    }
+    // a driver's face (the ellipse inside its box) is an obstacle for the other parts' labels: on a narrow phone the
+    // cabinet's label had flipped onto the woofer. A driver's own label starts on its rim, where its anchor sits, so
+    // its own face is no obstacle on its own row, and only the cone or dome (the inner 70%) once stepped off that row.
+    const faces = spots.filter((s) => s.shown && s.face).map((s) => ({ id: s.id, box: s.face! }));
+    const onFace = ([f0, f1, fy, fh]: Box, k: number, x0: number, x1: number, y: number, h: number) => {
+      const rx = ((f1 - f0) / 2) * k, ry = fh * k, cx = (f0 + f1) / 2;
+      const nx = Math.min(Math.max(cx, x0), x1), ny = Math.min(Math.max(fy, y - h), y + h);
+      return ((nx - cx) / rx) ** 2 + ((ny - fy) / ry) ** 2 < 1;
+    };
+    // `ownK` scales the placing label's own face (0: none)
+    const clear = (x0: number, x1: number, y: number, h: number, skip?: Box, mine?: Hotspot["id"], ownK = 0) =>
+      !placed.some((p) => p !== skip && Math.abs(p[2] - y) < p[3] + h && x0 < p[1] && x1 > p[0]) &&
+      !faces.some((f) => (f.id !== mine || ownK > 0) && onFace(f.box, f.id === mine ? ownK : 1, x0, x1, y, h));
+    for (const s of spots) {
+      const el = tagBox.querySelector<HTMLElement>(`[data-spot="${s.id}"]`);
+      if (!el) continue;
+      const own = dots.get(s.id);
+      let shown = false;
+      if (own) {
+        let w = tagW.get(el);
+        if (!w) { w = el.offsetWidth; tagW.set(el, w); }
+        // up before down: a driver's label then lands above it (the tweeter's over the cabinet top, the woofer's in
+        // the gap between the drivers) rather than over its own cone
+        search: for (const dy of [0, -ROW, ROW, -2 * ROW, 2 * ROW]) {
+          for (const flip of [false, true]) {
+            const ax = flip ? s.lx : s.x;
+            const ay = flip ? s.ly : s.y;
+            const y = ay + dy;
+            // the label alone, past its dot and the 10 px gap
+            const a = flip ? ax - w : ax + 10;
+            const b = flip ? ax - 10 : ax + w;
+            const dx = dy ? Math.max(EDGE - a, Math.min(0, W - EDGE - b)) : 0;
+            if (a + dx < EDGE - 0.5 || b + dx > W - EDGE + 0.5 || y < Math.max(TAG_H, tagTop + TAG_H / 2) || y > H - TAG_H) continue;
+            if (!clear(a + dx, b + dx, y, TAG_H / 2, own, s.id, dy ? 0.7 : 0)) continue;
+            if (flip && !clear(ax - 7, ax + 7, ay, 7, own, s.id)) continue;
+            // a leader is an obstacle too: it may not cross another label or dot, nor a later label cross it
+            const lead: Box = [ax - 1, ax + 1, ay + dy / 2, Math.abs(dy) / 2];
+            if (dy && !clear(lead[0], lead[1], lead[2], lead[3], own, s.id)) continue;
+            [own[0], own[1], own[2]] = [ax - 7, ax + 7, ay];
+            placed.push([a + dx, b + dx, y, TAG_H / 2]);
+            if (dy) placed.push(lead);
+            el.classList.toggle("is-flip", flip);
+            el.classList.toggle("is-down", dy > 0);
+            el.classList.toggle("is-up", dy < 0);
+            el.style.setProperty("--dx", `${Math.round(dx)}px`);
+            el.style.setProperty("--dy", `${dy}px`);
+            // the elbow runs from the dot across to the label's near edge, or straight into it once it slid past
+            el.style.setProperty("--ew", `${Math.max(0, Math.round(flip ? 14 - dx : 14 + dx))}px`);
+            el.style.transform = `translate(${Math.round(ax)}px, ${Math.round(ay)}px)`;
+            shown = true;
+            break search;
+          }
+        }
+      }
+      el.classList.toggle("is-shown", shown);
+    }
+  }
+
+  // ---- 3D: tiers 1-2 with a real GPU; the scene is its own file, fetched only then
+  let speaker: Speaker | null = null;
   let starting = false;
-  // each start gets a number; stop() moves it on, so a scene that finishes building after a stop is thrown away
   let run = 0;
+  let gaveUp = false;
+  const phone = matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+
   async function start() {
-    if (speaker || starting || reduce.matches || saveData || !webgl()) return;
+    if (speaker || starting || gaveUp || tier() > 2 || !webgl()) return;
     starting = true;
     const mine = ++run;
     try {
       const { mountSpeaker } = await import("../../lib/halvane/scene");
-      if (mine !== run || reduce.matches) return;
+      if (mine !== run) return;
       canvas.hidden = false;
-      // built in short steps (the page stays responsive meanwhile), shaders compiled before the first frame
-      const built = await mountSpeaker(canvas, {
-        phone,
-        onLabel: placeTag,
-        onLost: stop,
-      });
-      if (mine !== run || reduce.matches) { built.dispose(); return; }
+      const built = await mountSpeaker(canvas, { tier: tier() === 1 ? "A" : "B", phone, pose, finish, onLost: giveUp, onSlow: giveUp, onHotspots: placeTags });
+      if (mine !== run) { built.dispose(); return; }
       speaker = built;
-      speaker.setFinish(finish);
-      speaker.setPart(part);
-      speaker.setExplode(spread());
-      speaker.setPaused(paused);
-      setTag();
+      speaker.setFinish(finish, false);
+      speaker.setPose(pose);
+      if (look) speaker.setInteractive(true);
+      if (near >= preloadIdx) { preloaded = true; speaker.preload(); }
       stage.classList.add("is-3d");
       tools.hidden = false;
-      tag.hidden = false;
-      setTag();
+      tagBox.hidden = false;
+      lookH.textContent = "Have a look around";
+      how.textContent = how3d();
+      refresh(); // the showroom caption grew (its buttons): refit the portrait framing to it
     } catch {
-      stop();
+      if (mine === run) { gaveUp = true; stop(); }
     } finally {
-      starting = false;
+      if (mine === run) starting = false;
     }
   }
+
   function stop() {
     run++;
+    starting = false;
+    preloaded = false;
+    const used = !!speaker || !canvas.hidden;
     speaker?.dispose();
     speaker = null;
     stage.classList.remove("is-3d");
     tools.hidden = true;
-    tag.hidden = true;
-    // a disposed canvas keeps its lost context, so a later start gets a fresh one
-    const fresh = canvas.cloneNode() as HTMLCanvasElement;
-    fresh.hidden = true;
-    canvas.replaceWith(fresh);
-    canvas = fresh;
+    tagBox.hidden = true;
+    lookH.textContent = LOOK_STILL;
+    how.textContent = HOW_STILL;
+    if (anchors.length) refresh();
+    if (used) {
+      const fresh = canvas.cloneNode() as HTMLCanvasElement;
+      fresh.removeAttribute("style");
+      fresh.hidden = true;
+      canvas.replaceWith(fresh);
+      canvas = fresh;
+    }
+    showPoster(names[near]);
   }
-  reduce.addEventListener("change", () => (reduce.matches ? stop() : start()));
-  addEventListener("pagehide", stop);
-  addEventListener("pageshow", (e) => { if (e.persisted) start(); });
-  const go = () => ("requestIdleCallback" in window ? requestIdleCallback(() => start(), { timeout: 2000 }) : setTimeout(start, 300));
-  if (document.readyState === "complete") go(); else addEventListener("load", go, { once: true });
+
+  function giveUp() {
+    gaveUp = true;
+    stop();
+  }
+
+  addEventListener("pagehide", () => stop());
+  addEventListener("pageshow", (e) => {
+    if (!e.persisted) return;
+    ScrollTrigger.refresh();
+    if (!gaveUp && tier() <= 2) void start();
+  });
+
+  const idle = (fn: () => void) => ("requestIdleCallback" in window ? requestIdleCallback(fn, { timeout: 2000 }) : setTimeout(fn, 300));
+  const boot = () => idle(() => whileTier(2, () => { void start(); return stop; }));
+  if (document.readyState === "complete") boot();
+  else addEventListener("load", boot, { once: true });
 </script>

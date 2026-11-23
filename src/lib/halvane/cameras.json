@@ -1,0 +1,102 @@
+{
+  "$comment": "Named camera states for the Lumen One. Shared by scene.ts (real time) and scripts/halvane/build_speaker.py (Cycles posters and stills), so a still and the live canvas frame the speaker identically. three.js axes, metres: y up, the speaker's front faces +z, its feet stand on y = 0. yaw: the speaker's turn about y in degrees (a turntable under fixed lights). fov: field of view across the viewport's SHORT side, in degrees. shift: where the target lands, from the viewport centre, in short-side units (x right, y up). portrait: overrides for viewports taller than wide. explode: drivers forward (0-1), or per driver ({\"Woofer\": 1} moves only the woofer). hatch: the back plate opened to show the crossover (0-1). poster (optional): cover = how much wider than the state's fov the Cycles poster is rendered, for close-ups that must fill the screen (the page scales and masks it to match). lamp (optional): a soft disc light added for this state only, aimed at the target: pos (three.js metres), power (W in Cycles; scene.ts maps it to its own intensity), size (diameter, m), k (colour temperature).",
+  "states": {
+    "reveal": {
+      "yaw": -35,
+      "pos": [0, 0.55, 1.95],
+      "target": [0, 0.165, 0],
+      "fov": 16,
+      "shift": [0.3, 0],
+      "portrait": {
+        "fov": 13.5,
+        "shift": [0, 0.02]
+      }
+    },
+    "silhouette": {
+      "yaw": -66,
+      "pos": [0, 0.3, 1.95],
+      "target": [0, 0.165, 0],
+      "fov": 15,
+      "shift": [-0.28, 0],
+      "portrait": {
+        "fov": 12.5,
+        "shift": [0, 0.02]
+      }
+    },
+    "front-detail": {
+      "yaw": -20,
+      "pos": [0, 0.6, 1.3],
+      "target": [0, 0.175, 0.03],
+      "fov": 19,
+      "shift": [0.3, 0],
+      "explode": { "Woofer": 1 },
+      "portrait": {
+        "fov": 17,
+        "shift": [0, 0.02]
+      }
+    },
+    "driver-macro": {
+      "yaw": -22,
+      "pos": [-0.121, 0.421, 0.552],
+      "target": [-0.049, 0.277, 0.12],
+      "fov": 15.5,
+      "shift": [0.26, 0],
+      "poster": { "cover": 1.5 },
+      "portrait": {
+        "fov": 13.5,
+        "shift": [0, 0]
+      }
+    },
+    "rear-detail": {
+      "yaw": 145,
+      "pos": [-0.05, 0.62, 1.9],
+      "target": [-0.05, 0.15, 0],
+      "fov": 16,
+      "shift": [-0.28, 0],
+      "hatch": 1,
+      "lamp": {
+        "pos": [-1.0, 1.0, 1.2],
+        "power": 26,
+        "size": 0.5,
+        "k": 4800
+      },
+      "portrait": {
+        "fov": 14,
+        "shift": [0, 0.02]
+      }
+    },
+    "material-transition": {
+      "yaw": -38,
+      "pos": [0, 0.4, 1.75],
+      "target": [0, 0.165, 0],
+      "fov": 17,
+      "shift": [0.28, 0],
+      "portrait": {
+        "fov": 14.5,
+        "shift": [0, 0.02]
+      }
+    },
+    "showroom": {
+      "yaw": -38,
+      "pos": [0, 0.45, 2.1],
+      "target": [0, 0.165, 0],
+      "fov": 16,
+      "shift": [0, 0],
+      "portrait": {
+        "fov": 13.5,
+        "shift": [0, 0.02]
+      }
+    },
+    "final-product": {
+      "yaw": -35,
+      "pos": [0, 0.5, 2.3],
+      "target": [0, 0.165, 0],
+      "fov": 15,
+      "shift": [-0.3, 0],
+      "portrait": {
+        "fov": 13,
+        "shift": [0, 0.02]
+      }
+    }
+  }
+}
