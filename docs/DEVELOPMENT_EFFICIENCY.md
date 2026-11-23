@@ -237,10 +237,26 @@ and §14 run 4). They are not worth reopening the frozen chapters for, so they a
 
 **Environment:** the billing and contact-form tests need builds of other services (§2).
 
-**Waiting on the owner:**
-- a WIP commit;
-- any push or deploy;
-- the Blender MCP (off, not installed, pending a security review).
+**Shipped 2026-11-23, on the owner's word ("Go ahead and do these"):**
+
+| Step | Record |
+|---|---|
+| Commits | Redesign `02dbb46`, then `902f192`, which merges master `fbfaba4` (the privacy-policy line) into the branch. |
+| Pushes | Branch pushed. nuxy-business master fast-forwarded `fbfaba4..902f192`. |
+| Pages | `e6b5545..cee62e3`. Actions run `45241006954`: build and deploy both succeeded. |
+| Rollback | Push `e6b5545`'s tree back to Pages main. |
+| Tests before the push | Full suite 232 pass, 0 fail, 10 skipped. |
+| Live bytes | 539 of 545 files are byte-identical to the local build. The other 6 are `.vtt`/`robots.txt` files that differ only by the worktree's CRLF; they are identical once normalised to LF. |
+| Live sweep | 67 pages at 1440 and 390: no console errors, no overflow, one h1 each. The work-page videos (`preload="metadata"`) log `ERR_ABORTED` because the browser stops after the metadata; the files return 200. |
+| Live Halvane page | 3D at 1440 and 390, and all 14 `/3d/halvane/` requests return 200. Reduced motion gets the posters and no GLB. No audio plays. The fictional-brand notice is there. The only console item is the D3D shader compiler's X4122 precision warning at 1440. |
+
+**Still the owner's:**
+- the Blender MCP: off and not installed. The review was re-checked 11-23 against upstream, which is unchanged at
+  `a5a8acf`, and now has 12 findings, F12 being floating dependencies. It is at
+  `D:\Work\Business\NUXY-3D-Studio\docs\blender-mcp-security-review.md`. Choose A (keep it off, recommended) or B (a
+  sandboxed trial);
+- the parked engine phases 4-8 and 18, and the 25-step work order;
+- the optional P2s.
 
 ## 8. What was changed to prevent repeat fixes (11-23)
 

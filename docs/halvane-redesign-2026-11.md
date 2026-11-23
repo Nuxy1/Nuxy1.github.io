@@ -78,7 +78,15 @@ _Filled in as each stage runs: what the skill changed, and the rendered result t
 
 ## 6. Status and next steps (checkpoint 2026-11-22 13:30, before the 14:00 hibernation)
 
-**Latest checkpoint, 2026-11-23 12:30.** The owner's "NUXY Immersive Website Demo" efficiency brief is in. Start with `docs/DEVELOPMENT_EFFICIENCY.md`: it has the diagnosis, the baseline, the repair loop, the sections and the remaining defects. Rows 79-87 are done. QA pass 13 is the visual baseline. Critique run 4 scored 28/32 = 35.0/40 (§14), which meets the bar. Nothing is committed, pushed or deployed, and the Blender MCP is off; all of that waits on the owner.
+**Latest checkpoint, 2026-11-23 12:30.** The owner's "NUXY Immersive Website Demo" efficiency brief is in. Start with `docs/DEVELOPMENT_EFFICIENCY.md`: it has the diagnosis, the baseline, the repair loop, the sections and the remaining defects. Rows 79-87 are done. QA pass 13 is the visual baseline. Critique run 4 scored 28/32 = 35.0/40 (§14), which meets the bar. **Shipped 2026-11-23 about 12:45 on the owner's word.**
+- Commits: `02dbb46` (redesign) and `902f192` (merge of master `fbfaba4`).
+- Master fast-forwarded to `902f192`.
+- Pages `e6b5545..cee62e3`, Actions run `45241006954` successful.
+- Live checks passed: bytes, a 67-page sweep at two widths, and the Halvane 3D page. Records are in `DEVELOPMENT_EFFICIENCY.md` §7.
+- Rollback: push `e6b5545`'s tree.
+
+The Blender MCP stays off and is not installed. Its review was re-checked against upstream, which is unchanged at
+`a5a8acf`, and gained F12 (floating dependencies). It waits on the owner's A or B.
 
 **Earlier checkpoint, 2026-11-23 about 04:45 (before the 05:00 hibernation).** Since 11-22: rows 62-72 of the fix list (critique fixes, the waveguide tangent fix, the crossover rebuilt with leads, sealed ends, ties and print). The web GLB, the rear-detail posters and `dist` are current (pass 10 shots at 1440, 768, 390 and 1440 reduced in `D:\Work\Business\Nuxy-Halvane-Redesign-2026-11\qa\pass10`, console clean). Full suite 11-23 04:05 and again 04:22 after the run 2 fixes: 197 tests, 185 pass, 2 environment fails (billing, contact-form), 10 skipped. The engine's `nuxy-scroll-cinematic` tests: 11 of 11. Critique run 2 (fresh assessors): 24/32, still below the bar; its page fixes are rows 73-78 and 82, checked in pass 11 (`qa\pass11`, 1440, 390, 360 and 1440 reduced, console clean). Nothing committed, pushed or deployed; the Blender MCP stays off. Next: rows 79-81 (close-up renders, showroom labels, the rest of row 81), then run 3 with a new pair, then row 33's finish residuals, the engine's Phase 4 skill router (tell peer sessions first, it writes to `~/.claude/skills`), and the wrap-up deliverables.
 
