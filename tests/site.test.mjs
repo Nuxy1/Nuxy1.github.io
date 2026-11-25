@@ -49,7 +49,7 @@ const indexable = [...pages.keys()].filter((u) => !expectedNoindex.has(u));
 const legacy = JSON.parse(first(pages.get("/"), /const legacy = (\{[^;]*\});/));
 
 test("the build has every page, and the made-up data matches the pages", () => {
-  assert.equal(pages.size, 67 + caseStudies.length, `pages: ${[...pages.keys()].join(" ")}`);
+  assert.equal(pages.size, 68 + caseStudies.length, `pages: ${[...pages.keys()].join(" ")}`);
   assert.ok(pages.has("/handover/"), "the handover page");
   for (const p of ["/payment/thanks/", "/payment/cancelled/"]) assert.ok(pages.has(p), `the Stripe return page ${p}`);
   for (const sub of ["quote", "services", "projects", "about", "contact"]) assert.ok(pages.has(`/example-sites/fernway-lawn/${sub}/`), `fernway ${sub}`);
@@ -57,7 +57,7 @@ test("the build has every page, and the made-up data matches the pages", () => {
   for (const sub of ["estimate", "checklist", "book", "about"]) assert.ok(pages.has(`/example-sites/mossgate-cleaning/${sub}/`), `mossgate ${sub}`);
   for (const sub of ["shop", "cart", "checkout", "candles/cedar-evening", "candles/forest-cabin"]) assert.ok(pages.has(`/example-sites/quillfern-candles/${sub}/`), `quillfern ${sub}`);
   for (const u of ["/", "/websites/", "/get-a-website/", "/automation/", "/solutions/", "/pricing/", "/about/",
-    "/contact/", "/contact/thanks/", "/demos/", "/demo/", "/policies/", "/docs/", "/404.html", "/ecommerce/", "/portfolio/", "/website-security/",
+    "/contact/", "/contact/thanks/", "/demos/", "/demo/", "/policies/", "/sms-terms/", "/docs/", "/404.html", "/ecommerce/", "/portfolio/", "/website-security/",
     "/web-design/", "/business-websites/", "/signature-websites/", "/immersive-websites/"]) {
     assert.ok(pages.has(u), `missing ${u}`);
   }

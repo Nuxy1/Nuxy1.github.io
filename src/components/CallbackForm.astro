@@ -9,6 +9,7 @@
 // and /contact/ still loads one script file (tests/cinematic.test.mjs counts them): keep it small.
 // Every id here starts with cb- and every hook with data-cb-, so nothing collides with the quote form above it.
 import Icon from "./Icon.astro";
+import SmsConsent from "./SmsConsent.astro";
 import { inquiryUrl, inbox } from "../data/site";
 import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/callback";
 ---
@@ -31,7 +32,7 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
       <div class="field">
         <label for="cb-phone">Phone number</label>
         <input id="cb-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="40" aria-describedby="cb-phone-help cb-phone-err" />
-        <p class="help" id="cb-phone-help">The number we should call or text.</p>
+        <p class="help" id="cb-phone-help">The number we should call.</p>
         <p class="err" id="cb-phone-err" data-cb-err="phone" data-l="Phone" data-missing="Phone number is required." data-problem="Enter a phone number with at least 7 digits." hidden></p>
       </div>
       <div class="field">
@@ -77,9 +78,16 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
     <input type="hidden" name="t" value="" />
 
     <div class="field check">
-      <label for="cb-consent"><input id="cb-consent" name="callConsent" type="checkbox" value="yes" required aria-describedby="cb-consent-help cb-consent-err" /> <span>I agree that Nuxy Automation may call or text me at this number about this request.</span></label>
-      <p class="help" id="cb-consent-help">Needed for a callback. Your number is used only for this request: never for marketing, and never shared.</p>
-      <p class="err" id="cb-consent-err" data-cb-err="callConsent" data-l="OK to call or text" data-missing="Tick the box so we may call or text you about this request." hidden></p>
+      <label for="cb-consent"><input id="cb-consent" name="callConsent" type="checkbox" value="yes" required aria-describedby="cb-consent-help cb-consent-err" /> <span>I agree that Nuxy Automation may call me at this number about this request.</span></label>
+      <p class="help" id="cb-consent-help">Needed for a callback. Your number is used only for this request: never for marketing, and never shared. Texts are separate and optional (below).</p>
+      <p class="err" id="cb-consent-err" data-cb-err="callConsent" data-l="OK to call" data-missing="Tick the box so we may call you about this request." hidden></p>
+    </div>
+
+    <!-- (10DLC campaign CWRUOGH) texts are their own optional, unticked box with the full disclosure; its error line
+    has no data-missing, so the script never asks for it, and data-l carries the answer into the fallback email -->
+    <div class="field">
+      <SmsConsent id="cb-sms" />
+      <p class="err" data-cb-err="smsConsent" data-l="OK to text" hidden></p>
     </div>
 
     <div class="cb-actions">
@@ -93,7 +101,8 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
     <span class="cb-badge ok"><Icon name="checkCircle" /></span>
     <h3>We Got Your Callback Request</h3>
     <p>Your reference is <strong class="cb-ref" data-cb-ref></strong>. This is a request, not an appointment: no call time has been set yet.</p>
-    <p>We’ll try to reach you at <strong data-cb-phone></strong> by call or text, aiming for the time of day you chose (<span data-cb-window></span>, {callbackWindowNote}).</p>
+    <p>We’ll try to call you at <strong data-cb-phone></strong>, aiming for the time of day you chose (<span data-cb-window></span>, {callbackWindowNote}).</p>
+    <p data-cb-sms hidden>You agreed to texts about this request. Reply STOP to any text to opt out, or HELP for help.</p>
     <p class="note">Need to add something? Email <a href={`mailto:${inbox}`}>{inbox}</a> with your reference.</p>
     <!-- (critique round 14) the same way on as the quote form's success panel -->
     <a class="text-link cb-onward" href="/portfolio/" data-track="done_portfolio">See Our Work While You Wait<Icon name="arrowRight" /></a>
@@ -230,7 +239,7 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
     const el = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
     const picked = (name: string) => form.querySelector<HTMLInputElement>(`[name="${name}"]:checked`);
     const group = (name: string) => GROUPS.includes(name);
-    const valueOf = (name: string) => group(name) ? picked(name)?.value ?? "" : name == "callConsent" ? (el(name).checked ? "yes" : "") : el(name).value.trim();
+    const valueOf = (name: string) => group(name) ? picked(name)?.value ?? "" : el(name).type == "checkbox" ? (el(name).checked ? "yes" : "") : el(name).value.trim();
     const focusOf = (name: string) => group(name) ? picked(name) ?? form.querySelector<HTMLInputElement>(`[name="${name}"]`) : el(name);
     const show = (name: string, message: string) => {
       const err = errs[names.indexOf(name)];
@@ -261,7 +270,7 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
     form.addEventListener("input", start);
     form.addEventListener("change", start);
 
-    const answer = (name: string) => group(name) ? picked(name)?.parentElement?.textContent?.trim() ?? "" : name == "callConsent" ? (valueOf(name) ? "Yes" : "No") : valueOf(name);
+    const answer = (name: string) => group(name) ? picked(name)?.parentElement?.textContent?.trim() ?? "" : el(name).type == "checkbox" ? (valueOf(name) ? "Yes" : "No") : valueOf(name);
     const reveal = (box: HTMLElement) => {
       box.hidden = false;
       form.hidden = true;
@@ -310,6 +319,7 @@ import { callbackReasons, callbackWindows, callbackWindowNote } from "../data/ca
           q("[data-cb-ref]").textContent = data.ref;
           q("[data-cb-phone]").textContent = valueOf("phone");
           q("[data-cb-window]").textContent = answer("window").toLowerCase();
+          q("[data-cb-sms]").hidden = !valueOf("smsConsent");
           reveal(done);
           track("form_submit");
           track("callback_completed");

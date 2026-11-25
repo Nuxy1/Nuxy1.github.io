@@ -54,7 +54,7 @@ const pageData = {
         {callbackForm && (
           <ul class="ways" aria-label="Two ways to start" data-ways>
             <li><a href="#quote-form" id="way-quote" data-way="quote"><Icon name="pencilSimple" /><span><strong>Write it down</strong> A short form; we reply in writing</span></a></li>
-            <li><a href="#callback" id="way-callback" data-way="callback"><Icon name="phone" /><span><strong>Request a callback</strong> Leave your number; we call or text</span></a></li>
+            <li><a href="#callback" id="way-callback" data-way="callback"><Icon name="phone" /><span><strong>Request a callback</strong> Leave your number; we call you back</span></a></li>
           </ul>
         )}
         <div class="way-panel" id="quote-panel" data-way-panel="quote">
@@ -80,7 +80,7 @@ const pageData = {
         {callbackForm && (
           <section class="callback way-panel" id="callback" data-way-panel="callback" aria-labelledby="callback-title">
             <h2 id="callback-title">Rather Talk on the Phone?</h2>
-            <p class="lead">Leave your number and the time of day that suits you, and we’ll call or text you back about it. This asks for a call; it doesn’t set a time.</p>
+            <p class="lead">Leave your number and the time of day that suits you, and we’ll call you back about it. Texts only if you tick the optional box. This asks for a call; it doesn’t set a time.</p>
             <div class="panel form-panel">
               <CallbackForm />
             </div>
@@ -164,7 +164,7 @@ const pageData = {
       // form was open; both now follow the chosen form
       const call = t.dataset.way === "callback";
       if (eyebrow) eyebrow.textContent = call ? "Free callback" : "Free quote";
-      if (reply) reply.textContent = call ? "we’ll call or text you back" : "we’ll reply in writing";
+      if (reply) reply.textContent = call ? "we’ll call you back" : "we’ll reply in writing";
       // the address says which form is open, so a reload or a shared link opens the same one; no jump
       history.replaceState(history.state, "", t.dataset.way === "callback" ? "#callback" : location.pathname + location.search);
     };

@@ -27,13 +27,14 @@ const agent = process.env.INQUIRY_JS;
 if (!agent || !existsSync(agent)) throw new Error("Set INQUIRY_JS to the inquiry service's src/inquiry.js (see the header of this file).");
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE || "playwright-core");
 const { inquiryStore, hitCounter, startPublic, emailTypo: serverTypo } = await import(pathToFileURL(agent).href);
+const { consentStore, SMS_DISCLOSURES } = await import(pathToFileURL(join(dirname(agent), "sms", "consent.js")).href);
 const LIVE = "https://preview.nuxyautomation.com";
 // The site counts visits only on its real address, so the browser is told that name means this computer: the pages are
 // served locally under the real host name, and the inquiry service sees the origin it will see in production.
 const HOST = new URL((await import("../astro.config.mjs")).default.site).hostname;
 const REF = /^NX-\d{6}-[A-Z0-9]{4}$/;
 
-let site, api, web, inq, browser, dir, store, hits, notified;
+let site, api, web, inq, browser, dir, store, hits, notified, consent;
 const logs = [];
 before(async () => {
   assert.ok(existsSync(join(dist, "contact", "index.html")), "run npm run build first");
@@ -42,8 +43,9 @@ before(async () => {
   dir = mkdtempSync(join(tmpdir(), "nuxy-form-"));
   store = inquiryStore(join(dir, "inquiries.json"), (m) => logs.push(m));
   hits = hitCounter(join(dir, "hits.json"), { log: (m) => logs.push(m) });
+  consent = consentStore(join(dir, "sms-consent.json"), (m) => logs.push(m));
   notified = 0;
-  inq = startPublic({ port: 0, store, hits, notify: () => notified++, log: (m) => logs.push(m), siteUrl: site, origins: [site], limits: { attempts: 1000, tenMinutes: 1000, day: 1000, allDay: 1000, hits: 1000 } });
+  inq = startPublic({ port: 0, store, hits, consent, notify: () => notified++, log: (m) => logs.push(m), siteUrl: site, origins: [site], limits: { attempts: 1000, tenMinutes: 1000, day: 1000, allDay: 1000, hits: 1000 } });
   await new Promise((ok) => inq.listening ? ok() : inq.once("listening", ok));
   api = `http://127.0.0.1:${inq.address().port}`;
   browser = await chromium.launch({ executablePath: process.env.BROWSER || "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", headless: true,
@@ -638,7 +640,7 @@ test("one form at a time: the quote form first, the callback form on its tab or 
   assert.deepEqual(await state(), { list: "tablist", tabs: tabs(true, false), quote: true, callback: false, hash: "", focus: "", eyebrow: "Free quote / we’ll reply in writing" });
   await page.fill("#f-name", "Kept Name");
   await page.click("#way-callback");
-  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(false, true), quote: false, callback: true, hash: "#callback", focus: "way-callback", eyebrow: "Free callback / we’ll call or text you back" });
+  assert.deepEqual(await state(), { list: "tablist", tabs: tabs(false, true), quote: false, callback: true, hash: "#callback", focus: "way-callback", eyebrow: "Free callback / we’ll call you back" });
   await page.fill("#cb-name", "Also Kept");
   await page.focus("#way-callback"); // back on the tabs, as a keyboard user would be (Shift+Tab out of the form)
   await page.keyboard.press("ArrowLeft");
@@ -689,6 +691,44 @@ test("the callback form offers the server's choices, needs a ticked yes and a ph
   await context.close();
 });
 
+// (10DLC campaign CWRUOGH) texts are their own optional box, never ticked for the person, with the full disclosure and
+// working links to the privacy policy and the SMS terms; ticked, the opt-in lands in the consent history with the words shown
+test("the text box is separate, optional and unticked, says everything carriers ask, and a tick is recorded with its words", async (t) => {
+  const { page, context, errors } = await open("/contact/#callback");
+  if (!(await page.locator("[data-callback]").count())) { await context.close(); return t.skip("callbackForm is off"); }
+  const box = page.locator("#cb-sms");
+  assert.equal(await box.isChecked(), false, "never ticked for them");
+  assert.equal(await box.getAttribute("required"), null, "never required");
+  assert.notEqual(await box.getAttribute("name"), await page.getAttribute("#cb-consent", "name"), "its own box, not the call permission");
+  const words = (await page.textContent("#cb-sms-terms")).replace(/\s+/g, " ");
+  assert.ok(words.includes(SMS_DISCLOSURES[await page.inputValue('[data-callback] [name="smsV"]')]), "the shown words are the stored words");
+  for (const must of [/Nuxy Automation/, /Message frequency varies/, /Message and data rates may apply/, /Reply STOP to opt out/, /Reply HELP for help/, /not a condition of purchase/, /not be sold or shared with third parties/])
+    assert.match(words, must);
+  assert.match(await page.textContent('label[for="cb-sms"]'), /optional/i);
+  const links = await page.locator("#cb-sms-terms a").evaluateAll((a) => a.map((x) => [x.textContent, x.getAttribute("href")]));
+  assert.deepEqual(links, [["Privacy Policy", "/policies/#texts"], ["SMS Terms", "/sms-terms/"]]);
+  for (const [, href] of links) assert.equal((await context.request.get(new URL(href, web.url).href)).status(), 200, href);
+  // (the call permission no longer mentions texts)
+  assert.doesNotMatch(await page.textContent('label[for="cb-consent"]'), /text/i);
+  await page.waitForTimeout(2600);
+  const v = await fillCallback(page, { phone: "(507) 555-0166" });
+  await page.check("#cb-consent");
+  await page.check("#cb-sms");
+  await page.click("[data-cb-submit]");
+  await page.locator("[data-cb-done]").waitFor({ state: "visible" });
+  const ref = await page.textContent("[data-cb-ref]");
+  const r = store.find(ref);
+  assert.deepEqual([r.callConsent, r.smsConsent, r.smsV], ["yes", "yes", "2026-11-25"]);
+  assert.equal(consent.status(v.phone), "opted_in");
+  const e = consent.history(v.phone).at(-1);
+  assert.deepEqual([e.source, e.ref, e.disclosure], ["website", ref, SMS_DISCLOSURES["2026-11-25"]]);
+  assert.equal(await page.isVisible("[data-cb-sms]"), true);
+  assert.match(await page.textContent("[data-cb-sms]"), /STOP/);
+  assert.equal(await box.isChecked(), false, "the form is cleared for a second request");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 test("a callback request is saved as one, and the success message promises no time", async (t) => {
   const { page, context, sent } = await open("/contact/#callback");
   if (!(await page.locator("[data-callback]").count())) { await context.close(); return t.skip("callbackForm is off"); }
@@ -700,7 +740,8 @@ test("a callback request is saved as one, and the success message promises no ti
   const ref = await page.textContent("[data-cb-ref]");
   assert.match(ref, REF);
   const r = store.find(ref);
-  assert.deepEqual([r.kind, r.phone, r.email, r.reason, r.window, r.callConsent, r.stage], ["callback", v.phone, "", "automation", "morning", "yes", "new"]);
+  assert.deepEqual([r.kind, r.phone, r.email, r.reason, r.window, r.callConsent, r.smsConsent, r.stage], ["callback", v.phone, "", "automation", "morning", "yes", "", "new"]);
+  assert.equal(await page.isHidden("[data-cb-sms]"), true, "no text promise without the text box");
   const done = await page.textContent("[data-cb-done]");
   assert.match(done, /not an appointment: no call time has been set/);
   assert.doesNotMatch(done, /scheduled|booked|confirmed|reserved/i);

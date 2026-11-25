@@ -1,0 +1,40 @@
+---
+// The optional "Text me" box for Nuxy Automation SMS Communications (10DLC campaign TCR CWRUOGH). Put it in any form
+// that already asks for a phone number. What carriers require, and why it looks the way it does:
+// - never ticked for the person and never required: the form sends with it empty, and an empty box means no texts;
+// - its own box, separate from any other agreement (a callback form's "may call me" stays its own box);
+// - the full disclosure sits with the box (brand, what the texts are, frequency, rates, STOP, HELP, not a condition of
+//   purchase, no sharing), with working links to the privacy policy and the SMS terms.
+// It sends smsConsent=yes only when ticked, and smsV, the version of the words shown, which the inquiry service checks
+// and stores with the consent (agent src/sms/consent.js). The words live in data/sms.ts.
+import { smsConsentLabel, smsDisclosure, smsDisclosureVersion } from "../data/sms";
+
+interface Props {
+  id: string; // (unique on the page, e.g. "cb-sms")
+}
+const { id } = Astro.props;
+---
+<div class="sms" data-sms-consent>
+  <input type="hidden" name="smsV" value={smsDisclosureVersion} />
+  <label for={id}><input id={id} name="smsConsent" type="checkbox" value="yes" aria-describedby={`${id}-terms`} /> <span>{smsConsentLabel}</span></label>
+  <p class="terms" id={`${id}-terms`}>{smsDisclosure} See our <a href="/policies/#texts">Privacy Policy</a> and <a href="/sms-terms/">SMS Terms</a>.</p>
+</div>
+
+<style>
+  /* (the same palette checkbox as the callback form's: Astro scopes styles per component, so it is drawn here too) */
+  .sms { display: grid; gap: 6px; }
+  .sms > label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding-top: 10px; color: var(--body); font-size: 0.9375rem; line-height: 1.45; cursor: pointer; }
+  .sms input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; width: 20px; height: 20px; margin: 0.1em 0 0; flex: none;
+    border: 1.5px solid var(--field-line); border-radius: 5px; background: var(--field); cursor: pointer; transition: border-color 160ms ease-out, background-color 160ms ease-out;
+  }
+  .sms input[type="checkbox"]::before { content: ""; width: 12px; height: 12px; background: #fff; clip-path: polygon(13% 47%, 0 62%, 38% 100%, 100% 22%, 86% 9%, 37% 70%); transform: scale(0); transition: transform 140ms ease-out; }
+  .sms input[type="checkbox"]:hover { border-color: var(--field-line-hover); }
+  .sms input[type="checkbox"]:checked { border-color: var(--blue-line); background: var(--blue); }
+  .sms input[type="checkbox"]:checked::before { transform: scale(1); }
+  .sms input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .sms input[type="checkbox"], .sms input[type="checkbox"]::before { transition: none; } }
+  @media (forced-colors: active) { .sms input[type="checkbox"] { appearance: auto; -webkit-appearance: auto; } .sms input[type="checkbox"]::before { display: none; } }
+  .terms { padding-left: 30px; color: var(--muted); font-size: 0.8125rem; line-height: 1.5; }
+  .terms a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+</style>

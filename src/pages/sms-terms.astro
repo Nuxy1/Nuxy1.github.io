@@ -1,0 +1,58 @@
+---
+// The terms of Nuxy Automation's own text-message program (10DLC campaign TCR CWRUOGH). Linked from the opt-in box
+// on the callback form (components/SmsConsent.astro), from /policies/#texts and from the footer. Every program fact
+// comes from data/sms.ts, so this page, the box and the privacy policy say the same thing.
+import Base from "../layouts/Base.astro";
+import { smsBrand, smsProgram, smsReplies, smsSupportEmail, smsTermsUpdated } from "../data/sms";
+
+const pageData = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": "https://nuxyautomation.com/sms-terms/",
+  url: "https://nuxyautomation.com/sms-terms/",
+  name: `${smsProgram} terms`,
+  about: { "@id": "https://nuxyautomation.com/#business" },
+};
+---
+<Base title="SMS Terms · Nuxy Automation" description={`Terms of ${smsProgram}: what the texts are, how often they come, costs, and how to stop them with STOP or get help with HELP.`}>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(pageData)} />
+  <h1>SMS Terms</h1>
+  <p class="lead">The terms of {smsProgram}, the text messages {smsBrand} (Faribault, Minnesota) sends to people who ask for them. Questions: <a href={`mailto:${smsSupportEmail}`}>{smsSupportEmail}</a>.</p>
+  <p>Last updated {smsTermsUpdated}.</p>
+
+  <h2 id="program">The Program</h2>
+  <ul>
+    <li><strong>Program name:</strong> {smsProgram}.</li>
+    <li><strong>What the texts are:</strong> customer care about a request you sent us: scheduling the callback you asked for, replies to your questions and updates on your project. No marketing or promotional texts are sent in this program.</li>
+    <li><strong>How you join:</strong> on the <a href="/contact/#callback">callback form</a>, enter your phone number and tick the optional “Text me” box, which is never ticked for you. You can ask for a callback without it.</li>
+    <li><strong>How often:</strong> message frequency varies with your request; usually a few texts while it is open.</li>
+    <li><strong>Cost:</strong> message and data rates may apply, as set by your mobile carrier. {smsBrand} never charges for texts.</li>
+    <li><strong>Consent is not a condition of purchase.</strong> You never need texts to get a quote, a callback or any service.</li>
+  </ul>
+
+  <h2 id="stop">Stopping Texts</h2>
+  <ul>
+    <li>Reply <strong>STOP</strong> to any text to opt out. STOPALL, UNSUBSCRIBE, CANCEL, END and QUIT work too.</li>
+    <li>You get one last text confirming it: “{smsReplies.optOut}” After that, no more texts are sent to your number unless you opt in again.</li>
+    <li>To opt back in, reply <strong>START</strong> (or UNSTOP) to the same number.</li>
+    <li>You can also email <a href={`mailto:${smsSupportEmail}`}>{smsSupportEmail}</a> to stop texts.</li>
+  </ul>
+
+  <h2 id="help">Help</h2>
+  <ul>
+    <li>Reply <strong>HELP</strong> to any text for help: “{smsReplies.help}”</li>
+    <li>Or email <a href={`mailto:${smsSupportEmail}`}>{smsSupportEmail}</a>.</li>
+  </ul>
+
+  <h2 id="privacy">Privacy</h2>
+  <ul>
+    <li>Your mobile information will not be sold or shared with third parties or affiliates for promotional or marketing purposes. Text-message opt-in data and consent are never shared with any third party, except the texting platform and phone carriers that deliver the texts.</li>
+    <li>What is kept, and why, is in the <a href="/policies/#texts">privacy policy</a>.</li>
+  </ul>
+
+  <h2 id="carriers">Carriers</h2>
+  <ul>
+    <li>Carriers are not liable for delayed or undelivered messages.</li>
+    <li>Supported on major US carriers. Texts are sent only to US mobile numbers.</li>
+  </ul>
+</Base>
