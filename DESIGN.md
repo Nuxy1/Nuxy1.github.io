@@ -417,15 +417,11 @@ part coming forward), `--dur-4` 520ms (section reveals, the hero's camera move);
   Immersive site, switched by three radio buttons and CSS (works without JavaScript). The Signature and Immersive
   versions fade their parts in on switching unless motion is reduced; the Immersive loop runs only with
   `html[data-ambient]`, while the drawing is on screen and the tab is visible (the script sets `.run`).
-- **Halvane 3D** (`src/lib/halvane/scene.ts`, Three.js): loaded as its own file (about 131 KB gzip) only after the
-  page has loaded, never with reduced motion or save-data, and only when WebGL works; otherwise the page keeps its
-  SVG drawing, which is complete on its own. Pixel ratio `Math.min(devicePixelRatio, 1.5)`, drawing paused while
-  off screen or in a hidden tab, and `dispose()` frees every geometry, material, texture and the renderer (then
-  forces a context loss). Switching reduced motion on stops and frees the scene. The scene is built in short steps
-  that yield to the page, its shaders compile asynchronously before the first frame, and changing the finish swaps
-  colours only (no shader rebuild), so no task blocks a tap for long. No reflection map on any device: three's
-  reflection blur held the page for about 0.4 s on a Windows desktop and the lights alone give the same look.
-  `tests/levels.test.mjs` checks it.
+- **Halvane speaker** (`src/lib/halvane/stage.js`): a prerendered photo, no 3D model (the Three.js speaker, its
+  GLB and `scene.ts` were removed on 2026-11-24). On motion tiers 1-2 the walnut speaker turns through 49 orbit
+  frames drawn on a 2D canvas (`#product-orbit`), 800 or 520 px by the box's device size; tier 3 (reduced motion,
+  save-data, low memory) shows the poster only and never downloads the frames. The only WebGL on the page is the
+  pendulum scene (`pendulum.js`). `tests/levels.test.mjs` checks it.
 - **Prices are never typed into motion components.** The hero panels and the goal picker read names and prices from
   `data/services.ts`, skip any id that isn't in the catalogue, and the goal picker is a fixed list per goal, not AI.
 - Analytics: a demo counts `demo_start` and `demo_complete` at most once each per demo per page view; the goal picker's buttons are

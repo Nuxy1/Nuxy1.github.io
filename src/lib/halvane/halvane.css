@@ -1,0 +1,393 @@
+/* Halvane Audio on the GetLayers Artefakt frame (artefakt.css). This file only adds what the template does not
+   have: Halvane's two typefaces, text logos and wordmark, the poster that stands in for the 3D speaker, and the
+   acts the template has no section for (sound, room, specs, reserve). Frame mode = the template's own query. */
+
+@font-face { font-family: "Newsreader Display"; src: url("/fonts/newsreader-display-var.woff2") format("woff2"); font-weight: 300 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Albert Sans"; src: url("/fonts/albert-sans-var.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
+
+/* DemoSite's focus ring reads --demo-ring; bone shows on the obsidian page and on the banner (#0e1311). */
+body.hv-body { background: #0a0a0c; --demo-ring: #f4f1ea; }
+/* a dark page: native scrollbars, the select's option list and autofill follow it (scoped to this demo only) */
+html:has(body.hv-body) { color-scheme: dark; }
+/* every control already draws a focus ring; the grey tap flash is replaced by the controls' own states, and
+   manipulation drops the double-tap zoom wait */
+.hvx a, .hvx button, .hvx select, .hvx input { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+/* ---------- type ---------- */
+.hvx .display,
+.hvx #wordmark .wm-plate,
+.hvx #wordmark .wm-lit { font-family: var(--font-display), "Iowan Old Style", Georgia, serif; font-weight: 300; }
+.hvx .display { letter-spacing: -0.015em; }
+.hvx .num { font-family: var(--font-display), Georgia, serif; font-weight: 300; font-variant-numeric: lining-nums; line-height: 1; }
+
+/* ---------- text logos (the template's are images) ---------- */
+.hvx .site-header .logo,
+.hvx .menu-logo,
+.hvx #footer .logo {
+  display: flex; align-items: baseline; gap: 0.45em; width: auto;
+  font-family: var(--font-display), Georgia, serif; font-weight: 300; line-height: 1;
+  letter-spacing: -0.01em; white-space: nowrap; color: var(--hero-content);
+}
+.hvx .site-header .logo { align-items: center; font-size: calc(1.625 * var(--u)); }
+.hvx .site-header .logo span,
+.hvx .menu-logo span,
+.hvx #footer .logo span { font-family: var(--font-mono); font-size: 0.42em; letter-spacing: 0.02em; color: var(--hero-content-muted); }
+.hvx .menu-logo { font-size: calc(1.625 * var(--u)); }
+.hvx #footer .logo { height: auto; font-size: calc(2.25 * var(--u)); }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx .site-header .logo { width: auto; font-size: calc(1.5 * var(--u)); }
+  .hvx #footer .logo { width: auto; height: auto; }
+}
+
+/* ---------- wordmark: Halvane set in type, lit by the template's torch ---------- */
+/* #wordmark in every selector: the template's own wordmark rules carry that id and would win otherwise. */
+.hvx #wordmark .wm-box { container-type: size; }
+.hvx #wordmark .wm-plate,
+.hvx #wordmark .wm-lit {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 27cqw; line-height: 1; letter-spacing: -0.02em; white-space: nowrap;
+  scale: none; user-select: none; -webkit-user-select: none;
+}
+/* The plate is dim bone; the torch reveals the same word in brushed titanium (a solid tone: the light, not a
+   gradient, does the brushing). */
+.hvx #wordmark .wm-plate { color: var(--hero-content); }
+.hvx #wordmark .wm-lit { color: #cfc9be; }
+/* artefakt.js fades the wordmark in (inline opacity) after the hero paints; hide it until then so it does not
+   flash. It skips that fade when motion is reduced or the page is on tier 3, so those keep it visible. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  html:not([data-tier="3"]) .hvx #wordmark { opacity: 0; }
+}
+
+/* ---------- Act 01-02: the speaker stage ---------- */
+/* The hero is centred on the sticky stage below the 44px demo banner. */
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  html { scroll-padding-top: 0; }
+  .hvx #hero { height: calc(100lvh - 88px); }
+  /* the Lumen One stands lower in its frame than the template's product, so on 16:9 screens a two-line claim
+     touched the cabinet's base: one line keeps the claim's place above the CTA and frees a line of air below the speaker */
+  .hvx #hero h1 { flex-direction: row; justify-content: center; column-gap: 0.3em; }
+}
+.hvx #product-canvas { container-type: size; }
+/* The product photo: the poster and, on tiers 1-2, the orbit canvas over it share one square box placed on the hero
+   framing. stage.js scales and moves the box along the scroll journey (transform, about the cabinet's centre) and
+   swaps the poster for the orbit frames while the speaker turns. */
+.hvx #product-photo {
+  position: absolute; left: 50%; top: 50%;
+  width: 154.83cqh; height: 154.83cqh;
+  translate: -50% calc(-50% + 0.26cqh);
+  transform-origin: 49.5% 50.8%;
+  pointer-events: none;
+}
+.hvx #product-poster {
+  position: absolute; inset: 0; width: 100%; height: 100%; max-width: none;
+  object-fit: contain;
+  transition: opacity 0.35s var(--ease-entrance);
+}
+.hvx #product-orbit { position: absolute; display: block; opacity: 0; transition: opacity 0.35s var(--ease-entrance); }
+.hvx #product-orbit[hidden] { display: none; }
+.hvx #product-photo.is-turning #product-poster { opacity: 0; }
+.hvx #product-photo.is-turning #product-orbit { opacity: 1; }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx #product-photo { width: 113.73cqh; height: 113.73cqh; translate: -50% calc(-50% - 6.15cqh); }
+}
+/* Below the frame layout the stage is only about 250px tall, shorter than the template's 17rem bottom fade, so the
+   fade ate the cabinet's lower third (port and wordmark) and the base sat 4px past the stage edge. The poster is a
+   cutout with its own contact shadow, so a short fade is enough; the speaker sits slightly smaller and higher. */
+@media not all and (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx .hv-stage { --hero-stage-fade: 1.5rem; }
+  .hvx #product-photo { width: 146cqh; height: 146cqh; translate: -50% calc(-50% - 1.5cqh); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hvx #product-poster, .hvx #product-orbit { transition: none; }
+}
+/* First paint. The stage is served hidden until the end of the main script measures where the hero's stage box sits
+   (--hero-stage-top), so the poster, which is the page's largest paint, waited for all of that script: Lighthouse
+   measured LCP 8.6 s on a throttled phone. The frame layout never reads that offset (the stage is sticky there), and
+   where anchor positioning exists the boxed layout can pin the stage to the box itself, so in both cases the poster
+   shows from the first paint. Other browsers keep the measured path. */
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx #product-canvas { visibility: visible !important; }
+}
+@supports (anchor-name: --a) {
+  .hvx #hero-stage { anchor-name: --hv-hero-stage; }
+  @media not all and (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+    .hvx #product-canvas { top: anchor(--hv-hero-stage top); visibility: visible !important; }
+  }
+}
+
+/* hero badges: a numeral instead of the template's idle glyphs */
+.hvx .badge .num { font-size: calc(2.25 * var(--u)); color: var(--hero-content); }
+
+/* finish cards carry no index number (three finishes are not a sequence): the corner mark keeps its right edge */
+.hvx .product .head .row { justify-content: flex-end; }
+/* the template's frame-mode header floats with no backing, so scrolling headings ran into the nav:
+   a page-coloured fade under the header strip lets content pass beneath it cleanly */
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx .site-header::before {
+    content: ""; position: absolute; inset: 0 0 auto; height: calc(5.25 * var(--u)); z-index: -1; pointer-events: none;
+    background: linear-gradient(to bottom, var(--hero-surface-lattice) 50%, transparent);
+  }
+}
+
+/* details rows carry a part icon, no number: the three are not a sequence */
+.hvx #details-rows .rail { justify-content: flex-end; }
+
+/* ---------- Act 03: technology ---------- */
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  /* the template's mobile #reel-box rule comes later in artefakt.css and would win; restate the frame box */
+  .hvx #reel-box {
+    position: absolute; top: calc(8.5 * var(--u)); inset-inline: 0; margin-inline: auto;
+    width: calc(41.5625 * var(--u)); height: calc(38.6875 * var(--u)); aspect-ratio: auto;
+  }
+}
+.hvx .layer-card.is-left { right: auto; left: calc(2.5 * var(--u)); }
+
+/* ---------- Act 04: sound visualised (GetLayers scene pendulum-wave) ---------- */
+.hvx .sound-stage { position: relative; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; background: var(--hero-surface); }
+.hvx .sound-stage img,
+.hvx .sound-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hvx #sound-canvas { opacity: 0; transition: opacity 1s var(--ease-entrance) 0.7s; }
+.hvx #sound.is-live #sound-canvas { opacity: 1; }
+.hvx #sound-controls { display: flex; flex-wrap: wrap; align-items: center; gap: calc(1 * var(--u)); }
+.hvx #sound-controls:not(:has(button:not([hidden]))) { display: none; }
+.hvx .sound-toggle {
+  display: inline-flex; align-items: center; gap: 0.6em; height: calc(2.5 * var(--u)); min-height: 44px; padding: 0 calc(1 * var(--u));
+  border: 1px solid var(--hero-rule); background: transparent; color: var(--hero-content);
+  font: inherit; font-size: var(--hero-text-body); line-height: 1; cursor: pointer;
+}
+.hvx .sound-toggle .state { color: var(--hero-content-muted); font-variant-numeric: tabular-nums; }
+.hvx .sound-toggle .state::after { content: "off"; }
+.hvx .sound-toggle[aria-pressed="true"] { border-color: var(--hero-content); }
+.hvx .sound-toggle[aria-pressed="true"] .state { color: var(--hero-content); }
+.hvx .sound-toggle[aria-pressed="true"] .state::after { content: "on"; }
+@media (hover: hover) { .hvx .sound-toggle:hover { border-color: var(--hero-content); } }
+@media (min-width: 640px) { .hvx .sound-toggle { height: calc(2.875 * var(--u)); } }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx .sound-stage {
+    position: absolute; inset: 0 0 0 calc(24 * var(--u)); width: auto; aspect-ratio: auto;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%), linear-gradient(180deg, transparent, #000 10%, #000 90%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(90deg, transparent, #000 22%), linear-gradient(180deg, transparent, #000 10%, #000 90%, transparent);
+    mask-composite: intersect;
+  }
+  .hvx #sound-h { position: absolute; top: calc(8.5 * var(--u)); left: calc(2.5 * var(--u)); width: calc(22.9375 * var(--u)); z-index: 10; }
+  .hvx #sound-note { position: absolute; top: calc(30 * var(--u)); left: calc(2.5 * var(--u)); width: calc(22.9375 * var(--u)); z-index: 10; }
+  .hvx #sound-controls { position: absolute; left: calc(2.5 * var(--u)); top: calc(43.625 * var(--u)); z-index: 10; }
+}
+
+/* ---------- Act 05: the room ---------- */
+.hvx #room { position: relative; }
+.hvx #room picture,
+.hvx #room img { display: block; width: 100%; height: auto; }
+.hvx .room-copy { display: flex; flex-direction: column; gap: calc(1 * var(--u)); padding: calc(2.5 * var(--u)) calc(1.25 * var(--u)) calc(4 * var(--u)); }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  /* the sound stage above fades into the page; the room photo fades in the same way instead of starting on a hard edge */
+  .hvx #room picture {
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 14%);
+    mask-image: linear-gradient(180deg, transparent, #000 14%);
+  }
+  .hvx #room::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(0deg, rgb(10 10 12 / 0.78) 0%, rgb(10 10 12 / 0.35) 30%, transparent 55%);
+  }
+  /* right-hand side: the sideboard and both speakers fill the left of the room photo */
+  .hvx .room-copy { position: absolute; right: calc(2.5 * var(--u)); bottom: calc(3 * var(--u)); width: calc(30 * var(--u)); padding: 0; z-index: 1; }
+}
+
+/* ---------- Act 06: the collection's close-up views ----------
+   The drivers and grain views are crops of each finish's studio photo, so they carry its dark backdrop to the edge.
+   A little smaller than the showroom cutout (clear of the name and price row) and feathered on all four sides so the
+   backdrop dissolves into the card instead of standing as a square. */
+.hvx .product .layer img:not([data-shot="showroom"]) {
+  width: calc(15.5 * var(--u)); height: calc(15.5 * var(--u)); top: 54%;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent), linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent), linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent);
+  mask-composite: intersect;
+}
+
+/* ---------- Act 05b: the light sweep ---------- */
+.hvx #sweep { position: relative; }
+.hvx .sweep-media video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #000; }
+.hvx .sweep-copy { display: flex; flex-direction: column; align-items: flex-start; gap: calc(1 * var(--u)); padding: calc(2.5 * var(--u)) calc(1.25 * var(--u)) calc(4 * var(--u)); }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  /* the clip's right third is the cabinet's dark side panel: the words sit there; both edges fade into the page */
+  .hvx .sweep-media {
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+  }
+  .hvx #sweep::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(270deg, rgb(10 10 12 / 0.7) 0%, rgb(10 10 12 / 0.3) 30%, transparent 48%);
+  }
+  .hvx .sweep-copy { position: absolute; right: calc(2.5 * var(--u)); top: 50%; transform: translateY(-50%); width: calc(26 * var(--u)); padding: 0; z-index: 1; }
+}
+
+/* ---------- Act 06c: out of the dark ----------
+   Static (tier 3, no JS): the plinth photo, then all four lines as a short stack.
+   Live (data-live, tiers 1-2): the section is the scroll length, the stage pins to the viewport, the emergence frames
+   draw on the canvas and one line shows per beat. The frames keep the speaker at 76% across (object-position and the
+   canvas crop use the same rule), clear of the words on the left. */
+.hvx #finale { position: relative; background: #000; }
+.hvx .finale-media { position: relative; overflow: hidden; aspect-ratio: 1920 / 1072; background: #000; }
+.hvx .finale-media img,
+.hvx .finale-media canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
+.hvx #finale-canvas { opacity: 0; }
+.hvx .finale-reveal { object-position: 50% 50%; }
+.hvx .finale-copy { display: flex; flex-direction: column; gap: calc(0.75 * var(--u)); padding: calc(2.5 * var(--u)) calc(1.25 * var(--u)) calc(4 * var(--u)); }
+.hvx .finale-line { text-wrap: balance; }
+/* static (tier 3, no JS): the heading stays display size; the other three lines read as one standfirst */
+.hvx #finale:not([data-live]) .finale-copy { display: block; }
+.hvx #finale:not([data-live]) p.finale-line {
+  display: inline; font-size: var(--hero-text-lede); line-height: 1.4; color: var(--hero-content);
+}
+/* text that crosses a photograph keeps WCAG AA contrast: a tight dark shadow behind the letters, not a glow
+   (the hero claim passes over the pinned speaker while scrolling; the static finale paragraph touches the plinth) */
+.hvx #hero-title, .hvx #finale:not([data-live]) .finale-copy {
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.7), 0 0 10px rgb(0 0 0 / 0.45);
+}
+.hvx #finale:not([data-live]) h2.finale-line { margin-bottom: calc(0.75 * var(--u)); }
+.hvx #finale:not([data-live]) p.finale-line + p.finale-line::before { content: " "; }
+
+.hvx #finale[data-live] { height: 420svh; }
+.hvx #finale[data-live] .finale-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+/* phones and tablets: the sticky header (--head, measured in stage.js) sits over the top of the stage, so the
+   picture starts below it */
+.hvx #finale[data-live] .finale-stage { padding-top: var(--head, 0px); }
+.hvx #finale[data-live] .finale-media { aspect-ratio: auto; height: 64svh; }
+.hvx #finale[data-live] #finale-canvas[data-ready] { opacity: var(--emerge, 1); }
+/* a frame failed to load: the plinth photo stands in for the whole run */
+.hvx #finale[data-live][data-fallback] #finale-canvas { opacity: 0; }
+.hvx #finale[data-live][data-fallback] .finale-reveal { opacity: 1; }
+.hvx #finale[data-live] .finale-reveal {
+  opacity: var(--reveal, 0);
+  transform: scale(var(--dolly, 1.06)) translateY(var(--drift, 0px));
+  transform-origin: 50% 60%;
+  will-change: opacity, transform;
+}
+.hvx #finale[data-live] .finale-media::after {
+  /* the frames fade into the black the words sit on */
+  content: ""; position: absolute; inset: auto 0 0; height: 30%; pointer-events: none;
+  background: linear-gradient(0deg, #000, transparent);
+}
+.hvx #finale[data-live] .finale-copy { display: grid; padding: calc(1.5 * var(--u)) calc(1.25 * var(--u)) 0; }
+.hvx #finale[data-live] .finale-line {
+  grid-area: 1 / 1; opacity: 0; transform: translateY(14px);
+  transition: opacity 520ms var(--ease-entrance, cubic-bezier(0.2, 0, 0, 1)), transform 640ms var(--ease-entrance, cubic-bezier(0.2, 0, 0, 1));
+}
+.hvx #finale[data-live] .finale-line[data-on] { opacity: 1; transform: none; }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx .finale-copy { position: absolute; left: calc(2.5 * var(--u)); bottom: calc(5 * var(--u)); width: calc(30 * var(--u)); padding: 0; z-index: 1; }
+  .hvx #finale::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgb(0 0 0 / 0.72) 0%, rgb(0 0 0 / 0.3) 32%, transparent 52%);
+  }
+  .hvx #finale[data-live]::after { display: none; }
+  .hvx #finale[data-live] .finale-stage { padding-top: 0; }
+  .hvx #finale[data-live] .finale-media { height: 100%; }
+  .hvx #finale[data-live] .finale-media::after { display: none; }
+  .hvx #finale[data-live] .finale-stage::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgb(0 0 0 / 0.6) 0%, rgb(0 0 0 / 0.2) 30%, transparent 46%);
+  }
+  .hvx #finale[data-live] .finale-copy { padding: 0; top: 50%; bottom: auto; transform: translateY(-50%); }
+}
+
+/* ---------- shared flow layout for the acts after the stage ---------- */
+.hvx .flow { position: relative; display: flex; flex-direction: column; gap: calc(2.5 * var(--u)); padding: calc(4 * var(--u)) calc(1.25 * var(--u)); }
+.hvx .flow-head { display: flex; flex-direction: column; gap: calc(1 * var(--u)); }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx .flow { display: grid; grid-template-columns: calc(22.9375 * var(--u)) 1fr; column-gap: calc(4 * var(--u)); align-items: start; padding: calc(8.5 * var(--u)) calc(2.5 * var(--u)); }
+  .hvx .flow-head { gap: calc(1.5 * var(--u)); }
+}
+
+/* ---------- Act 06b: specs ---------- */
+.hvx .specs-list { display: flex; flex-direction: column; border-top: 1px solid var(--hero-rule); }
+.hvx .spec-line {
+  display: grid; grid-template-columns: 1fr; gap: calc(0.25 * var(--u));
+  padding: calc(0.875 * var(--u)) 0; border-bottom: 1px solid var(--hero-rule);
+  font-size: var(--hero-text-body); line-height: var(--raw-leading-caption);
+}
+.hvx .spec-line dd { font-variant-numeric: tabular-nums; }
+@media (min-width: 640px) {
+  .hvx .spec-line { grid-template-columns: calc(12.1875 * var(--u)) 1fr; column-gap: calc(2 * var(--u)); }
+}
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx #specs .specs-list { width: calc(42.125 * var(--u)); justify-self: end; }
+  /* "The numbers," is wider than the shared 22.9u head column and was cut off; the fixed-width list leaves ~39u, so this act's head takes 27u */
+  .hvx #specs.flow { grid-template-columns: calc(27 * var(--u)) 1fr; }
+}
+
+/* ---------- Act 07: reserve ---------- */
+.hvx .reserve-sum { display: flex; flex-direction: column; border-top: 1px solid var(--hero-rule); margin-top: calc(0.5 * var(--u)); }
+.hvx .reserve-sum > div { display: flex; justify-content: space-between; gap: calc(2 * var(--u)); padding: calc(0.75 * var(--u)) 0; border-bottom: 1px solid var(--hero-rule); font-size: var(--hero-text-body); line-height: var(--raw-leading-caption); }
+.hvx .reserve-sum dd { text-align: right; }
+.hvx .hv-form { display: flex; flex-direction: column; gap: calc(1.25 * var(--u)); }
+.hvx .field { display: flex; flex-direction: column; gap: calc(0.5 * var(--u)); }
+.hvx .field label { font-size: var(--hero-text-body); line-height: var(--raw-leading-tight); color: var(--hero-content-muted); }
+.hvx .field input,
+.hvx .field select {
+  width: 100%; height: calc(3 * var(--u)); padding: 0 calc(1 * var(--u));
+  border: 1px solid var(--hero-rule); border-radius: 0; background: transparent; color: var(--hero-content);
+  font: inherit; font-size: max(16px, var(--hero-text-body));
+}
+.hvx .field select { appearance: none; -webkit-appearance: none; padding-right: calc(2.5 * var(--u));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 5'%3E%3Cpath d='M0 0h6L3 5z' fill='%23f4f1ea'/%3E%3C/svg%3E"); background-repeat: no-repeat;
+  background-position: right calc(1 * var(--u)) center; background-size: 6px 5px; }
+.hvx .field select option { background: #111114; color: #f4f1ea; }
+.hvx .field input::placeholder { color: var(--hero-content-faint); opacity: 1; }
+@media (hover: hover) { .hvx .field input:hover, .hvx .field select:hover { border-color: var(--hero-content-muted); } }
+.hvx .field input:focus-visible,
+.hvx .field select:focus-visible { border-color: var(--hero-content); outline: 2px solid var(--hero-content); outline-offset: 2px; }
+.hvx .field input:user-invalid { border-color: #d98c7a; }
+.hvx .hint { font-size: var(--hero-text-fine); line-height: var(--raw-leading-caption); color: var(--hero-content-faint); }
+.hvx button.btn { background-color: var(--hero-surface-lattice); color: var(--hero-content); font: inherit; cursor: pointer; align-self: flex-start; }
+.hvx .btn:focus-visible { outline: 2px solid var(--hero-content); outline-offset: 3px; }
+.hvx .demo-sent { border-radius: 0; background: #111114; border: 1px solid var(--hero-rule); color: var(--hero-content); padding: calc(1.25 * var(--u)); gap: calc(0.75 * var(--u)); }
+.hvx .demo-sent strong { font-weight: 400; font-size: var(--hero-text-lede); line-height: var(--raw-leading-caption); }
+.hvx .demo-sent p { font-size: var(--hero-text-body); line-height: var(--raw-leading-caption); color: var(--hero-content-muted); }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx #reserve .reserve-box { width: calc(36 * var(--u)); justify-self: end; }
+}
+
+/* ---------- footer ---------- */
+.hvx #footer .fiction a { color: var(--hero-content); text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; white-space: nowrap; }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  /* balanced lines: the studio's name no longer splits across two lines or leaves "Automation" alone on the last one */
+  .hvx #footer .copyright { white-space: normal; max-width: calc(46 * var(--u)); text-wrap: balance; }
+}
+
+/* The decode effect was written for a monospace face. In Halvane's proportional type, a run of random capitals is
+   wider than the label it stands for, so it wrapped onto a second line for a moment ("Reserve S / GDFP") or ran into
+   the next word. The glyph layer now paints only inside the label's own box (clip-path leaves layout and baseline alone). */
+.hvx .scr-box { clip-path: inset(-0.2em); }
+.hvx .menu-cart a { white-space: nowrap; }
+
+/* Target sizes. The template widens small controls with a ::before that frame mode switches off, and a pseudo-element
+   is not the control's own box. The site promises 44px controls (WCAG 2.5.8 asks 24px), so each control's own box
+   is 44px and the drawn mark stays the template's size, centred where it was. */
+.hvx .btn { min-height: 44px; }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  /* a 44px CTA on a short frame (1024x768) would climb into the claim: keep the claim a line above it */
+  .hvx #hero h1 { bottom: max(calc(7.375 * var(--u)), calc(4 * var(--u) + 44px)); }
+}
+.hvx .menu-toggle { width: 44px; height: 44px; margin: calc((44px - 1.5 * var(--u)) / -2) calc((44px - 1.75 * var(--u)) / -2); }
+.hvx .menu-glyph { width: calc(1.75 * var(--u)); flex: none; }
+.hvx .nav-label { --nav-pad: max(0px, calc((44px - 1lh) / 2)); padding-block: var(--nav-pad); margin-block: calc(var(--nav-pad) * -1); }
+.hvx .nav-label .nav-caret { top: calc(var(--nav-pad) + 0.25 * var(--u)); }
+/* the finish links under Finishes in the phone menu were 20px of text; each is now a 44px row (the old gap folds into it) */
+.hvx .menu-row.sub { padding-bottom: 0; }
+.hvx .menu-row.sub a { display: flex; align-items: center; min-height: 44px; }
+.hvx .product .swatches { --sw: calc(1 * var(--u)); right: calc(1.5 * var(--u) - 22px); width: 44px; gap: 0; }
+.hvx .product .swatches button, .hvx .product .swatches button[aria-pressed="true"] { position: relative; width: 44px; height: 44px; border: 0; background: none; }
+.hvx .product .swatches button::before { content: none; }
+.hvx .product .swatches button::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: var(--sw); height: var(--sw); translate: -50% -50%;
+  border: 1px solid var(--hero-content-muted);
+  transition: background var(--duration-normal) var(--ease-entrance), border-color var(--duration-normal) var(--ease-entrance);
+}
+@media (hover: hover) { .hvx .product .swatches button:hover::after { border-color: var(--hero-content); } }
+.hvx .product .swatches button[aria-pressed="true"]::after { background: var(--hero-content); border-color: var(--hero-content); }
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .hvx .product .swatches { --sw: calc(0.75 * var(--u)); right: calc(1.375 * var(--u) - 22px); }
+}

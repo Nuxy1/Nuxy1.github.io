@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "project": "Halvane Audio demo (fictional brand), /example-sites/halvane-audio/",
+  "brief": { "dimensionality": ["3d"], "mood": ["luxe"], "tone": ["dark"], "motionEnergy": ["subtle"], "density": ["sparse"] },
+  "styleId": "obsidian-luxe",
+  "tokens": {
+    "gl-bg": "#0a0a0c", "gl-bg-alt": "#101014", "gl-surface": "#141419", "gl-surface-raised": "#1c1c22",
+    "gl-ink": "#f4f1ea", "gl-ink-muted": "#a8a49b", "gl-ink-subtle": "#6b6862",
+    "gl-accent": "#c9a227", "gl-accent-ink": "#0a0a0c", "gl-line": "#26262c", "gl-glow": "#e8c766",
+    "gl-font-display": "'General Sans', ui-sans-serif, system-ui, sans-serif",
+    "gl-font-body": "'Onest', ui-sans-serif, system-ui, sans-serif",
+    "gl-tracking-display": "-0.03em", "gl-weight-display": "500", "gl-weight-body": "400",
+    "gl-radius": "0.25rem", "gl-radius-lg": "0.75rem",
+    "gl-duration-fast": "150ms", "gl-duration": "320ms", "gl-duration-slow": "900ms", "gl-ease": "cubic-bezier(0.22, 1, 0.36, 1)"
+  },
+  "tokenOverrides": "Halvane keeps its own approved type (serif display, existing body face) and warm wordmark #cfc9be; gl-glow is unused (the brief bans glow). See docs/halvane-getlayers-2026-11.md.",
+  "activeTemplateId": "artefakt",
+  "placed": [
+    { "sectionId": "artefakt/hero", "slot": "act-1-arrival" },
+    { "sectionId": "artefakt/technology", "slot": "act-2-reveal" },
+    { "sectionId": "artefakt/details", "slot": "act-3-engineered-detail" },
+    { "sectionId": "halvane/listen", "slot": "act-4-sound-visualized", "sceneId": "pendulum-wave", "sceneParams": "tinted through the CONFIG map returned by materialize; shader colours untouched" },
+    { "sectionId": "artefakt/collections", "slot": "act-5-experience + act-6-collection" },
+    { "sectionId": "halvane/specs+reserve", "slot": "act-7-finale" }
+  ],
+  "previews": {
+    "artefakt": "https://www.getlayers.ai/?layer=artefakt",
+    "obsidian-luxe": "https://www.getlayers.ai/?layer=obsidian-luxe",
+    "pendulum-wave": "https://www.getlayers.ai/?layer=pendulum-wave"
+  },
+  "considered": ["halcyon", "laocoon", "lumi-re", "brewns", "ring-galaxy", "bamboo-grove", "chess-endgame", "deer-in-mist"],
+  "usage": {
+    "mcpCalls": { "start": 1, "plan": 1, "search": 5, "materialize": 3, "state_schema": 1 },
+    "studioCredits": 0,
+    "bulkDownload": false
+  },
+  "licensing": "Template and scene source was retrieved through the signed-in GetLayers MCP for this project only. None of the MCP results carried licence text, and a web search found no public GetLayers licence page. Commercial reuse terms must be confirmed with GetLayers (account terms) before this pattern is used on paid client work. Signed media URLs are never stored in this repo.",
+  "notes": "Generated files src/lib/halvane/artefakt.{js,css} come from D:/Work/Business/Nuxy-Halvane-GetLayers-2026-11/tools/port-artefakt.mjs; never hand-edit them."
+}

@@ -1,0 +1,7 @@
+[
+  { "index": "01", "title": "Tweeter", "body": "A 1-inch aluminium dome in a shallow waveguide, set in a brass ring.", "icon": "/3d/halvane/gl/parts/tweeter.svg", "cardTop": 224, "cardSideY": 285, "anchorFx": 0.385, "anchorFy": 0.240, "side": "right" },
+  { "index": "02", "title": "Woofer", "body": "A 6.5-inch paper-composite cone on a cast frame.", "icon": "/3d/halvane/gl/parts/woofer.svg", "cardTop": 442, "cardSideY": 503, "anchorFx": 0.385, "anchorFy": 0.593, "side": "right" },
+  { "index": "03", "title": "Port", "body": "A slot along the bottom of the front, so the speaker can sit near a wall.", "icon": "/3d/halvane/gl/parts/port.svg", "cardTop": 599, "cardSideY": 660, "anchorFx": 0.385, "anchorFy": 0.847, "side": "right" },
+  { "index": "04", "title": "Cabinet", "body": "Solid hardwood, 19 mm thick, braced inside so the box stays quiet.", "icon": "/3d/halvane/gl/parts/cabinet.svg", "cardTop": 346, "cardSideY": 407, "anchorFx": 0.212, "anchorFy": 0.438, "side": "left" },
+  { "index": "05", "title": "Crossover", "body": "Air-core coils and film capacitors, hand-soldered behind the back panel.", "icon": "/3d/halvane/gl/parts/crossover.svg", "cardTop": 501, "cardSideY": 562, "anchorFx": 0.794, "anchorFy": 0.688, "side": "right" }
+]

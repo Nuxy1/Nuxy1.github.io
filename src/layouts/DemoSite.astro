@@ -58,10 +58,12 @@ Astro.csp?.insertStyleHash(`sha256-${createHash("sha256").update(optIn).digest("
       <a class="nx-about" href={about} target="_top" data-nuxy-open>About this demo</a>
     </section>
     <slot />
-    <a class="nx-pill is-away" href={about} target="_top" data-nuxy-open aria-label="Built by Nuxy: what this demo shows">
-      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 16V4l12 12V4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-      <span class="nx-pill-text">Built by Nuxy</span>
-    </a>
+    <aside aria-label="About this demo">
+      <a class="nx-pill is-away" href={about} target="_top" data-nuxy-open aria-label="Built by Nuxy: what this demo shows">
+        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 16V4l12 12V4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <span class="nx-pill-text">Built by Nuxy</span>
+      </a>
+    </aside>
     <dialog class="nx-drawer" aria-labelledby="nx-drawer-title" data-nuxy-drawer>
       <div class="nx-drawer-in">
         <div class="nx-drawer-top">
