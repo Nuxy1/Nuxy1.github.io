@@ -62,6 +62,10 @@ import Base from "../../layouts/Base.astro";
   const reference = links.get("ref");
   const management = /^([0-9a-f]{32})\.([0-9a-f]{64})$/.exec(links.get("manage") ?? "");
   if (reference || management) history.replaceState(history.state, "", location.pathname + location.search);
+  window.addEventListener("hashchange", () => {
+    const next = new URLSearchParams(location.hash.slice(1));
+    if (next.has("manage") || next.has("ref")) location.reload();
+  });
   const endpoint = "https://preview.nuxyautomation.com/api/consultations";
   const post = (suffix: string, body: object) => fetch(endpoint + suffix, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
