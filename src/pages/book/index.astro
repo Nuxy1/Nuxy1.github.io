@@ -1,0 +1,192 @@
+---
+import Base from "../../layouts/Base.astro";
+---
+<Base title="Book a Free Consultation · NUXY Automation" description="Pick a time for a free 30-minute consultation with NUXY Automation." wide noindex>
+  <section class="section">
+    <div class="wrap booking">
+      <div class="booking-intro">
+        <h1>Book a free consultation</h1>
+        <p class="lead">Spend 30 minutes with a NUXY founder talking through what your business needs.</p>
+        <p>Appointments are shown in Central time. We’ll send the meeting link to your email.</p>
+      </div>
+      <div class="booking-content">
+        <p id="booking-status" role="status">Checking availability…</p>
+        <form id="booking-form" hidden>
+          <label for="booking-time">Appointment time</label>
+          <select id="booking-time" name="start" required><option value="">Choose an available time</option></select>
+          <label for="booking-name">Name</label>
+          <input id="booking-name" name="name" autocomplete="name" maxlength="120" required />
+          <label for="booking-email">Email</label>
+          <input id="booking-email" name="email" type="email" autocomplete="email" maxlength="254" required />
+          <div hidden><label for="booking-website">Leave this blank</label><input id="booking-website" name="website" tabindex="-1" autocomplete="off" /></div>
+          <button class="button" type="submit">Book consultation</button>
+        </form>
+        <form id="booking-code" hidden>
+          <label for="booking-verification">Code from your email</label>
+          <input id="booking-verification" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" required />
+          <button class="button" type="submit">Confirm consultation</button>
+        </form>
+        <form id="booking-manage" hidden>
+          <label for="booking-change">New appointment time</label>
+          <select id="booking-change" name="start"><option value="">Choose an available time</option></select>
+          <button class="button" type="submit" value="reschedule">Reschedule</button>
+          <button class="button secondary" type="submit" value="cancel" formnovalidate>Cancel appointment</button>
+        </form>
+        <p><a href="/contact/">Contact NUXY</a> if you need help finding a time.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .booking{display:grid;gap:clamp(2rem,7vw,7rem);grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .booking-intro{max-width:34rem}
+  .booking-content{border-top:1px solid #375070;padding-top:1.25rem;max-width:29rem}
+  form:not([hidden]){display:grid;gap:.65rem;margin:1.5rem 0}
+  label{font-weight:600}
+  input,select{min-height:3rem;border:1px solid #5f7697;border-radius:.5rem;background:#0c1523;color:#e8eef6;padding:.55rem .75rem;margin-bottom:.5rem;font:inherit;color-scheme:dark}
+  button{justify-self:start;min-height:3rem}
+  :is(input,select,button):focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
+  @media(max-width:720px){.booking{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>("#booking-form");
+  const time = document.querySelector<HTMLSelectElement>("#booking-time");
+  const status = document.querySelector<HTMLElement>("#booking-status");
+  const verification = document.querySelector<HTMLFormElement>("#booking-code");
+  const manageForm = document.querySelector<HTMLFormElement>("#booking-manage");
+  const change = document.querySelector<HTMLSelectElement>("#booking-change");
+  const submit = form?.querySelector<HTMLButtonElement>("button");
+  const links = new URLSearchParams(location.hash.slice(1));
+  const reference = links.get("ref");
+  const management = /^([0-9a-f]{32})\.([0-9a-f]{64})$/.exec(links.get("manage") ?? "");
+  if (reference || management) history.replaceState(history.state, "", location.pathname + location.search);
+  const endpoint = "https://preview.nuxyautomation.com/api/consultations";
+  const post = (suffix: string, body: object) => fetch(endpoint + suffix, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+
+  if (form && time && status && submit && verification && manageForm && change) {
+    let challenge = "";
+    const labelTime = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Chicago", weekday: "short", month: "short", day: "numeric",
+      hour: "numeric", minute: "2-digit", timeZoneName: "short",
+    });
+    const offered = new Set<string>();
+    async function loadTimes() {
+      const reply = await fetch(endpoint + "/availability", { cache: "no-store" });
+      if (!reply.ok) throw new Error("Availability unavailable");
+      const result = await reply.json();
+      if (!Array.isArray(result.starts)) throw new Error("Invalid availability");
+      for (const start of result.starts) {
+        if (typeof start !== "string" || !Number.isFinite(Date.parse(start)) || offered.has(start)) continue;
+        offered.add(start);
+        const label = labelTime.format(new Date(start));
+        time!.append(new Option(label, start));
+        change!.append(new Option(label, start));
+      }
+      if (management) {
+        const lookup = await post("/manage", { id: management[1], token: management[2], action: "status" });
+        const appointment = await lookup.json();
+        if (!lookup.ok || appointment.status !== "confirmed") throw new Error("Appointment unavailable");
+        status!.textContent = "Your current appointment is " + labelTime.format(new Date(appointment.start)) + ".";
+        manageForm!.hidden = false;
+        return;
+      }
+      form!.hidden = offered.size === 0;
+      status!.textContent = offered.size ? "Choose a time below." : "There are no open times right now.";
+    }
+    void loadTimes().catch(() => { status.textContent = "Online booking is unavailable right now."; });
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const fields = new FormData(form);
+      if (!offered.has(String(fields.get("start")))) return;
+      submit.disabled = true;
+      status.textContent = "Checking your time…";
+      try {
+        const reply = await post("", { start: fields.get("start"), name: fields.get("name"), email: fields.get("email"), website: fields.get("website"), reference });
+        if (reply.status === 409) {
+          time.selectedOptions[0]?.remove();
+          status.textContent = "That time is no longer available. Choose another time.";
+          return;
+        }
+        if (!reply.ok) throw new Error("Verification could not be sent");
+        const result = await reply.json();
+        if (result.status !== "verification_required" || typeof result.id !== "string") throw new Error("Invalid verification");
+        challenge = result.id;
+        form.hidden = true;
+        verification.hidden = false;
+        status.textContent = "Enter the code we sent to your email.";
+        verification.querySelector("input")?.focus();
+      } catch {
+        status.textContent = "We couldn’t confirm your booking. Try again or contact NUXY.";
+      } finally {
+        submit.disabled = false;
+      }
+    });
+    verification.addEventListener("submit", async event => {
+      event.preventDefault();
+      const button = verification.querySelector("button")!;
+      button.disabled = true;
+      status.textContent = "Confirming your appointment…";
+      try {
+        const code = new FormData(verification).get("code");
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const reply = await post("/confirm", { id: challenge, code });
+          if (reply.status === 403) {
+            status.textContent = "That code is incorrect or expired.";
+            return;
+          }
+          if (reply.status === 409) {
+            verification.hidden = true;
+            form.hidden = false;
+            status.textContent = "That time was taken. Choose another appointment.";
+            return;
+          }
+          const result = await reply.json();
+          if (reply.ok && result.status === "confirmed") {
+            verification.hidden = true;
+            status.textContent = "Your consultation is booked. Check your email for the meeting link.";
+            return;
+          }
+          if (!reply.ok || result.status !== "meeting_pending") break;
+          await new Promise(resolve => window.setTimeout(resolve, 1500));
+        }
+        status.textContent = "Your meeting link is still unavailable. Try confirming again.";
+      } catch {
+        status.textContent = "We couldn’t confirm your appointment. Try again.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+    manageForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!management || !(event.submitter instanceof HTMLButtonElement)) return;
+      const action = event.submitter.value;
+      if (action === "cancel" && !window.confirm("Cancel this consultation?")) return;
+      if (action === "reschedule" && !offered.has(change.value)) return;
+      const buttons = Array.from(manageForm.querySelectorAll("button"));
+      for (const button of buttons) button.disabled = true;
+      try {
+        const reply = await post("/manage", { id: management[1], token: management[2], action, start: change.value });
+        if (reply.status === 409) {
+          status.textContent = "That change is unavailable. Choose another time or contact NUXY.";
+          return;
+        }
+        if (!reply.ok) throw new Error("Change unavailable");
+        const result = await reply.json();
+        if (result.status === "cancelled") {
+          status.textContent = "Your appointment was cancelled.";
+          manageForm.hidden = true;
+        } else if (result.status === "confirmed") {
+          status.textContent = "Your appointment is now " + labelTime.format(new Date(result.start)) + ".";
+        }
+      } catch {
+        status.textContent = "We couldn’t confirm the change. Try again or contact NUXY.";
+      } finally {
+        for (const button of buttons) button.disabled = false;
+      }
+    });
+  }
+</script>
